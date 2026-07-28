@@ -1,4 +1,11 @@
-import { appendRecord, deleteRecord, getAllRecords, updateRecord, type KeyedTableConfig } from '@/lib/sheets/keyedTable';
+import {
+  appendRecord,
+  deleteRecord,
+  getAllRecords,
+  updateRecord,
+  upsertRecord,
+  type KeyedTableConfig,
+} from '@/lib/sheets/keyedTable';
 import { getAllFromSupabase, mirrorKeyedTableToSupabase } from '@/lib/supabase/keyedTable';
 
 // Supabase 테이블 이름은 항상 시트 탭 이름과 동일하다는 규칙(레지스트리 전체의 확립된 원칙)을 그대로 따른다.
@@ -38,6 +45,15 @@ export async function updateKeyedRecord(
   record: Record<string, string>
 ): Promise<Record<string, string>[]> {
   await updateRecord(config, keyValues, record);
+  return afterSheetWrite(config);
+}
+
+export async function upsertKeyedRecord(
+  config: KeyedTableConfig,
+  keyValues: Record<string, string>,
+  record: Record<string, string>
+): Promise<Record<string, string>[]> {
+  await upsertRecord(config, keyValues, record);
   return afterSheetWrite(config);
 }
 
