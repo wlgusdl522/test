@@ -10,7 +10,7 @@ export default function LoginPage() {
       <form
         action={async () => {
           'use server';
-          await signIn('google', { redirectTo: '/team-test' });
+          await signIn('google', { redirectTo: '/settings/simple-lists' });
         }}
       >
         <button type="submit" style={{ padding: '10px 20px' }}>Google 계정으로 로그인</button>
