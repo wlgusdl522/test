@@ -12,6 +12,17 @@ export async function requireViewerEmail(): Promise<string> {
   return email.toLowerCase();
 }
 
+export async function getViewerStaffRecord(): Promise<Record<string, string> | null> {
+  const email = await requireViewerEmail();
+  const { data, error } = await getSupabaseServerClient()
+    .from('직원관리')
+    .select('*')
+    .eq('이메일(아이디)', email)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as Record<string, string>;
+}
+
 async function getViewerPosition(email: string): Promise<string> {
   const { data, error } = await getSupabaseServerClient()
     .from('직원관리')
