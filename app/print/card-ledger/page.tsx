@@ -7,6 +7,8 @@ import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { getStaffList } from '@/lib/mutate/staff';
 import { buildApprovalBoxData } from '@/lib/approval/approvalLine';
 import ApprovalBox from '@/components/print/ApprovalBox';
+import PrintButton from '@/components/print/PrintButton';
+import { btn, card, input } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,10 +18,11 @@ const TYPES = ['체크카드', '신용카드', '계좌이체'];
 export default async function CardLedgerPrintPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ym?: string }>;
+  searchParams: Promise<{ ym?: string; type?: string | string[] }>;
 }) {
-  const { ym } = await searchParams;
+  const { ym, type } = await searchParams;
   const yearMonth = ym ?? new Date().toISOString().slice(0, 7);
+  const selectedTypes = type ? (Array.isArray(type) ? type : [type]) : TYPES;
 
   const [records, approvalRules, approvalLine, me, staffList] = await Promise.all([
     getCardLedgerList(),
@@ -32,17 +35,33 @@ export default async function CardLedgerPrintPage({
   const rule = approvalRules.find((r) => r.페이지ID === 'card-ledger');
   const filtered = records.filter((r) => r.사용일자.slice(0, 7) === yearMonth);
   const [year, month] = yearMonth.split('-');
+  const sections = TYPES.filter((t) => selectedTypes.includes(t)).map((t) => ({
+    type: t,
+    rows: filtered.filter((r) => r.구분 === t),
+  })).filter((s) => s.rows.length > 0);
 
   return (
-    <div>
-      <form method="get" className="mb-6 print:hidden">
-        <input type="month" name="ym" defaultValue={yearMonth} />
-        <button type="submit">조회</button>
-      </form>
+    <div className="p-6">
+      <div className={`${card} print:hidden flex flex-wrap items-center gap-4`}>
+        <form method="get" className="flex flex-wrap items-center gap-4">
+          <input type="month" name="ym" defaultValue={yearMonth} className={`${input} w-auto`} />
+          {TYPES.map((t) => (
+            <label key={t} className="flex items-center gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
+              <input type="checkbox" name="type" value={t} defaultChecked={selectedTypes.includes(t)} /> {t}
+            </label>
+          ))}
+          <button type="submit" className={btn}>조회</button>
+        </form>
+        <PrintButton />
+      </div>
 
-      {TYPES.map((type) => {
-        const rows = filtered.filter((r) => r.구분 === type);
-        if (!rows.length) return null;
+      {sections.length === 0 && (
+        <div className={card}>
+          <p className="text-sm text-zinc-500">연/월과 구분을 선택하고 조회를 눌러주세요.</p>
+        </div>
+      )}
+
+      {sections.map(({ type: t, rows }) => {
         const total = rows.reduce((sum, r) => sum + Number(r.사용금액 || 0), 0);
         const approvalData = buildApprovalBoxData(
           approvalLine,
@@ -55,12 +74,12 @@ export default async function CardLedgerPrintPage({
         );
 
         return (
-          <div key={type} style={{ marginBottom: 40, pageBreakAfter: 'always' }}>
+          <div key={t} className={card} style={{ marginBottom: 40, pageBreakAfter: 'always' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: 24 }}>서대문노인종합복지관</h2>
                 <div style={{ marginTop: 6, fontSize: 19, color: '#666' }}>
-                  {year}년 {Number(month)}월 {type} 사용대장
+                  {year}년 {Number(month)}월 {t} 사용대장
                 </div>
               </div>
               <ApprovalBox data={approvalData} />
