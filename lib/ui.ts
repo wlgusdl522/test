@@ -10,12 +10,12 @@ export const card =
   'border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 mb-6 bg-white dark:bg-zinc-900 shadow-sm';
 
 export const input =
-  'w-full rounded-md border border-zinc-300 dark:border-zinc-700 px-2.5 py-1.5 text-sm bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100';
+  'w-full rounded-md border border-zinc-300 dark:border-zinc-700 px-2.5 py-1.5 text-sm bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand';
 
 export const label = 'flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400';
 
 export const btn =
-  'inline-flex items-center justify-center rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300';
+  'inline-flex items-center justify-center rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark';
 
 export const btnSecondary =
   'inline-flex items-center justify-center rounded-md border border-zinc-300 dark:border-zinc-700 px-2.5 py-1 text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800';

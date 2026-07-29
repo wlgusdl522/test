@@ -8,8 +8,8 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <nav className="w-56 shrink-0 border-r border-zinc-200 bg-zinc-50 px-3 py-4 dark:border-zinc-800 dark:bg-zinc-950">
-      <Link href="/" className="mb-4 block px-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+    <nav className="w-56 shrink-0 border-r border-zinc-200 bg-white px-3 py-4 shadow-[1px_0_3px_rgba(0,0,0,0.03)] dark:border-zinc-800 dark:bg-zinc-950">
+      <Link href="/" className="mb-4 block px-2 text-sm font-semibold text-brand">
         서대문노인종합복지관
       </Link>
       {NAV_SECTIONS.map((section) => (
@@ -24,8 +24,8 @@ export default function Sidebar() {
                     href={item.href}
                     className={`block rounded-md px-2 py-1.5 text-sm transition-colors ${
                       active
-                        ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                        : 'text-zinc-700 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800'
+                        ? 'bg-brand-tint text-brand font-medium'
+                        : 'text-zinc-700 hover:bg-brand-tint hover:text-brand dark:text-zinc-300'
                     }`}
                   >
                     {item.label}
