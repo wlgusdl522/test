@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { NAV_SECTIONS } from '@/lib/nav';
+import { NAV_SECTIONS, STANDALONE_NAV_ITEMS } from '@/lib/nav';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -25,6 +25,25 @@ export default function Sidebar() {
       <Link href="/" className="mb-4 block px-2 text-sm font-semibold text-brand">
         서대문노인종합복지관
       </Link>
+      <ul className="mb-3 flex flex-col gap-0.5">
+        {STANDALONE_NAV_ITEMS.map((item) => {
+          const active = pathname === item.href;
+          return (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className={`block rounded-md px-2 py-1.5 text-sm transition-colors ${
+                  active
+                    ? 'bg-brand-tint font-medium text-brand'
+                    : 'text-zinc-700 hover:bg-brand-tint hover:text-brand dark:text-zinc-300'
+                }`}
+              >
+                {item.label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
       {NAV_SECTIONS.map((section) => {
         const open = openSections.has(section.label);
         return (

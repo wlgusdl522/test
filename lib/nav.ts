@@ -1,6 +1,11 @@
 export type NavItem = { href: string; label: string };
 export type NavSection = { label: string; items: NavItem[] };
 
+export const STANDALONE_NAV_ITEMS: NavItem[] = [
+  { href: '/', label: '홈' },
+  { href: '/mypage', label: '마이페이지' },
+];
+
 export const NAV_SECTIONS: NavSection[] = [
   {
     label: '인사관리',

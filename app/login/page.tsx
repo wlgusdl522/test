@@ -8,7 +8,7 @@ export default function LoginPage() {
       <form
         action={async () => {
           'use server';
-          await signIn('google', { redirectTo: '/settings/simple-lists' });
+          await signIn('google', { redirectTo: '/' });
         }}
       >
         <button
