@@ -8,7 +8,7 @@ import { getStaffList } from '@/lib/mutate/staff';
 import { buildApprovalBoxData } from '@/lib/approval/approvalLine';
 import ApprovalBox from '@/components/print/ApprovalBox';
 import PrintButton from '@/components/print/PrintButton';
-import { btn, card, input } from '@/lib/ui';
+import { btn, card, input, table, tableWrap, td, th } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -74,7 +74,7 @@ export default async function CardLedgerPrintPage({
         );
 
         return (
-          <div key={t} className={card} style={{ marginBottom: 40, pageBreakAfter: 'always' }}>
+          <div key={t} className="bg-white dark:bg-zinc-900 mb-10 print:break-after-page">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: 24 }}>서대문노인종합복지관</h2>
@@ -84,32 +84,35 @@ export default async function CardLedgerPrintPage({
               </div>
               <ApprovalBox data={approvalData} />
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th>사용일자</th><th>담당자명</th><th>사용금액</th><th>예산과목</th><th>사용내역</th><th>카드번호</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id}>
-                    <td>{r.사용일자}</td>
-                    <td>{r.담당자명}</td>
-                    <td style={{ textAlign: 'right' }}>{Number(r.사용금액 || 0).toLocaleString()}원</td>
-                    <td>{r.예산과목}</td>
-                    <td>{r.사용내역}</td>
-                    <td>{r.카드번호}</td>
+            <div className={tableWrap}>
+              <table className={table}>
+                <thead>
+                  <tr>
+                    <th className={th}>사용일자</th><th className={th}>담당자명</th><th className={th}>사용금액</th>
+                    <th className={th}>예산과목</th><th className={th}>사용내역</th><th className={th}>카드번호</th>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colSpan={2} style={{ textAlign: 'right', fontWeight: 700 }}>합계</td>
-                  <td style={{ textAlign: 'right', fontWeight: 700 }}>{total.toLocaleString()}원</td>
-                  <td colSpan={3}></td>
-                </tr>
-              </tfoot>
-            </table>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.id}>
+                      <td className={td}>{r.사용일자}</td>
+                      <td className={td}>{r.담당자명}</td>
+                      <td className={td} style={{ textAlign: 'right' }}>{Number(r.사용금액 || 0).toLocaleString()}원</td>
+                      <td className={td}>{r.예산과목}</td>
+                      <td className={td}>{r.사용내역}</td>
+                      <td className={td}>{r.카드번호}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td className={td} colSpan={2} style={{ textAlign: 'right', fontWeight: 700 }}>합계</td>
+                    <td className={td} style={{ textAlign: 'right', fontWeight: 700 }}>{total.toLocaleString()}원</td>
+                    <td className={td} colSpan={3}></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
         );
       })}

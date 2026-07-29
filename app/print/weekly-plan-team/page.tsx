@@ -8,7 +8,7 @@ import { getStaffList } from '@/lib/mutate/staff';
 import { buildApprovalBoxData } from '@/lib/approval/approvalLine';
 import ApprovalBox from '@/components/print/ApprovalBox';
 import PrintButton from '@/components/print/PrintButton';
-import { btn, card, input } from '@/lib/ui';
+import { btn, card, input, table, tableWrap, td, th } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -62,7 +62,7 @@ export default async function WeeklyPlanTeamPrintPage({
         <PrintButton />
       </div>
 
-      <div className={card}>
+      <div className="bg-white dark:bg-zinc-900">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>{team} 주간업무계획</h2>
@@ -70,22 +70,24 @@ export default async function WeeklyPlanTeamPrintPage({
           </div>
           <ApprovalBox data={approvalData} />
         </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr><th>날짜</th><th>성명</th><th>업무내용</th></tr>
-          </thead>
-          <tbody>
-            {tasks.length === 0 ? (
-              <tr><td colSpan={3} style={{ textAlign: 'center', color: '#888' }}>해당 주 등록된 업무가 없습니다.</td></tr>
-            ) : tasks.map((t) => (
-              <tr key={t.id}>
-                <td>{t.날짜}</td>
-                <td>{t.성명}</td>
-                <td>{t.업무내용}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className={tableWrap}>
+          <table className={table}>
+            <thead>
+              <tr><th className={th}>날짜</th><th className={th}>성명</th><th className={th}>업무내용</th></tr>
+            </thead>
+            <tbody>
+              {tasks.length === 0 ? (
+                <tr><td className={td} colSpan={3} style={{ textAlign: 'center', color: '#888' }}>해당 주 등록된 업무가 없습니다.</td></tr>
+              ) : tasks.map((t) => (
+                <tr key={t.id}>
+                  <td className={td}>{t.날짜}</td>
+                  <td className={td}>{t.성명}</td>
+                  <td className={td}>{t.업무내용}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

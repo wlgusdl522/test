@@ -8,7 +8,7 @@ import { getStaffList } from '@/lib/mutate/staff';
 import { buildApprovalBoxData } from '@/lib/approval/approvalLine';
 import ApprovalBox from '@/components/print/ApprovalBox';
 import PrintButton from '@/components/print/PrintButton';
-import { btn, card, input } from '@/lib/ui';
+import { btn, card, input, table, tableWrap, td, th } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -63,7 +63,7 @@ export default async function VehicleLogMonthlyPrintPage({
         <PrintButton />
       </div>
 
-      <div className={card}>
+      <div className="bg-white dark:bg-zinc-900">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>{vehicleType} 차량운행일지</h2>
@@ -74,33 +74,35 @@ export default async function VehicleLogMonthlyPrintPage({
           </div>
           <ApprovalBox data={approvalData} />
         </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th>운행일자</th><th>운전자</th><th>목적</th><th>목적지</th>
-              <th>출발(km)</th><th>도착(km)</th><th>운행거리</th>
-              <th>주유금액(원)</th><th>주유단가(원)</th><th>주유량(L)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
-              <tr><td colSpan={10} style={{ textAlign: 'center', color: '#888' }}>해당 월 운행 기록이 없습니다.</td></tr>
-            ) : filtered.map((r) => (
-              <tr key={r.id}>
-                <td>{r.운행일자}</td>
-                <td>{r.운전자명}</td>
-                <td>{r.목적}</td>
-                <td>{r.목적지}</td>
-                <td style={{ textAlign: 'right' }}>{r.출발계기판}</td>
-                <td style={{ textAlign: 'right' }}>{r.도착계기판}</td>
-                <td style={{ textAlign: 'right' }}>{r.주행거리}km</td>
-                <td style={{ textAlign: 'right' }}>{r.주유금액 ? Number(r.주유금액).toLocaleString() : ''}</td>
-                <td style={{ textAlign: 'right' }}>{r.주유단가 ? Number(r.주유단가).toLocaleString() : ''}</td>
-                <td style={{ textAlign: 'right' }}>{r.주유량 || ''}</td>
+        <div className={tableWrap}>
+          <table className={table}>
+            <thead>
+              <tr>
+                <th className={th}>운행일자</th><th className={th}>운전자</th><th className={th}>목적</th><th className={th}>목적지</th>
+                <th className={th}>출발(km)</th><th className={th}>도착(km)</th><th className={th}>운행거리</th>
+                <th className={th}>주유금액(원)</th><th className={th}>주유단가(원)</th><th className={th}>주유량(L)</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr><td className={td} colSpan={10} style={{ textAlign: 'center', color: '#888' }}>해당 월 운행 기록이 없습니다.</td></tr>
+              ) : filtered.map((r) => (
+                <tr key={r.id}>
+                  <td className={td}>{r.운행일자}</td>
+                  <td className={td}>{r.운전자명}</td>
+                  <td className={td}>{r.목적}</td>
+                  <td className={td}>{r.목적지}</td>
+                  <td className={td} style={{ textAlign: 'right' }}>{r.출발계기판}</td>
+                  <td className={td} style={{ textAlign: 'right' }}>{r.도착계기판}</td>
+                  <td className={td} style={{ textAlign: 'right' }}>{r.주행거리}km</td>
+                  <td className={td} style={{ textAlign: 'right' }}>{r.주유금액 ? Number(r.주유금액).toLocaleString() : ''}</td>
+                  <td className={td} style={{ textAlign: 'right' }}>{r.주유단가 ? Number(r.주유단가).toLocaleString() : ''}</td>
+                  <td className={td} style={{ textAlign: 'right' }}>{r.주유량 || ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -113,7 +113,7 @@ function ItemCheckReportDoc({
   const cell: CSSProperties = { border: '1px solid #333', padding: '7px 10px' };
 
   return (
-    <div style={{ fontSize: 13.5, color: '#000', width: '186mm', margin: '0 auto' }} className={card}>
+    <div style={{ fontSize: 13.5, color: '#000', width: '186mm', margin: '0 auto' }} className="bg-white p-6 print:p-0">
       <h2 style={{ textAlign: 'center', fontSize: 22, letterSpacing: 10, marginBottom: 18 }}>물품검수조서</h2>
 
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
