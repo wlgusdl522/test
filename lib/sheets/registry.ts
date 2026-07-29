@@ -1,5 +1,30 @@
 import type { KeyedTableConfig } from './keyedTable';
-import { CARD_LEDGER_SHEET_ID, STAFF_SHEET_ID, VEHICLE_SHEET_ID } from './sheetIds';
+import { CARD_LEDGER_SHEET_ID, STAFF_SHEET_ID, VEHICLE_SHEET_ID, WEEKLY_PLAN_SHEET_ID } from './sheetIds';
+
+export const VEHICLE_REQUEST_HEADERS = [
+  'id', '차량번호', '신청자이메일', '신청자명', '소속팀',
+  '사용일자', '출발시간', '복귀시간', '목적', '목적지', '동승자', '비고', '등록일시',
+  '반복그룹ID',
+];
+
+export const VEHICLE_MAINTENANCE_HEADERS = [
+  'id', '차량번호', '정비일자', '정비내용', '주행거리', '지출액',
+  '등록자이메일', '등록자명', '비고', '등록일시',
+];
+
+export const CARD_LEDGER_HEADERS = [
+  'id', '구분', '사용일자', '담당자이메일', '담당자명', '사용금액', '예산과목', '사용내역', '카드번호', '등록일시',
+];
+
+export const WEEKLY_TASK_HEADERS = [
+  'id', '이메일(아이디)', '성명', '소속팀', '날짜', '업무내용', '회의록후보', '부서장반영', '등록일시',
+];
+
+export const MEETING_HEADERS = [
+  'id', '회의일자', '회의시간', '회의장소', '소속팀', '작성자이메일', '작성자명', '공지사항', '휴가및일정', '슈퍼비전',
+];
+
+export const REVIEW_STATUS_HEADERS = ['id', '소속팀', '주시작일', '완료여부', '확인자이메일', '확인자명', '확인일시'];
 
 export const STAFF_HEADERS = [
   '이메일(아이디)', '성명', '소속팀', '담당사업', '직급/직책',
@@ -59,5 +84,47 @@ export const ACCOUNT_HISTORY_TABLE: KeyedTableConfig = {
   spreadsheetId: STAFF_SHEET_ID,
   sheetName: '계정이력',
   headers: ACCOUNT_HISTORY_HEADERS,
+  primaryKey: 'id',
+};
+
+export const VEHICLE_REQUEST_TABLE: KeyedTableConfig = {
+  spreadsheetId: VEHICLE_SHEET_ID,
+  sheetName: '차량사용신청',
+  headers: VEHICLE_REQUEST_HEADERS,
+  primaryKey: 'id',
+};
+
+export const VEHICLE_MAINTENANCE_TABLE: KeyedTableConfig = {
+  spreadsheetId: VEHICLE_SHEET_ID,
+  sheetName: '차량정비대장',
+  headers: VEHICLE_MAINTENANCE_HEADERS,
+  primaryKey: 'id',
+};
+
+export const CARD_LEDGER_TABLE: KeyedTableConfig = {
+  spreadsheetId: CARD_LEDGER_SHEET_ID,
+  sheetName: '카드사용대장',
+  headers: CARD_LEDGER_HEADERS,
+  primaryKey: 'id',
+};
+
+export const WEEKLY_TASK_TABLE: KeyedTableConfig = {
+  spreadsheetId: WEEKLY_PLAN_SHEET_ID,
+  sheetName: '주간업무',
+  headers: WEEKLY_TASK_HEADERS,
+  primaryKey: 'id',
+};
+
+export const MEETING_TABLE: KeyedTableConfig = {
+  spreadsheetId: WEEKLY_PLAN_SHEET_ID,
+  sheetName: '회의록정리',
+  headers: MEETING_HEADERS,
+  primaryKey: 'id',
+};
+
+export const REVIEW_STATUS_TABLE: KeyedTableConfig = {
+  spreadsheetId: WEEKLY_PLAN_SHEET_ID,
+  sheetName: '부서장확인상태',
+  headers: REVIEW_STATUS_HEADERS,
   primaryKey: 'id',
 };

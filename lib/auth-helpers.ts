@@ -41,3 +41,34 @@ export async function requireCanManagePermissions(): Promise<void> {
     throw new Error('권한설정은 관리자 또는 팀장급 이상만 사용할 수 있습니다.');
   }
 }
+
+// 본인 업무는 항상 체크 가능, 그 외엔 부서장(팀장/과장/부장/관장)만 — SENIOR_POSITIONS(관장/부장)는 전체 팀,
+// 나머지 부서장(과장/팀장)은 본인 팀만 가능.
+export async function requireCanToggleTask(taskEmail: string, taskTeam: string): Promise<void> {
+  const viewerEmail = await requireViewerEmail();
+  if (taskEmail.toLowerCase() === viewerEmail) return;
+  if (ADMIN_EMAILS.includes(viewerEmail)) return;
+
+  const me = await getViewerStaffRecord();
+  const position = me?.['직급/직책'] ?? '';
+  if (!SUPERVISOR_POSITIONS.includes(position)) {
+    throw new Error('다른 사람의 업무는 부서장(팀장/과장/부장/관장)만 확인할 수 있습니다.');
+  }
+  if (!SENIOR_POSITIONS.includes(position) && (!me || me['소속팀'] !== taskTeam)) {
+    throw new Error('본인 팀 업무만 확인할 수 있습니다.');
+  }
+}
+
+export async function requireIsSupervisorForTeam(team: string): Promise<void> {
+  const viewerEmail = await requireViewerEmail();
+  if (ADMIN_EMAILS.includes(viewerEmail)) return;
+
+  const me = await getViewerStaffRecord();
+  const position = me?.['직급/직책'] ?? '';
+  if (!SUPERVISOR_POSITIONS.includes(position)) {
+    throw new Error('부서장(팀장/과장/부장/관장)만 사용할 수 있습니다.');
+  }
+  if (!SENIOR_POSITIONS.includes(position) && (!me || me['소속팀'] !== team)) {
+    throw new Error('본인 팀만 확인할 수 있습니다.');
+  }
+}
