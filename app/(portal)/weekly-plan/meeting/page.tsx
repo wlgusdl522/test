@@ -3,6 +3,7 @@ import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getMeetingMeta } from '@/lib/mutate/meeting';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
+import { btn, btnSecondary, card, h1, h2, input, label, page } from '@/lib/ui';
 import { saveMeetingMetaAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -33,47 +34,47 @@ export default async function MeetingPage({
   );
 
   return (
-    <main style={{ padding: 24, fontFamily: 'sans-serif', maxWidth: 800, margin: '0 auto' }}>
-      <h1>회의록 정리</h1>
+    <main className={page}>
+      <h1 className={h1}>회의록 정리</h1>
 
-      <form method="get" style={{ display: 'flex', gap: 8, margin: '16px 0' }}>
-        <select name="team" defaultValue={team} style={{ padding: 6 }}>
+      <form method="get" className="flex gap-2 mb-6">
+        <select name="team" defaultValue={team} className={`${input} w-auto`}>
           {teams.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <input type="date" name="date" defaultValue={date} style={{ padding: 6 }} />
-        <button type="submit">조회</button>
+        <input type="date" name="date" defaultValue={date} className={`${input} w-auto`} />
+        <button type="submit" className={btnSecondary}>조회</button>
       </form>
 
-      <h2 style={{ fontSize: 15 }}>이번 주 회의록후보 업무</h2>
-      <ul>
+      <h2 className={h2}>이번 주 회의록후보 업무</h2>
+      <ul className="mb-6 list-disc pl-5 text-sm text-zinc-700 dark:text-zinc-300">
         {highlightedTasks.map((t) => <li key={t.id}>{t.날짜} — {t.성명}: {t.업무내용}</li>)}
       </ul>
 
-      <form action={saveMeetingMetaAction} style={{ display: 'flex', flexDirection: 'column', gap: 10, margin: '16px 0', border: '1px solid #ddd', padding: 16 }}>
+      <form action={saveMeetingMetaAction} className={`${card} flex flex-col gap-3`}>
         <input type="hidden" name="team" value={team} />
         <input type="hidden" name="date" value={date} />
-        <label>
+        <label className={label}>
           회의시간
-          <input type="time" name="time" defaultValue={meta?.회의시간 ?? ''} style={{ width: '100%', padding: 6 }} />
+          <input type="time" name="time" defaultValue={meta?.회의시간 ?? ''} className={input} />
         </label>
-        <label>
+        <label className={label}>
           회의장소
-          <input name="place" defaultValue={meta?.회의장소 ?? ''} style={{ width: '100%', padding: 6 }} />
+          <input name="place" defaultValue={meta?.회의장소 ?? ''} className={input} />
         </label>
-        <label>
+        <label className={label}>
           공지사항
-          <textarea name="notice" defaultValue={meta?.공지사항 ?? ''} style={{ width: '100%', padding: 6 }} />
+          <textarea name="notice" defaultValue={meta?.공지사항 ?? ''} className={input} />
         </label>
-        <label>
+        <label className={label}>
           휴가 및 일정
-          <textarea name="leave" defaultValue={meta?.휴가및일정 ?? ''} style={{ width: '100%', padding: 6 }} />
+          <textarea name="leave" defaultValue={meta?.휴가및일정 ?? ''} className={input} />
         </label>
-        <label>
+        <label className={label}>
           슈퍼비전
-          <textarea name="supervision" defaultValue={meta?.슈퍼비전 ?? ''} style={{ width: '100%', padding: 6 }} />
+          <textarea name="supervision" defaultValue={meta?.슈퍼비전 ?? ''} className={input} />
         </label>
         <div>
-          <button type="submit">저장</button>
+          <button type="submit" className={btn}>저장</button>
         </div>
       </form>
     </main>

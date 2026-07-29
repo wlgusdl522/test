@@ -1,4 +1,5 @@
 import { getActiveStaffDirectory } from '@/lib/mutate/staff';
+import { h1, page, table, td, th } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -8,23 +9,24 @@ export default async function StaffDirectoryPage() {
   const sorted = [...staff].sort((a, b) => a.소속팀.localeCompare(b.소속팀) || a.성명.localeCompare(b.성명));
 
   return (
-    <main style={{ padding: 24, fontFamily: 'sans-serif', maxWidth: 800, margin: '0 auto' }}>
-      <h1>전직원 주소록</h1>
+    <main className={page}>
+      <h1 className={h1}>전직원 주소록</h1>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table className={table}>
         <thead>
-          <tr style={{ textAlign: 'left' }}>
-            <th>소속팀</th><th>성명</th><th>직급/직책</th><th>내선번호</th><th>휴대폰번호</th>
+          <tr>
+            <th className={th}>소속팀</th><th className={th}>성명</th><th className={th}>직급/직책</th>
+            <th className={th}>내선번호</th><th className={th}>휴대폰번호</th>
           </tr>
         </thead>
         <tbody>
           {sorted.map((s) => (
             <tr key={s['이메일(아이디)']}>
-              <td>{s.소속팀}</td>
-              <td>{s.성명}</td>
-              <td>{s['직급/직책']}</td>
-              <td>{s.내선번호}</td>
-              <td>{s.휴대폰번호}</td>
+              <td className={td}>{s.소속팀}</td>
+              <td className={td}>{s.성명}</td>
+              <td className={td}>{s['직급/직책']}</td>
+              <td className={td}>{s.내선번호}</td>
+              <td className={td}>{s.휴대폰번호}</td>
             </tr>
           ))}
         </tbody>

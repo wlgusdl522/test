@@ -1,6 +1,7 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
+import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, td, th } from '@/lib/ui';
 import {
   addVehicleRequestAction,
   deleteVehicleRequestAction,
@@ -22,88 +23,89 @@ export default async function VehicleRequestsPage() {
   ]);
 
   return (
-    <main style={{ padding: 24, fontFamily: 'sans-serif', maxWidth: 900, margin: '0 auto' }}>
-      <h1>차량사용신청</h1>
+    <main className={pageWide}>
+      <h1 className={h1}>차량사용신청</h1>
 
-      <form action={addVehicleRequestAction} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, margin: '16px 0', border: '1px solid #ddd', padding: 16 }}>
-        <label>
+      <form action={addVehicleRequestAction} className={`${card} grid grid-cols-2 gap-3`}>
+        <label className={label}>
           차량 *
-          <select name="vehicleNo" required style={{ width: '100%', padding: 6 }}>
+          <select name="vehicleNo" required className={input}>
             {vehicles.map((v) => <option key={v.차량번호} value={v.차량번호}>{v.차종} ({v.차량번호})</option>)}
           </select>
         </label>
-        <label>
+        <label className={label}>
           사용일자 *
-          <input type="date" name="date" required style={{ width: '100%', padding: 6 }} />
+          <input type="date" name="date" required className={input} />
         </label>
-        <label>
+        <label className={label}>
           출발시간
-          <input type="time" name="startTime" style={{ width: '100%', padding: 6 }} />
+          <input type="time" name="startTime" className={input} />
         </label>
-        <label>
+        <label className={label}>
           복귀시간
-          <input type="time" name="endTime" style={{ width: '100%', padding: 6 }} />
+          <input type="time" name="endTime" className={input} />
         </label>
-        <label>
+        <label className={label}>
           목적 *
-          <input name="purpose" required style={{ width: '100%', padding: 6 }} />
+          <input name="purpose" required className={input} />
         </label>
-        <label>
+        <label className={label}>
           목적지
-          <input name="destination" style={{ width: '100%', padding: 6 }} />
+          <input name="destination" className={input} />
         </label>
-        <label>
+        <label className={label}>
           동승자
-          <input name="companions" style={{ width: '100%', padding: 6 }} />
+          <input name="companions" className={input} />
         </label>
-        <label>
+        <label className={label}>
           비고
-          <input name="note" style={{ width: '100%', padding: 6 }} />
+          <input name="note" className={input} />
         </label>
 
-        <div style={{ gridColumn: '1 / -1', border: '1px dashed #ccc', padding: 8 }}>
-          <label><input type="checkbox" name="recurring" /> 반복 일정으로 등록</label>
-          <div style={{ display: 'flex', gap: 8, marginTop: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="col-span-2 rounded-md border border-dashed border-zinc-300 dark:border-zinc-700 p-3">
+          <label className="text-sm"><input type="checkbox" name="recurring" /> 반복 일정으로 등록</label>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
             {WEEKDAYS.map((w) => (
-              <label key={w.value} style={{ fontSize: 13 }}>
+              <label key={w.value} className="text-xs text-zinc-600 dark:text-zinc-400">
                 <input type="checkbox" name="weekday" value={w.value} /> {w.label}
               </label>
             ))}
-            <label style={{ fontSize: 13 }}>
-              반복 종료일 <input type="date" name="untilDate" style={{ padding: 4 }} />
+            <label className="text-xs text-zinc-600 dark:text-zinc-400">
+              반복 종료일 <input type="date" name="untilDate" className={`${input} inline-block w-auto`} />
             </label>
           </div>
         </div>
 
-        <div style={{ gridColumn: '1 / -1' }}>
-          <button type="submit">신청</button>
+        <div className="col-span-2">
+          <button type="submit" className={btn}>신청</button>
         </div>
       </form>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table className={table}>
         <thead>
-          <tr style={{ textAlign: 'left' }}>
-            <th>사용일자</th><th>차량</th><th>신청자</th><th>시간</th><th>목적</th><th>목적지</th><th></th>
+          <tr>
+            <th className={th}>사용일자</th><th className={th}>차량</th><th className={th}>신청자</th>
+            <th className={th}>시간</th><th className={th}>목적</th><th className={th}>목적지</th><th className={th}></th>
           </tr>
         </thead>
         <tbody>
           {requests.map((r) => (
             <tr key={r.id}>
-              <td>{r.사용일자}</td>
-              <td>{r.차량번호}</td>
-              <td>{r.신청자명}</td>
-              <td>{r.출발시간} ~ {r.복귀시간}</td>
-              <td>{r.목적}</td>
-              <td>{r.목적지}</td>
-              <td>
-                <form action={deleteVehicleRequestAction} style={{ display: 'inline' }}>
+              <td className={td}>{r.사용일자}</td>
+              <td className={td}>{r.차량번호}</td>
+              <td className={td}>{r.신청자명}</td>
+              <td className={td}>{r.출발시간} ~ {r.복귀시간}</td>
+              <td className={td}>{r.목적}</td>
+              <td className={td}>{r.목적지}</td>
+              <td className={`${td} flex gap-1.5`}>
+                <form action={deleteVehicleRequestAction}>
                   <input type="hidden" name="id" value={r.id} />
-                  <button type="submit">{r.반복그룹ID ? '삭제(이 건만)' : '삭제'}</button>
+                  <button type="submit" className={btnDanger}>{r.반복그룹ID ? '삭제(이 건만)' : '삭제'}</button>
                 </form>
                 {r.반복그룹ID && (
-                  <form action={deleteVehicleRequestSeriesAction} style={{ display: 'inline', marginLeft: 4 }}>
+                  <form action={deleteVehicleRequestSeriesAction}>
                     <input type="hidden" name="id" value={r.id} />
-                    <button type="submit" title="이 날짜 이후 반복 전체 삭제">삭제(이후 전체)</button>
+                    <button type="submit" title="이 날짜 이후 반복 전체 삭제" className={btnSecondary}>삭제(이후 전체)</button>
                   </form>
                 )}
               </td>

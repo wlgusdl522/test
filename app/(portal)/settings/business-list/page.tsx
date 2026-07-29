@@ -1,6 +1,7 @@
 import { getBusinessList } from '@/lib/mutate/business';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
+import { btn, btnDanger, h1, input, page, table, td, th } from '@/lib/ui';
 import { addBusinessAction, deleteBusinessAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -10,32 +11,37 @@ export default async function BusinessListSettingsPage() {
   const [businesses, teams] = await Promise.all([getBusinessList(), getSimpleList(TEAM_LIST_SHEET_NAME)]);
 
   return (
-    <main style={{ padding: 24, fontFamily: 'sans-serif', maxWidth: 560, margin: '0 auto' }}>
-      <h1>설정 &gt; 사업목록</h1>
+    <main className={page}>
+      <h1 className={h1}>설정 &gt; 사업목록</h1>
 
-      <form action={addBusinessAction} style={{ display: 'flex', gap: 8, margin: '16px 0' }}>
-        <input name="name" placeholder="새 사업명" required style={{ flex: 1, padding: 6 }} />
-        <select name="team" required style={{ padding: 6 }}>
+      <form action={addBusinessAction} className="flex gap-2 mb-6">
+        <input name="name" placeholder="새 사업명" required className={input} />
+        <select name="team" required className={input}>
           <option value="">소관팀 선택</option>
-          {teams.map((team) => (
-            <option key={team} value={team}>{team}</option>
-          ))}
+          {teams.map((team) => <option key={team} value={team}>{team}</option>)}
         </select>
-        <button type="submit">추가</button>
+        <button type="submit" className={btn}>추가</button>
       </form>
 
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {businesses.map((b) => (
-          <li key={b.name} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-            <span style={{ flex: 1 }}>{b.name}</span>
-            <span style={{ color: '#666', fontSize: 13 }}>{b.team}</span>
-            <form action={deleteBusinessAction}>
-              <input type="hidden" name="name" value={b.name} />
-              <button type="submit">삭제</button>
-            </form>
-          </li>
-        ))}
-      </ul>
+      <table className={table}>
+        <thead>
+          <tr><th className={th}>사업명</th><th className={th}>소관팀</th><th className={th}></th></tr>
+        </thead>
+        <tbody>
+          {businesses.map((b) => (
+            <tr key={b.name}>
+              <td className={td}>{b.name}</td>
+              <td className={td}>{b.team}</td>
+              <td className={td}>
+                <form action={deleteBusinessAction}>
+                  <input type="hidden" name="name" value={b.name} />
+                  <button type="submit" className={btnDanger}>삭제</button>
+                </form>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </main>
   );
 }

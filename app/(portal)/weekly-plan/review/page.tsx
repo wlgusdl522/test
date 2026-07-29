@@ -1,6 +1,7 @@
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getReviewCompletionStatus } from '@/lib/mutate/reviewStatus';
+import { btn, btnSecondary, h1, input, page, table, td, th } from '@/lib/ui';
 import { setReviewCompletionAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -27,17 +28,17 @@ export default async function ReviewPage({
   ]);
 
   return (
-    <main style={{ padding: 24, fontFamily: 'sans-serif', maxWidth: 700, margin: '0 auto' }}>
-      <h1>부서장 확인</h1>
+    <main className={page}>
+      <h1 className={h1}>부서장 확인</h1>
 
-      <form method="get" style={{ margin: '16px 0' }}>
-        <input type="date" name="weekStart" defaultValue={weekStart} style={{ padding: 6 }} />
-        <button type="submit">조회</button>
+      <form method="get" className="flex gap-2 mb-6">
+        <input type="date" name="weekStart" defaultValue={weekStart} className={`${input} w-auto`} />
+        <button type="submit" className={btnSecondary}>조회</button>
       </form>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table className={table}>
         <thead>
-          <tr style={{ textAlign: 'left' }}><th>팀</th><th>완료여부</th><th>확인자</th><th>확인일시</th><th></th></tr>
+          <tr><th className={th}>팀</th><th className={th}>완료여부</th><th className={th}>확인자</th><th className={th}>확인일시</th><th className={th}></th></tr>
         </thead>
         <tbody>
           {teams.map((team) => {
@@ -45,16 +46,16 @@ export default async function ReviewPage({
             const done = s?.완료여부 ?? false;
             return (
               <tr key={team}>
-                <td>{team}</td>
-                <td>{done ? '완료' : '미완료'}</td>
-                <td>{s?.확인자명 ?? ''}</td>
-                <td>{s?.확인일시 ?? ''}</td>
-                <td>
+                <td className={td}>{team}</td>
+                <td className={td}>{done ? '완료' : '미완료'}</td>
+                <td className={td}>{s?.확인자명 ?? ''}</td>
+                <td className={td}>{s?.확인일시 ?? ''}</td>
+                <td className={td}>
                   <form action={setReviewCompletionAction}>
                     <input type="hidden" name="team" value={team} />
                     <input type="hidden" name="weekStart" value={weekStart} />
                     <input type="hidden" name="flag" value={String(!done)} />
-                    <button type="submit">{done ? '완료 취소' : '완료 처리'}</button>
+                    <button type="submit" className={btn}>{done ? '완료 취소' : '완료 처리'}</button>
                   </form>
                 </td>
               </tr>
