@@ -22,6 +22,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: '차량관리',
     items: [
       { href: '/vehicles/requests', label: '차량사용신청' },
+      { href: '/vehicles/logs', label: '차량운행일지' },
       { href: '/vehicles/maintenance', label: '차량정비대장' },
       { href: '/settings/vehicles', label: '차량목록' },
     ],
