@@ -7,3 +7,7 @@ export const VEHICLE_SHEET_ID = '1JtRFxBzH1Xh7chmyMlqlAv__qYC4INR3y7FMIWGKwpQ'; 
 export const TEAM_LIST_SHEET_NAME = '팀목록';
 export const POSITION_LIST_SHEET_NAME = '직급목록';
 export const APPROVAL_LINE_SHEET_NAME = '결재라인';
+
+// Drive 업로드 폴더 (업무포털 공유 드라이브 폴더 안에 위치, Code.js와 동일한 폴더 재사용)
+export const ITEM_CHECK_PHOTO_FOLDER_ID = '1p3VMhrkWf0vadUeOqgf1eARyG4itcH3n';
+export const STAFF_STAMP_FOLDER_ID = '1amadx4xhlIISS4Yxn6wO0ebEd9p7EmWa';

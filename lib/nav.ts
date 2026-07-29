@@ -30,6 +30,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: '지출관리',
     items: [
       { href: '/expenses', label: '카드사용대장' },
+      { href: '/expenses/photos', label: '물품검수사진' },
       { href: '/settings/budget-items', label: '예산과목' },
     ],
   },
