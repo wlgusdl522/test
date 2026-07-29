@@ -1,7 +1,7 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getVehicleMaintenanceList } from '@/lib/mutate/vehicleMaintenance';
-import { btn, btnDanger, card, h1, input, label, pageWide, table, td, th } from '@/lib/ui';
+import { btn, btnDanger, card, h1, input, label, pageWide, table, tableWrap, td, th } from '@/lib/ui';
 import { addVehicleMaintenanceAction, deleteVehicleMaintenanceAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -49,7 +49,7 @@ export default async function VehicleMaintenancePage() {
         </div>
       </form>
 
-      <table className={table}>
+      <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
             <th className={th}>정비일자</th><th className={th}>차량</th><th className={th}>정비내용</th>
@@ -74,7 +74,7 @@ export default async function VehicleMaintenancePage() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </main>
   );
 }

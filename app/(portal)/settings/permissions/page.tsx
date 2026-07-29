@@ -1,6 +1,6 @@
 import { CONFIGURABLE_PAGES, PAGE_ACCESS_TIERS } from '@/lib/pages-registry';
 import { getActiveStaffList, getPageAccessExceptionMap, getPageAccessRuleMap } from '@/lib/mutate/permissions';
-import { btn, btnSecondary, h1, input, page, table, td, th } from '@/lib/ui';
+import { btn, btnSecondary, h1, input, page, table, tableWrap, td, th } from '@/lib/ui';
 import { addExceptionAction, removeExceptionAction, setTierAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -17,7 +17,7 @@ export default async function PermissionsSettingsPage() {
     <main className={page}>
       <h1 className={h1}>설정 &gt; 권한설정</h1>
 
-      <table className={table}>
+      <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
             <th className={th}>게시판(페이지)</th>
@@ -68,7 +68,7 @@ export default async function PermissionsSettingsPage() {
             );
           })}
         </tbody>
-      </table>
+      </table></div>
     </main>
   );
 }

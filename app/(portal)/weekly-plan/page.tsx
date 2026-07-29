@@ -2,7 +2,7 @@ import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { btn, btnDanger, btnSecondary, h1, input, pageWide, table, td, th } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, h1, input, pageWide, table, tableWrap, td, th } from '@/lib/ui';
 import {
   addWeeklyTaskAction,
   deleteWeeklyTaskAction,
@@ -55,7 +55,7 @@ export default async function WeeklyPlanPage({
         <button type="submit" className={btn}>추가</button>
       </form>
 
-      <table className={table}>
+      <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
             <th className={th}>날짜</th><th className={th}>성명</th><th className={th}>업무내용</th>
@@ -95,7 +95,7 @@ export default async function WeeklyPlanPage({
             );
           })}
         </tbody>
-      </table>
+      </table></div>
 
       <p className="mt-6 text-sm text-zinc-500 flex gap-3">
         <a href="/weekly-plan/meeting" className="hover:underline">회의록 정리</a>

@@ -3,7 +3,7 @@ import { APPROVAL_JEONGYEOL_TABLE } from '@/lib/sheets/registry';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { APPROVAL_LINE_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { APPROVAL_LINE_USAGE_MODES, DAMDANG_DISPLAY_MODES, PRINTABLE_PAGES } from '@/lib/pages-registry';
-import { btn, h1, input, page, table, td, th } from '@/lib/ui';
+import { btn, h1, input, page, table, tableWrap, td, th } from '@/lib/ui';
 import { setApprovalRuleAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -23,7 +23,7 @@ export default async function ApprovalRulesSettingsPage() {
     <main className={page}>
       <h1 className={h1}>설정 &gt; 결재라인 &gt; 게시판별 전결기준</h1>
 
-      <table className={table}>
+      <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
             <th className={th}>게시판</th>
@@ -57,7 +57,7 @@ export default async function ApprovalRulesSettingsPage() {
             );
           })}
         </tbody>
-      </table>
+      </table></div>
     </main>
   );
 }

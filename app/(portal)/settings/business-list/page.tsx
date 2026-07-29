@@ -1,7 +1,7 @@
 import { getBusinessList } from '@/lib/mutate/business';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
-import { btn, btnDanger, h1, input, page, table, td, th } from '@/lib/ui';
+import { btn, btnDanger, h1, input, page, table, tableWrap, td, th } from '@/lib/ui';
 import { addBusinessAction, deleteBusinessAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -23,7 +23,7 @@ export default async function BusinessListSettingsPage() {
         <button type="submit" className={btn}>추가</button>
       </form>
 
-      <table className={table}>
+      <div className={tableWrap}><table className={table}>
         <thead>
           <tr><th className={th}>사업명</th><th className={th}>소관팀</th><th className={th}></th></tr>
         </thead>
@@ -41,7 +41,7 @@ export default async function BusinessListSettingsPage() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </main>
   );
 }

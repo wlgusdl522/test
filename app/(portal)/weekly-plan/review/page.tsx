@@ -1,7 +1,8 @@
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getReviewCompletionStatus } from '@/lib/mutate/reviewStatus';
-import { btn, btnSecondary, h1, input, page, table, td, th } from '@/lib/ui';
+import { btn, btnSecondary, h1, input, page, table, tableWrap, td, th } from '@/lib/ui';
+import StatusBadge from '@/components/StatusBadge';
 import { setReviewCompletionAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -36,7 +37,7 @@ export default async function ReviewPage({
         <button type="submit" className={btnSecondary}>조회</button>
       </form>
 
-      <table className={table}>
+      <div className={tableWrap}><table className={table}>
         <thead>
           <tr><th className={th}>팀</th><th className={th}>완료여부</th><th className={th}>확인자</th><th className={th}>확인일시</th><th className={th}></th></tr>
         </thead>
@@ -47,7 +48,7 @@ export default async function ReviewPage({
             return (
               <tr key={team}>
                 <td className={td}>{team}</td>
-                <td className={td}>{done ? '완료' : '미완료'}</td>
+                <td className={td}><StatusBadge status={done ? '완료' : '미완료'} /></td>
                 <td className={td}>{s?.확인자명 ?? ''}</td>
                 <td className={td}>{s?.확인일시 ?? ''}</td>
                 <td className={td}>
@@ -62,7 +63,7 @@ export default async function ReviewPage({
             );
           })}
         </tbody>
-      </table>
+      </table></div>
     </main>
   );
 }

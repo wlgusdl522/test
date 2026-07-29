@@ -2,7 +2,8 @@ import { getBusinessList } from '@/lib/mutate/business';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { getStaffList } from '@/lib/mutate/staff';
 import { POSITION_LIST_SHEET_NAME, TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
-import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, td, th } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, tableWrap, td, th } from '@/lib/ui';
+import StatusBadge from '@/components/StatusBadge';
 import { deleteStaffAction, registerStaffAction, updateStaffAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -146,7 +147,7 @@ export default async function StaffPage({
         </div>
       </form>
 
-      <table className={table}>
+      <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
             <th className={th}>이메일</th><th className={th}>성명</th><th className={th}>소속팀</th>
@@ -160,7 +161,7 @@ export default async function StaffPage({
               <td className={td}>{s.성명}</td>
               <td className={td}>{s.소속팀}</td>
               <td className={td}>{s['직급/직책']}</td>
-              <td className={td}>{s.재직상태}</td>
+              <td className={td}><StatusBadge status={s.재직상태} /></td>
               <td className={`${td} flex gap-1.5`}>
                 <a href={`/staff?edit=${encodeURIComponent(s['이메일(아이디)'])}`} className={btnSecondary}>수정</a>
                 <form action={deleteStaffAction}>
@@ -171,7 +172,7 @@ export default async function StaffPage({
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </main>
   );
 }

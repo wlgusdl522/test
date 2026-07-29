@@ -1,7 +1,8 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getMyPendingVehicleLogApprovals, getVehicleLogList } from '@/lib/mutate/vehicleLog';
-import { btn, btnDanger, btnSecondary, card, h1, h2, input, label, pageWide, table, td, th } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h1, h2, input, label, pageWide, table, tableWrap, td, th } from '@/lib/ui';
+import StatusBadge from '@/components/StatusBadge';
 import { actOnVehicleLogAction, addVehicleLogAction, deleteVehicleLogAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -24,7 +25,7 @@ export default async function VehicleLogsPage() {
       {pending.length > 0 && (
         <>
           <h2 className={h2}>내 결재 대기 ({pending.length}건)</h2>
-          <table className={table}>
+          <div className={tableWrap}><table className={table}>
             <thead>
               <tr><th className={th}>차량</th><th className={th}>운행일자</th><th className={th}>운전자</th><th className={th}>단계</th><th className={th}></th></tr>
             </thead>
@@ -50,7 +51,7 @@ export default async function VehicleLogsPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </>
       )}
 
@@ -107,7 +108,7 @@ export default async function VehicleLogsPage() {
         </div>
       </form>
 
-      <table className={table}>
+      <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
             <th className={th}>운행일자</th><th className={th}>차량</th><th className={th}>운전자</th>
@@ -122,7 +123,7 @@ export default async function VehicleLogsPage() {
               <td className={td}>{r.운전자명}</td>
               <td className={td}>{r.목적}</td>
               <td className={td}>{r.주행거리}km</td>
-              <td className={td}>{r.결재상태}</td>
+              <td className={td}><StatusBadge status={r.결재상태} /></td>
               <td className={td}>
                 <form action={deleteVehicleLogAction}>
                   <input type="hidden" name="id" value={r.id} />
@@ -132,7 +133,7 @@ export default async function VehicleLogsPage() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </main>
   );
 }

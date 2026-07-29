@@ -1,6 +1,7 @@
 import { getCardLedgerList } from '@/lib/mutate/cardLedger';
 import { getItemCheckReportList, getMyPendingItemCheckReportApprovals } from '@/lib/mutate/itemCheckReport';
-import { btn, btnDanger, btnSecondary, card, h1, h2, input, label, pageWide, table, td, th } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h1, h2, input, label, pageWide, table, tableWrap, td, th } from '@/lib/ui';
+import StatusBadge from '@/components/StatusBadge';
 import {
   actOnItemCheckReportAction,
   addItemCheckReportAction,
@@ -24,7 +25,7 @@ export default async function ItemCheckReportsPage() {
       {pending.length > 0 && (
         <>
           <h2 className={h2}>내 결재 대기 ({pending.length}건)</h2>
-          <table className={table}>
+          <div className={tableWrap}><table className={table}>
             <thead>
               <tr><th className={th}>품명</th><th className={th}>금액</th><th className={th}>검수자</th><th className={th}>단계</th><th className={th}></th></tr>
             </thead>
@@ -50,7 +51,7 @@ export default async function ItemCheckReportsPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </>
       )}
 
@@ -144,7 +145,7 @@ export default async function ItemCheckReportsPage() {
         </div>
       </form>
 
-      <table className={table}>
+      <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
             <th className={th}>품명</th><th className={th}>등록구분</th><th className={th}>금액</th>
@@ -158,7 +159,7 @@ export default async function ItemCheckReportsPage() {
               <td className={td}>{r.등록구분}</td>
               <td className={td}>{Number(r.금액 || 0).toLocaleString()}원</td>
               <td className={td}>{r.검수자명}</td>
-              <td className={td}>{r.결재상태}</td>
+              <td className={td}><StatusBadge status={r.결재상태} /></td>
               <td className={td}>{r.현재결재단계}</td>
               <td className={`${td} flex gap-1.5`}>
                 <a href={`/print/item-check-report?id=${r.id}`} target="_blank" className={btnSecondary}>인쇄</a>
@@ -170,7 +171,7 @@ export default async function ItemCheckReportsPage() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </main>
   );
 }

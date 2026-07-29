@@ -1,7 +1,7 @@
 import { getMyRecordsSummary } from '@/lib/mutate/dashboard';
 import { getMyPendingItemCheckReportApprovals } from '@/lib/mutate/itemCheckReport';
 import { getMyPendingVehicleLogApprovals } from '@/lib/mutate/vehicleLog';
-import { btn, btnDanger, h1, h2, pageWide, table, td, th } from '@/lib/ui';
+import { btn, btnDanger, h1, h2, pageWide, table, tableWrap, td, th } from '@/lib/ui';
 import { actOnItemCheckReportAction } from '@/app/(portal)/expenses/reports/actions';
 import { actOnVehicleLogAction } from '@/app/(portal)/vehicles/logs/actions';
 
@@ -32,7 +32,7 @@ export default async function MyPage() {
       {(pendingReports.length > 0 || pendingLogs.length > 0) && (
         <>
           <h2 className={h2}>내 결재함</h2>
-          <table className={table}>
+          <div className={tableWrap}><table className={table}>
             <thead>
               <tr><th className={th}>구분</th><th className={th}>내용</th><th className={th}>단계</th><th className={th}></th></tr>
             </thead>
@@ -76,7 +76,7 @@ export default async function MyPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </>
       )}
 

@@ -1,6 +1,6 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { BUDGET_ITEM_TABLE } from '@/lib/sheets/registry';
-import { btn, btnDanger, h1, hint, input, page, table, td, th } from '@/lib/ui';
+import { btn, btnDanger, h1, hint, input, page, table, tableWrap, td, th } from '@/lib/ui';
 import { addBudgetItemAction, deleteBudgetItemAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -27,7 +27,7 @@ export default async function BudgetItemsSettingsPage() {
         <button type="submit" className={btn}>추가</button>
       </form>
 
-      <table className={table}>
+      <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
             <th className={th}>예산과목명</th>
@@ -53,7 +53,7 @@ export default async function BudgetItemsSettingsPage() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </main>
   );
 }

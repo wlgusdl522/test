@@ -1,5 +1,5 @@
 import { getAccountHistory } from '@/lib/mutate/accountHistory';
-import { btn, card, h1, input, label, pageWide, table, td, th } from '@/lib/ui';
+import { btn, card, h1, input, label, pageWide, table, tableWrap, td, th } from '@/lib/ui';
 import { addAccountHistoryAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -58,7 +58,7 @@ export default async function AccountHistoryPage() {
         </div>
       </form>
 
-      <table className={table}>
+      <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
             <th className={th}>처리일자</th><th className={th}>처리구분</th><th className={th}>이전 이메일</th><th className={th}>이전 담당자</th>
@@ -79,7 +79,7 @@ export default async function AccountHistoryPage() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </main>
   );
 }

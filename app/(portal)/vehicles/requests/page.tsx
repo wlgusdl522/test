@@ -1,7 +1,7 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
-import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, td, th } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, tableWrap, td, th } from '@/lib/ui';
 import {
   addVehicleRequestAction,
   deleteVehicleRequestAction,
@@ -81,7 +81,7 @@ export default async function VehicleRequestsPage() {
         </div>
       </form>
 
-      <table className={table}>
+      <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
             <th className={th}>사용일자</th><th className={th}>차량</th><th className={th}>신청자</th>
@@ -112,7 +112,7 @@ export default async function VehicleRequestsPage() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </main>
   );
 }

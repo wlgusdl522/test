@@ -1,7 +1,7 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { BUDGET_ITEM_TABLE } from '@/lib/sheets/registry';
 import { getCardLedgerList } from '@/lib/mutate/cardLedger';
-import { btn, btnDanger, card, h1, input, label, pageWide, table, td, th } from '@/lib/ui';
+import { btn, btnDanger, card, h1, input, label, pageWide, table, tableWrap, td, th } from '@/lib/ui';
 import { addCardLedgerAction, deleteCardLedgerAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -60,7 +60,7 @@ export default async function ExpensesPage() {
         </div>
       </form>
 
-      <table className={table}>
+      <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
             <th className={th}>사용일자</th><th className={th}>구분</th><th className={th}>담당자</th>
@@ -87,7 +87,7 @@ export default async function ExpensesPage() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </main>
   );
 }

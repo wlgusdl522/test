@@ -1,5 +1,5 @@
 import { getActiveStaffDirectory } from '@/lib/mutate/staff';
-import { h1, page, table, td, th } from '@/lib/ui';
+import { h1, page, table, tableWrap, td, th } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,7 +12,7 @@ export default async function StaffDirectoryPage() {
     <main className={page}>
       <h1 className={h1}>전직원 주소록</h1>
 
-      <table className={table}>
+      <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
             <th className={th}>소속팀</th><th className={th}>성명</th><th className={th}>직급/직책</th>
@@ -30,7 +30,7 @@ export default async function StaffDirectoryPage() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </main>
   );
 }
