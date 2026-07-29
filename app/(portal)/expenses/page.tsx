@@ -15,7 +15,10 @@ export default async function ExpensesPage() {
 
   return (
     <main className={pageWide}>
-      <h1 className={h1}>카드사용대장</h1>
+      <div className="flex items-center justify-between">
+        <h1 className={h1}>카드사용대장</h1>
+        <a href="/print/card-ledger" target="_blank" className="text-sm text-brand hover:underline">월별 인쇄</a>
+      </div>
 
       <form action={addCardLedgerAction} className={`${card} grid grid-cols-2 gap-3`}>
         <label className={label}>

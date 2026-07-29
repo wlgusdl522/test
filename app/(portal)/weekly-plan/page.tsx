@@ -36,7 +36,10 @@ export default async function WeeklyPlanPage({
 
   return (
     <main className={pageWide}>
-      <h1 className={h1}>주간업무계획</h1>
+      <div className="flex items-center justify-between">
+        <h1 className={h1}>주간업무계획</h1>
+        <a href={`/print/weekly-plan-team?team=${encodeURIComponent(team)}&weekStart=${weekStart}`} target="_blank" className="text-sm text-brand hover:underline">인쇄</a>
+      </div>
 
       <form method="get" className="flex gap-2 mb-3">
         <select name="team" defaultValue={team} className={`${input} w-auto`}>

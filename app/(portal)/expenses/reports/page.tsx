@@ -160,7 +160,8 @@ export default async function ItemCheckReportsPage() {
               <td className={td}>{r.검수자명}</td>
               <td className={td}>{r.결재상태}</td>
               <td className={td}>{r.현재결재단계}</td>
-              <td className={td}>
+              <td className={`${td} flex gap-1.5`}>
+                <a href={`/print/item-check-report?id=${r.id}`} target="_blank" className={btnSecondary}>인쇄</a>
                 <form action={deleteItemCheckReportAction}>
                   <input type="hidden" name="id" value={r.id} />
                   <button type="submit" className={btnSecondary}>삭제</button>

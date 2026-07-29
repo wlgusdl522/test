@@ -16,7 +16,10 @@ export default async function VehicleLogsPage() {
 
   return (
     <main className={pageWide}>
-      <h1 className={h1}>차량운행일지</h1>
+      <div className="flex items-center justify-between">
+        <h1 className={h1}>차량운행일지</h1>
+        <a href="/print/vehicle-log-monthly" target="_blank" className="text-sm text-brand hover:underline">월별 인쇄</a>
+      </div>
 
       {pending.length > 0 && (
         <>
