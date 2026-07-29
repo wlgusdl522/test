@@ -2,8 +2,9 @@ import { getBusinessList } from '@/lib/mutate/business';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { getStaffList } from '@/lib/mutate/staff';
 import { POSITION_LIST_SHEET_NAME, TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
-import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
+import FormToggle from '@/components/FormToggle';
 import { deleteStaffAction, registerStaffAction, updateStaffAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -29,6 +30,7 @@ export default async function StaffPage({
     <main className={pageWide}>
       <h1 className={h1}>직원관리</h1>
 
+      <FormToggle label={editing ? '직원 수정' : '신규 등록'} defaultOpen={!!editing}>
       <form
         action={editing ? updateStaffAction : registerStaffAction}
         className={`${card} grid grid-cols-2 gap-3`}
@@ -146,6 +148,7 @@ export default async function StaffPage({
           {editing && <a href="/staff" className="text-xs text-zinc-500 hover:underline">취소</a>}
         </div>
       </form>
+      </FormToggle>
 
       <div className={tableWrap}><table className={table}>
         <thead>
@@ -156,7 +159,7 @@ export default async function StaffPage({
         </thead>
         <tbody>
           {staff.map((s) => (
-            <tr key={s['이메일(아이디)']}>
+            <tr key={s['이메일(아이디)']} className={trZebraHover}>
               <td className={td}>{s['이메일(아이디)']}</td>
               <td className={td}>{s.성명}</td>
               <td className={td}>{s.소속팀}</td>

@@ -1,7 +1,8 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getVehicleMaintenanceList } from '@/lib/mutate/vehicleMaintenance';
-import { btn, btnDanger, card, h1, input, label, pageWide, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, btnDanger, card, h1, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import FormToggle from '@/components/FormToggle';
 import { addVehicleMaintenanceAction, deleteVehicleMaintenanceAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -17,6 +18,7 @@ export default async function VehicleMaintenancePage() {
     <main className={pageWide}>
       <h1 className={h1}>차량정비대장</h1>
 
+      <FormToggle label="정비 등록">
       <form action={addVehicleMaintenanceAction} className={`${card} grid grid-cols-2 gap-3`}>
         <label className={label}>
           차량 *
@@ -48,6 +50,7 @@ export default async function VehicleMaintenancePage() {
           <button type="submit" className={btn}>등록</button>
         </div>
       </form>
+      </FormToggle>
 
       <div className={tableWrap}><table className={table}>
         <thead>
@@ -58,7 +61,7 @@ export default async function VehicleMaintenancePage() {
         </thead>
         <tbody>
           {records.map((r) => (
-            <tr key={r.id}>
+            <tr key={r.id} className={trZebraHover}>
               <td className={td}>{r.정비일자}</td>
               <td className={td}>{r.차량번호}</td>
               <td className={td}>{r.정비내용}</td>

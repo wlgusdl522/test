@@ -1,6 +1,6 @@
 import { CONFIGURABLE_PAGES, PAGE_ACCESS_TIERS } from '@/lib/pages-registry';
 import { getActiveStaffList, getPageAccessExceptionMap, getPageAccessRuleMap } from '@/lib/mutate/permissions';
-import { btn, btnSecondary, h1, input, page, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, btnSecondary, h1, input, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import { addExceptionAction, removeExceptionAction, setTierAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -30,7 +30,7 @@ export default async function PermissionsSettingsPage() {
             const currentTier = rules[p.id] ?? '전체';
             const exceptedEmails = exceptions[p.id] ?? [];
             return (
-              <tr key={p.id} className="align-top">
+              <tr key={p.id} className={`align-top ${trZebraHover}`}>
                 <td className={td}>{p.label}</td>
                 <td className={td}>
                   <form action={setTierAction} className="flex gap-1.5">

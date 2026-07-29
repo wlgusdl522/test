@@ -2,7 +2,8 @@ import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { btn, btnDanger, btnSecondary, h1, input, pageWide, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, h1, input, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import FormToggle from '@/components/FormToggle';
 import {
   addWeeklyTaskAction,
   deleteWeeklyTaskAction,
@@ -49,11 +50,13 @@ export default async function WeeklyPlanPage({
         <button type="submit" className={btnSecondary}>조회</button>
       </form>
 
-      <form action={addWeeklyTaskAction} className="flex gap-2 mb-6">
-        <input type="date" name="date" required defaultValue={weekStart} className={`${input} w-auto`} />
-        <input name="content" placeholder="업무내용" required className={input} />
-        <button type="submit" className={btn}>추가</button>
-      </form>
+      <FormToggle label="업무 추가" defaultOpen>
+        <form action={addWeeklyTaskAction} className="flex gap-2 mb-6">
+          <input type="date" name="date" required defaultValue={weekStart} className={`${input} w-auto`} />
+          <input name="content" placeholder="업무내용" required className={input} />
+          <button type="submit" className={btn}>추가</button>
+        </form>
+      </FormToggle>
 
       <div className={tableWrap}><table className={table}>
         <thead>
@@ -67,7 +70,7 @@ export default async function WeeklyPlanPage({
             const highlighted = t.회의록후보 === 'TRUE' || t.회의록후보 === 'true';
             const reflected = t.부서장반영 === 'TRUE' || t.부서장반영 === 'true';
             return (
-              <tr key={t.id}>
+              <tr key={t.id} className={trZebraHover}>
                 <td className={td}>{t.날짜}</td>
                 <td className={td}>{t.성명}</td>
                 <td className={td}>{t.업무내용}</td>

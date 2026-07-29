@@ -1,7 +1,8 @@
 import { getBusinessList } from '@/lib/mutate/business';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
-import { btn, btnDanger, h1, input, page, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, btnDanger, h1, input, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import FormToggle from '@/components/FormToggle';
 import { addBusinessAction, deleteBusinessAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -14,14 +15,16 @@ export default async function BusinessListSettingsPage() {
     <main className={page}>
       <h1 className={h1}>설정 &gt; 사업목록</h1>
 
-      <form action={addBusinessAction} className="flex gap-2 mb-6">
-        <input name="name" placeholder="새 사업명" required className={input} />
-        <select name="team" required className={input}>
-          <option value="">소관팀 선택</option>
-          {teams.map((team) => <option key={team} value={team}>{team}</option>)}
-        </select>
-        <button type="submit" className={btn}>추가</button>
-      </form>
+      <FormToggle label="사업 등록">
+        <form action={addBusinessAction} className="flex gap-2 mb-6">
+          <input name="name" placeholder="새 사업명" required className={input} />
+          <select name="team" required className={input}>
+            <option value="">소관팀 선택</option>
+            {teams.map((team) => <option key={team} value={team}>{team}</option>)}
+          </select>
+          <button type="submit" className={btn}>추가</button>
+        </form>
+      </FormToggle>
 
       <div className={tableWrap}><table className={table}>
         <thead>
@@ -29,7 +32,7 @@ export default async function BusinessListSettingsPage() {
         </thead>
         <tbody>
           {businesses.map((b) => (
-            <tr key={b.name}>
+            <tr key={b.name} className={trZebraHover}>
               <td className={td}>{b.name}</td>
               <td className={td}>{b.team}</td>
               <td className={td}>

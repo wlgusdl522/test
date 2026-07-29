@@ -1,8 +1,9 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getMyPendingVehicleLogApprovals, getVehicleLogList } from '@/lib/mutate/vehicleLog';
-import { btn, btnDanger, btnSecondary, card, h1, h2, input, label, pageWide, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h1, h2, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
+import FormToggle from '@/components/FormToggle';
 import { actOnVehicleLogAction, addVehicleLogAction, deleteVehicleLogAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -31,7 +32,7 @@ export default async function VehicleLogsPage() {
             </thead>
             <tbody>
               {pending.map((r) => (
-                <tr key={r.id}>
+                <tr key={r.id} className={trZebraHover}>
                   <td className={td}>{r.차량번호}</td>
                   <td className={td}>{r.운행일자}</td>
                   <td className={td}>{r.운전자명}</td>
@@ -56,6 +57,7 @@ export default async function VehicleLogsPage() {
       )}
 
       <h2 className={h2}>새 운행일지 등록</h2>
+      <FormToggle label="운행일지 등록">
       <form action={addVehicleLogAction} className={`${card} grid grid-cols-2 gap-3`}>
         <label className={label}>
           차량 *
@@ -107,6 +109,7 @@ export default async function VehicleLogsPage() {
           <button type="submit" className={btn}>등록</button>
         </div>
       </form>
+      </FormToggle>
 
       <div className={tableWrap}><table className={table}>
         <thead>
@@ -117,7 +120,7 @@ export default async function VehicleLogsPage() {
         </thead>
         <tbody>
           {logs.map((r) => (
-            <tr key={r.id}>
+            <tr key={r.id} className={trZebraHover}>
               <td className={td}>{r.운행일자}</td>
               <td className={td}>{r.차량번호}</td>
               <td className={td}>{r.운전자명}</td>

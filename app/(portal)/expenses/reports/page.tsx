@@ -1,7 +1,8 @@
 import { getCardLedgerList } from '@/lib/mutate/cardLedger';
 import { getItemCheckReportList, getMyPendingItemCheckReportApprovals } from '@/lib/mutate/itemCheckReport';
-import { btn, btnDanger, btnSecondary, card, h1, h2, input, label, pageWide, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h1, h2, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
+import FormToggle from '@/components/FormToggle';
 import {
   actOnItemCheckReportAction,
   addItemCheckReportAction,
@@ -31,7 +32,7 @@ export default async function ItemCheckReportsPage() {
             </thead>
             <tbody>
               {pending.map((r) => (
-                <tr key={r.id}>
+                <tr key={r.id} className={trZebraHover}>
                   <td className={td}>{r.품명}</td>
                   <td className={td}>{Number(r.금액 || 0).toLocaleString()}원</td>
                   <td className={td}>{r.검수자명}</td>
@@ -56,6 +57,7 @@ export default async function ItemCheckReportsPage() {
       )}
 
       <h2 className={h2}>새 조서 등록</h2>
+      <FormToggle label="조서 등록">
       <form action={addItemCheckReportAction} className={`${card} grid grid-cols-2 gap-3`}>
         <label className={label}>
           카드사용대장 연결 *
@@ -144,6 +146,7 @@ export default async function ItemCheckReportsPage() {
           <button type="submit" className={btn}>제출</button>
         </div>
       </form>
+      </FormToggle>
 
       <div className={tableWrap}><table className={table}>
         <thead>
@@ -154,7 +157,7 @@ export default async function ItemCheckReportsPage() {
         </thead>
         <tbody>
           {reports.map((r) => (
-            <tr key={r.id}>
+            <tr key={r.id} className={trZebraHover}>
               <td className={td}>{r.품명}</td>
               <td className={td}>{r.등록구분}</td>
               <td className={td}>{Number(r.금액 || 0).toLocaleString()}원</td>

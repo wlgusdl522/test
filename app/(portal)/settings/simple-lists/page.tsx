@@ -1,6 +1,7 @@
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { APPROVAL_LINE_SHEET_NAME, POSITION_LIST_SHEET_NAME, TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { btn, btnDanger, btnSecondary, h1, h2, input, pageWide } from '@/lib/ui';
+import FormToggle from '@/components/FormToggle';
 import { addItemAction, deleteItemAction, moveItemAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -24,11 +25,13 @@ export default async function SimpleListsSettingsPage() {
         {lists.map((list) => (
           <section key={list.name}>
             <h2 className={h2}>{list.label}</h2>
-            <form action={addItemAction} className="flex gap-2 mb-3">
-              <input type="hidden" name="listName" value={list.name} />
-              <input name="value" placeholder="추가할 값" required className={input} />
-              <button type="submit" className={btn}>추가</button>
-            </form>
+            <FormToggle label="추가">
+              <form action={addItemAction} className="flex gap-2 mb-3">
+                <input type="hidden" name="listName" value={list.name} />
+                <input name="value" placeholder="추가할 값" required className={input} />
+                <button type="submit" className={btn}>추가</button>
+              </form>
+            </FormToggle>
             <ul className="flex flex-col gap-1">
               {list.items.map((item, i) => (
                 <li key={item} className="flex items-center gap-1.5 text-sm">

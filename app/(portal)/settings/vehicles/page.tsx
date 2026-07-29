@@ -1,6 +1,7 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { btn, btnDanger, h1, input, page } from '@/lib/ui';
+import FormToggle from '@/components/FormToggle';
 import { addVehicleAction, deleteVehicleAction, updateVehicleAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -13,11 +14,13 @@ export default async function VehiclesSettingsPage() {
     <main className={page}>
       <h1 className={h1}>설정 &gt; 차량관리 &gt; 차량목록</h1>
 
-      <form action={addVehicleAction} className="flex gap-2 mb-6">
-        <input name="number" placeholder="차량번호" required className={input} />
-        <input name="type" placeholder="차종" className={input} />
-        <button type="submit" className={btn}>추가</button>
-      </form>
+      <FormToggle label="차량 등록">
+        <form action={addVehicleAction} className="flex gap-2 mb-6">
+          <input name="number" placeholder="차량번호" required className={input} />
+          <input name="type" placeholder="차종" className={input} />
+          <button type="submit" className={btn}>추가</button>
+        </form>
+      </FormToggle>
 
       <ul className="flex flex-col gap-2">
         {vehicles.map((v) => (

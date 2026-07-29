@@ -1,7 +1,7 @@
 import { getMyRecordsSummary } from '@/lib/mutate/dashboard';
 import { getMyPendingItemCheckReportApprovals } from '@/lib/mutate/itemCheckReport';
 import { getMyPendingVehicleLogApprovals } from '@/lib/mutate/vehicleLog';
-import { btn, btnDanger, h1, h2, pageWide, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, btnDanger, h1, h2, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import { actOnItemCheckReportAction } from '@/app/(portal)/expenses/reports/actions';
 import { actOnVehicleLogAction } from '@/app/(portal)/vehicles/logs/actions';
 
@@ -38,7 +38,7 @@ export default async function MyPage() {
             </thead>
             <tbody>
               {pendingReports.map((r) => (
-                <tr key={`report-${r.id}`}>
+                <tr key={`report-${r.id}`} className={trZebraHover}>
                   <td className={td}>물품검수조서</td>
                   <td className={td}>{r.품명} · {Number(r.금액 || 0).toLocaleString()}원</td>
                   <td className={td}>{r.현재결재단계}</td>
@@ -57,7 +57,7 @@ export default async function MyPage() {
                 </tr>
               ))}
               {pendingLogs.map((r) => (
-                <tr key={`log-${r.id}`}>
+                <tr key={`log-${r.id}`} className={trZebraHover}>
                   <td className={td}>차량운행일지</td>
                   <td className={td}>{r.차량번호} · {r.목적}</td>
                   <td className={td}>{r.현재결재단계}</td>

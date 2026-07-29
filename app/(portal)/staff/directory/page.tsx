@@ -1,5 +1,5 @@
 import { getActiveStaffDirectory } from '@/lib/mutate/staff';
-import { h1, page, table, tableWrap, td, th } from '@/lib/ui';
+import { h1, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,7 +21,7 @@ export default async function StaffDirectoryPage() {
         </thead>
         <tbody>
           {sorted.map((s) => (
-            <tr key={s['이메일(아이디)']}>
+            <tr key={s['이메일(아이디)']} className={trZebraHover}>
               <td className={td}>{s.소속팀}</td>
               <td className={td}>{s.성명}</td>
               <td className={td}>{s['직급/직책']}</td>

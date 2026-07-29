@@ -1,6 +1,7 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { BUDGET_ITEM_TABLE } from '@/lib/sheets/registry';
-import { btn, btnDanger, h1, hint, input, page, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, btnDanger, h1, hint, input, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import FormToggle from '@/components/FormToggle';
 import { addBudgetItemAction, deleteBudgetItemAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -17,15 +18,17 @@ export default async function BudgetItemsSettingsPage() {
         &quot;공통비&quot;는 소관팀(예: 총무팀)을 함께 적어주세요.
       </p>
 
-      <form action={addBudgetItemAction} className="flex flex-wrap gap-2 mb-6">
-        <input name="name" placeholder="새 예산과목명" required className={`${input} w-auto`} />
-        <select name="type" defaultValue="사업비" className={`${input} w-auto`}>
-          <option value="사업비">사업비</option>
-          <option value="공통비">공통비</option>
-        </select>
-        <input name="linked" placeholder="연계사업명(사업비) / 소관팀(공통비)" className={`${input} w-auto`} />
-        <button type="submit" className={btn}>추가</button>
-      </form>
+      <FormToggle label="예산과목 등록">
+        <form action={addBudgetItemAction} className="flex flex-wrap gap-2 mb-6">
+          <input name="name" placeholder="새 예산과목명" required className={`${input} w-auto`} />
+          <select name="type" defaultValue="사업비" className={`${input} w-auto`}>
+            <option value="사업비">사업비</option>
+            <option value="공통비">공통비</option>
+          </select>
+          <input name="linked" placeholder="연계사업명(사업비) / 소관팀(공통비)" className={`${input} w-auto`} />
+          <button type="submit" className={btn}>추가</button>
+        </form>
+      </FormToggle>
 
       <div className={tableWrap}><table className={table}>
         <thead>
@@ -39,7 +42,7 @@ export default async function BudgetItemsSettingsPage() {
         </thead>
         <tbody>
           {items.map((b) => (
-            <tr key={b.예산과목명}>
+            <tr key={b.예산과목명} className={trZebraHover}>
               <td className={td}>{b.예산과목명}</td>
               <td className={td}>{b.구분}</td>
               <td className={td}>{b.연계사업명}</td>

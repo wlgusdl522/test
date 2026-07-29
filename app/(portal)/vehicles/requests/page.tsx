@@ -1,7 +1,8 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
-import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import FormToggle from '@/components/FormToggle';
 import {
   addVehicleRequestAction,
   deleteVehicleRequestAction,
@@ -26,6 +27,7 @@ export default async function VehicleRequestsPage() {
     <main className={pageWide}>
       <h1 className={h1}>차량사용신청</h1>
 
+      <FormToggle label="신규 신청">
       <form action={addVehicleRequestAction} className={`${card} grid grid-cols-2 gap-3`}>
         <label className={label}>
           차량 *
@@ -80,6 +82,7 @@ export default async function VehicleRequestsPage() {
           <button type="submit" className={btn}>신청</button>
         </div>
       </form>
+      </FormToggle>
 
       <div className={tableWrap}><table className={table}>
         <thead>
@@ -90,7 +93,7 @@ export default async function VehicleRequestsPage() {
         </thead>
         <tbody>
           {requests.map((r) => (
-            <tr key={r.id}>
+            <tr key={r.id} className={trZebraHover}>
               <td className={td}>{r.사용일자}</td>
               <td className={td}>{r.차량번호}</td>
               <td className={td}>{r.신청자명}</td>

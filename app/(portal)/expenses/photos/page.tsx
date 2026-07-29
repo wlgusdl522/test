@@ -2,7 +2,7 @@ import { getCardLedgerList } from '@/lib/mutate/cardLedger';
 import { getItemCheckPhotoList } from '@/lib/mutate/itemCheckPhoto';
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { BUDGET_ITEM_TABLE, ITEM_CHECK_PHOTO_SLOTS } from '@/lib/sheets/registry';
-import { btn, btnDanger, card, h1, h2, input, label, pageWide, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, btnDanger, card, h1, h2, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import { deleteItemCheckPhotoAction, saveItemCheckPhotoAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -90,7 +90,7 @@ export default async function ItemCheckPhotosPage({
         </thead>
         <tbody>
           {photos.map((p) => (
-            <tr key={p.id}>
+            <tr key={p.id} className={trZebraHover}>
               <td className={td}>{p.지출일자}</td>
               <td className={td}>{p.사업명}</td>
               <td className={td}>{p.품명}</td>

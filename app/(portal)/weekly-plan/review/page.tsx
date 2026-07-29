@@ -1,7 +1,7 @@
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getReviewCompletionStatus } from '@/lib/mutate/reviewStatus';
-import { btn, btnSecondary, h1, input, page, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, btnSecondary, h1, input, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
 import { setReviewCompletionAction } from './actions';
 
@@ -46,7 +46,7 @@ export default async function ReviewPage({
             const s = status[team];
             const done = s?.완료여부 ?? false;
             return (
-              <tr key={team}>
+              <tr key={team} className={trZebraHover}>
                 <td className={td}>{team}</td>
                 <td className={td}><StatusBadge status={done ? '완료' : '미완료'} /></td>
                 <td className={td}>{s?.확인자명 ?? ''}</td>

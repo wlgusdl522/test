@@ -1,40 +1,43 @@
 // 반복되는 Tailwind 클래스 조합을 한 곳에 모아 화면마다 일관된 스타일을 쉽게 재사용한다.
+// 값들은 원래 Index.html(Apps Script 앱)의 CSS를 그대로 참고해서 맞췄다 — 카드 그림자, 표 줄무늬,
+// 결재라인 하이라이트 등 원본 앱의 느낌을 유지하는 것이 목적.
 
 export const page = 'p-8 max-w-4xl mx-auto';
 export const pageWide = 'p-8 max-w-6xl mx-auto';
 
-export const pageHeader = 'flex items-center justify-between mb-6 pb-4 border-b border-zinc-200 dark:border-zinc-800';
-export const h1 = 'text-[22px] font-bold tracking-tight text-zinc-900 dark:text-zinc-100';
-export const h2 = 'text-[13px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-3 mt-2';
+export const pageHeader = 'flex items-center justify-between mb-5 flex-wrap gap-3';
+export const h1 = 'text-[20px] font-semibold text-brand-dark dark:text-brand m-0';
+export const h2 = 'text-[13px] font-bold text-brand-dark dark:text-brand mt-[22px] mb-2.5 pb-1.5 border-b border-zinc-100 dark:border-zinc-800 first:mt-0';
 export const hint = 'text-[13px] text-zinc-500 dark:text-zinc-400 mb-4 leading-relaxed';
 
 export const card =
-  'border border-zinc-200/80 dark:border-zinc-800 rounded-xl p-5 mb-7 bg-white dark:bg-zinc-900 shadow-[0_1px_2px_rgba(16,24,40,0.04)]';
+  'rounded-lg bg-white dark:bg-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.08)] p-5 mb-5';
 
 export const statCard =
-  'flex-1 rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)] border-l-4 border-l-brand transition-shadow hover:shadow-md';
+  'flex-1 rounded-lg bg-white dark:bg-zinc-900 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.08)] border-l-[3px] border-l-brand transition-shadow hover:shadow-md';
 
 export const input =
-  'w-full rounded-lg border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand';
+  'w-full rounded-md border border-[#dadce0] dark:border-zinc-700 px-3 py-2 text-sm bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-brand focus:ring-[3px] focus:ring-brand-tint';
 
-export const label = 'flex flex-col gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400';
+export const label = 'flex flex-col gap-1 text-[12.5px] text-zinc-500 dark:text-zinc-400';
 
 export const btn =
-  'inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3.5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-dark active:scale-[0.98]';
+  'inline-flex items-center justify-center gap-1.5 rounded-md bg-brand px-4 py-2 text-sm text-white transition-colors hover:bg-brand-dark';
 
 export const btnSecondary =
-  'inline-flex items-center justify-center gap-1 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 shadow-sm transition-colors hover:bg-zinc-50 hover:border-zinc-400 dark:hover:bg-zinc-800';
+  'inline-flex items-center justify-center gap-1 rounded-md bg-[#eef1f6] dark:bg-zinc-800 px-2.5 py-1.5 text-xs text-zinc-800 dark:text-zinc-200 transition-colors hover:bg-[#e3e7ee] dark:hover:bg-zinc-700';
 
 export const btnDanger =
-  'inline-flex items-center justify-center gap-1 rounded-lg border border-red-200 dark:border-red-900/60 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 shadow-sm transition-colors hover:bg-red-50 dark:hover:bg-red-950/40';
+  'inline-flex items-center justify-center gap-1 rounded-md bg-[#eef1f6] dark:bg-zinc-800 px-2.5 py-1.5 text-xs text-[#b51c31] dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-950/40';
 
-export const tableWrap = 'overflow-x-auto rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-[0_1px_2px_rgba(16,24,40,0.04)]';
-export const table = 'w-full border-collapse text-sm';
-export const th = 'text-left bg-zinc-50/80 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 py-2.5 px-3.5 font-semibold text-[12.5px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide whitespace-nowrap';
-export const td = 'border-b border-zinc-100 dark:border-zinc-900 py-2.5 px-3.5 text-zinc-800 dark:text-zinc-200 whitespace-nowrap';
-export const trHover = 'transition-colors hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40';
+export const tableWrap = 'overflow-x-auto rounded-md border border-[#d7dbe0] dark:border-zinc-800 mb-5';
+export const table = 'w-full border-collapse text-[13.5px] bg-white dark:bg-zinc-900';
+export const th = 'text-left bg-[#eef1f5] dark:bg-zinc-800 border border-[#e3e6ea] dark:border-zinc-800 py-[7px] px-2.5 font-semibold text-zinc-800 dark:text-zinc-200 whitespace-nowrap';
+export const td = 'border border-[#e3e6ea] dark:border-zinc-800 py-[7px] px-2.5 text-zinc-800 dark:text-zinc-200';
+// 짝수행 옅은 배경 + hover 시 브랜드 틴트 — 원본 표 스타일 그대로.
+export const trZebraHover = 'even:bg-[#f8f9fb] dark:even:bg-zinc-800/30 hover:bg-brand-tint transition-colors';
 
-// 상태값(결재상태/재직상태 등)에 색상 의미를 부여하는 배지. lib/badge.ts의 statusTone()과 함께 쓴다.
+// 상태값(결재상태/재직상태 등)에 색상 의미를 부여하는 배지.
 export const badgeBase = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium';
 export const badgeTone = {
   green: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',

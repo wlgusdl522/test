@@ -1,5 +1,6 @@
 import { getAccountHistory } from '@/lib/mutate/accountHistory';
-import { btn, card, h1, input, label, pageWide, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, card, h1, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import FormToggle from '@/components/FormToggle';
 import { addAccountHistoryAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -13,6 +14,7 @@ export default async function AccountHistoryPage() {
     <main className={pageWide}>
       <h1 className={h1}>인사관리 &gt; 계정관리</h1>
 
+      <FormToggle label="계정이력 등록">
       <form action={addAccountHistoryAction} className={`${card} grid grid-cols-2 gap-3`}>
         <label className={label}>
           처리일자
@@ -57,6 +59,7 @@ export default async function AccountHistoryPage() {
           <button type="submit" className={btn}>등록</button>
         </div>
       </form>
+      </FormToggle>
 
       <div className={tableWrap}><table className={table}>
         <thead>
@@ -67,7 +70,7 @@ export default async function AccountHistoryPage() {
         </thead>
         <tbody>
           {sorted.map((r) => (
-            <tr key={r.id}>
+            <tr key={r.id} className={trZebraHover}>
               <td className={td}>{r.처리일자}</td>
               <td className={td}>{r.처리구분}</td>
               <td className={td}>{r['이전 이메일(계정)']}</td>

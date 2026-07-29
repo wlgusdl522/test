@@ -3,7 +3,7 @@ import { APPROVAL_JEONGYEOL_TABLE } from '@/lib/sheets/registry';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { APPROVAL_LINE_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { APPROVAL_LINE_USAGE_MODES, DAMDANG_DISPLAY_MODES, PRINTABLE_PAGES } from '@/lib/pages-registry';
-import { btn, h1, input, page, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, h1, input, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import { setApprovalRuleAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -34,7 +34,7 @@ export default async function ApprovalRulesSettingsPage() {
           {PRINTABLE_PAGES.map((p) => {
             const current = byPageId[p.id];
             return (
-              <tr key={p.id}>
+              <tr key={p.id} className={trZebraHover}>
                 <td className={td}>{p.label}</td>
                 <td className={td} colSpan={4}>
                   <form action={setApprovalRuleAction} className="flex items-center gap-2">
