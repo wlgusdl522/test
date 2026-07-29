@@ -11,7 +11,7 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: '주간업무계획',
+    label: '업무관리',
     items: [
       { href: '/weekly-plan', label: '주간업무' },
       { href: '/weekly-plan/meeting', label: '회의록 정리' },
@@ -27,7 +27,7 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: '회계',
+    label: '지출관리',
     items: [
       { href: '/expenses', label: '카드사용대장' },
       { href: '/settings/budget-items', label: '예산과목' },
