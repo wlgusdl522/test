@@ -30,7 +30,10 @@ export default async function ReviewPage({
 
   return (
     <main className={page}>
-      <h1 className={h1}>부서장 확인</h1>
+      <div className="flex items-center justify-between">
+        <h1 className={h1}>부서장 확인</h1>
+        <a href={`/print/weekly-plan-rollup?weekStart=${weekStart}`} target="_blank" className="text-sm text-brand hover:underline">부서별 취합 인쇄</a>
+      </div>
 
       <form method="get" className="flex gap-2 mb-6">
         <input type="date" name="weekStart" defaultValue={weekStart} className={`${input} w-auto`} />

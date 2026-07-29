@@ -8,10 +8,12 @@ import { getStaffList } from '@/lib/mutate/staff';
 import { buildApprovalBoxData } from '@/lib/approval/approvalLine';
 import ApprovalBox from '@/components/print/ApprovalBox';
 import PrintButton from '@/components/print/PrintButton';
-import { btn, card, input, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, card, input, table, td, th } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const WEEKDAY_LABELS = ['월', '화', '수', '목', '금', '토'];
 
 function mondayOf(date: Date): string {
   const d = new Date(date);
@@ -37,6 +39,17 @@ export default async function WeeklyPlanTeamPrintPage({
   const team = params.team ?? me?.소속팀 ?? teams[0] ?? '';
   const weekStart = params.weekStart ?? mondayOf(new Date());
   const tasks = await getWeeklyTasks(team, weekStart);
+
+  const roster = staffList.filter((s) => s['소속팀'] === team && s['재직상태'] !== '퇴사');
+
+  const monday = new Date(`${weekStart}T00:00:00`);
+  const dayDates: string[] = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(monday);
+    d.setDate(d.getDate() + i);
+    dayDates.push(d.toISOString().slice(0, 10));
+  }
+  const saturday = new Date(dayDates[5]);
 
   const rule = approvalRules.find((r) => r.페이지ID === 'weekly-plan-team');
   const approvalData = buildApprovalBoxData(
@@ -66,25 +79,51 @@ export default async function WeeklyPlanTeamPrintPage({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
           <div>
             <h2 style={{ margin: 0, fontSize: 22 }}>{team} 주간업무계획</h2>
-            <div style={{ marginTop: 6, fontSize: 15, color: '#666' }}>{weekStart} 주</div>
+            <div style={{ marginTop: 6, fontSize: 14, color: '#666' }}>
+              ● 기간: {monday.getFullYear()}. {monday.getMonth() + 1}. {monday.getDate()} ~ {saturday.getFullYear()}. {saturday.getMonth() + 1}. {saturday.getDate()}.
+            </div>
           </div>
           <ApprovalBox data={approvalData} />
         </div>
-        <div className={tableWrap}>
+
+        <div style={{ overflowX: 'auto', border: '1px solid #d7dbe0', borderRadius: 6 }}>
           <table className={table}>
+            <colgroup>
+              <col style={{ width: '13%' }} />
+              {dayDates.map((iso) => <col key={iso} style={{ width: `${(87 / dayDates.length).toFixed(2)}%` }} />)}
+            </colgroup>
             <thead>
-              <tr><th className={th}>날짜</th><th className={th}>성명</th><th className={th}>업무내용</th></tr>
+              <tr>
+                <th className={th}>성명</th>
+                {dayDates.map((iso, i) => {
+                  const d = new Date(`${iso}T00:00:00`);
+                  return <th key={iso} className={th}>{WEEKDAY_LABELS[i]} ({d.getMonth() + 1}/{d.getDate()})</th>;
+                })}
+              </tr>
             </thead>
             <tbody>
-              {tasks.length === 0 ? (
-                <tr><td className={td} colSpan={3} style={{ textAlign: 'center', color: '#888' }}>해당 주 등록된 업무가 없습니다.</td></tr>
-              ) : tasks.map((t) => (
-                <tr key={t.id}>
-                  <td className={td}>{t.날짜}</td>
-                  <td className={td}>{t.성명}</td>
-                  <td className={td}>{t.업무내용}</td>
-                </tr>
-              ))}
+              {roster.length === 0 ? (
+                <tr><td className={td} colSpan={7} style={{ textAlign: 'center', color: '#888' }}>해당 팀에 재직 중인 직원이 없습니다.</td></tr>
+              ) : roster.map((r) => {
+                const email = r['이메일(아이디)'];
+                const isLead = ['과장', '팀장'].includes(r['직급/직책']);
+                return (
+                  <tr key={email}>
+                    <td className={td}>
+                      <b>{r['성명']}</b>
+                      {isLead && <><br /><span style={{ fontSize: 11.5, color: '#888' }}>{r['직급/직책']}</span></>}
+                    </td>
+                    {dayDates.map((iso) => {
+                      const dayTasks = tasks.filter((t) => t['이메일(아이디)'] === email && t['날짜'] === iso);
+                      return (
+                        <td key={iso} className={td}>
+                          {dayTasks.map((t, i) => <div key={i}>• {t['업무내용']}</div>)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
