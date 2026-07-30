@@ -1,9 +1,12 @@
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getReviewCompletionStatus } from '@/lib/mutate/reviewStatus';
-import { btn, btnSecondary, h1, input, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
+import { getViewerStaffRecord } from '@/lib/auth-helpers';
+import { btn, btnSecondary, card, h1, h2, hint, input, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
 import { setReviewCompletionAction } from './actions';
+import { toggleSupervisorReflectAction } from '@/app/(portal)/weekly-plan/actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,14 +22,17 @@ function mondayOf(date: Date): string {
 export default async function ReviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ weekStart?: string }>;
+  searchParams: Promise<{ weekStart?: string; team?: string }>;
 }) {
   const params = await searchParams;
   const weekStart = params.weekStart ?? mondayOf(new Date());
-  const [teams, status] = await Promise.all([
+  const [teams, status, me] = await Promise.all([
     getSimpleList(TEAM_LIST_SHEET_NAME),
     getReviewCompletionStatus(weekStart),
+    getViewerStaffRecord(),
   ]);
+  const reviewTeam = params.team ?? me?.소속팀 ?? teams[0] ?? '';
+  const reviewTasks = await getWeeklyTasks(reviewTeam, weekStart);
 
   return (
     <main className={page}>
@@ -36,9 +42,44 @@ export default async function ReviewPage({
       </div>
 
       <form method="get" className="flex gap-2 mb-6">
+        <select name="team" defaultValue={reviewTeam} className={`${input} w-auto`}>
+          {teams.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
         <input type="date" name="weekStart" defaultValue={weekStart} className={`${input} w-auto`} />
         <button type="submit" className={btnSecondary}>조회</button>
       </form>
+
+      <h2 className={h2}>{reviewTeam} 팀별 주간업무 확인</h2>
+      <p className={hint}>회의록에 올릴 업무를 체크하면 바로 반영됩니다.</p>
+      <div className={`${card} mb-3`}>
+        <div className={tableWrap}><table className={table}>
+          <thead>
+            <tr><th className={th}>날짜</th><th className={th}>성명</th><th className={th}>업무내용</th><th className={th}>부서장 주간업무 반영</th></tr>
+          </thead>
+          <tbody>
+            {reviewTasks.length === 0 ? (
+              <tr><td className={td} colSpan={4} style={{ textAlign: 'center' }}>해당 주에 등록된 업무가 없습니다.</td></tr>
+            ) : reviewTasks.map((t) => {
+              const highlighted = t.회의록후보 === 'TRUE' || t.회의록후보 === 'true';
+              const reflected = t.부서장반영 === 'TRUE' || t.부서장반영 === 'true';
+              return (
+                <tr key={t.id} className={trZebraHover}>
+                  <td className={td}>{t.날짜}</td>
+                  <td className={td}>{t.성명}</td>
+                  <td className={td}>{t.업무내용} {highlighted && <span className="text-xs text-brand">(회의록 반영됨)</span>}</td>
+                  <td className={td} style={{ textAlign: 'center' }}>
+                    <form action={toggleSupervisorReflectAction}>
+                      <input type="hidden" name="id" value={t.id} />
+                      <input type="hidden" name="flag" value={String(!reflected)} />
+                      <button type="submit">{reflected ? '✅' : '☐'}</button>
+                    </form>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table></div>
+      </div>
 
       <div className={tableWrap}><table className={table}>
         <thead>

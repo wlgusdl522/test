@@ -1,18 +1,12 @@
-import { getSimpleList } from '@/lib/mutate/simpleList';
-import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { btn, btnDanger, btnSecondary, h1, input, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
-import FormToggle from '@/components/FormToggle';
-import {
-  addWeeklyTaskAction,
-  deleteWeeklyTaskAction,
-  toggleHighlightAction,
-  toggleSupervisorReflectAction,
-} from './actions';
+import { h1, input, pageWide } from '@/lib/ui';
+import WeeklyTaskCalendar from '@/components/weekly/WeeklyTaskCalendar';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const WEEKDAY_LABELS = ['월', '화', '수', '목', '금', '토'];
 
 function mondayOf(date: Date): string {
   const d = new Date(date);
@@ -25,80 +19,43 @@ function mondayOf(date: Date): string {
 export default async function WeeklyPlanPage({
   searchParams,
 }: {
-  searchParams: Promise<{ team?: string; weekStart?: string }>;
+  searchParams: Promise<{ weekStart?: string }>;
 }) {
   const params = await searchParams;
   const me = await getViewerStaffRecord();
-  const teams = await getSimpleList(TEAM_LIST_SHEET_NAME);
-  const team = params.team ?? me?.소속팀 ?? teams[0] ?? '';
+  const team = me?.소속팀 ?? '';
   const weekStart = params.weekStart ?? mondayOf(new Date());
+  const viewerEmail = (me?.['이메일(아이디)'] ?? '').toLowerCase();
 
-  const tasks = await getWeeklyTasks(team, weekStart);
+  const teamTasks = await getWeeklyTasks(team, weekStart);
+  const myTasks = teamTasks.filter((t) => (t['이메일(아이디)'] ?? '').toLowerCase() === viewerEmail);
+
+  const monday = new Date(`${weekStart}T00:00:00`);
+  const dayDates: string[] = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(monday);
+    d.setDate(d.getDate() + i);
+    dayDates.push(d.toISOString().slice(0, 10));
+  }
 
   return (
     <main className={pageWide}>
       <div className="flex items-center justify-between">
-        <h1 className={h1}>주간업무계획</h1>
+        <h1 className={h1}>주간업무계획 (내 업무 입력)</h1>
         <a href={`/print/weekly-plan-team?team=${encodeURIComponent(team)}&weekStart=${weekStart}`} target="_blank" className="text-sm text-brand hover:underline">인쇄</a>
       </div>
 
-      <form method="get" className="flex gap-2 mb-3">
-        <select name="team" defaultValue={team} className={`${input} w-auto`}>
-          {teams.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
+      <form method="get" className="flex gap-2 mb-4">
         <input type="date" name="weekStart" defaultValue={weekStart} className={`${input} w-auto`} />
-        <button type="submit" className={btnSecondary}>조회</button>
+        <button type="submit" className="text-sm text-brand hover:underline">조회</button>
       </form>
 
-      <FormToggle label="업무 추가" defaultOpen>
-        <form action={addWeeklyTaskAction} className="flex gap-2 mb-6">
-          <input type="date" name="date" required defaultValue={weekStart} className={`${input} w-auto`} />
-          <input name="content" placeholder="업무내용" required className={input} />
-          <button type="submit" className={btn}>추가</button>
-        </form>
-      </FormToggle>
-
-      <div className={tableWrap}><table className={table}>
-        <thead>
-          <tr>
-            <th className={th}>날짜</th><th className={th}>성명</th><th className={th}>업무내용</th>
-            <th className={th}>회의록후보</th><th className={th}>부서장반영</th><th className={th}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {tasks.map((t) => {
-            const highlighted = t.회의록후보 === 'TRUE' || t.회의록후보 === 'true';
-            const reflected = t.부서장반영 === 'TRUE' || t.부서장반영 === 'true';
-            return (
-              <tr key={t.id} className={trZebraHover}>
-                <td className={td}>{t.날짜}</td>
-                <td className={td}>{t.성명}</td>
-                <td className={td}>{t.업무내용}</td>
-                <td className={td}>
-                  <form action={toggleHighlightAction}>
-                    <input type="hidden" name="id" value={t.id} />
-                    <input type="hidden" name="flag" value={String(!highlighted)} />
-                    <button type="submit">{highlighted ? '✅' : '☐'}</button>
-                  </form>
-                </td>
-                <td className={td}>
-                  <form action={toggleSupervisorReflectAction}>
-                    <input type="hidden" name="id" value={t.id} />
-                    <input type="hidden" name="flag" value={String(!reflected)} />
-                    <button type="submit">{reflected ? '✅' : '☐'}</button>
-                  </form>
-                </td>
-                <td className={td}>
-                  <form action={deleteWeeklyTaskAction}>
-                    <input type="hidden" name="id" value={t.id} />
-                    <button type="submit" className={btnDanger}>삭제</button>
-                  </form>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table></div>
+      <WeeklyTaskCalendar
+        dayDates={dayDates}
+        weekdayLabels={WEEKDAY_LABELS}
+        initialTasks={myTasks.map((t) => ({ id: t.id, 날짜: t.날짜, 업무내용: t.업무내용, 회의록후보: t.회의록후보 }))}
+        myName={me?.성명 ?? ''}
+      />
 
       <p className="mt-6 text-sm text-zinc-500 flex gap-3">
         <a href="/weekly-plan/meeting" className="hover:underline">회의록 정리</a>

@@ -47,6 +47,31 @@ export async function addWeeklyTask(payload: Record<string, string>): Promise<Re
   return addKeyedRecord(WEEKLY_TASK_TABLE, record);
 }
 
+// 요일 칸 하나(이메일+날짜)의 업무를 화면에서 넘어온 줄 목록과 diff해서 그 차이만 추가/삭제한다.
+// 그대로인 줄은 손대지 않아 회의록후보 체크 등 기존 상태가 보존된다.
+export async function syncWeeklyTaskDay(
+  email: string,
+  name: string,
+  team: string,
+  date: string,
+  lines: string[]
+): Promise<Record<string, string>[]> {
+  const all = await getKeyedList(WEEKLY_TASK_TABLE);
+  const existingForDay = all.filter((r) => r['이메일(아이디)'] === email && r['날짜'] === date);
+  const remaining = [...existingForDay];
+  const toAdd: string[] = [];
+  for (const line of lines) {
+    const idx = remaining.findIndex((t) => t['업무내용'] === line);
+    if (idx > -1) remaining.splice(idx, 1);
+    else toAdd.push(line);
+  }
+  for (const t of remaining) await deleteWeeklyTask(t.id);
+  for (const line of toAdd) await addWeeklyTask({ '이메일(아이디)': email, 성명: name, 소속팀: team, 날짜: date, 업무내용: line });
+
+  const updated = await getKeyedList(WEEKLY_TASK_TABLE);
+  return updated.filter((r) => r['이메일(아이디)'] === email && r['날짜'] === date);
+}
+
 export async function deleteWeeklyTask(id: string): Promise<Record<string, string>[]> {
   const existing = (await getKeyedList(WEEKLY_TASK_TABLE)).find((r) => r.id === id);
   if (!existing) return getKeyedList(WEEKLY_TASK_TABLE); // 멱등 삭제 — 이미 없으면 조용히 성공 처리
