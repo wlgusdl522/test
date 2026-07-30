@@ -2,7 +2,7 @@ import { getCardLedgerList } from '@/lib/mutate/cardLedger';
 import { getItemCheckPhotoList } from '@/lib/mutate/itemCheckPhoto';
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { BUDGET_ITEM_TABLE, ITEM_CHECK_PHOTO_SLOTS } from '@/lib/sheets/registry';
-import { btn, btnDanger, card, h1, h2, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h1, h2, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import { deleteItemCheckPhotoAction, saveItemCheckPhotoAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -104,7 +104,8 @@ export default async function ItemCheckPhotosPage({
                   ))}
                 </div>
               </td>
-              <td className={td}>
+              <td className={`${td} flex gap-1.5`}>
+                <a href={`/print/item-check-photo?id=${p.id}`} target="_blank" className={btnSecondary}>인쇄</a>
                 <form action={deleteItemCheckPhotoAction}>
                   <input type="hidden" name="id" value={p.id} />
                   <button type="submit" className={btnDanger}>삭제</button>
