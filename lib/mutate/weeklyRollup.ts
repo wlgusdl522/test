@@ -3,15 +3,7 @@ import { getStaffList } from '@/lib/mutate/staff';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { SENIOR_POSITIONS } from '@/lib/auth-helpers';
-
-// "내 업무 입력"에서 업무내용 끝에 "(연가)" 같은 휴가/교육 태그가 붙으면 부서별 취합의 "휴가" 행에 모은다.
-// Index.html의 동명 LEAVE_TYPES와 반드시 동일하게 맞춰야 한다.
-const LEAVE_TYPES = ['연가', '공가', '가족돌봄', '특별휴가', '건강검진', '교육(종일)', '0.75', '0.5(오전)', '0.5(오후)', '0.25(오전)', '0.25(오후)'];
-
-function isLeaveTagContent(content: string): boolean {
-  const m = /^(.+)\(([^)]+)\)$/.exec(content || '');
-  return !!(m && LEAVE_TYPES.includes(m[2]));
-}
+import { isLeaveTagContent } from '@/lib/weeklyLeave';
 
 export type WeeklyRollupLeader = {
   name: string;

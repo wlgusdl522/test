@@ -3,18 +3,9 @@
 import { useState, useTransition } from 'react';
 import { input, label } from '@/lib/ui';
 import { syncMyWeeklyTaskDayAction, toggleHighlightAction } from '@/app/(portal)/weekly-plan/actions';
+import { FULL_DAY_LEAVE_TYPES, LEAVE_TYPES, parseLeaveTag } from '@/lib/weeklyLeave';
 
 type Task = { id: string; 날짜: string; 업무내용: string; 회의록후보: string };
-
-// 원본 Code.js/Index.html의 LEAVE_TYPES와 반드시 동일하게 맞춰야 한다(부서별 취합 집계가 이 태그를 읽음).
-const LEAVE_TYPES = ['연가', '공가', '가족돌봄', '특별휴가', '건강검진', '교육(종일)', '0.75', '0.5(오전)', '0.5(오후)', '0.25(오전)', '0.25(오후)'];
-const FULL_DAY_LEAVE_TYPES = ['연가', '공가', '가족돌봄', '특별휴가', '건강검진', '교육(종일)'];
-
-function parseLeaveTag(content: string): { name: string; type: string } | null {
-  const m = /^(.+)\(([^)]+)\)$/.exec(content || '');
-  if (!m || !LEAVE_TYPES.includes(m[2])) return null;
-  return { name: m[1], type: m[2] };
-}
 
 function parseBulletLines(text: string): string[] {
   return text

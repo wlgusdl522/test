@@ -3,6 +3,7 @@ import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getMeetingMeta } from '@/lib/mutate/meeting';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
+import { summarizeLeaveEntries } from '@/lib/weeklyLeave';
 import { btn, btnSecondary, card, h1, h2, input, label, page } from '@/lib/ui';
 import { saveMeetingMetaAction } from './actions';
 
@@ -29,9 +30,9 @@ export default async function MeetingPage({
   const date = params.date ?? mondayOf(new Date());
 
   const [meta, weekStart] = [await getMeetingMeta(team, date), mondayOf(new Date(date))];
-  const highlightedTasks = (await getWeeklyTasks(team, weekStart)).filter(
-    (t) => t.회의록후보 === 'TRUE' || t.회의록후보 === 'true'
-  );
+  const weekTasks = await getWeeklyTasks(team, weekStart);
+  const highlightedTasks = weekTasks.filter((t) => t.회의록후보 === 'TRUE' || t.회의록후보 === 'true');
+  const leaveSuggestion = summarizeLeaveEntries(weekTasks);
 
   return (
     <main className={page}>
@@ -67,7 +68,7 @@ export default async function MeetingPage({
         </label>
         <label className={label}>
           휴가 및 일정
-          <textarea name="leave" defaultValue={meta?.휴가및일정 ?? ''} className={input} />
+          <textarea name="leave" defaultValue={meta?.휴가및일정 || leaveSuggestion} className={input} />
         </label>
         <label className={label}>
           슈퍼비전
