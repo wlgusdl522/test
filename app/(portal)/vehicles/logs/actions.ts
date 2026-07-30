@@ -8,6 +8,7 @@ async function payloadFromForm(formData: FormData): Promise<Record<string, strin
   const viewerEmail = await requireViewerEmail();
   const me = await getViewerStaffRecord();
   return {
+    신청ID: String(formData.get('requestId') ?? ''),
     차량번호: String(formData.get('vehicleNo') ?? ''),
     운전자이메일: viewerEmail,
     운전자명: me?.성명 ?? '',

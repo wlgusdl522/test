@@ -18,9 +18,9 @@ export const dynamic = 'force-dynamic';
 export default async function ItemCheckReportsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string }>;
+  searchParams: Promise<{ edit?: string; ledgerId?: string }>;
 }) {
-  const { edit } = await searchParams;
+  const { edit, ledgerId } = await searchParams;
   const [reports, pending, ledgerRecords, canCheckAccounting] = await Promise.all([
     getItemCheckReportList(),
     getMyPendingItemCheckReportApprovals(),
@@ -28,6 +28,7 @@ export default async function ItemCheckReportsPage({
     isAccountingViewer(),
   ]);
   const editing = edit ? reports.find((r) => r.id === edit) : null;
+  const prefillLedger = !editing && ledgerId ? ledgerRecords.find((r) => r.id === ledgerId) : null;
 
   return (
     <main className={pageWide}>
@@ -68,12 +69,12 @@ export default async function ItemCheckReportsPage({
       )}
 
       <h2 className={h2}>{editing ? '조서 수정' : '새 조서 등록'}</h2>
-      <FormToggle label={editing ? '조서 수정' : '조서 등록'} defaultOpen={!!editing}>
+      <FormToggle label={editing ? '조서 수정' : '조서 등록'} defaultOpen={!!editing || !!prefillLedger}>
       <form action={editing ? updateItemCheckReportAction : addItemCheckReportAction} className={`${card} grid grid-cols-2 gap-3`}>
         {editing && <input type="hidden" name="id" value={editing.id} />}
         <label className={label}>
           카드사용대장 연결 *
-          <select name="ledgerId" defaultValue={editing?.카드사용대장ID ?? ''} required className={input}>
+          <select name="ledgerId" defaultValue={editing?.카드사용대장ID ?? prefillLedger?.id ?? ''} required className={input}>
             {ledgerRecords.map((r) => (
               <option key={r.id} value={r.id}>{r.사용일자} · {r.사용내역} · {Number(r.사용금액 || 0).toLocaleString()}원</option>
             ))}
@@ -81,7 +82,7 @@ export default async function ItemCheckReportsPage({
         </label>
         <label className={label}>
           품명 *
-          <input name="itemName" defaultValue={editing?.품명 ?? ''} required className={input} />
+          <input name="itemName" defaultValue={editing?.품명 ?? prefillLedger?.사용내역 ?? ''} required className={input} />
         </label>
         <label className={label}>
           등록구분 *

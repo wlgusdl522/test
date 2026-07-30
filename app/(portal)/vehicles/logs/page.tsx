@@ -1,6 +1,7 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getMyPendingVehicleLogApprovals, getVehicleLogList } from '@/lib/mutate/vehicleLog';
+import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
 import { btn, btnDanger, btnSecondary, card, h1, h2, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
 import FormToggle from '@/components/FormToggle';
@@ -12,15 +13,17 @@ export const dynamic = 'force-dynamic';
 export default async function VehicleLogsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string }>;
+  searchParams: Promise<{ edit?: string; requestId?: string }>;
 }) {
-  const { edit } = await searchParams;
-  const [logs, pending, vehicles] = await Promise.all([
+  const { edit, requestId } = await searchParams;
+  const [logs, pending, vehicles, vehicleRequests] = await Promise.all([
     getVehicleLogList(),
     getMyPendingVehicleLogApprovals(),
     getKeyedList(VEHICLE_LIST_TABLE),
+    getVehicleRequestList(),
   ]);
   const editing = edit ? logs.find((r) => r.id === edit) : null;
+  const prefillRequest = !editing && requestId ? vehicleRequests.find((r) => r.id === requestId) : null;
 
   return (
     <main className={pageWide}>
@@ -64,34 +67,35 @@ export default async function VehicleLogsPage({
       )}
 
       <h2 className={h2}>{editing ? '운행일지 수정' : '새 운행일지 등록'}</h2>
-      <FormToggle label={editing ? '운행일지 수정' : '운행일지 등록'} defaultOpen={!!editing}>
+      <FormToggle label={editing ? '운행일지 수정' : '운행일지 등록'} defaultOpen={!!editing || !!prefillRequest}>
       <form action={editing ? updateVehicleLogAction : addVehicleLogAction} className={`${card} grid grid-cols-2 gap-3`}>
         {editing && <input type="hidden" name="id" value={editing.id} />}
+        <input type="hidden" name="requestId" value={editing?.신청ID ?? prefillRequest?.id ?? ''} />
         <label className={label}>
           차량 *
-          <select name="vehicleNo" defaultValue={editing?.차량번호 ?? ''} required className={input}>
+          <select name="vehicleNo" defaultValue={editing?.차량번호 ?? prefillRequest?.차량번호 ?? ''} required className={input}>
             {vehicles.map((v) => <option key={v.차량번호} value={v.차량번호}>{v.차종} ({v.차량번호})</option>)}
           </select>
         </label>
         <label className={label}>
           운행일자 *
-          <input type="date" name="date" defaultValue={editing?.운행일자 ?? ''} required className={input} />
+          <input type="date" name="date" defaultValue={editing?.운행일자 ?? prefillRequest?.사용일자 ?? ''} required className={input} />
         </label>
         <label className={label}>
           출발시간
-          <input type="time" name="startTime" defaultValue={editing?.출발시간 ?? ''} className={input} />
+          <input type="time" name="startTime" defaultValue={editing?.출발시간 ?? prefillRequest?.출발시간 ?? ''} className={input} />
         </label>
         <label className={label}>
           도착시간
-          <input type="time" name="endTime" defaultValue={editing?.도착시간 ?? ''} className={input} />
+          <input type="time" name="endTime" defaultValue={editing?.도착시간 ?? prefillRequest?.복귀시간 ?? ''} className={input} />
         </label>
         <label className={label}>
           목적 *
-          <input name="purpose" defaultValue={editing?.목적 ?? ''} required className={input} />
+          <input name="purpose" defaultValue={editing?.목적 ?? prefillRequest?.목적 ?? ''} required className={input} />
         </label>
         <label className={label}>
           목적지
-          <input name="destination" defaultValue={editing?.목적지 ?? ''} className={input} />
+          <input name="destination" defaultValue={editing?.목적지 ?? prefillRequest?.목적지 ?? ''} className={input} />
         </label>
         <label className={label}>
           출발계기판(km)

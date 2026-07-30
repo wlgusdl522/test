@@ -1,6 +1,9 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { BUDGET_ITEM_TABLE } from '@/lib/sheets/registry';
 import { getCardLedgerList } from '@/lib/mutate/cardLedger';
+import { getItemCheckPhotoList } from '@/lib/mutate/itemCheckPhoto';
+import { getItemCheckReportList } from '@/lib/mutate/itemCheckReport';
+import { getSystemSettings } from '@/lib/mutate/settings';
 import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import FormToggle from '@/components/FormToggle';
 import { addCardLedgerAction, deleteCardLedgerAction, updateCardLedgerAction } from './actions';
@@ -14,11 +17,16 @@ export default async function ExpensesPage({
   searchParams: Promise<{ edit?: string }>;
 }) {
   const { edit } = await searchParams;
-  const [records, budgetItems] = await Promise.all([
+  const [records, budgetItems, photos, reports, settings] = await Promise.all([
     getCardLedgerList(),
     getKeyedList(BUDGET_ITEM_TABLE),
+    getItemCheckPhotoList(),
+    getItemCheckReportList(),
+    getSystemSettings(),
   ]);
   const editing = edit ? records.find((r) => r.id === edit) : null;
+  const photoByLedgerId = new Map(photos.map((p) => [p.카드사용대장ID, p]));
+  const reportByLedgerId = new Map(reports.map((r) => [r.카드사용대장ID, r]));
 
   return (
     <main className={pageWide}>
@@ -76,28 +84,47 @@ export default async function ExpensesPage({
           <tr>
             <th className={th}>사용일자</th><th className={th}>구분</th><th className={th}>담당자</th>
             <th className={th}>사용금액</th><th className={th}>예산과목</th><th className={th}>사용내역</th>
-            <th className={th}>카드번호</th><th className={th}></th>
+            <th className={th}>카드번호</th><th className={th}>연계 업무</th><th className={th}></th>
           </tr>
         </thead>
         <tbody>
-          {records.map((r) => (
-            <tr key={r.id} className={trZebraHover}>
-              <td className={td}>{r.사용일자}</td>
-              <td className={td}>{r.구분}</td>
-              <td className={td}>{r.담당자명}</td>
-              <td className={td}>{Number(r.사용금액 || 0).toLocaleString()}원</td>
-              <td className={td}>{r.예산과목}</td>
-              <td className={td}>{r.사용내역}</td>
-              <td className={td}>{r.카드번호}</td>
-              <td className={`${td} flex gap-1.5`}>
-                <a href={`/expenses?edit=${r.id}`} className={btnSecondary}>수정</a>
-                <form action={deleteCardLedgerAction}>
-                  <input type="hidden" name="id" value={r.id} />
-                  <button type="submit" className={btnDanger}>삭제</button>
-                </form>
-              </td>
-            </tr>
-          ))}
+          {records.map((r) => {
+            const photo = photoByLedgerId.get(r.id);
+            const report = reportByLedgerId.get(r.id);
+            const needsReport = settings.itemCheckReportThreshold > 0 && Number(r.사용금액 || 0) >= settings.itemCheckReportThreshold;
+            return (
+              <tr key={r.id} className={trZebraHover}>
+                <td className={td}>{r.사용일자}</td>
+                <td className={td}>{r.구분}</td>
+                <td className={td}>{r.담당자명}</td>
+                <td className={td}>{Number(r.사용금액 || 0).toLocaleString()}원</td>
+                <td className={td}>{r.예산과목}</td>
+                <td className={td}>{r.사용내역}</td>
+                <td className={td}>{r.카드번호}</td>
+                <td className={`${td} flex flex-col gap-1`}>
+                  <a
+                    href={photo ? `/expenses/photos?editId=${photo.id}` : `/expenses/photos?ledgerId=${r.id}`}
+                    className="text-xs text-brand hover:underline"
+                  >
+                    {photo ? '사진 보기/수정' : '사진 등록'}
+                  </a>
+                  <a
+                    href={report ? `/expenses/reports?edit=${report.id}` : `/expenses/reports?ledgerId=${r.id}`}
+                    className={`text-xs hover:underline ${!report && needsReport ? 'text-[#b51c31] font-semibold' : 'text-brand'}`}
+                  >
+                    {report ? '조서 보기/수정' : needsReport ? '조서 작성(필수)' : '조서 작성'}
+                  </a>
+                </td>
+                <td className={`${td} flex gap-1.5`}>
+                  <a href={`/expenses?edit=${r.id}`} className={btnSecondary}>수정</a>
+                  <form action={deleteCardLedgerAction}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <button type="submit" className={btnDanger}>삭제</button>
+                  </form>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table></div>
     </main>

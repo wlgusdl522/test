@@ -13,22 +13,31 @@ export const dynamic = 'force-dynamic';
 export default async function StaffPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string }>;
+  searchParams: Promise<{ edit?: string; team?: string }>;
 }) {
-  const { edit } = await searchParams;
-  const [staff, teams, positions, businesses] = await Promise.all([
+  const { edit, team: teamFilter } = await searchParams;
+  const [allStaff, teams, positions, businesses] = await Promise.all([
     getStaffList(),
     getSimpleList(TEAM_LIST_SHEET_NAME),
     getSimpleList(POSITION_LIST_SHEET_NAME),
     getBusinessList(),
   ]);
+  const staff = teamFilter ? allStaff.filter((s) => s.소속팀 === teamFilter) : allStaff;
 
-  const editing = edit ? staff.find((s) => s['이메일(아이디)'] === edit) : null;
+  const editing = edit ? allStaff.find((s) => s['이메일(아이디)'] === edit) : null;
   const selectedBusinesses = editing ? editing.담당사업.split(',').map((v) => v.trim()).filter(Boolean) : [];
 
   return (
     <main className={pageWide}>
       <h1 className={h1}>직원관리</h1>
+
+      <form method="get" className="flex gap-2 mb-3">
+        <select name="team" defaultValue={teamFilter ?? ''} className={`${input} w-auto`}>
+          <option value="">전체 팀</option>
+          {teams.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <button type="submit" className={btnSecondary}>조회</button>
+      </form>
 
       <FormToggle label={editing ? '직원 수정' : '신규 등록'} defaultOpen={!!editing}>
       <form
@@ -154,7 +163,8 @@ export default async function StaffPage({
         <thead>
           <tr>
             <th className={th}>이메일</th><th className={th}>성명</th><th className={th}>소속팀</th>
-            <th className={th}>직급/직책</th><th className={th}>재직상태</th><th className={th}></th>
+            <th className={th}>담당사업</th><th className={th}>직급/직책</th><th className={th}>재직상태</th>
+            <th className={th}>입사일</th><th className={th}>내선</th><th className={th}>휴대폰</th><th className={th}></th>
           </tr>
         </thead>
         <tbody>
@@ -163,8 +173,12 @@ export default async function StaffPage({
               <td className={td}>{s['이메일(아이디)']}</td>
               <td className={td}>{s.성명}</td>
               <td className={td}>{s.소속팀}</td>
+              <td className={td}>{s.담당사업}</td>
               <td className={td}>{s['직급/직책']}</td>
               <td className={td}><StatusBadge status={s.재직상태} /></td>
+              <td className={td}>{s.입사일}</td>
+              <td className={td}>{s.내선번호}</td>
+              <td className={td}>{s.휴대폰번호}</td>
               <td className={`${td} flex gap-1.5`}>
                 <a href={`/staff?edit=${encodeURIComponent(s['이메일(아이디)'])}`} className={btnSecondary}>수정</a>
                 <form action={deleteStaffAction}>

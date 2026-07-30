@@ -1,8 +1,10 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
+import { getVehicleLogList } from '@/lib/mutate/vehicleLog';
 import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import FormToggle from '@/components/FormToggle';
+import VehicleSelectWithFuelWarning from '@/components/vehicles/VehicleSelectWithFuelWarning';
 import {
   addVehicleRequestAction,
   deleteVehicleRequestAction,
@@ -24,11 +26,21 @@ export default async function VehicleRequestsPage({
   searchParams: Promise<{ edit?: string }>;
 }) {
   const { edit } = await searchParams;
-  const [requests, vehicles] = await Promise.all([
+  const [requests, vehicles, logs] = await Promise.all([
     getVehicleRequestList(),
     getKeyedList(VEHICLE_LIST_TABLE),
+    getVehicleLogList(),
   ]);
   const editing = edit ? requests.find((r) => r.id === edit) : null;
+  const logByRequestId = new Map(logs.filter((l) => l.신청ID).map((l) => [l.신청ID, l]));
+
+  const fuelWarningByVehicle: Record<string, boolean> = {};
+  for (const v of vehicles) {
+    const vehicleLogs = logs
+      .filter((l) => l.차량번호 === v.차량번호)
+      .sort((a, b) => b.운행일자.localeCompare(a.운행일자));
+    fuelWarningByVehicle[v.차량번호] = vehicleLogs[0]?.주유필요 === 'Y';
+  }
 
   return (
     <main className={pageWide}>
@@ -39,9 +51,11 @@ export default async function VehicleRequestsPage({
         {editing && <input type="hidden" name="id" value={editing.id} />}
         <label className={label}>
           차량 *
-          <select name="vehicleNo" defaultValue={editing?.차량번호 ?? ''} required className={input}>
-            {vehicles.map((v) => <option key={v.차량번호} value={v.차량번호}>{v.차종} ({v.차량번호})</option>)}
-          </select>
+          <VehicleSelectWithFuelWarning
+            vehicles={vehicles.map((v) => ({ 차량번호: v.차량번호, 차종: v.차종 }))}
+            defaultValue={editing?.차량번호 ?? ''}
+            fuelWarningByVehicle={fuelWarningByVehicle}
+          />
         </label>
         <label className={label}>
           사용일자 *
@@ -99,33 +113,45 @@ export default async function VehicleRequestsPage({
         <thead>
           <tr>
             <th className={th}>사용일자</th><th className={th}>차량</th><th className={th}>신청자</th>
-            <th className={th}>시간</th><th className={th}>목적</th><th className={th}>목적지</th><th className={th}></th>
+            <th className={th}>시간</th><th className={th}>목적</th><th className={th}>목적지</th>
+            <th className={th}>운행일지</th><th className={th}></th>
           </tr>
         </thead>
         <tbody>
-          {requests.map((r) => (
-            <tr key={r.id} className={trZebraHover}>
-              <td className={td}>{r.사용일자}</td>
-              <td className={td}>{r.차량번호}</td>
-              <td className={td}>{r.신청자명}</td>
-              <td className={td}>{r.출발시간} ~ {r.복귀시간}</td>
-              <td className={td}>{r.목적}</td>
-              <td className={td}>{r.목적지}</td>
-              <td className={`${td} flex gap-1.5`}>
-                <a href={`/vehicles/requests?edit=${r.id}`} className={btnSecondary}>수정</a>
-                <form action={deleteVehicleRequestAction}>
-                  <input type="hidden" name="id" value={r.id} />
-                  <button type="submit" className={btnDanger}>{r.반복그룹ID ? '삭제(이 건만)' : '삭제'}</button>
-                </form>
-                {r.반복그룹ID && (
-                  <form action={deleteVehicleRequestSeriesAction}>
+          {requests.map((r) => {
+            const linkedLog = logByRequestId.get(r.id);
+            return (
+              <tr key={r.id} className={trZebraHover}>
+                <td className={td}>{r.사용일자}</td>
+                <td className={td}>{r.차량번호}</td>
+                <td className={td}>{r.신청자명}</td>
+                <td className={td}>{r.출발시간} ~ {r.복귀시간}</td>
+                <td className={td}>{r.목적}</td>
+                <td className={td}>{r.목적지}</td>
+                <td className={td}>
+                  <a
+                    href={linkedLog ? `/vehicles/logs?edit=${linkedLog.id}` : `/vehicles/logs?requestId=${r.id}`}
+                    className="text-xs text-brand hover:underline"
+                  >
+                    {linkedLog ? '운행일지 보기/수정' : '운행일지 작성'}
+                  </a>
+                </td>
+                <td className={`${td} flex gap-1.5`}>
+                  <a href={`/vehicles/requests?edit=${r.id}`} className={btnSecondary}>수정</a>
+                  <form action={deleteVehicleRequestAction}>
                     <input type="hidden" name="id" value={r.id} />
-                    <button type="submit" title="이 날짜 이후 반복 전체 삭제" className={btnSecondary}>삭제(이후 전체)</button>
+                    <button type="submit" className={btnDanger}>{r.반복그룹ID ? '삭제(이 건만)' : '삭제'}</button>
                   </form>
-                )}
-              </td>
-            </tr>
-          ))}
+                  {r.반복그룹ID && (
+                    <form action={deleteVehicleRequestSeriesAction}>
+                      <input type="hidden" name="id" value={r.id} />
+                      <button type="submit" title="이 날짜 이후 반복 전체 삭제" className={btnSecondary}>삭제(이후 전체)</button>
+                    </form>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table></div>
     </main>
