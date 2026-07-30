@@ -5,6 +5,7 @@ import { getVehicleLogList } from '@/lib/mutate/vehicleLog';
 import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import FormToggle from '@/components/FormToggle';
 import VehicleSelectWithFuelWarning from '@/components/vehicles/VehicleSelectWithFuelWarning';
+import VehicleRequestCalendar from '@/components/vehicles/VehicleRequestCalendar';
 import {
   addVehicleRequestAction,
   deleteVehicleRequestAction,
@@ -23,9 +24,9 @@ const WEEKDAYS = [
 export default async function VehicleRequestsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string; q?: string; ym?: string }>;
+  searchParams: Promise<{ edit?: string; q?: string; ym?: string; view?: string; month?: string; date?: string }>;
 }) {
-  const { edit, q, ym } = await searchParams;
+  const { edit, q, ym, view, month, date } = await searchParams;
   const [allRequests, vehicles, logs] = await Promise.all([
     getVehicleRequestList(),
     getKeyedList(VEHICLE_LIST_TABLE),
@@ -33,6 +34,8 @@ export default async function VehicleRequestsPage({
   ]);
   const editing = edit ? allRequests.find((r) => r.id === edit) : null;
   const logByRequestId = new Map(logs.filter((l) => l.신청ID).map((l) => [l.신청ID, l]));
+  const isCalendarView = view === 'calendar';
+  const calendarMonth = month ?? new Date().toISOString().slice(0, 7);
 
   const fuelWarningByVehicle: Record<string, boolean> = {};
   for (const v of vehicles) {
@@ -50,16 +53,24 @@ export default async function VehicleRequestsPage({
 
   return (
     <main className={pageWide}>
-      <h1 className={h1}>차량사용신청</h1>
+      <div className="flex items-center justify-between">
+        <h1 className={h1}>차량사용신청</h1>
+        <div className="flex gap-3 text-sm">
+          <a href="/vehicles/requests" className={!isCalendarView ? 'font-semibold text-brand' : 'text-zinc-500 hover:underline'}>목록형</a>
+          <a href={`/vehicles/requests?view=calendar&month=${calendarMonth}`} className={isCalendarView ? 'font-semibold text-brand' : 'text-zinc-500 hover:underline'}>달력형</a>
+        </div>
+      </div>
 
-      <form method="get" className="flex gap-2 mb-3">
-        <input type="month" name="ym" defaultValue={ym ?? ''} className={`${input} w-auto`} />
-        <input name="q" defaultValue={q ?? ''} placeholder="목적/목적지/신청자 검색" className={`${input} w-auto`} />
-        <button type="submit" className={btnSecondary}>조회</button>
-        {(ym || q) && <a href="/vehicles/requests" className="text-xs text-zinc-500 hover:underline self-center">초기화</a>}
-      </form>
+      {!isCalendarView && (
+        <form method="get" className="flex gap-2 mb-3">
+          <input type="month" name="ym" defaultValue={ym ?? ''} className={`${input} w-auto`} />
+          <input name="q" defaultValue={q ?? ''} placeholder="목적/목적지/신청자 검색" className={`${input} w-auto`} />
+          <button type="submit" className={btnSecondary}>조회</button>
+          {(ym || q) && <a href="/vehicles/requests" className="text-xs text-zinc-500 hover:underline self-center">초기화</a>}
+        </form>
+      )}
 
-      <FormToggle label={editing ? '신청 수정' : '신규 신청'} defaultOpen={!!editing}>
+      <FormToggle label={editing ? '신청 수정' : '신규 신청'} defaultOpen={!!editing || !!date}>
       <form action={editing ? updateVehicleRequestAction : addVehicleRequestAction} className={`${card} grid grid-cols-2 gap-3`}>
         {editing && <input type="hidden" name="id" value={editing.id} />}
         <label className={label}>
@@ -72,7 +83,7 @@ export default async function VehicleRequestsPage({
         </label>
         <label className={label}>
           사용일자 *
-          <input type="date" name="date" defaultValue={editing?.사용일자 ?? ''} required className={input} />
+          <input type="date" name="date" defaultValue={editing?.사용일자 ?? date ?? ''} required className={input} />
         </label>
         <label className={label}>
           출발시간
@@ -122,6 +133,15 @@ export default async function VehicleRequestsPage({
       </form>
       </FormToggle>
 
+      {isCalendarView ? (
+        <VehicleRequestCalendar
+          month={calendarMonth}
+          selectedDate={date ?? null}
+          requests={allRequests}
+          vehicles={vehicles.map((v) => ({ 차량번호: v.차량번호, 차종: v.차종 }))}
+          hasLogByRequestId={new Set(logByRequestId.keys())}
+        />
+      ) : (
       <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
@@ -167,6 +187,7 @@ export default async function VehicleRequestsPage({
           })}
         </tbody>
       </table></div>
+      )}
     </main>
   );
 }
