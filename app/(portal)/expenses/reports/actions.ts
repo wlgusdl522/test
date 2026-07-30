@@ -5,9 +5,10 @@ import {
   actOnItemCheckReport,
   addItemCheckReport,
   deleteItemCheckReport,
+  setItemCheckReportPrinted,
   updateItemCheckReport,
 } from '@/lib/mutate/itemCheckReport';
-import { getViewerStaffRecord } from '@/lib/auth-helpers';
+import { getViewerStaffRecord, requireIsAccountingViewer } from '@/lib/auth-helpers';
 
 async function payloadFromForm(formData: FormData): Promise<Record<string, string>> {
   const me = await getViewerStaffRecord();
@@ -58,5 +59,13 @@ export async function actOnItemCheckReportAction(formData: FormData) {
   const action = String(formData.get('action') ?? '') as '승인' | '반려';
   const comment = String(formData.get('comment') ?? '');
   await actOnItemCheckReport(id, action, comment);
+  revalidatePath('/expenses/reports');
+}
+
+export async function setItemCheckReportPrintedAction(formData: FormData) {
+  await requireIsAccountingViewer();
+  const id = String(formData.get('id') ?? '');
+  const printed = formData.get('printed') === 'true';
+  await setItemCheckReportPrinted(id, printed);
   revalidatePath('/expenses/reports');
 }

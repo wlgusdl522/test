@@ -1,5 +1,6 @@
 import { auth } from '@/auth';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { getSystemSettings } from '@/lib/mutate/settings';
 
 export const SUPERVISOR_POSITIONS = ['관장', '부장', '과장', '팀장'];
 export const SENIOR_POSITIONS = ['관장', '부장'];
@@ -56,6 +57,26 @@ export async function requireCanToggleTask(taskEmail: string, taskTeam: string):
   }
   if (!SENIOR_POSITIONS.includes(position) && (!me || me['소속팀'] !== taskTeam)) {
     throw new Error('본인 팀 업무만 확인할 수 있습니다.');
+  }
+}
+
+// 물품검수사진/조서의 "회계확인" 체크박스는 설정에서 지정한 회계담당자(또는 관리자)만 눌러서
+// 켜고 끌 수 있고, 나머지 직원은 체크 여부만 읽기전용으로 본다.
+export async function requireIsAccountingViewer(): Promise<void> {
+  const viewerEmail = await requireViewerEmail();
+  if (ADMIN_EMAILS.includes(viewerEmail)) return;
+  const { itemCheckAccountingEmail } = await getSystemSettings();
+  if (!itemCheckAccountingEmail || itemCheckAccountingEmail.toLowerCase() !== viewerEmail) {
+    throw new Error('회계확인은 회계담당자만 처리할 수 있습니다.');
+  }
+}
+
+export async function isAccountingViewer(): Promise<boolean> {
+  try {
+    await requireIsAccountingViewer();
+    return true;
+  } catch {
+    return false;
   }
 }
 

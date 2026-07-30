@@ -7,6 +7,7 @@ import {
   addVehicleRequestAction,
   deleteVehicleRequestAction,
   deleteVehicleRequestSeriesAction,
+  updateVehicleRequestAction,
 } from './actions';
 
 export const runtime = 'nodejs';
@@ -17,69 +18,79 @@ const WEEKDAYS = [
   { value: 3, label: '수' }, { value: 4, label: '목' }, { value: 5, label: '금' }, { value: 6, label: '토' },
 ];
 
-export default async function VehicleRequestsPage() {
+export default async function VehicleRequestsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ edit?: string }>;
+}) {
+  const { edit } = await searchParams;
   const [requests, vehicles] = await Promise.all([
     getVehicleRequestList(),
     getKeyedList(VEHICLE_LIST_TABLE),
   ]);
+  const editing = edit ? requests.find((r) => r.id === edit) : null;
 
   return (
     <main className={pageWide}>
       <h1 className={h1}>차량사용신청</h1>
 
-      <FormToggle label="신규 신청">
-      <form action={addVehicleRequestAction} className={`${card} grid grid-cols-2 gap-3`}>
+      <FormToggle label={editing ? '신청 수정' : '신규 신청'} defaultOpen={!!editing}>
+      <form action={editing ? updateVehicleRequestAction : addVehicleRequestAction} className={`${card} grid grid-cols-2 gap-3`}>
+        {editing && <input type="hidden" name="id" value={editing.id} />}
         <label className={label}>
           차량 *
-          <select name="vehicleNo" required className={input}>
+          <select name="vehicleNo" defaultValue={editing?.차량번호 ?? ''} required className={input}>
             {vehicles.map((v) => <option key={v.차량번호} value={v.차량번호}>{v.차종} ({v.차량번호})</option>)}
           </select>
         </label>
         <label className={label}>
           사용일자 *
-          <input type="date" name="date" required className={input} />
+          <input type="date" name="date" defaultValue={editing?.사용일자 ?? ''} required className={input} />
         </label>
         <label className={label}>
           출발시간
-          <input type="time" name="startTime" className={input} />
+          <input type="time" name="startTime" defaultValue={editing?.출발시간 ?? ''} className={input} />
         </label>
         <label className={label}>
           복귀시간
-          <input type="time" name="endTime" className={input} />
+          <input type="time" name="endTime" defaultValue={editing?.복귀시간 ?? ''} className={input} />
         </label>
         <label className={label}>
           목적 *
-          <input name="purpose" required className={input} />
+          <input name="purpose" defaultValue={editing?.목적 ?? ''} required className={input} />
         </label>
         <label className={label}>
           목적지
-          <input name="destination" className={input} />
+          <input name="destination" defaultValue={editing?.목적지 ?? ''} className={input} />
         </label>
         <label className={label}>
           동승자
-          <input name="companions" className={input} />
+          <input name="companions" defaultValue={editing?.동승자 ?? ''} className={input} />
         </label>
         <label className={label}>
           비고
-          <input name="note" className={input} />
+          <input name="note" defaultValue={editing?.비고 ?? ''} className={input} />
         </label>
 
-        <div className="col-span-2 rounded-md border border-dashed border-zinc-300 dark:border-zinc-700 p-3">
-          <label className="text-sm"><input type="checkbox" name="recurring" /> 반복 일정으로 등록</label>
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            {WEEKDAYS.map((w) => (
-              <label key={w.value} className="text-xs text-zinc-600 dark:text-zinc-400">
-                <input type="checkbox" name="weekday" value={w.value} /> {w.label}
+        {!editing && (
+          <div className="col-span-2 rounded-md border border-dashed border-zinc-300 dark:border-zinc-700 p-3">
+            <label className="text-sm"><input type="checkbox" name="recurring" /> 반복 일정으로 등록</label>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              {WEEKDAYS.map((w) => (
+                <label key={w.value} className="text-xs text-zinc-600 dark:text-zinc-400">
+                  <input type="checkbox" name="weekday" value={w.value} /> {w.label}
+                </label>
+              ))}
+              <label className="text-xs text-zinc-600 dark:text-zinc-400">
+                반복 종료일 <input type="date" name="untilDate" className={`${input} inline-block w-auto`} />
               </label>
-            ))}
-            <label className="text-xs text-zinc-600 dark:text-zinc-400">
-              반복 종료일 <input type="date" name="untilDate" className={`${input} inline-block w-auto`} />
-            </label>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="col-span-2">
-          <button type="submit" className={btn}>신청</button>
+        <div className="col-span-2 flex items-center gap-3">
+          <button type="submit" className={btn}>{editing ? '저장' : '신청'}</button>
+          {editing && <a href="/vehicles/requests" className="text-xs text-zinc-500 hover:underline">취소</a>}
         </div>
       </form>
       </FormToggle>
@@ -101,6 +112,7 @@ export default async function VehicleRequestsPage() {
               <td className={td}>{r.목적}</td>
               <td className={td}>{r.목적지}</td>
               <td className={`${td} flex gap-1.5`}>
+                <a href={`/vehicles/requests?edit=${r.id}`} className={btnSecondary}>수정</a>
                 <form action={deleteVehicleRequestAction}>
                   <input type="hidden" name="id" value={r.id} />
                   <button type="submit" className={btnDanger}>{r.반복그룹ID ? '삭제(이 건만)' : '삭제'}</button>

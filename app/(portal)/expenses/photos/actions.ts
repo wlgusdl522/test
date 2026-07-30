@@ -1,8 +1,9 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { deleteItemCheckPhoto, saveItemCheckPhoto } from '@/lib/mutate/itemCheckPhoto';
+import { deleteItemCheckPhoto, saveItemCheckPhoto, setItemCheckPhotoPrinted } from '@/lib/mutate/itemCheckPhoto';
 import { ITEM_CHECK_PHOTO_SLOTS } from '@/lib/sheets/registry';
+import { requireIsAccountingViewer } from '@/lib/auth-helpers';
 
 async function fileToDataUrl(file: File | null): Promise<string> {
   if (!file || file.size === 0) return '';
@@ -29,5 +30,13 @@ export async function saveItemCheckPhotoAction(formData: FormData) {
 
 export async function deleteItemCheckPhotoAction(formData: FormData) {
   await deleteItemCheckPhoto(String(formData.get('id') ?? ''));
+  revalidatePath('/expenses/photos');
+}
+
+export async function setItemCheckPhotoPrintedAction(formData: FormData) {
+  await requireIsAccountingViewer();
+  const id = String(formData.get('id') ?? '');
+  const printed = formData.get('printed') === 'true';
+  await setItemCheckPhotoPrinted(id, printed);
   revalidatePath('/expenses/photos');
 }

@@ -74,3 +74,19 @@ export async function deleteItemCheckPhoto(id: string): Promise<Record<string, s
   await deleteRecord(ITEM_CHECK_PHOTO_TABLE, { id });
   return afterWrite();
 }
+
+function nowTimestamp(): string {
+  return new Date().toISOString().slice(0, 19).replace('T', ' ');
+}
+
+// 회계담당자(또는 관리자)만 켜고 끌 수 있는 "회계확인" 표시 — 인가는 호출부(Server Action)에서 확인한다.
+export async function setItemCheckPhotoPrinted(id: string, printed: boolean): Promise<void> {
+  const existing = (await getKeyedList(ITEM_CHECK_PHOTO_TABLE)).find((r) => r.id === id);
+  if (!existing) throw new Error('검수사진 내역을 찾을 수 없습니다.');
+  const value = printed ? nowTimestamp() : '';
+  await updateRecord(ITEM_CHECK_PHOTO_TABLE, { id }, { ...existing, 인쇄일시: value });
+  await mirrorKeyedTableToSupabase(
+    { tableName: ITEM_CHECK_PHOTO_TABLE.sheetName, primaryKey: ITEM_CHECK_PHOTO_TABLE.primaryKey },
+    await getKeyedList(ITEM_CHECK_PHOTO_TABLE)
+  );
+}
