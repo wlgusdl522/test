@@ -13,17 +13,23 @@ export const dynamic = 'force-dynamic';
 export default async function VehicleLogsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string; requestId?: string }>;
+  searchParams: Promise<{ edit?: string; requestId?: string; q?: string; ym?: string }>;
 }) {
-  const { edit, requestId } = await searchParams;
-  const [logs, pending, vehicles, vehicleRequests] = await Promise.all([
+  const { edit, requestId, q, ym } = await searchParams;
+  const [allLogs, pending, vehicles, vehicleRequests] = await Promise.all([
     getVehicleLogList(),
     getMyPendingVehicleLogApprovals(),
     getKeyedList(VEHICLE_LIST_TABLE),
     getVehicleRequestList(),
   ]);
-  const editing = edit ? logs.find((r) => r.id === edit) : null;
+  const editing = edit ? allLogs.find((r) => r.id === edit) : null;
   const prefillRequest = !editing && requestId ? vehicleRequests.find((r) => r.id === requestId) : null;
+
+  const logs = allLogs.filter((r) => {
+    if (ym && !r.운행일자.startsWith(ym)) return false;
+    if (q && !`${r.목적} ${r.목적지} ${r.운전자명}`.toLowerCase().includes(q.toLowerCase())) return false;
+    return true;
+  });
 
   return (
     <main className={pageWide}>
@@ -31,6 +37,13 @@ export default async function VehicleLogsPage({
         <h1 className={h1}>차량운행일지</h1>
         <a href="/print/vehicle-log-monthly" target="_blank" className="text-sm text-brand hover:underline">월별 인쇄</a>
       </div>
+
+      <form method="get" className="flex gap-2 mb-3">
+        <input type="month" name="ym" defaultValue={ym ?? ''} className={`${input} w-auto`} />
+        <input name="q" defaultValue={q ?? ''} placeholder="목적/목적지/운전자 검색" className={`${input} w-auto`} />
+        <button type="submit" className={btnSecondary}>조회</button>
+        {(ym || q) && <a href="/vehicles/logs" className="text-xs text-zinc-500 hover:underline self-center">초기화</a>}
+      </form>
 
       {pending.length > 0 && (
         <>

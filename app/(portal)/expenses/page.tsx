@@ -14,19 +14,25 @@ export const dynamic = 'force-dynamic';
 export default async function ExpensesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string }>;
+  searchParams: Promise<{ edit?: string; q?: string; ym?: string }>;
 }) {
-  const { edit } = await searchParams;
-  const [records, budgetItems, photos, reports, settings] = await Promise.all([
+  const { edit, q, ym } = await searchParams;
+  const [allRecords, budgetItems, photos, reports, settings] = await Promise.all([
     getCardLedgerList(),
     getKeyedList(BUDGET_ITEM_TABLE),
     getItemCheckPhotoList(),
     getItemCheckReportList(),
     getSystemSettings(),
   ]);
-  const editing = edit ? records.find((r) => r.id === edit) : null;
+  const editing = edit ? allRecords.find((r) => r.id === edit) : null;
   const photoByLedgerId = new Map(photos.map((p) => [p.카드사용대장ID, p]));
   const reportByLedgerId = new Map(reports.map((r) => [r.카드사용대장ID, r]));
+
+  const records = allRecords.filter((r) => {
+    if (ym && !r.사용일자.startsWith(ym)) return false;
+    if (q && !`${r.사용내역} ${r.담당자명} ${r.예산과목}`.toLowerCase().includes(q.toLowerCase())) return false;
+    return true;
+  });
 
   return (
     <main className={pageWide}>
@@ -34,6 +40,13 @@ export default async function ExpensesPage({
         <h1 className={h1}>카드사용대장</h1>
         <a href="/print/card-ledger" target="_blank" className="text-sm text-brand hover:underline">월별 인쇄</a>
       </div>
+
+      <form method="get" className="flex gap-2 mb-3">
+        <input type="month" name="ym" defaultValue={ym ?? ''} className={`${input} w-auto`} />
+        <input name="q" defaultValue={q ?? ''} placeholder="사용내역/담당자/예산과목 검색" className={`${input} w-auto`} />
+        <button type="submit" className={btnSecondary}>조회</button>
+        {(ym || q) && <a href="/expenses" className="text-xs text-zinc-500 hover:underline self-center">초기화</a>}
+      </form>
 
       <FormToggle label={editing ? '내역 수정' : '신규 등록'} defaultOpen={!!editing}>
         <form action={editing ? updateCardLedgerAction : addCardLedgerAction} className={`${card} grid grid-cols-2 gap-3`}>
