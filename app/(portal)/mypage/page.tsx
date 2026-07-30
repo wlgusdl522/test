@@ -1,23 +1,58 @@
 import { getMyRecordsSummary } from '@/lib/mutate/dashboard';
 import { getMyPendingItemCheckReportApprovals } from '@/lib/mutate/itemCheckReport';
 import { getMyPendingVehicleLogApprovals } from '@/lib/mutate/vehicleLog';
-import { btn, btnDanger, h1, h2, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { getViewerStaffRecord } from '@/lib/auth-helpers';
+import { btn, btnDanger, card, h1, h2, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import { actOnItemCheckReportAction } from '@/app/(portal)/expenses/reports/actions';
 import { actOnVehicleLogAction } from '@/app/(portal)/vehicles/logs/actions';
+import { saveMyJandiWebhookAction, saveMyStampAction } from './actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export default async function MyPage() {
-  const [summary, pendingReports, pendingLogs] = await Promise.all([
+  const [summary, pendingReports, pendingLogs, me] = await Promise.all([
     getMyRecordsSummary(),
     getMyPendingItemCheckReportApprovals(),
     getMyPendingVehicleLogApprovals(),
+    getViewerStaffRecord(),
   ]);
 
   return (
     <main className={pageWide}>
       <h1 className={h1}>마이페이지</h1>
+
+      <h2 className={h2}>내 정보</h2>
+      <div className={`${card} grid grid-cols-2 gap-2 text-sm`}>
+        <div><span className="text-zinc-500">이메일</span> {me?.['이메일(아이디)'] ?? ''}</div>
+        <div><span className="text-zinc-500">성명</span> {me?.성명 ?? ''}</div>
+        <div><span className="text-zinc-500">소속팀</span> {me?.소속팀 ?? ''}</div>
+        <div><span className="text-zinc-500">직급/직책</span> {me?.['직급/직책'] ?? ''}</div>
+        <div><span className="text-zinc-500">담당사업</span> {me?.담당사업 ?? ''}</div>
+        <div><span className="text-zinc-500">내선번호</span> {me?.내선번호 ?? ''}</div>
+        <div><span className="text-zinc-500">휴대폰번호</span> {me?.휴대폰번호 ?? ''}</div>
+        <div><span className="text-zinc-500">입사일</span> {me?.입사일 ?? ''}</div>
+      </div>
+
+      <h2 className={h2}>내 도장 / 알림 설정</h2>
+      <div className={`${card} grid grid-cols-2 gap-4`}>
+        <form action={saveMyStampAction} encType="multipart/form-data" className="flex flex-col gap-2">
+          <label className={label}>
+            내 도장 이미지 {me?.도장 && <a href={me.도장} target="_blank" rel="noreferrer" className="text-brand hover:underline">(현재 도장 보기)</a>}
+            <input type="file" name="stamp" accept="image/*" className={input} />
+          </label>
+          <p className="text-xs text-zinc-400">결재라인이 없는 게시판(물품검수조서 등) 인쇄물에 이름 대신 이 도장 이미지가 찍힙니다.</p>
+          <div><button type="submit" className={btn}>도장 등록</button></div>
+        </form>
+        <form action={saveMyJandiWebhookAction} className="flex flex-col gap-2">
+          <label className={label}>
+            내 잔디(JANDI) 개인 웹훅 URL
+            <input name="webhookUrl" defaultValue={me?.잔디웹훅 ?? ''} placeholder="https://wh.jandi.com/..." className={input} />
+          </label>
+          <p className="text-xs text-zinc-400">잔디에서 "나와의 채팅" 토픽에 인커밍 웹훅을 연결해 등록해두면, 결재요청/승인/반려 알림이 나에게만 옵니다. 비워두면 공용 웹훅으로 대신 갑니다.</p>
+          <div><button type="submit" className={btn}>저장</button></div>
+        </form>
+      </div>
 
       <h2 className={h2}>처리할 일</h2>
       <ul className="mb-6 flex flex-col gap-1">
@@ -42,15 +77,16 @@ export default async function MyPage() {
                   <td className={td}>물품검수조서</td>
                   <td className={td}>{r.품명} · {Number(r.금액 || 0).toLocaleString()}원</td>
                   <td className={td}>{r.현재결재단계}</td>
-                  <td className={`${td} flex gap-1.5`}>
+                  <td className={`${td} flex items-center gap-1.5`}>
                     <form action={actOnItemCheckReportAction}>
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="action" value="승인" />
                       <button type="submit" className={btn}>승인</button>
                     </form>
-                    <form action={actOnItemCheckReportAction}>
+                    <form action={actOnItemCheckReportAction} className="flex items-center gap-1">
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="action" value="반려" />
+                      <input name="comment" placeholder="반려 사유" className={`${input} w-24 text-xs`} />
                       <button type="submit" className={btnDanger}>반려</button>
                     </form>
                   </td>
@@ -61,15 +97,16 @@ export default async function MyPage() {
                   <td className={td}>차량운행일지</td>
                   <td className={td}>{r.차량번호} · {r.목적}</td>
                   <td className={td}>{r.현재결재단계}</td>
-                  <td className={`${td} flex gap-1.5`}>
+                  <td className={`${td} flex items-center gap-1.5`}>
                     <form action={actOnVehicleLogAction}>
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="action" value="승인" />
                       <button type="submit" className={btn}>승인</button>
                     </form>
-                    <form action={actOnVehicleLogAction}>
+                    <form action={actOnVehicleLogAction} className="flex items-center gap-1">
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="action" value="반려" />
+                      <input name="comment" placeholder="반려 사유" className={`${input} w-24 text-xs`} />
                       <button type="submit" className={btnDanger}>반려</button>
                     </form>
                   </td>
@@ -83,11 +120,31 @@ export default async function MyPage() {
       <h2 className={h2}>최근 카드사용대장</h2>
       <ul className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
         {summary.cardLedger.map((r) => <li key={r.id}>{r.사용일자} · {r.사용내역} · {Number(r.사용금액 || 0).toLocaleString()}원</li>)}
+        {summary.cardLedger.length === 0 && <li className="text-zinc-400">없음</li>}
+      </ul>
+
+      <h2 className={h2}>최근 물품검수사진</h2>
+      <ul className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
+        {summary.itemCheckPhoto.map((r) => <li key={r.id}>{r.지출일자} · {r.품명}</li>)}
+        {summary.itemCheckPhoto.length === 0 && <li className="text-zinc-400">없음</li>}
+      </ul>
+
+      <h2 className={h2}>최근 작성한 물품검수조서</h2>
+      <ul className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
+        {summary.itemCheckReport.map((r) => <li key={r.id}>{r.검수년월일} · {r.품명} · {r.결재상태}</li>)}
+        {summary.itemCheckReport.length === 0 && <li className="text-zinc-400">없음</li>}
       </ul>
 
       <h2 className={h2}>최근 차량사용신청</h2>
       <ul className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
         {summary.vehicleRequest.map((r) => <li key={r.id}>{r.사용일자} · {r.차량번호} · {r.목적}</li>)}
+        {summary.vehicleRequest.length === 0 && <li className="text-zinc-400">없음</li>}
+      </ul>
+
+      <h2 className={h2}>최근 차량운행일지</h2>
+      <ul className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
+        {summary.vehicleLog.map((r) => <li key={r.id}>{r.운행일자} · {r.차량번호} · {r.목적} · {r.결재상태}</li>)}
+        {summary.vehicleLog.length === 0 && <li className="text-zinc-400">없음</li>}
       </ul>
     </main>
   );
