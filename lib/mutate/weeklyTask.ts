@@ -38,17 +38,6 @@ export async function getWeeklyTasks(team: string | null, weekStart: string): Pr
     .sort((a, b) => (a['날짜'] < b['날짜'] ? -1 : a['날짜'] > b['날짜'] ? 1 : 0));
 }
 
-// 마이페이지/주간업무 화면에서 "지난 기록" 훑어보기용 — 선택한 주와 상관없이 내가 등록한
-// 업무 전체를 최신순으로 돌려준다(휴가 태그 등 필터 없이 원본 그대로).
-export async function getMyWeeklyTaskHistory(email: string, limit = 30): Promise<Record<string, string>[]> {
-  const all = await getKeyedList(WEEKLY_TASK_TABLE);
-  return all
-    .filter((r) => (r['이메일(아이디)'] ?? '').toLowerCase() === email.toLowerCase())
-    .map((r): Record<string, string> => ({ ...r, 날짜: normalizeTaskDate(r['날짜']) }))
-    .sort((a, b) => (a['날짜'] < b['날짜'] ? 1 : a['날짜'] > b['날짜'] ? -1 : 0))
-    .slice(0, limit);
-}
-
 export async function addWeeklyTask(payload: Record<string, string>): Promise<Record<string, string>[]> {
   if (!payload['날짜'] || !payload['업무내용']) {
     throw new Error('날짜와 업무내용은 필수입니다.');

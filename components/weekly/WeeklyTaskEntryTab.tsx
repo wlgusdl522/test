@@ -92,36 +92,37 @@ export default function WeeklyTaskEntryTab({
       <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
         업무를 입력하고 회의록에 반영할 항목은 옆의 &quot;회의록&quot; 버튼을 눌러 표시하세요. 아래 <b>제출</b> 버튼을 눌러야 저장됩니다.
       </p>
-      <div className="grid grid-cols-6 gap-3 mb-4">
+      <div className="flex flex-col mb-4">
         {dayDates.map((iso, i) => {
           const d = new Date(`${iso}T00:00:00`);
           const rows = rowsByDay[iso] ?? [];
           const leaveVal = currentLeaveValue(iso);
           const isFullDayLeave = FULL_DAY_LEAVE_TYPES.includes(leaveVal);
           return (
-            <div key={iso} className="flex flex-col gap-1.5">
-              <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-                {weekdayLabels[i]} ({d.getMonth() + 1}/{d.getDate()})
+            <div key={iso} className="py-3 border-b border-zinc-100 dark:border-zinc-800 last:border-b-0">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">{weekdayLabels[i]}</span>
+                <span className="text-xs text-zinc-400">{d.getMonth() + 1}/{d.getDate()}</span>
+                <select
+                  className={`${input} w-auto ml-auto text-xs`}
+                  value={leaveVal}
+                  onChange={(e) => handleLeaveChange(iso, e.target.value)}
+                >
+                  <option value="">휴가/교육 없음</option>
+                  {LEAVE_TYPES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
               </div>
-              <select
-                className={`${input} text-xs`}
-                value={leaveVal}
-                onChange={(e) => handleLeaveChange(iso, e.target.value)}
-              >
-                <option value="">휴가/교육 없음</option>
-                {LEAVE_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
 
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 mb-2">
                 {rows.map((r) => (
-                  <div key={r.key} className="flex items-start gap-1">
-                    <span className="flex-1 text-xs leading-snug py-1 text-zinc-700 dark:text-zinc-300">• {r.text}</span>
+                  <div key={r.key} className="flex items-center gap-2">
+                    <span className="flex-1 text-sm py-1 text-zinc-700 dark:text-zinc-300">• {r.text}</span>
                     <button
                       type="button"
                       onClick={() => toggleFlag(iso, r.key)}
-                      className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] border transition-colors ${
+                      className={`shrink-0 rounded px-2 py-1 text-[11px] border transition-colors ${
                         r.flagged
                           ? 'bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-500/10 dark:border-amber-800 dark:text-amber-400'
                           : 'border-zinc-200 text-zinc-400 hover:border-zinc-300 dark:border-zinc-700'
@@ -132,7 +133,7 @@ export default function WeeklyTaskEntryTab({
                     <button
                       type="button"
                       onClick={() => removeRow(iso, r.key)}
-                      className="shrink-0 px-1 text-xs text-zinc-300 hover:text-red-500"
+                      className="shrink-0 px-1.5 text-sm text-zinc-300 hover:text-red-500"
                       aria-label="삭제"
                     >
                       ×
@@ -143,7 +144,7 @@ export default function WeeklyTaskEntryTab({
 
               {!isFullDayLeave && (
                 <input
-                  className={`${input} text-xs`}
+                  className={`${input} text-sm`}
                   placeholder="업무 입력 후 Enter"
                   value={draftByDay[iso] ?? ''}
                   onChange={(e) => setDraftByDay((prev) => ({ ...prev, [iso]: e.target.value }))}
