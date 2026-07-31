@@ -1,6 +1,6 @@
 import { CONFIGURABLE_PAGES, PAGE_ACCESS_TIERS } from '@/lib/pages-registry';
 import { getActiveStaffList, getPageAccessExceptionMap, getPageAccessRuleMap } from '@/lib/mutate/permissions';
-import { btn, btnSecondary, h1, input, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnSecondary, h1, input, inputBase, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import { addExceptionAction, removeExceptionAction, setTierAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -36,7 +36,7 @@ export default async function PermissionsSettingsPage() {
                   <form action={setTierAction} className="flex gap-1.5">
                     <input type="hidden" name="pageId" value={p.id} />
                     <input type="hidden" name="pageLabel" value={p.label} />
-                    <select name="tier" defaultValue={currentTier} className={`${input} w-auto`}>
+                    <select name="tier" defaultValue={currentTier} className={`${inputBase} w-auto`}>
                       {PAGE_ACCESS_TIERS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
                     <button type="submit" className={btn}>저장</button>

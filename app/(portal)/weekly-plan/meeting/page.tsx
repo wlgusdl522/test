@@ -4,7 +4,7 @@ import { getMeetingMeta } from '@/lib/mutate/meeting';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { summarizeLeaveEntries } from '@/lib/weeklyLeave';
-import { btn, btnSecondary, card, h1, h2, input, label, page } from '@/lib/ui';
+import { btn, btnSecondary, card, h1, h2, input, inputBase, label, page } from '@/lib/ui';
 import { saveMeetingMetaAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -39,10 +39,10 @@ export default async function MeetingPage({
       <h1 className={h1}>회의록 정리</h1>
 
       <form method="get" className="flex gap-2 mb-6">
-        <select name="team" defaultValue={team} className={`${input} w-auto`}>
+        <select name="team" defaultValue={team} className={`${inputBase} w-auto`}>
           {teams.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <input type="date" name="date" defaultValue={date} className={`${input} w-auto`} />
+        <input type="date" name="date" defaultValue={date} className={`${inputBase} w-auto`} />
         <button type="submit" className={btnSecondary}>조회</button>
       </form>
 

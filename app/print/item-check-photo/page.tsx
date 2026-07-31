@@ -1,7 +1,7 @@
 import { getItemCheckPhotoList } from '@/lib/mutate/itemCheckPhoto';
 import { driveThumbUrl } from '@/lib/drive/thumbUrl';
 import PrintButton from '@/components/print/PrintButton';
-import { card, input, table, td, th } from '@/lib/ui';
+import { card, input, inputBase, table, td, th } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -44,7 +44,7 @@ export default async function ItemCheckPhotoPrintPage({
     <div className="p-6">
       <div className={`${card} print:hidden flex flex-wrap items-center gap-4`}>
         <form method="get" className="flex flex-wrap items-center gap-2">
-          <select name="id" defaultValue={r?.id ?? ''} className={`${input} w-auto`}>
+          <select name="id" defaultValue={r?.id ?? ''} className={`${inputBase} w-auto`}>
             {photos.map((x) => (
               <option key={x.id} value={x.id}>
                 {x.지출일자} · {x.품명} · {x.사업명}

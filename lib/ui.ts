@@ -16,8 +16,13 @@ export const card =
 export const statCard =
   'flex-1 rounded-lg bg-white dark:bg-zinc-900 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.08)] border-l-[3px] border-l-brand transition-shadow hover:shadow-md';
 
-export const input =
-  'w-full rounded-md border border-[#dadce0] dark:border-zinc-700 px-3 py-2 text-sm bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-brand focus:ring-[3px] focus:ring-brand-tint';
+// w-full과 폭 지정 유틸(w-auto/w-28 등)이 같은 문자열에 같이 들어가면 CSS 명시도가 같아
+// JSX에 적힌 순서가 아니라 생성된 스타일시트 순서로 승자가 갈린다(주로 w-full이 이겨서
+// "폭을 좁히려고 w-auto를 붙였는데 여전히 꽉 차 보이는" 버그가 됨). 폭을 직접 지정할 곳은
+// 항상 `input` 대신 `inputBase`에 원하는 w-* 하나만 붙여서 써야 한다.
+export const inputBase =
+  'rounded-md border border-[#dadce0] dark:border-zinc-700 px-3 py-2 text-sm bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-brand focus:ring-[3px] focus:ring-brand-tint';
+export const input = `w-full ${inputBase}`;
 
 export const label = 'flex flex-col gap-1 text-[12.5px] text-zinc-500 dark:text-zinc-400';
 

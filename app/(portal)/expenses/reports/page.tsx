@@ -1,7 +1,7 @@
 import { getCardLedgerList } from '@/lib/mutate/cardLedger';
 import { getItemCheckReportList, getMyPendingItemCheckReportApprovals } from '@/lib/mutate/itemCheckReport';
 import { isAccountingViewer } from '@/lib/auth-helpers';
-import { btn, btnDanger, btnSecondary, card, h1, h2, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h1, h2, input, inputBase, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
 import FormToggle from '@/components/FormToggle';
 import {
@@ -57,7 +57,7 @@ export default async function ItemCheckReportsPage({
                     <form action={actOnItemCheckReportAction} className="flex items-center gap-1">
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="action" value="반려" />
-                      <input name="comment" placeholder="반려 사유" className={`${input} w-28 text-xs`} />
+                      <input name="comment" placeholder="반려 사유" className={`${inputBase} w-28 text-xs`} />
                       <button type="submit" className={btnDanger}>반려</button>
                     </form>
                   </td>

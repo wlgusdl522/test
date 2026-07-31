@@ -5,7 +5,7 @@ import { getStaffList } from '@/lib/mutate/staff';
 import { parseApprovalHistory, type ApprovalHistoryEntry } from '@/lib/approval/engine';
 import { driveThumbUrl } from '@/lib/drive/thumbUrl';
 import PrintButton from '@/components/print/PrintButton';
-import { card, input } from '@/lib/ui';
+import { card, input, inputBase } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -63,7 +63,7 @@ export default async function ItemCheckReportPrintPage({
     <div className="p-6">
       <div className={`${card} print:hidden flex flex-wrap items-center gap-4`}>
         <form method="get" className="flex flex-wrap items-center gap-2">
-          <select name="id" defaultValue={r?.id ?? ''} className={`${input} w-auto`}>
+          <select name="id" defaultValue={r?.id ?? ''} className={`${inputBase} w-auto`}>
             {sorted.map((x) => (
               <option key={x.id} value={x.id}>
                 {x.검수년월일} · {x.품명} · {x.검수자명}

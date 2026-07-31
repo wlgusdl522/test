@@ -2,7 +2,7 @@ import { getMyRecordsSummary } from '@/lib/mutate/dashboard';
 import { getMyPendingItemCheckReportApprovals } from '@/lib/mutate/itemCheckReport';
 import { getMyPendingVehicleLogApprovals } from '@/lib/mutate/vehicleLog';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { btn, btnDanger, card, h1, h2, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, card, h1, h2, input, inputBase, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import { actOnItemCheckReportAction } from '@/app/(portal)/expenses/reports/actions';
 import { actOnVehicleLogAction } from '@/app/(portal)/vehicles/logs/actions';
 import { saveMyJandiWebhookAction, saveMyStampAction } from './actions';
@@ -86,7 +86,7 @@ export default async function MyPage() {
                     <form action={actOnItemCheckReportAction} className="flex items-center gap-1">
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="action" value="반려" />
-                      <input name="comment" placeholder="반려 사유" className={`${input} w-24 text-xs`} />
+                      <input name="comment" placeholder="반려 사유" className={`${inputBase} w-24 text-xs`} />
                       <button type="submit" className={btnDanger}>반려</button>
                     </form>
                   </td>
@@ -106,7 +106,7 @@ export default async function MyPage() {
                     <form action={actOnVehicleLogAction} className="flex items-center gap-1">
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="action" value="반려" />
-                      <input name="comment" placeholder="반려 사유" className={`${input} w-24 text-xs`} />
+                      <input name="comment" placeholder="반려 사유" className={`${inputBase} w-24 text-xs`} />
                       <button type="submit" className={btnDanger}>반려</button>
                     </form>
                   </td>

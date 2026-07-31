@@ -2,7 +2,7 @@ import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
 import { getVehicleLogList } from '@/lib/mutate/vehicleLog';
-import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h1, input, inputBase, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import FormToggle from '@/components/FormToggle';
 import VehicleSelectWithFuelWarning from '@/components/vehicles/VehicleSelectWithFuelWarning';
 import VehicleRequestCalendar from '@/components/vehicles/VehicleRequestCalendar';
@@ -63,8 +63,8 @@ export default async function VehicleRequestsPage({
 
       {!isCalendarView && (
         <form method="get" className="flex gap-2 mb-3">
-          <input type="month" name="ym" defaultValue={ym ?? ''} className={`${input} w-auto`} />
-          <input name="q" defaultValue={q ?? ''} placeholder="목적/목적지/신청자 검색" className={`${input} w-auto`} />
+          <input type="month" name="ym" defaultValue={ym ?? ''} className={`${inputBase} w-auto`} />
+          <input name="q" defaultValue={q ?? ''} placeholder="목적/목적지/신청자 검색" className={`${inputBase} w-auto`} />
           <button type="submit" className={btnSecondary}>조회</button>
           {(ym || q) && <a href="/vehicles/requests" className="text-xs text-zinc-500 hover:underline self-center">초기화</a>}
         </form>
@@ -120,7 +120,7 @@ export default async function VehicleRequestsPage({
                 </label>
               ))}
               <label className="text-xs text-zinc-600 dark:text-zinc-400">
-                반복 종료일 <input type="date" name="untilDate" className={`${input} inline-block w-auto`} />
+                반복 종료일 <input type="date" name="untilDate" className={`${inputBase} inline-block w-auto`} />
               </label>
             </div>
           </div>

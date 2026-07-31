@@ -4,7 +4,7 @@ import { getCardLedgerList } from '@/lib/mutate/cardLedger';
 import { getItemCheckPhotoList } from '@/lib/mutate/itemCheckPhoto';
 import { getItemCheckReportList } from '@/lib/mutate/itemCheckReport';
 import { getSystemSettings } from '@/lib/mutate/settings';
-import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h1, input, inputBase, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import FormToggle from '@/components/FormToggle';
 import { addCardLedgerAction, deleteCardLedgerAction, updateCardLedgerAction } from './actions';
 
@@ -42,8 +42,8 @@ export default async function ExpensesPage({
       </div>
 
       <form method="get" className="flex gap-2 mb-3">
-        <input type="month" name="ym" defaultValue={ym ?? ''} className={`${input} w-auto`} />
-        <input name="q" defaultValue={q ?? ''} placeholder="사용내역/담당자/예산과목 검색" className={`${input} w-auto`} />
+        <input type="month" name="ym" defaultValue={ym ?? ''} className={`${inputBase} w-auto`} />
+        <input name="q" defaultValue={q ?? ''} placeholder="사용내역/담당자/예산과목 검색" className={`${inputBase} w-auto`} />
         <button type="submit" className={btnSecondary}>조회</button>
         {(ym || q) && <a href="/expenses" className="text-xs text-zinc-500 hover:underline self-center">초기화</a>}
       </form>

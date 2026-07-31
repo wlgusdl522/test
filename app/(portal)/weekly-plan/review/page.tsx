@@ -3,7 +3,7 @@ import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getReviewCompletionStatus } from '@/lib/mutate/reviewStatus';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { btn, btnSecondary, card, h1, h2, hint, input, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnSecondary, card, h1, h2, hint, input, inputBase, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
 import { setReviewCompletionAction } from './actions';
 import { toggleSupervisorReflectAction } from '@/app/(portal)/weekly-plan/actions';
@@ -42,10 +42,10 @@ export default async function ReviewPage({
       </div>
 
       <form method="get" className="flex gap-2 mb-6">
-        <select name="team" defaultValue={reviewTeam} className={`${input} w-auto`}>
+        <select name="team" defaultValue={reviewTeam} className={`${inputBase} w-auto`}>
           {teams.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <input type="date" name="weekStart" defaultValue={weekStart} className={`${input} w-auto`} />
+        <input type="date" name="weekStart" defaultValue={weekStart} className={`${inputBase} w-auto`} />
         <button type="submit" className={btnSecondary}>조회</button>
       </form>
 

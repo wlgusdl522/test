@@ -8,7 +8,7 @@ import { getStaffList } from '@/lib/mutate/staff';
 import { buildApprovalBoxData } from '@/lib/approval/approvalLine';
 import ApprovalBox from '@/components/print/ApprovalBox';
 import PrintButton from '@/components/print/PrintButton';
-import { btn, card, input, table, td, th } from '@/lib/ui';
+import { btn, card, input, inputBase, table, td, th } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -66,10 +66,10 @@ export default async function WeeklyPlanTeamPrintPage({
     <div className="p-6">
       <div className={`${card} print:hidden flex flex-wrap items-center gap-4`}>
         <form method="get" className="flex flex-wrap items-center gap-2">
-          <select name="team" defaultValue={team} className={`${input} w-auto`}>
+          <select name="team" defaultValue={team} className={`${inputBase} w-auto`}>
             {teams.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
-          <input type="date" name="weekStart" defaultValue={weekStart} className={`${input} w-auto`} />
+          <input type="date" name="weekStart" defaultValue={weekStart} className={`${inputBase} w-auto`} />
           <button type="submit" className={btn}>조회</button>
         </form>
         <PrintButton />

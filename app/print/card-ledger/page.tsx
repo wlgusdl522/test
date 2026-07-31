@@ -8,7 +8,7 @@ import { getStaffList } from '@/lib/mutate/staff';
 import { buildApprovalBoxData } from '@/lib/approval/approvalLine';
 import ApprovalBox from '@/components/print/ApprovalBox';
 import PrintButton from '@/components/print/PrintButton';
-import { btn, card, input, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, card, input, inputBase, table, tableWrap, td, th } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -44,7 +44,7 @@ export default async function CardLedgerPrintPage({
     <div className="p-6">
       <div className={`${card} print:hidden flex flex-wrap items-center gap-4`}>
         <form method="get" className="flex flex-wrap items-center gap-4">
-          <input type="month" name="ym" defaultValue={yearMonth} className={`${input} w-auto`} />
+          <input type="month" name="ym" defaultValue={yearMonth} className={`${inputBase} w-auto`} />
           {TYPES.map((t) => (
             <label key={t} className="flex items-center gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
               <input type="checkbox" name="type" value={t} defaultChecked={selectedTypes.includes(t)} /> {t}

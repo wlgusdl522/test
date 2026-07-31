@@ -1,6 +1,6 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
-import { btn, btnDanger, h1, input, page } from '@/lib/ui';
+import { btn, btnDanger, h1, input, inputBase, page } from '@/lib/ui';
 import FormToggle from '@/components/FormToggle';
 import { addVehicleAction, deleteVehicleAction, updateVehicleAction } from './actions';
 
@@ -27,7 +27,7 @@ export default async function VehiclesSettingsPage() {
           <li key={v.차량번호} className="flex items-center gap-2">
             <form action={updateVehicleAction} className="flex flex-1 gap-2">
               <input type="hidden" name="oldNumber" value={v.차량번호} />
-              <input name="newNumber" defaultValue={v.차량번호} className={`${input} w-28`} />
+              <input name="newNumber" defaultValue={v.차량번호} className={`${inputBase} w-28`} />
               <input name="type" defaultValue={v.차종} className={`${input} flex-1`} />
               <button type="submit" className={btn}>저장</button>
             </form>

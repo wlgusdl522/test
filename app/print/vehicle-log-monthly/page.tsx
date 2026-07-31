@@ -8,7 +8,7 @@ import { getStaffList } from '@/lib/mutate/staff';
 import { buildApprovalBoxData } from '@/lib/approval/approvalLine';
 import ApprovalBox from '@/components/print/ApprovalBox';
 import PrintButton from '@/components/print/PrintButton';
-import { btn, card, input, table, tableWrap, td, th } from '@/lib/ui';
+import { btn, card, input, inputBase, table, tableWrap, td, th } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -54,10 +54,10 @@ export default async function VehicleLogMonthlyPrintPage({
     <div className="p-6">
       <div className={`${card} print:hidden flex flex-wrap items-center gap-4`}>
         <form method="get" className="flex flex-wrap items-center gap-2">
-          <select name="vehicleNo" defaultValue={targetVehicle} className={`${input} w-auto`}>
+          <select name="vehicleNo" defaultValue={targetVehicle} className={`${inputBase} w-auto`}>
             {vehicles.map((v) => <option key={v.차량번호} value={v.차량번호}>{v.차종} ({v.차량번호})</option>)}
           </select>
-          <input type="month" name="ym" defaultValue={yearMonth} className={`${input} w-auto`} />
+          <input type="month" name="ym" defaultValue={yearMonth} className={`${inputBase} w-auto`} />
           <button type="submit" className={btn}>조회</button>
         </form>
         <PrintButton />

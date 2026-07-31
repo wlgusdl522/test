@@ -9,6 +9,14 @@ function nowTimestamp(): string {
   return new Date().toISOString().slice(0, 19).replace('T', ' ');
 }
 
+// 아주 초기(2026-07-11) 몇 건이 "2026. 7. 7" 같은 한글 로케일 형식으로 남아있어 ISO 비교에서
+// 항상 걸러졌다 — 값 자체는 안 고치고 읽을 때만 정규화해서 그런 오래된 행도 주별 보기에 나오게 한다.
+function normalizeTaskDate(raw: string): string {
+  const m = /^(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?$/.exec(raw || '');
+  if (!m) return raw;
+  return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+}
+
 // weekStart(월요일, 'yyyy-MM-dd')가 속한 월~토(6일) 범위의 업무만 돌려준다.
 export async function getWeeklyTasks(team: string | null, weekStart: string): Promise<Record<string, string>[]> {
   const all = await getKeyedList(WEEKLY_TASK_TABLE);
@@ -22,11 +30,23 @@ export async function getWeeklyTasks(team: string | null, weekStart: string): Pr
   }
 
   return all
+    .map((r): Record<string, string> => ({ ...r, 날짜: normalizeTaskDate(r['날짜']) }))
     .filter((r) => {
       if (team && r['소속팀'] !== team) return false;
       return validDates.has(r['날짜']);
     })
     .sort((a, b) => (a['날짜'] < b['날짜'] ? -1 : a['날짜'] > b['날짜'] ? 1 : 0));
+}
+
+// 마이페이지/주간업무 화면에서 "지난 기록" 훑어보기용 — 선택한 주와 상관없이 내가 등록한
+// 업무 전체를 최신순으로 돌려준다(휴가 태그 등 필터 없이 원본 그대로).
+export async function getMyWeeklyTaskHistory(email: string, limit = 30): Promise<Record<string, string>[]> {
+  const all = await getKeyedList(WEEKLY_TASK_TABLE);
+  return all
+    .filter((r) => (r['이메일(아이디)'] ?? '').toLowerCase() === email.toLowerCase())
+    .map((r): Record<string, string> => ({ ...r, 날짜: normalizeTaskDate(r['날짜']) }))
+    .sort((a, b) => (a['날짜'] < b['날짜'] ? 1 : a['날짜'] > b['날짜'] ? -1 : 0))
+    .slice(0, limit);
 }
 
 export async function addWeeklyTask(payload: Record<string, string>): Promise<Record<string, string>[]> {

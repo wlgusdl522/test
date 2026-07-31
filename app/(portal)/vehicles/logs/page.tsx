@@ -2,7 +2,7 @@ import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getMyPendingVehicleLogApprovals, getVehicleLogList } from '@/lib/mutate/vehicleLog';
 import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
-import { btn, btnDanger, btnSecondary, card, h1, h2, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h1, h2, input, inputBase, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
 import FormToggle from '@/components/FormToggle';
 import { actOnVehicleLogAction, addVehicleLogAction, deleteVehicleLogAction, updateVehicleLogAction } from './actions';
@@ -39,8 +39,8 @@ export default async function VehicleLogsPage({
       </div>
 
       <form method="get" className="flex gap-2 mb-3">
-        <input type="month" name="ym" defaultValue={ym ?? ''} className={`${input} w-auto`} />
-        <input name="q" defaultValue={q ?? ''} placeholder="목적/목적지/운전자 검색" className={`${input} w-auto`} />
+        <input type="month" name="ym" defaultValue={ym ?? ''} className={`${inputBase} w-auto`} />
+        <input name="q" defaultValue={q ?? ''} placeholder="목적/목적지/운전자 검색" className={`${inputBase} w-auto`} />
         <button type="submit" className={btnSecondary}>조회</button>
         {(ym || q) && <a href="/vehicles/logs" className="text-xs text-zinc-500 hover:underline self-center">초기화</a>}
       </form>
@@ -68,7 +68,7 @@ export default async function VehicleLogsPage({
                     <form action={actOnVehicleLogAction} className="flex items-center gap-1">
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="action" value="반려" />
-                      <input name="comment" placeholder="반려 사유" className={`${input} w-28 text-xs`} />
+                      <input name="comment" placeholder="반려 사유" className={`${inputBase} w-28 text-xs`} />
                       <button type="submit" className={btnDanger}>반려</button>
                     </form>
                   </td>
@@ -125,9 +125,9 @@ export default async function VehicleLogsPage({
         <div className="col-span-2 rounded-md border border-dashed border-zinc-300 dark:border-zinc-700 p-3">
           <label className="text-sm"><input type="checkbox" name="needsFuel" defaultChecked={editing?.주유필요 === 'Y'} /> 이번 운행에 주유함</label>
           <div className="mt-2 flex gap-3">
-            <input type="number" name="fuelAmount" defaultValue={editing?.주유금액 ?? ''} placeholder="주유금액" className={`${input} w-auto`} />
-            <input type="number" name="fuelUnitPrice" defaultValue={editing?.주유단가 ?? ''} placeholder="주유단가" className={`${input} w-auto`} />
-            <input type="number" name="fuelLiters" defaultValue={editing?.주유량 ?? ''} placeholder="주유량(L)" className={`${input} w-auto`} />
+            <input type="number" name="fuelAmount" defaultValue={editing?.주유금액 ?? ''} placeholder="주유금액" className={`${inputBase} w-auto`} />
+            <input type="number" name="fuelUnitPrice" defaultValue={editing?.주유단가 ?? ''} placeholder="주유단가" className={`${inputBase} w-auto`} />
+            <input type="number" name="fuelLiters" defaultValue={editing?.주유량 ?? ''} placeholder="주유량(L)" className={`${inputBase} w-auto`} />
           </div>
         </div>
         <div className="flex items-center gap-3">

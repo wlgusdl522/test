@@ -2,7 +2,7 @@ import { getBusinessList } from '@/lib/mutate/business';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { getStaffList } from '@/lib/mutate/staff';
 import { POSITION_LIST_SHEET_NAME, TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
-import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h1, input, inputBase, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
 import FormToggle from '@/components/FormToggle';
 import { deleteStaffAction, registerStaffAction, updateStaffAction } from './actions';
@@ -32,7 +32,7 @@ export default async function StaffPage({
       <h1 className={h1}>직원관리</h1>
 
       <form method="get" className="flex gap-2 mb-3">
-        <select name="team" defaultValue={teamFilter ?? ''} className={`${input} w-auto`}>
+        <select name="team" defaultValue={teamFilter ?? ''} className={`${inputBase} w-auto`}>
           <option value="">전체 팀</option>
           {teams.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
@@ -143,7 +143,7 @@ export default async function StaffPage({
           <div className="col-span-2 flex flex-wrap items-center gap-4 text-sm">
             <label><input type="radio" name="processType" value="신규생성" defaultChecked /> 신규 생성 (새 계정)</label>
             <label><input type="radio" name="processType" value="계정인계" /> 계정 인계 (기존 계정 이어받기)</label>
-            <select name="prevEmail" className={`${input} w-auto`}>
+            <select name="prevEmail" className={`${inputBase} w-auto`}>
               <option value="">이전 담당자 선택</option>
               {staff.map((s) => (
                 <option key={s['이메일(아이디)']} value={s['이메일(아이디)']}>{s.성명} ({s['이메일(아이디)']})</option>
