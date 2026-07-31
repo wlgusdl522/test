@@ -2,7 +2,8 @@ import { getMyWeeklyTaskHistory, getWeeklyTasks } from '@/lib/mutate/weeklyTask'
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { btnSecondary, card, h1, h2, inputBase, pageWide, tdClean, thClean } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
-import WeeklyTaskCalendar from '@/components/weekly/WeeklyTaskCalendar';
+import WeeklyTaskEntryTab from '@/components/weekly/WeeklyTaskEntryTab';
+import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -72,26 +73,23 @@ export default async function WeeklyPlanPage({
   return (
     <main className={pageWide}>
       <div className="flex items-center justify-between">
-        <h1 className={h1}>주간업무계획 (내 업무 입력)</h1>
+        <h1 className={h1}>주간업무계획</h1>
         <a href={`/print/weekly-plan-team?team=${encodeURIComponent(team)}&weekStart=${weekStart}`} target="_blank" className="text-sm text-brand hover:underline">인쇄</a>
       </div>
+
+      <WeeklyPlanTabs active="/weekly-plan" />
 
       <form method="get" className="flex items-center gap-2 mb-4">
         <input type="date" name="weekStart" defaultValue={weekStart} className={`${inputBase} w-auto`} />
         <button type="submit" className={btnSecondary}>조회</button>
       </form>
 
-      <WeeklyTaskCalendar
+      <WeeklyTaskEntryTab
         dayDates={dayDates}
         weekdayLabels={WEEKDAY_LABELS}
         initialTasks={myTasks.map((t) => ({ id: t.id, 날짜: t.날짜, 업무내용: t.업무내용, 회의록후보: t.회의록후보 }))}
         myName={me?.성명 ?? ''}
       />
-
-      <p className="mt-6 mb-2 text-sm text-zinc-500 flex gap-3">
-        <a href="/weekly-plan/meeting" className="hover:underline">회의록 정리</a>
-        <a href="/weekly-plan/review" className="hover:underline">부서장 확인</a>
-      </p>
 
       <h2 className={h2}>지난 기록 (최근 {history.length}건)</h2>
       {history.length === 0 ? (

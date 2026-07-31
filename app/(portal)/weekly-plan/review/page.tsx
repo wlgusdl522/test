@@ -5,6 +5,7 @@ import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { btn, btnSecondary, card, h1, h2, hint, input, inputBase, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
+import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
 import { setReviewCompletionAction } from './actions';
 import { toggleSupervisorReflectAction } from '@/app/(portal)/weekly-plan/actions';
 
@@ -40,6 +41,8 @@ export default async function ReviewPage({
         <h1 className={h1}>부서장 확인</h1>
         <a href={`/print/weekly-plan-rollup?weekStart=${weekStart}`} target="_blank" className="text-sm text-brand hover:underline">부서별 취합 인쇄</a>
       </div>
+
+      <WeeklyPlanTabs active="/weekly-plan/review" />
 
       <form method="get" className="flex gap-2 mb-6">
         <select name="team" defaultValue={reviewTeam} className={`${inputBase} w-auto`}>

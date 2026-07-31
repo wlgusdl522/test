@@ -1,0 +1,173 @@
+'use client';
+
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { btn, input } from '@/lib/ui';
+import { submitWeeklyPlanAction } from '@/app/(portal)/weekly-plan/actions';
+import { FULL_DAY_LEAVE_TYPES, LEAVE_TYPES, parseLeaveTag } from '@/lib/weeklyLeave';
+
+type Task = { id: string; 날짜: string; 업무내용: string; 회의록후보: string };
+type Row = { key: string; text: string; flagged: boolean };
+
+function toRows(tasks: Task[]): Row[] {
+  return tasks.map((t) => ({ key: t.id, text: t.업무내용, flagged: t.회의록후보 === 'TRUE' || t.회의록후보 === 'true' }));
+}
+
+export default function WeeklyTaskEntryTab({
+  dayDates,
+  weekdayLabels,
+  initialTasks,
+  myName,
+}: {
+  dayDates: string[];
+  weekdayLabels: string[];
+  initialTasks: Task[];
+  myName: string;
+}) {
+  const router = useRouter();
+  const [rowsByDay, setRowsByDay] = useState<Record<string, Row[]>>(() => {
+    const grouped: Record<string, Row[]> = {};
+    for (const iso of dayDates) grouped[iso] = toRows(initialTasks.filter((t) => t.날짜 === iso));
+    return grouped;
+  });
+  const [draftByDay, setDraftByDay] = useState<Record<string, string>>(() =>
+    Object.fromEntries(dayDates.map((iso) => [iso, '']))
+  );
+  const [statusText, setStatusText] = useState('');
+  const [isPending, startTransition] = useTransition();
+
+  function addRow(iso: string, text: string) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setRowsByDay((prev) => ({ ...prev, [iso]: [...prev[iso], { key: crypto.randomUUID(), text: trimmed, flagged: false }] }));
+    setDraftByDay((prev) => ({ ...prev, [iso]: '' }));
+  }
+
+  function removeRow(iso: string, key: string) {
+    setRowsByDay((prev) => ({ ...prev, [iso]: prev[iso].filter((r) => r.key !== key) }));
+  }
+
+  function toggleFlag(iso: string, key: string) {
+    setRowsByDay((prev) => ({
+      ...prev,
+      [iso]: prev[iso].map((r) => (r.key === key ? { ...r, flagged: !r.flagged } : r)),
+    }));
+  }
+
+  function handleLeaveChange(iso: string, type: string) {
+    setRowsByDay((prev) => {
+      const remaining = prev[iso].filter((r) => !parseLeaveTag(r.text));
+      let next: Row[];
+      if (!type) next = remaining;
+      else if (FULL_DAY_LEAVE_TYPES.includes(type)) next = [{ key: crypto.randomUUID(), text: `${myName}(${type})`, flagged: false }];
+      else next = [{ key: crypto.randomUUID(), text: `${myName}(${type})`, flagged: false }, ...remaining];
+      return { ...prev, [iso]: next };
+    });
+  }
+
+  function currentLeaveValue(iso: string): string {
+    const tag = (rowsByDay[iso] ?? []).map((r) => parseLeaveTag(r.text)).find(Boolean);
+    return tag?.type ?? '';
+  }
+
+  function handleSubmit() {
+    const payload: Record<string, { text: string; flagged: boolean }[]> = {};
+    for (const iso of dayDates) payload[iso] = (rowsByDay[iso] ?? []).map((r) => ({ text: r.text, flagged: r.flagged }));
+    setStatusText('제출 중...');
+    startTransition(async () => {
+      try {
+        await submitWeeklyPlanAction(payload);
+        setStatusText('제출 완료');
+        router.refresh();
+      } catch (err) {
+        setStatusText(err instanceof Error ? err.message : '제출 실패');
+      }
+    });
+  }
+
+  const flaggedCount = dayDates.reduce((sum, iso) => sum + (rowsByDay[iso] ?? []).filter((r) => r.flagged).length, 0);
+
+  return (
+    <div>
+      <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+        업무를 입력하고 회의록에 반영할 항목은 옆의 &quot;회의록&quot; 버튼을 눌러 표시하세요. 아래 <b>제출</b> 버튼을 눌러야 저장됩니다.
+      </p>
+      <div className="grid grid-cols-6 gap-3 mb-4">
+        {dayDates.map((iso, i) => {
+          const d = new Date(`${iso}T00:00:00`);
+          const rows = rowsByDay[iso] ?? [];
+          const leaveVal = currentLeaveValue(iso);
+          const isFullDayLeave = FULL_DAY_LEAVE_TYPES.includes(leaveVal);
+          return (
+            <div key={iso} className="flex flex-col gap-1.5">
+              <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                {weekdayLabels[i]} ({d.getMonth() + 1}/{d.getDate()})
+              </div>
+              <select
+                className={`${input} text-xs`}
+                value={leaveVal}
+                onChange={(e) => handleLeaveChange(iso, e.target.value)}
+              >
+                <option value="">휴가/교육 없음</option>
+                {LEAVE_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+
+              <div className="flex flex-col gap-1">
+                {rows.map((r) => (
+                  <div key={r.key} className="flex items-start gap-1">
+                    <span className="flex-1 text-xs leading-snug py-1 text-zinc-700 dark:text-zinc-300">• {r.text}</span>
+                    <button
+                      type="button"
+                      onClick={() => toggleFlag(iso, r.key)}
+                      className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] border transition-colors ${
+                        r.flagged
+                          ? 'bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-500/10 dark:border-amber-800 dark:text-amber-400'
+                          : 'border-zinc-200 text-zinc-400 hover:border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      회의록
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeRow(iso, r.key)}
+                      className="shrink-0 px-1 text-xs text-zinc-300 hover:text-red-500"
+                      aria-label="삭제"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {!isFullDayLeave && (
+                <input
+                  className={`${input} text-xs`}
+                  placeholder="업무 입력 후 Enter"
+                  value={draftByDay[iso] ?? ''}
+                  onChange={(e) => setDraftByDay((prev) => ({ ...prev, [iso]: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    addRow(iso, draftByDay[iso] ?? '');
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900 dark:bg-amber-500/10">
+        <span className="text-sm text-amber-800 dark:text-amber-400">회의록 반영 예정 {flaggedCount}건 — 제출해야 저장됩니다.</span>
+        <div className="flex items-center gap-2">
+          {statusText && <span className="text-xs text-zinc-500 dark:text-zinc-400">{statusText}</span>}
+          <button type="button" onClick={handleSubmit} disabled={isPending} className={btn}>
+            {isPending ? '제출 중...' : '이번 주 업무 제출'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

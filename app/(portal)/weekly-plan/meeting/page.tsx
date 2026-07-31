@@ -5,6 +5,7 @@ import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { summarizeLeaveEntries } from '@/lib/weeklyLeave';
 import { btn, btnSecondary, card, h1, h2, input, inputBase, label, page } from '@/lib/ui';
+import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
 import { saveMeetingMetaAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -37,6 +38,8 @@ export default async function MeetingPage({
   return (
     <main className={page}>
       <h1 className={h1}>회의록 정리</h1>
+
+      <WeeklyPlanTabs active="/weekly-plan/meeting" />
 
       <form method="get" className="flex gap-2 mb-6">
         <select name="team" defaultValue={team} className={`${inputBase} w-auto`}>
