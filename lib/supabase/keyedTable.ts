@@ -19,6 +19,23 @@ function recordKey(config: SupabaseKeyedTableConfig, record: Record<string, stri
     .join('::');
 }
 
+// PostgREST는 필터/on_conflict 파라미터의 컬럼명에 괄호가 있으면 함수호출 문법으로 오인해서
+// 파싱에 실패한다(예: "이메일(아이디)" -> "column 이메일 does not exist"). 이런 기본키를 쓰는
+// 테이블(직원관리)은 행 단위 .eq() 삭제/upsert 충돌판정을 아예 못 쓰므로 전체삭제+재삽입으로 우회한다.
+const UNSAFE_COLUMN_CHARS = /[()]/;
+
+function hasUnsafeKeyColumn(config: SupabaseKeyedTableConfig): boolean {
+  return keyColumns(config).some((col) => UNSAFE_COLUMN_CHARS.test(col));
+}
+
+function pickSafeFilterColumn(sample: Record<string, string> | undefined): string | null {
+  if (!sample) return null;
+  const col = Object.keys(sample).find(
+    (c) => !UNSAFE_COLUMN_CHARS.test(c) && c !== 'updated_at' && c !== '_synced_at'
+  );
+  return col ?? null;
+}
+
 export async function getAllFromSupabase(
   config: SupabaseKeyedTableConfig
 ): Promise<Record<string, string>[] | null> {
@@ -37,6 +54,20 @@ export async function mirrorKeyedTableToSupabase(
   const { data: current, error: readError } = await table(config.tableName).select('*');
   if (readError) {
     console.error(`[Supabase 미러 실패] ${config.tableName} 현재 목록 조회`, readError);
+    return;
+  }
+
+  if (hasUnsafeKeyColumn(config)) {
+    const safeCol = pickSafeFilterColumn(((current as Record<string, string>[] | null) ?? [])[0] ?? records[0]);
+    if (safeCol) {
+      const { error: deleteAllError } = await table(config.tableName).delete().not(safeCol, 'is', null);
+      if (deleteAllError) console.error(`[Supabase 미러 실패] ${config.tableName} 전체 삭제`, deleteAllError);
+    }
+    if (records.length > 0) {
+      const rows = records.map((r) => ({ ...r, updated_at: new Date().toISOString() }));
+      const { error: insertError } = await table(config.tableName).insert(rows);
+      if (insertError) console.error(`[Supabase 미러 실패] ${config.tableName} 재삽입`, insertError);
+    }
     return;
   }
 

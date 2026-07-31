@@ -13,25 +13,24 @@ export async function requireViewerEmail(): Promise<string> {
   return email.toLowerCase();
 }
 
+// 이메일(아이디) 컬럼명에 괄호가 들어있는데, PostgREST는 필터 파라미터의 컬럼명에 괄호가 있으면
+// 함수 호출 문법으로 오인해서 엉뚱하게 파싱해버린다("column 직원관리.이메일 does not exist" 에러).
+// 그래서 이 컬럼으로는 .eq() 필터를 절대 못 쓰고, 항상 전체를 읽어서 JS에서 걸러야 한다
+// (직원관리는 수십~수백 행 규모라 전체 조회해도 부담 없음).
 export async function getViewerStaffRecord(): Promise<Record<string, string> | null> {
   const email = await requireViewerEmail();
-  const { data, error } = await getSupabaseServerClient()
-    .from('직원관리')
-    .select('*')
-    .eq('이메일(아이디)', email)
-    .maybeSingle();
+  const { data, error } = await getSupabaseServerClient().from('직원관리').select('*');
   if (error || !data) return null;
-  return data as Record<string, string>;
+  const match = (data as Record<string, string>[]).find(
+    (r) => (r['이메일(아이디)'] ?? '').toLowerCase() === email
+  );
+  return match ?? null;
 }
 
 async function getViewerPosition(email: string): Promise<string> {
-  const { data, error } = await getSupabaseServerClient()
-    .from('직원관리')
-    .select('직급/직책')
-    .eq('이메일(아이디)', email)
-    .maybeSingle();
-  if (error || !data) return '';
-  return (data as any)['직급/직책'] ?? '';
+  const me = await getViewerStaffRecord();
+  if (!me || (me['이메일(아이디)'] ?? '').toLowerCase() !== email) return '';
+  return me['직급/직책'] ?? '';
 }
 
 export async function requireCanManagePermissions(): Promise<void> {
