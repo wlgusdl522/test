@@ -42,6 +42,11 @@ export default function WeeklyTaskCalendar({
   const [statusText, setStatusText] = useState('');
   const [, startTransition] = useTransition();
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  // textByDay를 그대로 미러링 — 저장 요청이 도는 동안(1~2초) 사용자가 더 입력한 경우,
+  // 응답이 그 사이의 최신 입력을 덮어쓰지 않도록 "요청 시점 텍스트 == 지금 화면 텍스트"인지 비교하는 용도.
+  const liveTextRef = useRef<Record<string, string>>(
+    Object.fromEntries(dayDates.map((iso) => [iso, toBulletText(initialTasks.filter((t) => t.날짜 === iso))]))
+  );
 
   // 입력이 멈추고 나서 자동 저장 — blur(포커스 이탈) 전에도 회의록 체크 목록이 곧바로 뜨도록.
   function scheduleAutoSync(iso: string, text: string) {
@@ -57,8 +62,13 @@ export default function WeeklyTaskCalendar({
     setStatusText('저장 중...');
     try {
       const updated = await syncMyWeeklyTaskDayAction(iso, lines);
+      // 응답이 오는 사이 사용자가 계속 타이핑해서 화면 내용이 이미 더 앞서갔다면,
+      // 이 요청은 낡은 스냅샷이므로 화면을 덮어쓰지 않는다 — 다음 자동저장/blur가 최신 내용을 다시 저장한다.
+      if (liveTextRef.current[iso] !== text) return;
       setTasksByDay((prev) => ({ ...prev, [iso]: updated as Task[] }));
-      setTextByDay((prev) => ({ ...prev, [iso]: toBulletText(updated as Task[]) }));
+      const savedText = toBulletText(updated as Task[]);
+      liveTextRef.current[iso] = savedText;
+      setTextByDay((prev) => ({ ...prev, [iso]: savedText }));
       setStatusText('저장됨');
     } catch (err) {
       setStatusText(err instanceof Error ? err.message : '저장 실패');
@@ -72,6 +82,7 @@ export default function WeeklyTaskCalendar({
     else if (FULL_DAY_LEAVE_TYPES.includes(type)) newLines = [`${myName}(${type})`];
     else newLines = [`${myName}(${type})`, ...remaining];
     const text = newLines.length ? `• ${newLines.join('\n• ')}` : '';
+    liveTextRef.current[iso] = text;
     setTextByDay((prev) => ({ ...prev, [iso]: text }));
     startTransition(() => {
       syncDay(iso, text);
@@ -119,7 +130,10 @@ export default function WeeklyTaskCalendar({
                 value={textByDay[iso] ?? ''}
                 disabled={isFullDayLeave}
                 onFocus={(e) => {
-                  if (!e.target.value) setTextByDay((prev) => ({ ...prev, [iso]: '• ' }));
+                  if (!e.target.value) {
+                    liveTextRef.current[iso] = '• ';
+                    setTextByDay((prev) => ({ ...prev, [iso]: '• ' }));
+                  }
                 }}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter') return;
@@ -127,6 +141,7 @@ export default function WeeklyTaskCalendar({
                   const el = e.currentTarget;
                   const start = el.selectionStart, end = el.selectionEnd;
                   const value = `${el.value.slice(0, start)}\n• ${el.value.slice(end)}`;
+                  liveTextRef.current[iso] = value;
                   setTextByDay((prev) => ({ ...prev, [iso]: value }));
                   scheduleAutoSync(iso, value);
                   requestAnimationFrame(() => {
@@ -135,6 +150,7 @@ export default function WeeklyTaskCalendar({
                 }}
                 onChange={(e) => {
                   const value = e.target.value;
+                  liveTextRef.current[iso] = value;
                   setTextByDay((prev) => ({ ...prev, [iso]: value }));
                   scheduleAutoSync(iso, value);
                 }}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NAV_SECTIONS, STANDALONE_NAV_ITEMS } from '@/lib/nav';
@@ -42,7 +43,7 @@ export default function Sidebar({ userName, userSubtitle }: { userName: string; 
   return (
     <nav className="flex w-60 shrink-0 flex-col border-r border-zinc-200 bg-white px-3 py-5 dark:border-zinc-800 dark:bg-zinc-950">
       <Link href="/" className="mb-5 flex items-center gap-2 px-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-brand text-xs font-bold text-white">서</span>
+        <Image src="/logo-icon.png" alt="" width={28} height={26} className="h-7 w-auto shrink-0" priority />
         <span className="text-[13px] font-bold leading-tight text-zinc-900 dark:text-zinc-100">
           서대문노인종합
           <br />
