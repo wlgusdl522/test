@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NAV_SECTIONS, STANDALONE_NAV_ITEMS } from '@/lib/nav';
+import { signOutAction } from '@/lib/session-actions';
 
 const SECTION_ICON: Record<string, string> = {
   인사관리: 'M17 20h5v-1a4 4 0 00-3-3.87M9 20H4v-1a4 4 0 013-3.87m6-3.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-4-4',
@@ -23,7 +24,7 @@ function SectionIcon({ label }: { label: string }) {
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ userName, userSubtitle }: { userName: string; userSubtitle: string }) {
   const pathname = usePathname();
   const [openSections, setOpenSections] = useState<Set<string>>(
     () => new Set(NAV_SECTIONS.filter((s) => s.items.some((i) => i.href === pathname)).map((s) => s.label))
@@ -117,6 +118,26 @@ export default function Sidebar() {
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-2 border-t border-zinc-100 pt-2 dark:border-zinc-900">
+        <div className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-2">
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">{userName}</p>
+            <p className="truncate text-[11.5px] text-zinc-500 dark:text-zinc-400">{userSubtitle}</p>
+          </div>
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              title="로그아웃"
+              className="shrink-0 rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-900"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-4 w-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m0-8H5a2 2 0 00-2 2v12a2 2 0 002 2h2" />
+              </svg>
+            </button>
+          </form>
+        </div>
       </div>
     </nav>
   );

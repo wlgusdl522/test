@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { btn } from '@/lib/ui';
+import Modal from '@/components/Modal';
 
 export default function FormToggle({
   label,
@@ -22,16 +23,9 @@ export default function FormToggle({
         </button>
       )}
       {open && (
-        <div>
+        <Modal title={label} onClose={() => setOpen(false)}>
           {children}
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="mt-2 text-xs text-zinc-500 hover:underline"
-          >
-            접기
-          </button>
-        </div>
+        </Modal>
       )}
     </div>
   );

@@ -2,8 +2,25 @@ import { getBusinessList } from '@/lib/mutate/business';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { getStaffList } from '@/lib/mutate/staff';
 import { POSITION_LIST_SHEET_NAME, TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
-import { btn, btnDanger, btnSecondary, card, h1, input, inputBase, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import {
+  btn,
+  btnDanger,
+  btnSecondary,
+  cardTableWrap,
+  h1,
+  input,
+  inputBase,
+  label,
+  pageFluid,
+  pageSubtitle,
+  selectFilter,
+  tableClean,
+  tdClean,
+  thClean,
+  trHoverClean,
+} from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
+import Tag from '@/components/Tag';
 import FormToggle from '@/components/FormToggle';
 import { deleteStaffAction, registerStaffAction, updateStaffAction } from './actions';
 
@@ -28,21 +45,16 @@ export default async function StaffPage({
   const selectedBusinesses = editing ? editing.담당사업.split(',').map((v) => v.trim()).filter(Boolean) : [];
 
   return (
-    <main className={pageWide}>
-      <h1 className={h1}>직원관리</h1>
-
-      <form method="get" className="flex gap-2 mb-3">
-        <select name="team" defaultValue={teamFilter ?? ''} className={`${inputBase} w-auto`}>
-          <option value="">전체 팀</option>
-          {teams.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <button type="submit" className={btnSecondary}>조회</button>
-      </form>
-
-      <FormToggle label={editing ? '직원 수정' : '신규 등록'} defaultOpen={!!editing}>
+    <main className={pageFluid}>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className={h1}>직원관리</h1>
+          <p className={pageSubtitle}>{teamFilter ? `${teamFilter} · ` : '전체 · '}{staff.length}명</p>
+        </div>
+        <FormToggle label={editing ? '직원 수정' : '신규 등록'} defaultOpen={!!editing}>
       <form
         action={editing ? updateStaffAction : registerStaffAction}
-        className={`${card} grid grid-cols-2 gap-3`}
+        className="grid grid-cols-2 gap-3"
       >
         {editing && <input type="hidden" name="originalEmail" value={editing['이메일(아이디)']} />}
 
@@ -158,28 +170,37 @@ export default async function StaffPage({
         </div>
       </form>
       </FormToggle>
+      </div>
 
-      <div className={tableWrap}><table className={table}>
+      <form method="get" className="mb-4 flex items-center gap-2">
+        <select name="team" defaultValue={teamFilter ?? ''} className={selectFilter}>
+          <option value="">전체 팀</option>
+          {teams.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <button type="submit" className={btnSecondary}>조회</button>
+      </form>
+
+      <div className={cardTableWrap}><table className={tableClean}>
         <thead>
           <tr>
-            <th className={th}>이메일</th><th className={th}>성명</th><th className={th}>소속팀</th>
-            <th className={th}>담당사업</th><th className={th}>직급/직책</th><th className={th}>재직상태</th>
-            <th className={th}>입사일</th><th className={th}>내선</th><th className={th}>휴대폰</th><th className={th}></th>
+            <th className={thClean}>이메일</th><th className={thClean}>성명</th><th className={thClean}>소속팀</th>
+            <th className={thClean}>담당사업</th><th className={thClean}>직급/직책</th><th className={thClean}>재직상태</th>
+            <th className={thClean}>입사일</th><th className={thClean}>내선</th><th className={thClean}>휴대폰</th><th className={thClean}></th>
           </tr>
         </thead>
         <tbody>
           {staff.map((s) => (
-            <tr key={s['이메일(아이디)']} className={trZebraHover}>
-              <td className={td}>{s['이메일(아이디)']}</td>
-              <td className={td}>{s.성명}</td>
-              <td className={td}>{s.소속팀}</td>
-              <td className={td}>{s.담당사업}</td>
-              <td className={td}>{s['직급/직책']}</td>
-              <td className={td}><StatusBadge status={s.재직상태} /></td>
-              <td className={td}>{s.입사일}</td>
-              <td className={td}>{s.내선번호}</td>
-              <td className={td}>{s.휴대폰번호}</td>
-              <td className={`${td} flex gap-1.5`}>
+            <tr key={s['이메일(아이디)']} className={trHoverClean}>
+              <td className={tdClean}>{s['이메일(아이디)']}</td>
+              <td className={`${tdClean} font-medium text-zinc-900 dark:text-zinc-100`}>{s.성명}</td>
+              <td className={tdClean}>{s.소속팀}</td>
+              <td className={tdClean}>{s.담당사업}</td>
+              <td className={tdClean}><Tag label={s['직급/직책']} /></td>
+              <td className={tdClean}><StatusBadge status={s.재직상태} /></td>
+              <td className={tdClean}>{s.입사일}</td>
+              <td className={tdClean}>{s.내선번호}</td>
+              <td className={tdClean}>{s.휴대폰번호}</td>
+              <td className={`${tdClean} flex gap-1.5`}>
                 <a href={`/staff?edit=${encodeURIComponent(s['이메일(아이디)'])}`} className={btnSecondary}>수정</a>
                 <form action={deleteStaffAction}>
                   <input type="hidden" name="email" value={s['이메일(아이디)']} />
