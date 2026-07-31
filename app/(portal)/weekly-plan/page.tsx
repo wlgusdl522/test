@@ -1,6 +1,6 @@
 import { getMyWeeklyTaskHistory, getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { btnSecondary, h1, h2, inputBase, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btnSecondary, card, h1, h2, inputBase, pageWide, tdClean, thClean } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
 import WeeklyTaskCalendar from '@/components/weekly/WeeklyTaskCalendar';
 
@@ -8,6 +8,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const WEEKDAY_LABELS = ['월', '화', '수', '목', '금', '토'];
+const WEEKDAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
 
 function mondayOf(date: Date): string {
   const d = new Date(date);
@@ -15,6 +16,34 @@ function mondayOf(date: Date): string {
   const diff = day === 0 ? -6 : 1 - day; // 이번 주 월요일까지 며칠 이동
   d.setDate(d.getDate() + diff);
   return d.toISOString().slice(0, 10);
+}
+
+function addDays(iso: string, n: number): string {
+  const d = new Date(`${iso}T00:00:00`);
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function formatDayLabel(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`);
+  return `${d.getMonth() + 1}/${d.getDate()}(${WEEKDAY_KO[d.getDay()]})`;
+}
+
+// 지난 기록을 월~토 단위 주차로 묶어서 최신 주가 위로 오게 정리한다.
+function groupHistoryByWeek(rows: Record<string, string>[]) {
+  const map = new Map<string, Record<string, string>[]>();
+  for (const r of rows) {
+    if (!r['날짜']) continue;
+    const weekStart = mondayOf(new Date(`${r['날짜']}T00:00:00`));
+    if (!map.has(weekStart)) map.set(weekStart, []);
+    map.get(weekStart)!.push(r);
+  }
+  return Array.from(map.entries())
+    .sort(([a], [b]) => (a < b ? 1 : -1))
+    .map(([weekStart, tasks]) => ({
+      weekStart,
+      tasks: tasks.sort((a, b) => (a['날짜'] < b['날짜'] ? -1 : a['날짜'] > b['날짜'] ? 1 : 0)),
+    }));
 }
 
 export default async function WeeklyPlanPage({
@@ -65,22 +94,40 @@ export default async function WeeklyPlanPage({
       </p>
 
       <h2 className={h2}>지난 기록 (최근 {history.length}건)</h2>
-      <div className={tableWrap}><table className={table}>
-        <thead>
-          <tr><th className={th}>날짜</th><th className={th}>업무내용</th><th className={th}>회의록후보</th></tr>
-        </thead>
-        <tbody>
-          {history.length === 0 ? (
-            <tr><td className={td} colSpan={3} style={{ textAlign: 'center' }}>등록된 업무 이력이 없습니다.</td></tr>
-          ) : history.map((t) => (
-            <tr key={t.id} className={trZebraHover}>
-              <td className={td}>{t.날짜}</td>
-              <td className={td}>{t.업무내용}</td>
-              <td className={td}>{(t.회의록후보 === 'TRUE' || t.회의록후보 === 'true') && <StatusBadge status="완료" />}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table></div>
+      {history.length === 0 ? (
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">등록된 업무 이력이 없습니다.</p>
+      ) : (
+        groupHistoryByWeek(history).map(({ weekStart, tasks }) => (
+          <div key={weekStart} className={card}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+                {formatDayLabel(weekStart)} ~ {formatDayLabel(addDays(weekStart, 5))}
+              </span>
+              <span className="text-xs text-zinc-400">{tasks.length}건</span>
+            </div>
+            <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+              <table className="w-full text-[13.5px] bg-white dark:bg-zinc-900">
+                <thead>
+                  <tr>
+                    <th className={thClean}>날짜</th>
+                    <th className={thClean}>업무내용</th>
+                    <th className={thClean}>회의록후보</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tasks.map((t) => (
+                    <tr key={t.id}>
+                      <td className={tdClean}>{formatDayLabel(t['날짜'])}</td>
+                      <td className={tdClean}>{t['업무내용']}</td>
+                      <td className={tdClean}>{(t['회의록후보'] === 'TRUE' || t['회의록후보'] === 'true') && <StatusBadge status="완료" />}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))
+      )}
     </main>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { input, label } from '@/lib/ui';
 import { syncMyWeeklyTaskDayAction, toggleHighlightAction } from '@/app/(portal)/weekly-plan/actions';
 import { FULL_DAY_LEAVE_TYPES, LEAVE_TYPES, parseLeaveTag } from '@/lib/weeklyLeave';
@@ -41,8 +41,18 @@ export default function WeeklyTaskCalendar({
   });
   const [statusText, setStatusText] = useState('');
   const [, startTransition] = useTransition();
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  // 입력이 멈추고 나서 자동 저장 — blur(포커스 이탈) 전에도 회의록 체크 목록이 곧바로 뜨도록.
+  function scheduleAutoSync(iso: string, text: string) {
+    clearTimeout(debounceTimers.current[iso]);
+    debounceTimers.current[iso] = setTimeout(() => {
+      syncDay(iso, text);
+    }, 1200);
+  }
 
   async function syncDay(iso: string, text: string) {
+    clearTimeout(debounceTimers.current[iso]);
     const lines = parseBulletLines(text);
     setStatusText('저장 중...');
     try {
@@ -118,11 +128,16 @@ export default function WeeklyTaskCalendar({
                   const start = el.selectionStart, end = el.selectionEnd;
                   const value = `${el.value.slice(0, start)}\n• ${el.value.slice(end)}`;
                   setTextByDay((prev) => ({ ...prev, [iso]: value }));
+                  scheduleAutoSync(iso, value);
                   requestAnimationFrame(() => {
                     el.selectionStart = el.selectionEnd = start + 3;
                   });
                 }}
-                onChange={(e) => setTextByDay((prev) => ({ ...prev, [iso]: e.target.value }))}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setTextByDay((prev) => ({ ...prev, [iso]: value }));
+                  scheduleAutoSync(iso, value);
+                }}
                 onBlur={(e) => syncDay(iso, e.target.value)}
               />
               {dayTasks.length > 0 && (
