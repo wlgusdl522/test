@@ -13,6 +13,29 @@ function toRows(tasks: Task[]): Row[] {
   return tasks.map((t) => ({ key: t.id, text: t.업무내용, flagged: t.회의록후보 === 'TRUE' || t.회의록후보 === 'true' }));
 }
 
+function formatMD(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+// 같은 업무내용이 여러 날 반복 체크되면 한 줄로 합쳐서 "업무내용(첫날~마지막날)"로 보여준다.
+function buildMeetingSummaryLines(dayDates: string[], rowsByDay: Record<string, Row[]>): string[] {
+  const datesByText = new Map<string, string[]>();
+  for (const iso of dayDates) {
+    for (const r of rowsByDay[iso] ?? []) {
+      if (!r.flagged) continue;
+      if (!datesByText.has(r.text)) datesByText.set(r.text, []);
+      datesByText.get(r.text)!.push(iso);
+    }
+  }
+  return Array.from(datesByText.entries()).map(([text, dates]) => {
+    const sorted = [...dates].sort();
+    const dateLabel =
+      sorted.length === 1 ? formatMD(sorted[0]) : `${formatMD(sorted[0])}~${formatMD(sorted[sorted.length - 1])}`;
+    return `${text}(${dateLabel})`;
+  });
+}
+
 export default function WeeklyTaskEntryTab({
   dayDates,
   weekdayLabels,
@@ -85,7 +108,7 @@ export default function WeeklyTaskEntryTab({
     });
   }
 
-  const flaggedCount = dayDates.reduce((sum, iso) => sum + (rowsByDay[iso] ?? []).filter((r) => r.flagged).length, 0);
+  const meetingSummaryLines = buildMeetingSummaryLines(dayDates, rowsByDay);
 
   return (
     <div>
@@ -160,14 +183,25 @@ export default function WeeklyTaskEntryTab({
         })}
       </div>
 
-      <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900 dark:bg-amber-500/10">
-        <span className="text-sm text-amber-800 dark:text-amber-400">회의록 반영 예정 {flaggedCount}건 — 제출해야 저장됩니다.</span>
-        <div className="flex items-center gap-2">
-          {statusText && <span className="text-xs text-zinc-500 dark:text-zinc-400">{statusText}</span>}
-          <button type="button" onClick={handleSubmit} disabled={isPending} className={btn}>
-            {isPending ? '제출 중...' : '이번 주 업무 제출'}
-          </button>
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900 dark:bg-amber-500/10">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-amber-800 dark:text-amber-400">
+            회의록 반영 예정 ({meetingSummaryLines.length}건) — 제출해야 저장됩니다.
+          </span>
+          <div className="flex items-center gap-2">
+            {statusText && <span className="text-xs text-zinc-500 dark:text-zinc-400">{statusText}</span>}
+            <button type="button" onClick={handleSubmit} disabled={isPending} className={btn}>
+              {isPending ? '제출 중...' : '이번 주 업무 제출'}
+            </button>
+          </div>
         </div>
+        {meetingSummaryLines.length > 0 && (
+          <div className="mt-2 flex flex-col gap-0.5">
+            {meetingSummaryLines.map((line) => (
+              <span key={line} className="text-sm text-amber-900 dark:text-amber-300">{line}</span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
