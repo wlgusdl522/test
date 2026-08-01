@@ -27,7 +27,8 @@ export default async function VehicleMyRequestsPage({
 
   const requests = allRequests
     .filter((r) => !mineOnly || (r.신청자이메일 ?? '').toLowerCase() === viewerEmail)
-    .filter((r) => !activeYm || r.사용일자.startsWith(activeYm));
+    .filter((r) => !activeYm || r.사용일자.startsWith(activeYm))
+    .sort((a, b) => a.사용일자.localeCompare(b.사용일자) || (a.출발시간 || '').localeCompare(b.출발시간 || ''));
 
   const mineParam = mineOnly ? '&mine=1' : '';
 

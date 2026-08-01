@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { getSheetsClient } from '@/lib/sheets/client';
+import { getAllRecords } from '@/lib/sheets/keyedTable';
 import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord } from '@/lib/mutate/keyedTable';
 import { VEHICLE_REQUEST_TABLE } from '@/lib/sheets/registry';
 import { mirrorKeyedTableToSupabase } from '@/lib/supabase/keyedTable';
@@ -28,8 +29,11 @@ function timesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string
   return aS < bE && bS < aE;
 }
 
+// 겹침 확인은 Supabase 캐시가 아니라 항상 시트(원본)에서 직접 읽는다 — 미러링이
+// 밀리거나 실패해도(방금 대량으로 등록한 반복 신청 직후 등) 캐시가 새 데이터를 아직
+// 못 따라가서 중복 검사가 뚫리는 일이 없도록.
 async function assertNoOverlap(payload: Record<string, string>, excludeId?: string) {
-  const all = await getKeyedList(VEHICLE_REQUEST_TABLE);
+  const all = await getAllRecords(VEHICLE_REQUEST_TABLE);
   const conflict = all.find(
     (r) =>
       r.id !== excludeId &&
@@ -100,7 +104,7 @@ export async function addVehicleRequestsRecurring(
   const groupId = randomUUID();
   const MAX_OCCURRENCES = 260;
   const rows: string[][] = [];
-  const existing = await getKeyedList(VEHICLE_REQUEST_TABLE);
+  const existing = await getAllRecords(VEHICLE_REQUEST_TABLE);
 
   const cur = new Date(start);
   while (cur <= end) {
