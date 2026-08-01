@@ -78,7 +78,7 @@ export default function MeetingComposer({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
         <label className={label}>
           회의시간
           <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className={input} />

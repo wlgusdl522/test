@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { btn, btnSecondary, input, inputBase, table, td, th, tableWrap } from '@/lib/ui';
+import { badgeBase, badgeTone, btn, btnSecondary, input, inputBase, table, td, th, tableWrap } from '@/lib/ui';
 import { submitWeeklyPlanAction } from '@/app/(portal)/weekly-plan/actions';
 import { FULL_DAY_LEAVE_TYPES, LEAVE_TYPES, parseLeaveTag } from '@/lib/weeklyLeave';
 
@@ -139,22 +139,20 @@ export default function WeeklyPlanWorkspace({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       <div>
-        <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
-          업무를 입력하고 회의록에 반영할 항목은 옆의 &quot;회의록&quot; 버튼을 눌러 표시하세요. 아래 <b>제출</b> 버튼을 눌러야 저장됩니다.
-        </p>
-        <div className="flex flex-col mb-4">
+        <div className="flex flex-col mb-4 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
           {dayDates.map((iso, i) => {
             const d = new Date(`${iso}T00:00:00`);
             const rows = rowsByDay[iso] ?? [];
             const leaveVal = currentLeaveValue(iso);
             const isFullDayLeave = FULL_DAY_LEAVE_TYPES.includes(leaveVal);
             return (
-              <div key={iso} className="py-3 border-b border-zinc-100 dark:border-zinc-800 last:border-b-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">{weekdayLabels[i]}</span>
-                  <span className="text-xs text-zinc-400">{d.getMonth() + 1}/{d.getDate()}</span>
+              <div key={iso} className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 last:border-b-0 odd:bg-zinc-50/60 dark:odd:bg-zinc-900/40">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <span className="inline-flex items-center justify-center rounded-md bg-brand-tint px-2 py-0.5 text-xs font-semibold text-brand-dark dark:text-brand">
+                    {weekdayLabels[i]} {d.getMonth() + 1}/{d.getDate()}
+                  </span>
                   <select
-                    className={`${input} w-auto ml-auto text-xs`}
+                    className={`${input} w-auto ml-auto text-xs py-1`}
                     value={leaveVal}
                     onChange={(e) => handleLeaveChange(iso, e.target.value)}
                   >
@@ -165,32 +163,34 @@ export default function WeeklyPlanWorkspace({
                   </select>
                 </div>
 
-                <div className="flex flex-col gap-1 mb-2">
-                  {rows.map((r) => (
-                    <div key={r.key} className="flex items-center gap-2">
-                      <span className="flex-1 text-sm py-1 text-zinc-700 dark:text-zinc-300">• {r.text}</span>
-                      <button
-                        type="button"
-                        onClick={() => toggleFlag(iso, r.key)}
-                        className={`shrink-0 rounded px-2 py-1 text-[11px] border transition-colors ${
-                          r.flagged
-                            ? 'bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-500/10 dark:border-amber-800 dark:text-amber-400'
-                            : 'border-zinc-200 text-zinc-400 hover:border-zinc-300 dark:border-zinc-700'
-                        }`}
-                      >
-                        회의록
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeRow(iso, r.key)}
-                        className="shrink-0 px-1.5 text-sm text-zinc-300 hover:text-red-500"
-                        aria-label="삭제"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                {rows.length > 0 && (
+                  <div className="flex flex-col gap-1 mb-2">
+                    {rows.map((r) => (
+                      <div key={r.key} className="flex items-center gap-2">
+                        <span className="flex-1 text-sm py-1 text-zinc-700 dark:text-zinc-300">{r.text}</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleFlag(iso, r.key)}
+                          className={`shrink-0 rounded px-2 py-1 text-[11px] border transition-colors ${
+                            r.flagged
+                              ? 'bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-500/10 dark:border-amber-800 dark:text-amber-400'
+                              : 'border-zinc-200 text-zinc-400 hover:border-zinc-300 dark:border-zinc-700'
+                          }`}
+                        >
+                          회의록
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeRow(iso, r.key)}
+                          className="shrink-0 px-1.5 text-sm text-zinc-300 hover:text-red-500"
+                          aria-label="삭제"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {!isFullDayLeave && (
                   <input
@@ -211,11 +211,9 @@ export default function WeeklyPlanWorkspace({
           })}
         </div>
 
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900 dark:bg-amber-500/10">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-amber-800 dark:text-amber-400">
-              회의록 반영 예정 ({meetingSummaryLines.length}건) — 제출해야 저장됩니다.
-            </span>
+        <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex items-center justify-between gap-3">
+            <span className={`${badgeBase} ${badgeTone.amber}`}>회의록 반영 {meetingSummaryLines.length}건</span>
             <div className="flex items-center gap-2">
               {statusText && <span className="text-xs text-zinc-500 dark:text-zinc-400">{statusText}</span>}
               <button type="button" onClick={handleSubmit} disabled={isPending} className={btn}>
@@ -224,9 +222,9 @@ export default function WeeklyPlanWorkspace({
             </div>
           </div>
           {meetingSummaryLines.length > 0 && (
-            <div className="mt-2 flex flex-col gap-0.5">
+            <div className="mt-2.5 flex flex-col gap-0.5 border-t border-zinc-100 dark:border-zinc-800 pt-2.5">
               {meetingSummaryLines.map((line) => (
-                <span key={line} className="text-sm text-amber-900 dark:text-amber-300">{line}</span>
+                <span key={line} className="text-sm text-zinc-600 dark:text-zinc-400">{line}</span>
               ))}
             </div>
           )}
@@ -235,7 +233,7 @@ export default function WeeklyPlanWorkspace({
 
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">팀 조회 (참고용)</h3>
+          <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">팀 조회</h3>
           <form method="get" className="flex items-center gap-1.5 ml-auto">
             <input type="hidden" name="weekStart" value={weekStart} />
             <select name="viewTeam" defaultValue={viewTeam} className={`${inputBase} w-auto text-xs py-1`}>
@@ -287,9 +285,6 @@ export default function WeeklyPlanWorkspace({
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-xs text-zinc-400">
-          {isOwnTeam ? '내 줄은 왼쪽 입력에 맞춰 실시간으로 바뀌고, 나머지는 이미 저장된 내용이에요.' : '다른 팀은 조회 전용이며 이미 저장된 내용만 보여줘요.'}
-        </p>
       </div>
     </div>
   );
