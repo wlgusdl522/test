@@ -4,6 +4,7 @@ import { getMeetingMeta } from '@/lib/mutate/meeting';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { summarizeLeaveEntries } from '@/lib/weeklyLeave';
+import { groupHighlightedTasks } from '@/lib/meetingSummary';
 import { btn, btnSecondary, card, h1, h2, input, inputBase, label, page } from '@/lib/ui';
 import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
 import { saveMeetingMetaAction } from './actions';
@@ -17,25 +18,6 @@ function mondayOf(date: Date): string {
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
   return d.toISOString().slice(0, 10);
-}
-
-function formatMD(iso: string): string {
-  const d = new Date(`${iso}T00:00:00`);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-
-// 같은 사람이 같은 업무를 여러 날 체크했으면 한 줄로 합쳐서 "업무내용(7/27, 7/29)"로 보여준다.
-function groupHighlighted(tasks: Record<string, string>[]): { name: string; label: string }[] {
-  const map = new Map<string, { name: string; text: string; dates: string[] }>();
-  for (const t of tasks) {
-    const key = `${t.성명}::${t.업무내용}`;
-    if (!map.has(key)) map.set(key, { name: t.성명, text: t.업무내용, dates: [] });
-    map.get(key)!.dates.push(t.날짜);
-  }
-  return Array.from(map.values()).map(({ name, text, dates }) => {
-    const dateLabel = [...dates].sort().map(formatMD).join(', ');
-    return { name, label: `${text}(${dateLabel})` };
-  });
 }
 
 export default async function MeetingPage({
@@ -56,7 +38,10 @@ export default async function MeetingPage({
 
   return (
     <main className={page}>
-      <h1 className={h1}>회의록 정리</h1>
+      <div className="flex items-center justify-between">
+        <h1 className={h1}>회의록 정리</h1>
+        <a href={`/print/weekly-plan-meeting?team=${encodeURIComponent(team)}&date=${date}`} target="_blank" className="text-sm text-brand hover:underline">회의록 인쇄</a>
+      </div>
 
       <WeeklyPlanTabs active="/weekly-plan/meeting" />
 
@@ -73,7 +58,7 @@ export default async function MeetingPage({
         <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-400">체크된 업무가 없습니다.</p>
       ) : (
         <ul className="mb-6 list-disc pl-5 text-sm text-zinc-700 dark:text-zinc-300">
-          {groupHighlighted(highlightedTasks).map((g, i) => (
+          {groupHighlightedTasks(highlightedTasks).map((g, i) => (
             <li key={i}><b>{g.name}</b>: {g.label}</li>
           ))}
         </ul>
