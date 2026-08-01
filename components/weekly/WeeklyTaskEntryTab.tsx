@@ -18,7 +18,7 @@ function formatMD(iso: string): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-// 같은 업무내용이 여러 날 반복 체크되면 한 줄로 합쳐서 "업무내용(첫날~마지막날)"로 보여준다.
+// 같은 업무내용이 여러 날 반복 체크되면 한 줄로 합쳐서 "업무내용(7/27, 7/29)"로 보여준다.
 function buildMeetingSummaryLines(dayDates: string[], rowsByDay: Record<string, Row[]>): string[] {
   const datesByText = new Map<string, string[]>();
   for (const iso of dayDates) {
@@ -29,9 +29,7 @@ function buildMeetingSummaryLines(dayDates: string[], rowsByDay: Record<string, 
     }
   }
   return Array.from(datesByText.entries()).map(([text, dates]) => {
-    const sorted = [...dates].sort();
-    const dateLabel =
-      sorted.length === 1 ? formatMD(sorted[0]) : `${formatMD(sorted[0])}~${formatMD(sorted[sorted.length - 1])}`;
+    const dateLabel = [...dates].sort().map(formatMD).join(', ');
     return `${text}(${dateLabel})`;
   });
 }
@@ -70,11 +68,18 @@ export default function WeeklyTaskEntryTab({
     setRowsByDay((prev) => ({ ...prev, [iso]: prev[iso].filter((r) => r.key !== key) }));
   }
 
+  // 같은 업무내용이 다른 날에도 있으면 하나만 눌러도 전부 같이 반영/해제된다.
   function toggleFlag(iso: string, key: string) {
-    setRowsByDay((prev) => ({
-      ...prev,
-      [iso]: prev[iso].map((r) => (r.key === key ? { ...r, flagged: !r.flagged } : r)),
-    }));
+    setRowsByDay((prev) => {
+      const target = prev[iso]?.find((r) => r.key === key);
+      if (!target) return prev;
+      const nextFlagged = !target.flagged;
+      const next: Record<string, Row[]> = {};
+      for (const day of Object.keys(prev)) {
+        next[day] = prev[day].map((r) => (r.text === target.text ? { ...r, flagged: nextFlagged } : r));
+      }
+      return next;
+    });
   }
 
   function handleLeaveChange(iso: string, type: string) {

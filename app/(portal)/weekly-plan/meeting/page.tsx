@@ -24,7 +24,7 @@ function formatMD(iso: string): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-// 같은 사람이 같은 업무를 여러 날 체크했으면 한 줄로 합쳐서 "업무내용(첫날~마지막날)"로 보여준다.
+// 같은 사람이 같은 업무를 여러 날 체크했으면 한 줄로 합쳐서 "업무내용(7/27, 7/29)"로 보여준다.
 function groupHighlighted(tasks: Record<string, string>[]): { name: string; label: string }[] {
   const map = new Map<string, { name: string; text: string; dates: string[] }>();
   for (const t of tasks) {
@@ -33,9 +33,7 @@ function groupHighlighted(tasks: Record<string, string>[]): { name: string; labe
     map.get(key)!.dates.push(t.날짜);
   }
   return Array.from(map.values()).map(({ name, text, dates }) => {
-    const sorted = [...dates].sort();
-    const dateLabel =
-      sorted.length === 1 ? formatMD(sorted[0]) : `${formatMD(sorted[0])}~${formatMD(sorted[sorted.length - 1])}`;
+    const dateLabel = [...dates].sort().map(formatMD).join(', ');
     return { name, label: `${text}(${dateLabel})` };
   });
 }
