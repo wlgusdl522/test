@@ -210,8 +210,8 @@ export default function VehicleReservationClient({
               <input name="destination" defaultValue={editing?.목적지 ?? ''} className={input} />
             </label>
             <label className={label}>
-              동승자
-              <input name="companions" defaultValue={editing?.동승자 ?? ''} className={input} />
+              동승 인원(명)
+              <input type="number" name="companions" min={0} defaultValue={editing?.동승자 ?? ''} className={input} />
             </label>
             <label className={label}>
               비고
