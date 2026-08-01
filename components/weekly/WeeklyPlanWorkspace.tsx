@@ -115,8 +115,13 @@ export default function WeeklyPlanWorkspace({
   }
 
   function handleSubmit() {
+    // Enter를 안 치고 바로 제출을 눌러도, 아직 입력창에 남아있는 텍스트를 놓치지 않고 같이 담는다.
     const payload: Record<string, { text: string; flagged: boolean }[]> = {};
-    for (const iso of dayDates) payload[iso] = (rowsByDay[iso] ?? []).map((r) => ({ text: r.text, flagged: r.flagged }));
+    for (const iso of dayDates) {
+      const rows = (rowsByDay[iso] ?? []).map((r) => ({ text: r.text, flagged: r.flagged }));
+      const leftover = (draftByDay[iso] ?? '').trim();
+      payload[iso] = leftover ? [...rows, { text: leftover, flagged: false }] : rows;
+    }
     setStatusText('제출 중...');
     startTransition(async () => {
       try {
@@ -190,7 +195,7 @@ export default function WeeklyPlanWorkspace({
                 {!isFullDayLeave && (
                   <input
                     className={`${input} text-sm`}
-                    placeholder="업무 입력 후 Enter"
+                    placeholder="업무 입력"
                     value={draftByDay[iso] ?? ''}
                     onChange={(e) => setDraftByDay((prev) => ({ ...prev, [iso]: e.target.value }))}
                     onKeyDown={(e) => {
@@ -198,6 +203,7 @@ export default function WeeklyPlanWorkspace({
                       e.preventDefault();
                       addRow(iso, draftByDay[iso] ?? '');
                     }}
+                    onBlur={(e) => addRow(iso, e.target.value)}
                   />
                 )}
               </div>
