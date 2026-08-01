@@ -83,7 +83,7 @@ export async function addVehicleRequestsRecurring(
   payload: Record<string, string>,
   weekdays: number[],
   untilDate: string
-): Promise<{ count: number; firstDate: string }> {
+): Promise<{ count: number; firstDate: string; requests: Record<string, string>[] }> {
   requireFields(payload);
   if (!weekdays.length) throw new Error('반복할 요일을 선택해주세요.');
   if (!untilDate) throw new Error('반복 종료일을 입력해주세요.');
@@ -145,12 +145,14 @@ export async function addVehicleRequestsRecurring(
   await mirrorKeyedTableToSupabase({ tableName: VEHICLE_REQUEST_TABLE.sheetName, primaryKey: VEHICLE_REQUEST_TABLE.primaryKey }, all);
 
   const dateColumnIndex = VEHICLE_REQUEST_TABLE.headers.indexOf('사용일자');
-  return { count: rows.length, firstDate: rows[0][dateColumnIndex] };
+  return { count: rows.length, firstDate: rows[0][dateColumnIndex], requests: all };
 }
 
 // 반복 일정 중 하나를 지울 때 "이번 건만"(deleteVehicleRequest)이 아니라 "이 날짜 이후 전체"를 지운다.
 // 지나간 과거 회차는 남긴다.
-export async function deleteVehicleRequestSeriesFrom(id: string): Promise<{ count: number }> {
+export async function deleteVehicleRequestSeriesFrom(
+  id: string
+): Promise<{ count: number; requests: Record<string, string>[] }> {
   const all = await getKeyedList(VEHICLE_REQUEST_TABLE);
   const target = all.find((r) => r.id === id);
   if (!target) throw new Error('삭제할 신청을 찾을 수 없습니다.');
@@ -159,8 +161,9 @@ export async function deleteVehicleRequestSeriesFrom(id: string): Promise<{ coun
   const targetDate = target['사용일자'];
 
   const toDelete = all.filter((r) => r['반복그룹ID'] === groupId && r['사용일자'] >= targetDate);
+  let requests: Record<string, string>[] = all;
   for (const r of toDelete) {
-    await deleteKeyedRecord(VEHICLE_REQUEST_TABLE, { id: r.id });
+    requests = await deleteKeyedRecord(VEHICLE_REQUEST_TABLE, { id: r.id });
   }
-  return { count: toDelete.length };
+  return { count: toDelete.length, requests };
 }

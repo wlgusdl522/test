@@ -2,7 +2,7 @@ import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
 import { getVehicleLogList } from '@/lib/mutate/vehicleLog';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { badgeBase, badgeTone, btnDanger, btnSecondary, inputBase, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
-import { deleteVehicleRequestAction, deleteVehicleRequestSeriesAction } from '@/app/(portal)/vehicles/actions';
+import { deleteVehicleRequestFormAction, deleteVehicleRequestSeriesFormAction } from '@/app/(portal)/vehicles/actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -95,12 +95,12 @@ export default async function VehicleMyRequestsPage({
                   {isMine && (
                     <>
                       <a href={`/vehicles?edit=${r.id}`} className={btnSecondary}>수정</a>
-                      <form action={deleteVehicleRequestAction}>
+                      <form action={deleteVehicleRequestFormAction}>
                         <input type="hidden" name="id" value={r.id} />
                         <button type="submit" className={btnDanger}>{r.반복그룹ID ? '삭제(이 건만)' : '삭제'}</button>
                       </form>
                       {r.반복그룹ID && (
-                        <form action={deleteVehicleRequestSeriesAction}>
+                        <form action={deleteVehicleRequestSeriesFormAction}>
                           <input type="hidden" name="id" value={r.id} />
                           <button type="submit" title="이 날짜 이후 반복 전체 삭제" className={btnSecondary}>이후 전체삭제</button>
                         </form>

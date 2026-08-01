@@ -28,7 +28,7 @@ export default function VehicleDayDetailTable({
   viewerEmail: string;
   onEdit: (id: string) => void;
   onAdd: (date: string) => void;
-  onMutated: () => void;
+  onMutated: (freshRequests: Req[]) => void;
   showAddButton?: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -37,8 +37,8 @@ export default function VehicleDayDetailTable({
     startTransition(async () => {
       const fd = new FormData();
       fd.set('id', id);
-      await deleteVehicleRequestAction(fd);
-      onMutated();
+      const result = await deleteVehicleRequestAction(fd);
+      onMutated(result.requests);
     });
   }
 

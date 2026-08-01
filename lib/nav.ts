@@ -1,5 +1,6 @@
 export type NavItem = { href: string; label: string };
-export type NavSection = { label: string; items: NavItem[] };
+// flat: 항목이 하나뿐이어도 앞으로 늘어날 계획이 없는 섹션만 펼치고 접는 토글 없이 바로 링크로 보여준다.
+export type NavSection = { label: string; items: NavItem[]; flat?: boolean };
 
 export const STANDALONE_NAV_ITEMS: NavItem[] = [
   { href: '/', label: '홈' },
@@ -23,6 +24,7 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: '차량관리',
+    flat: true,
     items: [
       { href: '/vehicles', label: '차량관리' },
     ],

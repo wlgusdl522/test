@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { btn, input, inputBase, label } from '@/lib/ui';
 import Modal from '@/components/Modal';
@@ -25,7 +25,7 @@ export default function VehicleReservationClient({
   initialDate,
   initialEditId,
   initialNew,
-  requests,
+  requests: initialRequests,
   vehicles,
   hasLogRequestIds,
   fuelWarningByVehicle,
@@ -44,6 +44,11 @@ export default function VehicleReservationClient({
   const router = useRouter();
   const [view, setView] = useState<View>(initialView);
   const [anchorDate, setAnchorDate] = useState(initialDate);
+  // 서버가 새 props를 내려줄 때(다른 탭에서 변경 후 돌아오는 등)도 반영되도록 동기화하되,
+  // add/update/delete 직후에는 서버 refresh를 기다리지 않고 즉시 반환된 최신 목록으로 갱신한다 —
+  // router.refresh()만 믿으면 반영 시점이 애매해서 "신청했는데 달력엔 안 보인다"가 될 수 있다.
+  const [requests, setRequests] = useState(initialRequests);
+  useEffect(() => setRequests(initialRequests), [initialRequests]);
   const [weekSelectedDate, setWeekSelectedDate] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(initialEditId || null);
   const [prefillDate, setPrefillDate] = useState<string | null>(initialNew ? initialDate : null);
@@ -80,7 +85,8 @@ export default function VehicleReservationClient({
     setAnchorDate(iso);
     setWeekSelectedDate(null);
   }
-  function handleMutated() {
+  function handleMutated(freshRequests: Req[]) {
+    setRequests(freshRequests);
     router.refresh();
   }
 
@@ -96,9 +102,11 @@ export default function VehicleReservationClient({
           ? await updateVehicleRequestAction(fd)
           : await addVehicleRequestAction(fd);
         setFormOpen(false);
-        // 방금 만든(또는 수정한) 예약이 바로 눈에 보이도록, 그 날짜로 화면을 옮긴다.
+        // 방금 만든(또는 수정한) 예약이 바로 눈에 보이도록, 서버 refresh를 기다리지 않고
+        // 액션이 돌려준 최신 목록을 바로 반영하고 그 날짜로 화면을 옮긴다.
         // 반복 신청이면 실제로 첫 회차가 등록된 날짜로 이동 — 처음 입력한 날짜가 반복 요일과
         // 안 맞으면 그 날짜엔 아무것도 안 만들어져서 "신청했는데 아무것도 안 보인다"로 이어졌었다.
+        setRequests(result.requests);
         setAnchorDate(result.date);
         setWeekSelectedDate(null);
         setSuccessMessage(
