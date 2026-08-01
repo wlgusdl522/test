@@ -5,7 +5,8 @@ import { getMeetingMeta } from '@/lib/mutate/meeting';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getStaffList } from '@/lib/mutate/staff';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { groupHighlightedTasks } from '@/lib/meetingSummary';
+import { formatKoreanDate, groupHighlightedTasksByCategory } from '@/lib/meetingSummary';
+import { resolveApprovalLineLabels } from '@/lib/approval/approvalLine';
 import { btn, card, inputBase } from '@/lib/ui';
 import PrintButton from '@/components/print/PrintButton';
 
@@ -30,8 +31,7 @@ const sectionHeader: CSSProperties = {
 const cell: CSSProperties = { padding: '8px 10px', border: '1px solid #d7dbe0', verticalAlign: 'top' };
 const labelCell: CSSProperties = { ...cell, color: '#666', width: 90, fontWeight: 600 };
 
-function SignatureBox() {
-  const positions = ['팀장', '부장', '관장'];
+function SignatureBox({ positions }: { positions: string[] }) {
   return (
     <table style={{ borderCollapse: 'collapse' }}>
       <tbody>
@@ -67,8 +67,9 @@ export default async function WeeklyPlanMeetingPrintPage({
 
   const [meta, weekTasks] = await Promise.all([getMeetingMeta(team, date), getWeeklyTasks(team, weekStart)]);
   const highlighted = weekTasks.filter((t) => t.회의록후보 === 'TRUE' || t.회의록후보 === 'true');
-  const contentLines = groupHighlightedTasks(highlighted);
+  const contentSections = groupHighlightedTasksByCategory(highlighted, staffList);
   const attendeeCount = staffList.filter((s) => s['소속팀'] === team && s['재직상태'] !== '퇴사').length;
+  const signaturePositions = resolveApprovalLineLabels(['과장', '부장', '관장'], team, staffList);
 
   return (
     <div className="p-6">
@@ -86,10 +87,10 @@ export default async function WeeklyPlanMeetingPrintPage({
       <div className="bg-white dark:bg-zinc-900" style={{ maxWidth: 800 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
           <div>
-            <div style={{ fontSize: 13, color: '#666' }}>{team}</div>
-            <h2 style={{ margin: '2px 0 0', fontSize: 22 }}>회의록</h2>
+            <h2 style={{ margin: 0, fontSize: 22 }}>{team} 회의록</h2>
+            <div style={{ marginTop: 6, fontSize: 15, fontWeight: 700 }}>{formatKoreanDate(date)}</div>
           </div>
-          <SignatureBox />
+          <SignatureBox positions={signaturePositions} />
         </div>
 
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5 }}>
@@ -114,11 +115,17 @@ export default async function WeeklyPlanMeetingPrintPage({
             <tr>
               <td style={labelCell}>내용</td>
               <td style={cell} colSpan={3}>
-                {contentLines.length === 0 ? (
+                <div style={{ fontWeight: 600, marginBottom: 4 }}>● 업무추진내용 및 공지사항</div>
+                {contentSections.length === 0 ? (
                   <span style={{ color: '#999' }}>-</span>
                 ) : (
-                  contentLines.map((line, i) => (
-                    <div key={i} style={{ padding: '2px 0' }}>{i + 1}. {line.name}: {line.label}</div>
+                  contentSections.map((section, i) => (
+                    <div key={i} style={{ padding: '2px 0' }}>
+                      <div style={{ fontWeight: 600 }}>{i + 1}. {section.category}({section.names.join(', ')})</div>
+                      {section.lines.map((line, j) => (
+                        <div key={j} style={{ paddingLeft: 14 }}>• {line}</div>
+                      ))}
+                    </div>
                   ))
                 )}
               </td>

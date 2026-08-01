@@ -5,7 +5,8 @@ import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getStaffList } from '@/lib/mutate/staff';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { summarizeLeaveEntries } from '@/lib/weeklyLeave';
-import { groupHighlightedTasks } from '@/lib/meetingSummary';
+import { groupHighlightedTasksByCategory } from '@/lib/meetingSummary';
+import { resolveApprovalLineLabels } from '@/lib/approval/approvalLine';
 import { btnSecondary, h1, inputBase, pageWide } from '@/lib/ui';
 import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
 import MeetingComposer from '@/components/weekly/MeetingComposer';
@@ -40,6 +41,7 @@ export default async function MeetingPage({
   const highlightedTasks = weekTasks.filter((t) => t.회의록후보 === 'TRUE' || t.회의록후보 === 'true');
   const leaveSuggestion = summarizeLeaveEntries(weekTasks);
   const attendeeCount = staffList.filter((s) => s['소속팀'] === team && s['재직상태'] !== '퇴사').length;
+  const signaturePositions = resolveApprovalLineLabels(['과장', '부장', '관장'], team, staffList);
 
   return (
     <main className={pageWide}>
@@ -63,7 +65,8 @@ export default async function MeetingPage({
         date={date}
         writerName={me?.성명 ?? ''}
         attendeeCount={attendeeCount}
-        contentLines={groupHighlightedTasks(highlightedTasks)}
+        signaturePositions={signaturePositions}
+        contentSections={groupHighlightedTasksByCategory(highlightedTasks, staffList)}
         initialTime={meta?.회의시간 ?? ''}
         initialPlace={meta?.회의장소 ?? ''}
         initialNotice={meta?.공지사항 ?? ''}
