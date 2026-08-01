@@ -34,11 +34,7 @@ export async function mirrorSimpleListToSupabase(tableName: string, orderedValue
   }
 
   if (orderedValues.length > 0) {
-    const rows = orderedValues.map((value, index) => ({
-      값: value,
-      순서: index,
-      updated_at: new Date().toISOString(),
-    }));
+    const rows = orderedValues.map((value, index) => ({ 값: value, 순서: index }));
     const { error: upsertError } = await simpleListTable(tableName).upsert(rows, { onConflict: '값' });
     if (upsertError) console.error(`[Supabase 미러 실패] ${tableName} upsert`, upsertError);
   }
