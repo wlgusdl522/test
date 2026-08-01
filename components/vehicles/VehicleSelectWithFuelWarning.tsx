@@ -7,10 +7,12 @@ export default function VehicleSelectWithFuelWarning({
   vehicles,
   defaultValue,
   fuelWarningByVehicle,
+  onChange,
 }: {
   vehicles: { 차량번호: string; 차종: string }[];
   defaultValue: string;
   fuelWarningByVehicle: Record<string, boolean>;
+  onChange?: (value: string) => void;
 }) {
   const [selected, setSelected] = useState(defaultValue);
   return (
@@ -20,7 +22,10 @@ export default function VehicleSelectWithFuelWarning({
         defaultValue={defaultValue}
         required
         className={input}
-        onChange={(e) => setSelected(e.target.value)}
+        onChange={(e) => {
+          setSelected(e.target.value);
+          onChange?.(e.target.value);
+        }}
       >
         {vehicles.map((v) => <option key={v.차량번호} value={v.차량번호}>{v.차종} ({v.차량번호})</option>)}
       </select>

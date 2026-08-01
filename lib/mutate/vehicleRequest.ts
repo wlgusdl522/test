@@ -4,6 +4,7 @@ import { getAllRecords } from '@/lib/sheets/keyedTable';
 import { addKeyedRecord, deleteKeyedRecord, deleteKeyedRecords, getKeyedList, updateKeyedRecord } from '@/lib/mutate/keyedTable';
 import { VEHICLE_REQUEST_TABLE } from '@/lib/sheets/registry';
 import { mirrorKeyedTableToSupabase } from '@/lib/supabase/keyedTable';
+import { findOverlappingRequest, timesOverlap } from '@/lib/vehicleTimeOverlap';
 
 function nowTimestamp(): string {
   return new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -20,26 +21,20 @@ function requireFields(payload: Record<string, string>) {
   }
 }
 
-// 시간이 비어있으면 하루 전체를 막는 것으로 보고 겹침을 판정한다(부분적으로만 아는 경우 안전한 쪽으로).
-function timesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string): boolean {
-  const aS = aStart || '00:00';
-  const aE = aEnd || '23:59';
-  const bS = bStart || '00:00';
-  const bE = bEnd || '23:59';
-  return aS < bE && bS < aE;
-}
-
 // 겹침 확인은 Supabase 캐시가 아니라 항상 시트(원본)에서 직접 읽는다 — 미러링이
 // 밀리거나 실패해도(방금 대량으로 등록한 반복 신청 직후 등) 캐시가 새 데이터를 아직
 // 못 따라가서 중복 검사가 뚫리는 일이 없도록.
 async function assertNoOverlap(payload: Record<string, string>, excludeId?: string) {
   const all = await getAllRecords(VEHICLE_REQUEST_TABLE);
-  const conflict = all.find(
-    (r) =>
-      r.id !== excludeId &&
-      r['차량번호'] === payload['차량번호'] &&
-      r['사용일자'] === payload['사용일자'] &&
-      timesOverlap(r['출발시간'], r['복귀시간'], payload['출발시간'], payload['복귀시간'])
+  const conflict = findOverlappingRequest(
+    all,
+    {
+      차량번호: payload['차량번호'],
+      사용일자: payload['사용일자'],
+      출발시간: payload['출발시간'],
+      복귀시간: payload['복귀시간'],
+    },
+    excludeId
   );
   if (conflict) {
     throw new Error(

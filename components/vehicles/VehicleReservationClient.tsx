@@ -10,6 +10,7 @@ import VehicleWeekCalendar from '@/components/vehicles/VehicleWeekCalendar';
 import VehicleDayDetailTable from '@/components/vehicles/VehicleDayDetailTable';
 import VehicleViewSwitch from '@/components/vehicles/VehicleViewSwitch';
 import TimeSelect10Min from '@/components/vehicles/TimeSelect10Min';
+import { findOverlappingRequest } from '@/lib/vehicleTimeOverlap';
 import { addVehicleRequestAction, updateVehicleRequestAction } from '@/app/(portal)/vehicles/actions';
 
 type Req = Record<string, string>;
@@ -57,14 +58,35 @@ export default function VehicleReservationClient({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  // 시간/차량/날짜를 고를 때마다 바로 겹침을 확인해서 보여주기 위한 값 — 어차피 requests에
+  // 전체 예약이 다 올라와 있어서 서버를 다시 안 타도 클라이언트에서 바로 계산할 수 있다.
+  const [draftVehicle, setDraftVehicle] = useState('');
+  const [draftDate, setDraftDate] = useState('');
+  const [draftStart, setDraftStart] = useState('');
+  const [draftEnd, setDraftEnd] = useState('');
+
   const logIdSet = useMemo(() => new Set(hasLogRequestIds), [hasLogRequestIds]);
   const editing = editingId ? requests.find((r) => r.id === editingId) ?? null : null;
+
+  const liveConflict = useMemo(
+    () =>
+      findOverlappingRequest(
+        requests,
+        { 차량번호: draftVehicle, 사용일자: draftDate, 출발시간: draftStart, 복귀시간: draftEnd },
+        editingId ?? undefined
+      ),
+    [requests, draftVehicle, draftDate, draftStart, draftEnd, editingId]
+  );
 
   function openNew(date: string) {
     setEditingId(null);
     setPrefillDate(date);
     setFormError(null);
     setSuccessMessage(null);
+    setDraftVehicle('');
+    setDraftDate(date);
+    setDraftStart('');
+    setDraftEnd('');
     setFormOpen(true);
   }
   function openEdit(id: string) {
@@ -72,6 +94,11 @@ export default function VehicleReservationClient({
     setPrefillDate(null);
     setFormError(null);
     setSuccessMessage(null);
+    const target = requests.find((r) => r.id === id);
+    setDraftVehicle(target?.차량번호 ?? '');
+    setDraftDate(target?.사용일자 ?? '');
+    setDraftStart(target?.출발시간 ?? '');
+    setDraftEnd(target?.복귀시간 ?? '');
     setFormOpen(true);
   }
   function closeForm() {
@@ -96,6 +123,12 @@ export default function VehicleReservationClient({
     const wasEditing = !!editingId;
     if (wasEditing) fd.set('id', editingId as string);
     setFormError(null);
+    if (liveConflict) {
+      setFormError(
+        `이미 ${liveConflict['신청자명']}님이 같은 시간대(${liveConflict['출발시간'] || '00:00'}~${liveConflict['복귀시간'] || '23:59'})에 이 차량을 예약해서 신청이 중복됩니다.`
+      );
+      return;
+    }
     startTransition(async () => {
       try {
         const result = wasEditing
@@ -212,20 +245,34 @@ export default function VehicleReservationClient({
                 vehicles={vehicles}
                 defaultValue={editing?.차량번호 ?? ''}
                 fuelWarningByVehicle={fuelWarningByVehicle}
+                onChange={setDraftVehicle}
               />
             </label>
             <label className={label}>
               사용일자 *
-              <input type="date" name="date" defaultValue={editing?.사용일자 ?? prefillDate ?? anchorDate} required className={input} />
+              <input
+                type="date"
+                name="date"
+                defaultValue={editing?.사용일자 ?? prefillDate ?? anchorDate}
+                required
+                className={input}
+                onChange={(e) => setDraftDate(e.target.value)}
+              />
             </label>
             <label className={label}>
               출발시간
-              <TimeSelect10Min name="startTime" defaultValue={editing?.출발시간 ?? ''} />
+              <TimeSelect10Min name="startTime" defaultValue={editing?.출발시간 ?? ''} onChange={setDraftStart} />
             </label>
             <label className={label}>
               복귀시간
-              <TimeSelect10Min name="endTime" defaultValue={editing?.복귀시간 ?? ''} />
+              <TimeSelect10Min name="endTime" defaultValue={editing?.복귀시간 ?? ''} onChange={setDraftEnd} />
             </label>
+
+            {liveConflict && (
+              <div className="col-span-2 rounded-md bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-400">
+                ⚠ 이미 {liveConflict['신청자명']}님이 같은 시간대({liveConflict['출발시간'] || '00:00'}~{liveConflict['복귀시간'] || '23:59'})에 이 차량을 예약했어요. 시간을 다시 선택해주세요.
+              </div>
+            )}
             <label className={label}>
               목적 *
               <input name="purpose" defaultValue={editing?.목적 ?? ''} required className={input} />
@@ -266,7 +313,9 @@ export default function VehicleReservationClient({
             )}
 
             <div className="col-span-2 flex items-center gap-3">
-              <button type="submit" disabled={isPending} className={btn}>{isPending ? '저장 중...' : editing ? '저장' : '신청'}</button>
+              <button type="submit" disabled={isPending || !!liveConflict} className={btn}>
+                {isPending ? '저장 중...' : editing ? '저장' : '신청'}
+              </button>
             </div>
           </form>
         </Modal>

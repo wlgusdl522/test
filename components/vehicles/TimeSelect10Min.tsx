@@ -12,12 +12,19 @@ for (let h = 9; h <= 18; h++) {
 export default function TimeSelect10Min({
   name,
   defaultValue,
+  onChange,
 }: {
   name: string;
   defaultValue?: string;
+  onChange?: (value: string) => void;
 }) {
   return (
-    <select name={name} defaultValue={defaultValue ?? ''} className={input}>
+    <select
+      name={name}
+      defaultValue={defaultValue ?? ''}
+      className={input}
+      onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+    >
       <option value="">선택 안 함</option>
       {OPTIONS.map((t) => (
         <option key={t} value={t}>{t}</option>
