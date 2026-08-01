@@ -4,7 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const TOP_TABS = [
-  { href: '/vehicles', label: '신청', isActive: (p: string) => p === '/vehicles' },
+  {
+    href: '/vehicles',
+    label: '신청',
+    isActive: (p: string) => p === '/vehicles' || p.startsWith('/vehicles/requests'),
+  },
   {
     href: '/vehicles/logs',
     label: '일지',
@@ -12,14 +16,21 @@ const TOP_TABS = [
   },
 ];
 
-const SUB_TABS = [
-  { href: '/vehicles/logs', label: '운행일지' },
-  { href: '/vehicles/maintenance', label: '정비일지' },
-];
+const SUB_TABS: Record<string, { href: string; label: string }[]> = {
+  '/vehicles': [
+    { href: '/vehicles', label: '예약' },
+    { href: '/vehicles/requests', label: '신청내역' },
+  ],
+  '/vehicles/logs': [
+    { href: '/vehicles/logs', label: '운행일지' },
+    { href: '/vehicles/maintenance', label: '정비일지' },
+  ],
+};
 
 export default function VehicleTabsClient() {
   const pathname = usePathname();
-  const showSubTabs = pathname.startsWith('/vehicles/logs') || pathname.startsWith('/vehicles/maintenance');
+  const activeTop = TOP_TABS.find((t) => t.isActive(pathname));
+  const subTabs = activeTop ? SUB_TABS[activeTop.href] : undefined;
 
   return (
     <div className="mb-5">
@@ -41,9 +52,9 @@ export default function VehicleTabsClient() {
           );
         })}
       </div>
-      {showSubTabs && (
+      {subTabs && (
         <div className="flex gap-1.5 mt-3">
-          {SUB_TABS.map((t) => {
+          {subTabs.map((t) => {
             const active = pathname === t.href;
             return (
               <Link

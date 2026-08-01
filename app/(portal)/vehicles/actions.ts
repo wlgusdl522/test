@@ -40,6 +40,7 @@ export async function addVehicleRequestAction(formData: FormData) {
     await addVehicleRequest(payload);
   }
   revalidatePath('/vehicles');
+  revalidatePath('/vehicles/requests');
 }
 
 export async function updateVehicleRequestAction(formData: FormData) {
@@ -47,16 +48,19 @@ export async function updateVehicleRequestAction(formData: FormData) {
   const payload = await payloadFromForm(formData);
   await updateVehicleRequest(id, payload);
   revalidatePath('/vehicles');
+  revalidatePath('/vehicles/requests');
 }
 
 export async function deleteVehicleRequestAction(formData: FormData) {
   const id = String(formData.get('id') ?? '');
   await deleteVehicleRequest(id);
   revalidatePath('/vehicles');
+  revalidatePath('/vehicles/requests');
 }
 
 export async function deleteVehicleRequestSeriesAction(formData: FormData) {
   const id = String(formData.get('id') ?? '');
   await deleteVehicleRequestSeriesFrom(id);
   revalidatePath('/vehicles');
+  revalidatePath('/vehicles/requests');
 }

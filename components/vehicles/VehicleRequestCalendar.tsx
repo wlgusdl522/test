@@ -7,18 +7,17 @@ function vehicleLabel(vehicleNo: string, vehicles: { 차량번호: string; 차�
 }
 
 export default function VehicleRequestCalendar({
-  month,
-  selectedDate,
+  date,
   requests,
   vehicles,
   hasLogByRequestId,
 }: {
-  month: string; // yyyy-MM
-  selectedDate: string | null;
+  date: string; // yyyy-MM-dd, 달력의 기준(선택된) 날짜
   requests: Req[];
   vehicles: { 차량번호: string; 차종: string }[];
   hasLogByRequestId: Set<string>;
 }) {
+  const month = date.slice(0, 7);
   const [year, monthNum] = month.split('-').map(Number);
   const firstOfMonth = new Date(year, monthNum - 1, 1);
   const startWeekday = firstOfMonth.getDay(); // 0=일
@@ -33,8 +32,8 @@ export default function VehicleRequestCalendar({
 
   const prevMonthDate = new Date(year, monthNum - 2, 1);
   const nextMonthDate = new Date(year, monthNum, 1);
-  const prevMonth = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
-  const nextMonth = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
+  const prevMonthIso = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}-01`;
+  const nextMonthIso = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}-01`;
 
   const cells: (string | null)[] = [];
   for (let i = 0; i < startWeekday; i++) cells.push(null);
@@ -42,14 +41,14 @@ export default function VehicleRequestCalendar({
   while (cells.length % 7 !== 0) cells.push(null);
 
   const weekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
-  const selectedRequests = selectedDate ? byDate.get(selectedDate) ?? [] : [];
+  const selectedRequests = byDate.get(date) ?? [];
 
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <a href={`/vehicles?month=${prevMonth}`} className="text-sm text-brand hover:underline">◀ 이전달</a>
+        <a href={`/vehicles?view=month&date=${prevMonthIso}`} className="text-sm text-brand hover:underline">◀ 이전달</a>
         <span className="text-sm font-semibold">{year}년 {monthNum}월</span>
-        <a href={`/vehicles?month=${nextMonth}`} className="text-sm text-brand hover:underline">다음달 ▶</a>
+        <a href={`/vehicles?view=month&date=${nextMonthIso}`} className="text-sm text-brand hover:underline">다음달 ▶</a>
       </div>
 
       <div className="grid grid-cols-7 gap-1 mb-4">
@@ -60,11 +59,11 @@ export default function VehicleRequestCalendar({
           if (!iso) return <div key={i} className="min-h-20" />;
           const dayRequests = byDate.get(iso) ?? [];
           const vehiclesForDay = [...new Set(dayRequests.map((r) => r.차량번호))];
-          const isSelected = iso === selectedDate;
+          const isSelected = iso === date;
           return (
             <a
               key={iso}
-              href={`/vehicles?month=${month}&date=${iso}`}
+              href={`/vehicles?view=month&date=${iso}`}
               className={`min-h-20 rounded-md border p-1 text-xs flex flex-col gap-0.5 hover:border-brand ${
                 isSelected ? 'border-brand bg-brand-tint' : 'border-zinc-200 dark:border-zinc-800'
               }`}
@@ -87,34 +86,32 @@ export default function VehicleRequestCalendar({
         })}
       </div>
 
-      {selectedDate && (
-        <div className={card}>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold">{selectedDate} 예약 현황</h3>
-            <a href={`/vehicles?month=${month}&date=${selectedDate}#request-form`} className="text-sm text-brand hover:underline">+ 예약</a>
-          </div>
-          {selectedRequests.length === 0 ? (
-            <p className="text-sm text-zinc-400">이 날짜에 등록된 예약이 없습니다.</p>
-          ) : (
-            <div className={tableWrap}><table className={table}>
-              <thead>
-                <tr><th className={th}>차량</th><th className={th}>신청자</th><th className={th}>목적</th><th className={th}>목적지</th><th className={th}>상태</th></tr>
-              </thead>
-              <tbody>
-                {selectedRequests.map((r) => (
-                  <tr key={r.id}>
-                    <td className={td}>{vehicleLabel(r.차량번호, vehicles)}</td>
-                    <td className={td}>{r.신청자명}</td>
-                    <td className={td}>{r.목적}</td>
-                    <td className={td}>{r.목적지}</td>
-                    <td className={td}>{hasLogByRequestId.has(r.id) ? '운행완료' : '예약됨'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table></div>
-          )}
+      <div className={card}>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold">{date} 예약 현황</h3>
+          <a href={`/vehicles?view=month&date=${date}&new=1`} className="text-sm text-brand hover:underline">+ 예약</a>
         </div>
-      )}
+        {selectedRequests.length === 0 ? (
+          <p className="text-sm text-zinc-400">이 날짜에 등록된 예약이 없습니다.</p>
+        ) : (
+          <div className={tableWrap}><table className={table}>
+            <thead>
+              <tr><th className={th}>차량</th><th className={th}>신청자</th><th className={th}>목적</th><th className={th}>목적지</th><th className={th}>상태</th></tr>
+            </thead>
+            <tbody>
+              {selectedRequests.map((r) => (
+                <tr key={r.id}>
+                  <td className={td}>{vehicleLabel(r.차량번호, vehicles)}</td>
+                  <td className={td}>{r.신청자명}</td>
+                  <td className={td}>{r.목적}</td>
+                  <td className={td}>{r.목적지}</td>
+                  <td className={td}>{hasLogByRequestId.has(r.id) ? '운행완료' : '예약됨'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table></div>
+        )}
+      </div>
     </div>
   );
 }

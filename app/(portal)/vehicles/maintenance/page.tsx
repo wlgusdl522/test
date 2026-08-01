@@ -1,7 +1,7 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getVehicleMaintenanceList } from '@/lib/mutate/vehicleMaintenance';
-import { btn, btnDanger, btnSecondary, card, input, label, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, input, inputBase, label, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import FormToggle from '@/components/FormToggle';
 import PrinterIcon from '@/components/icons/PrinterIcon';
 import { addVehicleMaintenanceAction, deleteVehicleMaintenanceAction, updateVehicleMaintenanceAction } from './actions';
@@ -12,15 +12,19 @@ export const dynamic = 'force-dynamic';
 export default async function VehicleMaintenancePage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string }>;
+  searchParams: Promise<{ edit?: string; ym?: string; all?: string }>;
 }) {
-  const { edit } = await searchParams;
-  const [records, vehicles] = await Promise.all([
+  const { edit, ym, all } = await searchParams;
+  const [allRecords, vehicles] = await Promise.all([
     getVehicleMaintenanceList(),
     getKeyedList(VEHICLE_LIST_TABLE),
   ]);
-  const editing = edit ? records.find((r) => r.id === edit) : null;
+  const editing = edit ? allRecords.find((r) => r.id === edit) : null;
   const todayIso = new Date().toISOString().slice(0, 10);
+  const currentYm = todayIso.slice(0, 7);
+  const showAll = all === '1';
+  const activeYm = showAll ? '' : (ym || currentYm);
+  const records = allRecords.filter((r) => !activeYm || r.정비일자.startsWith(activeYm));
 
   return (
     <>
@@ -31,41 +35,59 @@ export default async function VehicleMaintenancePage({
         </a>
       </div>
 
-      <FormToggle label={editing ? '정비 기록 수정' : '정비 등록'} defaultOpen={!!editing}>
-      <form action={editing ? updateVehicleMaintenanceAction : addVehicleMaintenanceAction} className={`${card} grid grid-cols-2 gap-3`}>
-        {editing && <input type="hidden" name="id" value={editing.id} />}
-        <label className={label}>
-          차량 *
-          <select name="vehicleNo" defaultValue={editing?.차량번호 ?? ''} required className={input}>
-            {vehicles.map((v) => <option key={v.차량번호} value={v.차량번호}>{v.차종} ({v.차량번호})</option>)}
-          </select>
-        </label>
-        <label className={label}>
-          정비일자 *
-          <input type="date" name="date" defaultValue={editing?.정비일자 ?? todayIso} required className={input} />
-        </label>
-        <label className={`${label} col-span-2`}>
-          정비내용 *
-          <input name="content" defaultValue={editing?.정비내용 ?? ''} required className={input} />
-        </label>
-        <label className={label}>
-          주행거리
-          <input type="number" name="mileage" defaultValue={editing?.주행거리 ?? ''} className={input} />
-        </label>
-        <label className={label}>
-          지출액
-          <input type="number" name="cost" defaultValue={editing?.지출액 ?? ''} className={input} />
-        </label>
-        <label className={`${label} col-span-2`}>
-          비고
-          <input name="note" defaultValue={editing?.비고 ?? ''} className={input} />
-        </label>
-        <div className="flex items-center gap-3">
-          <button type="submit" className={btn}>{editing ? '저장' : '등록'}</button>
-          {editing && <a href="/vehicles/maintenance" className="text-xs text-zinc-500 hover:underline">취소</a>}
-        </div>
-      </form>
-      </FormToggle>
+      <div className="flex items-center gap-2 mb-4">
+        <a
+          href="/vehicles/maintenance"
+          className={`text-xs px-2.5 py-1 rounded-full ${!ym && !showAll ? 'bg-brand-tint text-brand-dark dark:text-brand font-medium' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'}`}
+        >
+          이번달
+        </a>
+        <form method="get" className="flex items-center gap-1.5">
+          <input type="month" name="ym" defaultValue={ym ?? ''} className={`${inputBase} w-auto text-xs py-1`} />
+          <button type="submit" className={`${btnSecondary} text-xs py-1`}>조회</button>
+        </form>
+        <a
+          href="/vehicles/maintenance?all=1"
+          className={`text-xs px-2.5 py-1 rounded-full ${showAll ? 'bg-brand-tint text-brand-dark dark:text-brand font-medium' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'}`}
+        >
+          전체보기
+        </a>
+
+        <FormToggle label={editing ? '정비 기록 수정' : '정비 등록'} defaultOpen={!!editing}>
+        <form action={editing ? updateVehicleMaintenanceAction : addVehicleMaintenanceAction} className="grid grid-cols-2 gap-3">
+          {editing && <input type="hidden" name="id" value={editing.id} />}
+          <label className={label}>
+            차량 *
+            <select name="vehicleNo" defaultValue={editing?.차량번호 ?? ''} required className={input}>
+              {vehicles.map((v) => <option key={v.차량번호} value={v.차량번호}>{v.차종} ({v.차량번호})</option>)}
+            </select>
+          </label>
+          <label className={label}>
+            정비일자 *
+            <input type="date" name="date" defaultValue={editing?.정비일자 ?? todayIso} required className={input} />
+          </label>
+          <label className={`${label} col-span-2`}>
+            정비내용 *
+            <input name="content" defaultValue={editing?.정비내용 ?? ''} required className={input} />
+          </label>
+          <label className={label}>
+            주행거리
+            <input type="number" name="mileage" defaultValue={editing?.주행거리 ?? ''} className={input} />
+          </label>
+          <label className={label}>
+            지출액
+            <input type="number" name="cost" defaultValue={editing?.지출액 ?? ''} className={input} />
+          </label>
+          <label className={`${label} col-span-2`}>
+            비고
+            <input name="note" defaultValue={editing?.비고 ?? ''} className={input} />
+          </label>
+          <div className="col-span-2 flex items-center gap-3">
+            <button type="submit" className={btn}>{editing ? '저장' : '등록'}</button>
+          </div>
+        </form>
+        </FormToggle>
+      </div>
 
       <div className={tableWrap}><table className={table}>
         <thead>
@@ -75,7 +97,9 @@ export default async function VehicleMaintenancePage({
           </tr>
         </thead>
         <tbody>
-          {records.map((r) => (
+          {records.length === 0 ? (
+            <tr><td className={td} colSpan={7}><span className="text-zinc-400">해당 기간에 등록된 정비 기록이 없습니다.</span></td></tr>
+          ) : records.map((r) => (
             <tr key={r.id} className={trZebraHover}>
               <td className={td}>{r.정비일자}</td>
               <td className={td}>{r.차량번호}</td>
