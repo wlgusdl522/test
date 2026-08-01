@@ -36,7 +36,7 @@ export default async function PermissionsSettingsPage() {
                   <form action={setTierAction} className="flex gap-1.5">
                     <input type="hidden" name="pageId" value={p.id} />
                     <input type="hidden" name="pageLabel" value={p.label} />
-                    <select name="tier" defaultValue={currentTier} className={`${inputBase} w-auto`}>
+                    <select key={currentTier} name="tier" defaultValue={currentTier} className={`${inputBase} w-auto`}>
                       {PAGE_ACCESS_TIERS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
                     <button type="submit" className={btn}>저장</button>
