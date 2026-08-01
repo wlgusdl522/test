@@ -7,10 +7,12 @@ import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { summarizeLeaveEntries } from '@/lib/weeklyLeave';
 import { groupHighlightedTasksByCategory } from '@/lib/meetingSummary';
 import { resolveApprovalLineLabels } from '@/lib/approval/approvalLine';
+import { hasPageAccess } from '@/lib/mutate/permissions';
 import { btnSecondary, h1, inputBase, pageWide } from '@/lib/ui';
 import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
 import MeetingComposer from '@/components/weekly/MeetingComposer';
 import PrinterIcon from '@/components/icons/PrinterIcon';
+import PageAccessDenied from '@/components/PageAccessDenied';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -36,6 +38,16 @@ export default async function MeetingPage({
   ]);
   const team = params.team ?? me?.소속팀 ?? teams[0] ?? '';
   const date = params.date ?? mondayOf(new Date());
+
+  if (!(await hasPageAccess('weekly-plan-meeting'))) {
+    return (
+      <main className={pageWide}>
+        <h1 className={h1}>회의록 정리</h1>
+        <WeeklyPlanTabs active="/weekly-plan/meeting" />
+        <PageAccessDenied />
+      </main>
+    );
+  }
 
   const [meta, weekStart] = [await getMeetingMeta(team, date), mondayOf(new Date(date))];
   const weekTasks = await getWeeklyTasks(team, weekStart);

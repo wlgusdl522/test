@@ -1,7 +1,13 @@
 // 새 게시판(페이지)이 생기면 여기 한 줄만 등록해두면, 실제 권한 등급/전결기준은
 // 설정 화면에서 코드 재배포 없이 바꿀 수 있다 (Index.html의 CONFIGURABLE_PAGES/PRINTABLE_PAGES와 동일).
 
-export const CONFIGURABLE_PAGES = [{ id: 'staff-admin', label: '직원관리' }];
+export const CONFIGURABLE_PAGES = [
+  { id: 'staff-admin', label: '직원관리' },
+  { id: 'weekly-plan-write', label: '주간업무 - 작성' },
+  { id: 'weekly-plan-team-view', label: '주간업무 - 전체보기' },
+  { id: 'weekly-plan-review', label: '주간업무 - 부서장확인' },
+  { id: 'weekly-plan-meeting', label: '주간업무 - 회의록작성' },
+];
 
 export const PRINTABLE_PAGES = [
   { id: 'card-ledger', label: '카드사용대장' },

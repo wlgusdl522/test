@@ -3,10 +3,12 @@ import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getReviewCompletionStatus } from '@/lib/mutate/reviewStatus';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
+import { hasPageAccess } from '@/lib/mutate/permissions';
 import { btnSecondary, card, h1, h2, inputBase, pageWide } from '@/lib/ui';
 import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
 import SupervisorReviewList from '@/components/weekly/SupervisorReviewList';
 import PrinterIcon from '@/components/icons/PrinterIcon';
+import PageAccessDenied from '@/components/PageAccessDenied';
 import { setReviewCompletionAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -35,6 +37,17 @@ export default async function ReviewPage({
     getViewerStaffRecord(),
   ]);
   const reviewTeam = params.team ?? me?.소속팀 ?? teams[0] ?? '';
+
+  if (!(await hasPageAccess('weekly-plan-review'))) {
+    return (
+      <main className={pageWide}>
+        <h1 className={h1}>부서장 확인</h1>
+        <WeeklyPlanTabs active="/weekly-plan/review" />
+        <PageAccessDenied />
+      </main>
+    );
+  }
+
   const reviewTasks = await getWeeklyTasks(reviewTeam, weekStart);
 
   const monday = new Date(`${weekStart}T00:00:00`);

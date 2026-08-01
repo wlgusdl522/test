@@ -1,10 +1,12 @@
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getStaffList } from '@/lib/mutate/staff';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { btnSecondary, card, h1, inputBase, pageWide } from '@/lib/ui';
+import { hasPageAccess } from '@/lib/mutate/permissions';
+import { btnSecondary, card, h1, inputBase, page, pageWide } from '@/lib/ui';
 import WeeklyPlanWorkspace from '@/components/weekly/WeeklyPlanWorkspace';
 import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
 import PrinterIcon from '@/components/icons/PrinterIcon';
+import PageAccessDenied from '@/components/PageAccessDenied';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -35,6 +37,16 @@ export default async function WeeklyPlanPage({
   const team = me?.소속팀 ?? '';
   const weekStart = params.weekStart ?? mondayOf(new Date());
   const viewerEmail = (me?.['이메일(아이디)'] ?? '').toLowerCase();
+
+  if (!(await hasPageAccess('weekly-plan-write'))) {
+    return (
+      <main className={page}>
+        <h1 className={h1}>주간업무계획</h1>
+        <WeeklyPlanTabs active="/weekly-plan" />
+        <PageAccessDenied />
+      </main>
+    );
+  }
 
   const [teamTasks, staffList] = await Promise.all([getWeeklyTasks(team, weekStart), getStaffList()]);
   const myTasks = teamTasks.filter((t) => (t['이메일(아이디)'] ?? '').toLowerCase() === viewerEmail);

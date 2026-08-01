@@ -3,8 +3,11 @@ import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getStaffList } from '@/lib/mutate/staff';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
+import { hasPageAccess } from '@/lib/mutate/permissions';
 import { btn, btnSecondary, h1, inputBase, page, table, td, th, tableWrap } from '@/lib/ui';
 import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
+import PrinterIcon from '@/components/icons/PrinterIcon';
+import PageAccessDenied from '@/components/PageAccessDenied';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -34,6 +37,16 @@ export default async function WeeklyPlanTeamPage({
   const weekStart = params.weekStart ?? mondayOf(new Date());
   const viewerEmail = (me?.['이메일(아이디)'] ?? '').toLowerCase();
 
+  if (!(await hasPageAccess('weekly-plan-team-view'))) {
+    return (
+      <main className={page}>
+        <h1 className={h1}>전체보기</h1>
+        <WeeklyPlanTabs active="/weekly-plan/team" />
+        <PageAccessDenied />
+      </main>
+    );
+  }
+
   const tasks = await getWeeklyTasks(team, weekStart);
   const roster = staffList.filter((s) => s['소속팀'] === team && s['재직상태'] !== '퇴사');
 
@@ -62,6 +75,7 @@ export default async function WeeklyPlanTeamPage({
           target="_blank"
           className={`${btn} ml-auto`}
         >
+          <PrinterIcon />
           인쇄
         </a>
       </form>

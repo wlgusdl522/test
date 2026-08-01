@@ -1,6 +1,13 @@
 import { getKeyedList, deleteKeyedRecord, upsertKeyedRecord } from '@/lib/mutate/keyedTable';
 import { PAGE_ACCESS_EXCEPTION_TABLE, PAGE_ACCESS_TABLE } from '@/lib/sheets/registry';
-import { requireCanManagePermissions } from '@/lib/auth-helpers';
+import {
+  ADMIN_EMAILS,
+  SENIOR_POSITIONS,
+  SUPERVISOR_POSITIONS,
+  getViewerStaffRecord,
+  requireCanManagePermissions,
+  requireViewerEmail,
+} from '@/lib/auth-helpers';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { PAGE_ACCESS_TIERS } from '@/lib/pages-registry';
 
@@ -63,4 +70,22 @@ export async function addPageAccessException(pageId: string, email: string): Pro
 export async function removePageAccessException(pageId: string, email: string): Promise<void> {
   await requireCanManagePermissions();
   await deleteKeyedRecord(PAGE_ACCESS_EXCEPTION_TABLE, { 페이지ID: pageId, 이메일: email });
+}
+
+// 설정 > 권한설정에서 지정한 등급/예외를 실제로 페이지 렌더링 시점에 확인한다.
+// 규칙이 아예 없으면(신규 등록 페이지) 기본값은 "전체"(모두 허용).
+export async function hasPageAccess(pageId: string): Promise<boolean> {
+  const viewerEmail = await requireViewerEmail();
+  if (ADMIN_EMAILS.includes(viewerEmail)) return true;
+
+  const [rules, exceptions] = await Promise.all([getPageAccessRuleMap(), getPageAccessExceptionMap()]);
+  if ((exceptions[pageId] ?? []).includes(viewerEmail)) return true;
+
+  const tier = rules[pageId] ?? '전체';
+  if (tier === '전체') return true;
+
+  const position = (await getViewerStaffRecord())?.['직급/직책'] ?? '';
+  if (tier === '관장부장만') return SENIOR_POSITIONS.includes(position);
+  if (tier === '팀장이상') return SUPERVISOR_POSITIONS.includes(position);
+  return true;
 }
