@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { actOnVehicleLog, addVehicleLog, deleteVehicleLog, updateVehicleLog } from '@/lib/mutate/vehicleLog';
+import { addVehicleMaintenance } from '@/lib/mutate/vehicleMaintenance';
 import { getViewerStaffRecord, requireViewerEmail } from '@/lib/auth-helpers';
 
 async function payloadFromForm(formData: FormData): Promise<Record<string, string>> {
@@ -34,7 +35,22 @@ async function payloadFromForm(formData: FormData): Promise<Record<string, strin
 }
 
 export async function addVehicleLogAction(formData: FormData) {
-  await addVehicleLog(await payloadFromForm(formData));
+  const payload = await payloadFromForm(formData);
+  await addVehicleLog(payload);
+
+  const maintenanceContent = String(formData.get('maintenanceContent') ?? '').trim();
+  if (formData.get('needsMaintenance') === 'on' && maintenanceContent) {
+    await addVehicleMaintenance({
+      차량번호: payload['차량번호'],
+      정비일자: payload['운행일자'],
+      정비내용: maintenanceContent,
+      주행거리: payload['주행거리'],
+      지출액: String(formData.get('maintenanceCost') ?? ''),
+      비고: '운행일지 등록 시 함께 입력됨',
+    });
+    revalidatePath('/vehicles/maintenance');
+  }
+
   revalidatePath('/vehicles/logs');
 }
 

@@ -2,15 +2,10 @@ import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
 import { getVehicleLogList } from '@/lib/mutate/vehicleLog';
-import { badgeBase, badgeTone, btn, btnDanger, btnSecondary, card, input, inputBase, label, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, card, input, inputBase, label } from '@/lib/ui';
 import VehicleSelectWithFuelWarning from '@/components/vehicles/VehicleSelectWithFuelWarning';
 import VehicleRequestCalendar from '@/components/vehicles/VehicleRequestCalendar';
-import {
-  addVehicleRequestAction,
-  deleteVehicleRequestAction,
-  deleteVehicleRequestSeriesAction,
-  updateVehicleRequestAction,
-} from './actions';
+import { addVehicleRequestAction, updateVehicleRequestAction } from './actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -23,9 +18,9 @@ const WEEKDAYS = [
 export default async function VehicleRequestsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string; q?: string; ym?: string; month?: string; date?: string }>;
+  searchParams: Promise<{ edit?: string; month?: string; date?: string }>;
 }) {
-  const { edit, q, ym, month, date } = await searchParams;
+  const { edit, month, date } = await searchParams;
   const [allRequests, vehicles, logs] = await Promise.all([
     getVehicleRequestList(),
     getKeyedList(VEHICLE_LIST_TABLE),
@@ -34,6 +29,7 @@ export default async function VehicleRequestsPage({
   const editing = edit ? allRequests.find((r) => r.id === edit) : null;
   const logByRequestId = new Map(logs.filter((l) => l.신청ID).map((l) => [l.신청ID, l]));
   const calendarMonth = month ?? new Date().toISOString().slice(0, 7);
+  const todayIso = new Date().toISOString().slice(0, 10);
 
   const fuelWarningByVehicle: Record<string, boolean> = {};
   for (const v of vehicles) {
@@ -42,12 +38,6 @@ export default async function VehicleRequestsPage({
       .sort((a, b) => b.운행일자.localeCompare(a.운행일자));
     fuelWarningByVehicle[v.차량번호] = vehicleLogs[0]?.주유필요 === 'Y';
   }
-
-  const requests = allRequests.filter((r) => {
-    if (ym && !r.사용일자.startsWith(ym)) return false;
-    if (q && !`${r.목적} ${r.목적지} ${r.신청자명}`.toLowerCase().includes(q.toLowerCase())) return false;
-    return true;
-  });
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -67,7 +57,7 @@ export default async function VehicleRequestsPage({
           </label>
           <label className={label}>
             사용일자 *
-            <input type="date" name="date" defaultValue={editing?.사용일자 ?? date ?? ''} required className={input} />
+            <input type="date" name="date" defaultValue={editing?.사용일자 ?? date ?? todayIso} required className={input} />
           </label>
           <label className={label}>
             출발시간
@@ -115,59 +105,9 @@ export default async function VehicleRequestsPage({
             {editing && <a href="/vehicles" className="text-xs text-zinc-500 hover:underline">취소</a>}
           </div>
         </form>
-
-        <div className="flex items-center gap-2 mt-6 mb-2">
-          <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">신청 목록</h3>
-          <form method="get" className="flex items-center gap-1.5 ml-auto">
-            <input type="month" name="ym" defaultValue={ym ?? ''} className={`${inputBase} w-auto text-xs py-1`} />
-            <input name="q" defaultValue={q ?? ''} placeholder="목적/목적지/신청자" className={`${inputBase} w-auto text-xs py-1`} />
-            <button type="submit" className={`${btnSecondary} text-xs py-1`}>조회</button>
-            {(ym || q) && <a href="/vehicles" className="text-xs text-zinc-500 hover:underline">초기화</a>}
-          </form>
-        </div>
-
-        <div className={tableWrap}><table className={table}>
-          <thead>
-            <tr>
-              <th className={th}>사용일자</th><th className={th}>차량</th><th className={th}>신청자</th>
-              <th className={th}>목적</th><th className={th}>운행일지</th><th className={th}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {requests.map((r) => {
-              const linkedLog = logByRequestId.get(r.id);
-              return (
-                <tr key={r.id} className={trZebraHover}>
-                  <td className={td}>{r.사용일자}</td>
-                  <td className={td}>{r.차량번호}</td>
-                  <td className={td}>{r.신청자명}</td>
-                  <td className={td}>{r.목적}</td>
-                  <td className={td}>
-                    <a
-                      href={linkedLog ? `/vehicles/logs?edit=${linkedLog.id}` : `/vehicles/logs?requestId=${r.id}`}
-                      className={`${badgeBase} ${linkedLog ? badgeTone.green : badgeTone.blue} hover:opacity-80`}
-                    >
-                      {linkedLog ? '작성됨' : '작성'}
-                    </a>
-                  </td>
-                  <td className={`${td} flex gap-1.5`}>
-                    <a href={`/vehicles?edit=${r.id}#request-form`} className={btnSecondary}>수정</a>
-                    <form action={deleteVehicleRequestAction}>
-                      <input type="hidden" name="id" value={r.id} />
-                      <button type="submit" className={btnDanger}>{r.반복그룹ID ? '삭제(이 건만)' : '삭제'}</button>
-                    </form>
-                    {r.반복그룹ID && (
-                      <form action={deleteVehicleRequestSeriesAction}>
-                        <input type="hidden" name="id" value={r.id} />
-                        <button type="submit" title="이 날짜 이후 반복 전체 삭제" className={btnSecondary}>삭제(이후 전체)</button>
-                      </form>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table></div>
+        <p className="mt-2 text-xs text-zinc-400">
+          신청 목록과 운행일지 작성은 <a href="/vehicles/logs" className="text-brand hover:underline">일지</a> 탭에서 확인할 수 있어요.
+        </p>
       </div>
 
       <div>
