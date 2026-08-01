@@ -21,6 +21,17 @@ const WEEKDAYS = [
   { value: 3, label: '수' }, { value: 4, label: '목' }, { value: 5, label: '금' }, { value: 6, label: '토' },
 ];
 
+// new Date(iso).toISOString()로 하루를 더하면 브라우저 타임존(KST)에서 하루가 밀리는 문제가
+// 있어(VehicleWeekCalendar에서 겪은 것과 동일), 로컬 연/월/일 getter로만 계산한다.
+function addDays(iso: string, delta: number): string {
+  const d = new Date(`${iso}T00:00:00`);
+  d.setDate(d.getDate() + delta);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export default function VehicleReservationClient({
   initialView,
   initialDate,
@@ -223,17 +234,41 @@ export default function VehicleReservationClient({
       )}
 
       {view === 'day' && (
-        <VehicleDayDetailTable
-          date={anchorDate}
-          requests={monthRequests}
-          vehicles={vehicles}
-          hasLogRequestIds={logIdSet}
-          viewerEmail={viewerEmail}
-          onEdit={openEdit}
-          onAdd={openNew}
-          onMutated={handleMutated}
-          showAddButton={false}
-        />
+        <>
+          <div className="flex items-center justify-between mb-3">
+            <button
+              type="button"
+              onClick={() => handleNavigate(addDays(anchorDate, -1))}
+              className="text-sm text-brand hover:underline"
+            >
+              ◀ 전날
+            </button>
+            <input
+              type="date"
+              value={anchorDate}
+              onChange={(e) => e.target.value && handleNavigate(e.target.value)}
+              className={`${inputBase} w-auto text-sm`}
+            />
+            <button
+              type="button"
+              onClick={() => handleNavigate(addDays(anchorDate, 1))}
+              className="text-sm text-brand hover:underline"
+            >
+              다음날 ▶
+            </button>
+          </div>
+          <VehicleDayDetailTable
+            date={anchorDate}
+            requests={monthRequests}
+            vehicles={vehicles}
+            hasLogRequestIds={logIdSet}
+            viewerEmail={viewerEmail}
+            onEdit={openEdit}
+            onAdd={openNew}
+            onMutated={handleMutated}
+            showAddButton={false}
+          />
+        </>
       )}
 
       {formOpen && (
