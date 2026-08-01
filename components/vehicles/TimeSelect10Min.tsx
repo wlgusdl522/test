@@ -1,8 +1,10 @@
 import { input } from '@/lib/ui';
 
+// 업무시간(09:00~18:00)만 선택 가능 — 차량은 근무시간 중에만 운행하므로.
 const OPTIONS: string[] = [];
-for (let h = 0; h < 24; h++) {
+for (let h = 9; h <= 18; h++) {
   for (let m = 0; m < 60; m += 10) {
+    if (h === 18 && m > 0) break;
     OPTIONS.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
   }
 }
