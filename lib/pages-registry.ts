@@ -4,7 +4,6 @@
 export const CONFIGURABLE_PAGES = [
   { id: 'staff-admin', label: '직원관리' },
   { id: 'weekly-plan-write', label: '주간업무 - 작성' },
-  { id: 'weekly-plan-team-view', label: '주간업무 - 전체보기' },
   { id: 'weekly-plan-review', label: '주간업무 - 부서장확인' },
   { id: 'weekly-plan-meeting', label: '주간업무 - 회의록작성' },
 ];

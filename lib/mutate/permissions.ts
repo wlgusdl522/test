@@ -1,4 +1,5 @@
 import { getKeyedList, deleteKeyedRecord, upsertKeyedRecord } from '@/lib/mutate/keyedTable';
+import { getStaffList } from '@/lib/mutate/staff';
 import { PAGE_ACCESS_EXCEPTION_TABLE, PAGE_ACCESS_TABLE } from '@/lib/sheets/registry';
 import {
   ADMIN_EMAILS,
@@ -8,7 +9,6 @@ import {
   requireCanManagePermissions,
   requireViewerEmail,
 } from '@/lib/auth-helpers';
-import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { PAGE_ACCESS_TIERS } from '@/lib/pages-registry';
 
 export async function getPageAccessRuleMap(): Promise<Record<string, string>> {
@@ -32,15 +32,11 @@ export async function getPageAccessExceptionMap(): Promise<Record<string, string
 
 export type ActiveStaff = { email: string; name: string; team: string };
 
+// "이메일(아이디)" 컬럼명의 괄호를 PostgREST가 관계형 조인(embed) 문법으로 오인해서
+// select() 절에 직접 넣으면 조회 자체가 실패한다 — 전체를 읽는 getStaffList()를 재사용한다.
 export async function getActiveStaffList(): Promise<ActiveStaff[]> {
-  const { data, error } = await getSupabaseServerClient()
-    .from('직원관리')
-    .select('이메일(아이디), 성명, 소속팀, 재직상태');
-  if (error) {
-    console.error('[Supabase 읽기 실패] 직원관리(활성 목록)', error);
-    return [];
-  }
-  return ((data ?? []) as any[])
+  const all = await getStaffList();
+  return all
     .filter((r) => r['재직상태'] === '재직')
     .map((r) => ({ email: r['이메일(아이디)'], name: r['성명'], team: r['소속팀'] }));
 }

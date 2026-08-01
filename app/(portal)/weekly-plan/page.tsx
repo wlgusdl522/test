@@ -1,5 +1,7 @@
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getStaffList } from '@/lib/mutate/staff';
+import { getSimpleList } from '@/lib/mutate/simpleList';
+import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import { btnSecondary, card, inputBase } from '@/lib/ui';
@@ -29,22 +31,29 @@ function formatDayLabel(iso: string): string {
 export default async function WeeklyPlanPage({
   searchParams,
 }: {
-  searchParams: Promise<{ weekStart?: string }>;
+  searchParams: Promise<{ weekStart?: string; viewTeam?: string }>;
 }) {
   const params = await searchParams;
   const me = await getViewerStaffRecord();
   const team = me?.소속팀 ?? '';
   const weekStart = params.weekStart ?? mondayOf(new Date());
   const viewerEmail = (me?.['이메일(아이디)'] ?? '').toLowerCase();
+  const viewTeam = params.viewTeam ?? team;
+  const isOwnTeam = viewTeam === team;
 
   if (!(await hasPageAccess('weekly-plan-write'))) {
     return <PageAccessDenied />;
   }
 
-  const [teamTasks, staffList] = await Promise.all([getWeeklyTasks(team, weekStart), getStaffList()]);
-  const myTasks = teamTasks.filter((t) => (t['이메일(아이디)'] ?? '').toLowerCase() === viewerEmail);
+  const [myTeamTasks, staffList, teams] = await Promise.all([
+    getWeeklyTasks(team, weekStart),
+    getStaffList(),
+    getSimpleList(TEAM_LIST_SHEET_NAME),
+  ]);
+  const myTasks = myTeamTasks.filter((t) => (t['이메일(아이디)'] ?? '').toLowerCase() === viewerEmail);
+  const viewTeamTasks = isOwnTeam ? myTeamTasks : await getWeeklyTasks(viewTeam, weekStart);
   const roster = staffList
-    .filter((s) => s['소속팀'] === team && s['재직상태'] !== '퇴사')
+    .filter((s) => s['소속팀'] === viewTeam && s['재직상태'] !== '퇴사')
     .map((s) => ({ email: s['이메일(아이디)'], name: s['성명'] }));
 
   const monday = new Date(`${weekStart}T00:00:00`);
@@ -71,6 +80,7 @@ export default async function WeeklyPlanPage({
           <span className="text-xs text-zinc-400 ml-auto">{formatDayLabel(dayDates[0])} ~ {formatDayLabel(dayDates[5])}</span>
         </div>
         <form method="get" className="flex items-center gap-2 mb-1">
+          <input type="hidden" name="viewTeam" value={viewTeam} />
           <input type="date" name="weekStart" defaultValue={weekStart} className={`${inputBase} w-auto`} />
           <button type="submit" className={btnSecondary}>조회</button>
         </form>
@@ -82,12 +92,16 @@ export default async function WeeklyPlanPage({
           myName={me?.성명 ?? ''}
           myEmail={viewerEmail}
           roster={roster}
-          teamTasks={teamTasks.map((t) => ({
+          teamTasks={viewTeamTasks.map((t) => ({
             email: t['이메일(아이디)'] ?? '',
             name: t['성명'] ?? '',
             날짜: t['날짜'],
             업무내용: t['업무내용'],
           }))}
+          teams={teams}
+          weekStart={weekStart}
+          viewTeam={viewTeam}
+          isOwnTeam={isOwnTeam}
         />
       </div>
     </>

@@ -3,7 +3,6 @@ import WeeklyPlanTabsClient from './WeeklyPlanTabsClient';
 
 const TABS = [
   { href: '/weekly-plan', label: '작성', pageId: 'weekly-plan-write' },
-  { href: '/weekly-plan/team', label: '전체보기', pageId: 'weekly-plan-team-view' },
   { href: '/weekly-plan/review', label: '부서장확인', pageId: 'weekly-plan-review' },
   { href: '/weekly-plan/meeting', label: '회의록작성', pageId: 'weekly-plan-meeting' },
 ];

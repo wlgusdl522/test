@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { btn, input, table, td, th, tableWrap } from '@/lib/ui';
+import { btn, btnSecondary, input, inputBase, table, td, th, tableWrap } from '@/lib/ui';
 import { submitWeeklyPlanAction } from '@/app/(portal)/weekly-plan/actions';
 import { FULL_DAY_LEAVE_TYPES, LEAVE_TYPES, parseLeaveTag } from '@/lib/weeklyLeave';
 
@@ -44,6 +44,10 @@ export default function WeeklyPlanWorkspace({
   myEmail,
   roster,
   teamTasks,
+  teams,
+  weekStart,
+  viewTeam,
+  isOwnTeam,
 }: {
   dayDates: string[];
   weekdayLabels: string[];
@@ -52,6 +56,10 @@ export default function WeeklyPlanWorkspace({
   myEmail: string;
   roster: RosterMember[];
   teamTasks: TeamTask[];
+  teams: string[];
+  weekStart: string;
+  viewTeam: string;
+  isOwnTeam: boolean;
 }) {
   const router = useRouter();
   const [rowsByDay, setRowsByDay] = useState<Record<string, Row[]>>(() => {
@@ -220,7 +228,16 @@ export default function WeeklyPlanWorkspace({
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold mb-2 text-zinc-700 dark:text-zinc-200">팀 전체보기 (실시간 미리보기)</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">팀 조회 (참고용)</h3>
+          <form method="get" className="flex items-center gap-1.5 ml-auto">
+            <input type="hidden" name="weekStart" value={weekStart} />
+            <select name="viewTeam" defaultValue={viewTeam} className={`${inputBase} w-auto text-xs py-1`}>
+              {teams.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <button type="submit" className={`${btnSecondary} text-xs py-1`}>조회</button>
+          </form>
+        </div>
         <div className={tableWrap}>
           <table className={table}>
             <thead>
@@ -232,35 +249,41 @@ export default function WeeklyPlanWorkspace({
               </tr>
             </thead>
             <tbody>
-              <tr className="bg-brand-tint">
-                <td className={td}><b>{myName}</b></td>
-                {dayDates.map((iso) => (
-                  <td key={iso} className={td}>
-                    {(rowsByDay[iso] ?? []).length === 0
-                      ? <span className="text-zinc-300 dark:text-zinc-700">-</span>
-                      : (rowsByDay[iso] ?? []).map((r, i) => <div key={i}>• {r.text}</div>)}
-                  </td>
-                ))}
-              </tr>
-              {roster.filter((m) => m.email.toLowerCase() !== myEmail.toLowerCase()).map((member) => (
-                <tr key={member.email}>
-                  <td className={td}>{member.name}</td>
-                  {dayDates.map((iso) => {
-                    const dayTasks = teamTasks.filter((t) => t.email.toLowerCase() === member.email.toLowerCase() && t.날짜 === iso);
-                    return (
-                      <td key={iso} className={td}>
-                        {dayTasks.length === 0
-                          ? <span className="text-zinc-300 dark:text-zinc-700">-</span>
-                          : dayTasks.map((t, i) => <div key={i}>• {t.업무내용}</div>)}
-                      </td>
-                    );
-                  })}
+              {isOwnTeam && (
+                <tr className="bg-brand-tint">
+                  <td className={td}><b>{myName}</b></td>
+                  {dayDates.map((iso) => (
+                    <td key={iso} className={td}>
+                      {(rowsByDay[iso] ?? []).length === 0
+                        ? <span className="text-zinc-300 dark:text-zinc-700">-</span>
+                        : (rowsByDay[iso] ?? []).map((r, i) => <div key={i}>• {r.text}</div>)}
+                    </td>
+                  ))}
                 </tr>
-              ))}
+              )}
+              {roster
+                .filter((m) => !isOwnTeam || m.email.toLowerCase() !== myEmail.toLowerCase())
+                .map((member) => (
+                  <tr key={member.email}>
+                    <td className={td}>{member.name}</td>
+                    {dayDates.map((iso) => {
+                      const dayTasks = teamTasks.filter((t) => t.email.toLowerCase() === member.email.toLowerCase() && t.날짜 === iso);
+                      return (
+                        <td key={iso} className={td}>
+                          {dayTasks.length === 0
+                            ? <span className="text-zinc-300 dark:text-zinc-700">-</span>
+                            : dayTasks.map((t, i) => <div key={i}>• {t.업무내용}</div>)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-xs text-zinc-400">내 줄은 왼쪽 입력에 맞춰 실시간으로 바뀌고, 나머지는 이미 저장된 내용이에요.</p>
+        <p className="mt-2 text-xs text-zinc-400">
+          {isOwnTeam ? '내 줄은 왼쪽 입력에 맞춰 실시간으로 바뀌고, 나머지는 이미 저장된 내용이에요.' : '다른 팀은 조회 전용이며 이미 저장된 내용만 보여줘요.'}
+        </p>
       </div>
     </div>
   );
