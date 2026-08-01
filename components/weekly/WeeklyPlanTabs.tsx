@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 const TABS = [
   { href: '/weekly-plan', label: '작성' },
+  { href: '/weekly-plan/team', label: '전체보기' },
   { href: '/weekly-plan/review', label: '부서장확인' },
   { href: '/weekly-plan/meeting', label: '회의록작성' },
 ];
