@@ -16,10 +16,14 @@ export default function SupervisorReviewList({
   tasks,
   dayDates,
   weekdayLabels,
+  team,
+  weekStart,
 }: {
   tasks: ReviewTask[];
   dayDates: string[];
   weekdayLabels: string[];
+  team: string;
+  weekStart: string;
 }) {
   const router = useRouter();
   const [reflectedById, setReflectedById] = useState<Record<string, boolean>>(() =>
@@ -36,15 +40,11 @@ export default function SupervisorReviewList({
     const changes = tasks
       .filter((t) => reflectedById[t.id] !== t.reflected)
       .map((t) => ({ id: t.id, flagged: reflectedById[t.id] }));
-    if (changes.length === 0) {
-      setStatusText('변경된 항목이 없습니다.');
-      return;
-    }
     setStatusText('반영 중...');
     startTransition(async () => {
       try {
-        await submitSupervisorReflectionsAction(changes);
-        setStatusText('반영 완료');
+        await submitSupervisorReflectionsAction(team, weekStart, changes);
+        setStatusText('반영 완료 (완료 처리됨)');
         router.refresh();
       } catch (err) {
         setStatusText(err instanceof Error ? err.message : '반영 실패');

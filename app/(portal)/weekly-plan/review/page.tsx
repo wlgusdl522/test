@@ -3,8 +3,7 @@ import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getReviewCompletionStatus } from '@/lib/mutate/reviewStatus';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { btn, btnSecondary, card, h1, h2, inputBase, pageWide, tableWrap, table, td, th, trZebraHover } from '@/lib/ui';
-import StatusBadge from '@/components/StatusBadge';
+import { btnSecondary, card, h1, h2, inputBase, pageWide } from '@/lib/ui';
 import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
 import SupervisorReviewList from '@/components/weekly/SupervisorReviewList';
 import { setReviewCompletionAction } from './actions';
@@ -54,7 +53,7 @@ export default async function ReviewPage({
 
       <WeeklyPlanTabs active="/weekly-plan/review" />
 
-      <form method="get" className="flex gap-2 mb-6">
+      <form method="get" className="flex gap-2 mb-4">
         <select name="team" defaultValue={reviewTeam} className={`${inputBase} w-auto`}>
           {teams.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
@@ -62,7 +61,38 @@ export default async function ReviewPage({
         <button type="submit" className={btnSecondary}>조회</button>
       </form>
 
-      <h2 className={h2}>{reviewTeam} 팀별 주간업무 확인</h2>
+      <div className="print:hidden flex flex-wrap items-center gap-1.5 mb-5">
+        {teams.map((team) => {
+          const done = status[team]?.완료여부 ?? false;
+          const active = team === reviewTeam;
+          return (
+            <a
+              key={team}
+              href={`/weekly-plan/review?team=${encodeURIComponent(team)}&weekStart=${weekStart}`}
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs border transition-colors ${
+                active ? 'border-brand bg-brand-tint text-brand font-medium' : 'border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300'
+              }`}
+            >
+              <span>{done ? '✓' : '☐'}</span>
+              {team}
+            </a>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center justify-between">
+        <h2 className={h2}>{reviewTeam} 팀별 주간업무 확인</h2>
+        {status[reviewTeam]?.완료여부 && (
+          <form action={setReviewCompletionAction} className="print:hidden">
+            <input type="hidden" name="team" value={reviewTeam} />
+            <input type="hidden" name="weekStart" value={weekStart} />
+            <input type="hidden" name="flag" value="false" />
+            <button type="submit" className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:underline">
+              완료 취소 ({status[reviewTeam]?.확인자명} 확인)
+            </button>
+          </form>
+        )}
+      </div>
       <div className={`${card} mb-3`}>
         <SupervisorReviewList
           tasks={reviewTasks.map((t) => ({
@@ -75,36 +105,10 @@ export default async function ReviewPage({
           }))}
           dayDates={dayDates}
           weekdayLabels={WEEKDAY_LABELS}
+          team={reviewTeam}
+          weekStart={weekStart}
         />
       </div>
-
-      <div className={tableWrap}><table className={table}>
-        <thead>
-          <tr><th className={th}>팀</th><th className={th}>완료여부</th><th className={th}>확인자</th><th className={th}>확인일시</th><th className={th}></th></tr>
-        </thead>
-        <tbody>
-          {teams.map((team) => {
-            const s = status[team];
-            const done = s?.완료여부 ?? false;
-            return (
-              <tr key={team} className={trZebraHover}>
-                <td className={td}>{team}</td>
-                <td className={td}><StatusBadge status={done ? '완료' : '미완료'} /></td>
-                <td className={td}>{s?.확인자명 ?? ''}</td>
-                <td className={td}>{s?.확인일시 ?? ''}</td>
-                <td className={td}>
-                  <form action={setReviewCompletionAction}>
-                    <input type="hidden" name="team" value={team} />
-                    <input type="hidden" name="weekStart" value={weekStart} />
-                    <input type="hidden" name="flag" value={String(!done)} />
-                    <button type="submit" className={btn}>{done ? '완료 취소' : '완료 처리'}</button>
-                  </form>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table></div>
     </main>
   );
 }

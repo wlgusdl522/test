@@ -2,11 +2,18 @@
 
 import { revalidatePath } from 'next/cache';
 import { submitWeeklyTaskDay, toggleSupervisorReflect } from '@/lib/mutate/weeklyTask';
+import { setReviewCompletion } from '@/lib/mutate/reviewStatus';
 import { getViewerStaffRecord, requireViewerEmail } from '@/lib/auth-helpers';
 
 // "부서장확인" 탭의 반영 버튼 — 체크만으로는 저장되지 않고, 이걸 눌러야 바뀐 항목들이 한 번에 저장된다.
-export async function submitSupervisorReflectionsAction(changes: { id: string; flagged: boolean }[]): Promise<void> {
+// 누르는 순간 그 팀/그 주의 완료 표시도 같이 켜져서 따로 완료 처리를 누를 필요가 없다.
+export async function submitSupervisorReflectionsAction(
+  team: string,
+  weekStart: string,
+  changes: { id: string; flagged: boolean }[]
+): Promise<void> {
   for (const { id, flagged } of changes) await toggleSupervisorReflect(id, flagged);
+  await setReviewCompletion(team, weekStart, true);
   revalidatePath('/weekly-plan/review');
 }
 
