@@ -1,6 +1,7 @@
 import {
   appendRecord,
   deleteRecord,
+  deleteRecords,
   getAllRecords,
   updateRecord,
   upsertRecord,
@@ -62,5 +63,16 @@ export async function deleteKeyedRecord(
   keyValues: Record<string, string>
 ): Promise<Record<string, string>[]> {
   await deleteRecord(config, keyValues);
+  return afterSheetWrite(config);
+}
+
+// 여러 건을 한 번에 지울 때 — 건마다 deleteKeyedRecord를 반복 호출하면 매번 시트 읽기+쓰기+
+// Supabase 미러링까지 다시 도는데, 이걸 N번 반복하면 대량 삭제 시 API 요청 한도에 걸려
+// 일부만 지워지고 중단될 수 있다. 시트 삭제는 batchUpdate 하나로, 미러링도 마지막에 한 번만 한다.
+export async function deleteKeyedRecords(
+  config: KeyedTableConfig,
+  keyValuesList: Record<string, string>[]
+): Promise<Record<string, string>[]> {
+  await deleteRecords(config, keyValuesList);
   return afterSheetWrite(config);
 }

@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { getSheetsClient } from '@/lib/sheets/client';
 import { getAllRecords } from '@/lib/sheets/keyedTable';
-import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord } from '@/lib/mutate/keyedTable';
+import { addKeyedRecord, deleteKeyedRecord, deleteKeyedRecords, getKeyedList, updateKeyedRecord } from '@/lib/mutate/keyedTable';
 import { VEHICLE_REQUEST_TABLE } from '@/lib/sheets/registry';
 import { mirrorKeyedTableToSupabase } from '@/lib/supabase/keyedTable';
 
@@ -161,7 +161,7 @@ export async function addVehicleRequestsRecurring(
 export async function deleteVehicleRequestSeriesFrom(
   id: string
 ): Promise<{ count: number; requests: Record<string, string>[] }> {
-  const all = await getKeyedList(VEHICLE_REQUEST_TABLE);
+  const all = await getAllRecords(VEHICLE_REQUEST_TABLE);
   const target = all.find((r) => r.id === id);
   if (!target) throw new Error('삭제할 신청을 찾을 수 없습니다.');
   const groupId = target['반복그룹ID'];
@@ -169,9 +169,12 @@ export async function deleteVehicleRequestSeriesFrom(
   const targetDate = target['사용일자'];
 
   const toDelete = all.filter((r) => r['반복그룹ID'] === groupId && r['사용일자'] >= targetDate);
-  let requests: Record<string, string>[] = all;
-  for (const r of toDelete) {
-    requests = await deleteKeyedRecord(VEHICLE_REQUEST_TABLE, { id: r.id });
-  }
+  if (toDelete.length === 0) return { count: 0, requests: all };
+  // 건마다 따로 지우면 반복 횟수만큼 API 왕복이 반복돼 대량 삭제 시 요청 한도에 걸려
+  // 일부만 지워지고 중단될 수 있었다 — 시트 삭제도, Supabase 미러링도 한 번씩만 한다.
+  const requests = await deleteKeyedRecords(
+    VEHICLE_REQUEST_TABLE,
+    toDelete.map((r) => ({ id: r.id }))
+  );
   return { count: toDelete.length, requests };
 }
