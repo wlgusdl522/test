@@ -3,11 +3,11 @@ import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getReviewCompletionStatus } from '@/lib/mutate/reviewStatus';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { btn, btnSecondary, card, h1, h2, hint, input, inputBase, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnSecondary, card, h1, h2, inputBase, page, tableWrap, table, td, th, trZebraHover } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
 import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
+import SupervisorReviewList from '@/components/weekly/SupervisorReviewList';
 import { setReviewCompletionAction } from './actions';
-import { toggleSupervisorReflectAction } from '@/app/(portal)/weekly-plan/actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -53,35 +53,17 @@ export default async function ReviewPage({
       </form>
 
       <h2 className={h2}>{reviewTeam} 팀별 주간업무 확인</h2>
-      <p className={hint}>회의록에 올릴 업무를 체크하면 바로 반영됩니다.</p>
       <div className={`${card} mb-3`}>
-        <div className={tableWrap}><table className={table}>
-          <thead>
-            <tr><th className={th}>날짜</th><th className={th}>성명</th><th className={th}>업무내용</th><th className={th}>부서장 주간업무 반영</th></tr>
-          </thead>
-          <tbody>
-            {reviewTasks.length === 0 ? (
-              <tr><td className={td} colSpan={4} style={{ textAlign: 'center' }}>해당 주에 등록된 업무가 없습니다.</td></tr>
-            ) : reviewTasks.map((t) => {
-              const highlighted = t.회의록후보 === 'TRUE' || t.회의록후보 === 'true';
-              const reflected = t.부서장반영 === 'TRUE' || t.부서장반영 === 'true';
-              return (
-                <tr key={t.id} className={trZebraHover}>
-                  <td className={td}>{t.날짜}</td>
-                  <td className={td}>{t.성명}</td>
-                  <td className={td}>{t.업무내용} {highlighted && <span className="text-xs text-brand">(회의록 반영됨)</span>}</td>
-                  <td className={td} style={{ textAlign: 'center' }}>
-                    <form action={toggleSupervisorReflectAction}>
-                      <input type="hidden" name="id" value={t.id} />
-                      <input type="hidden" name="flag" value={String(!reflected)} />
-                      <button type="submit">{reflected ? '✅' : '☐'}</button>
-                    </form>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table></div>
+        <SupervisorReviewList
+          tasks={reviewTasks.map((t) => ({
+            id: t.id,
+            날짜: t.날짜,
+            성명: t.성명,
+            업무내용: t.업무내용,
+            highlighted: t.회의록후보 === 'TRUE' || t.회의록후보 === 'true',
+            reflected: t.부서장반영 === 'TRUE' || t.부서장반영 === 'true',
+          }))}
+        />
       </div>
 
       <div className={tableWrap}><table className={table}>
