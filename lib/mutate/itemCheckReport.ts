@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { getKeyedList } from '@/lib/mutate/keyedTable';
-import { appendRecord, deleteRecord, updateRecord } from '@/lib/sheets/keyedTable';
+import { appendRecord, deleteRecord, getAllRecords, updateRecord } from '@/lib/sheets/keyedTable';
 import { ITEM_CHECK_REPORT_TABLE } from '@/lib/sheets/registry';
 import { mirrorKeyedTableToSupabase } from '@/lib/supabase/keyedTable';
 import {
@@ -75,8 +75,10 @@ function buildSubmitMessage(decorated: DecoratedReport): string {
   );
 }
 
+// appendRecord/updateRecord/deleteRecord는 시트에만 쓰므로, 미러링 대상은 Supabase를
+// 먼저 보는 getKeyedList가 아니라 시트에서 바로 다시 읽어야 방금 쓴 변경이 반영된다.
 async function afterWrite(): Promise<DecoratedReport[]> {
-  const raw = await getKeyedList(ITEM_CHECK_REPORT_TABLE);
+  const raw = await getAllRecords(ITEM_CHECK_REPORT_TABLE);
   await mirrorKeyedTableToSupabase(
     { tableName: ITEM_CHECK_REPORT_TABLE.sheetName, primaryKey: ITEM_CHECK_REPORT_TABLE.primaryKey },
     raw
@@ -180,7 +182,7 @@ export async function actOnItemCheckReport(id: string, action: '승인' | '반�
   await updateRecord(ITEM_CHECK_REPORT_TABLE, { id }, record);
   await mirrorKeyedTableToSupabase(
     { tableName: ITEM_CHECK_REPORT_TABLE.sheetName, primaryKey: ITEM_CHECK_REPORT_TABLE.primaryKey },
-    await getKeyedList(ITEM_CHECK_REPORT_TABLE)
+    await getAllRecords(ITEM_CHECK_REPORT_TABLE)
   );
 
   const redecorated = await decorate(record, staffList);
@@ -201,6 +203,6 @@ export async function setItemCheckReportPrinted(id: string, printed: boolean): P
   await updateRecord(ITEM_CHECK_REPORT_TABLE, { id }, { ...existing, 인쇄일시: value });
   await mirrorKeyedTableToSupabase(
     { tableName: ITEM_CHECK_REPORT_TABLE.sheetName, primaryKey: ITEM_CHECK_REPORT_TABLE.primaryKey },
-    await getKeyedList(ITEM_CHECK_REPORT_TABLE)
+    await getAllRecords(ITEM_CHECK_REPORT_TABLE)
   );
 }

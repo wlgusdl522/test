@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { getKeyedList } from '@/lib/mutate/keyedTable';
-import { appendRecord, deleteRecord, updateRecord } from '@/lib/sheets/keyedTable';
+import { appendRecord, deleteRecord, getAllRecords, updateRecord } from '@/lib/sheets/keyedTable';
 import { VEHICLE_LOG_TABLE } from '@/lib/sheets/registry';
 import { mirrorKeyedTableToSupabase } from '@/lib/supabase/keyedTable';
 import {
@@ -66,8 +66,12 @@ function buildSubmitMessage(record: DecoratedLog): string {
   return `[차량운행일지 제출] ${record.운전자명 ?? ''}님 - ${record.차량번호 ?? ''} · ${record.운행일자 ?? ''} · ${record.목적 ?? ''} - 결재 요청 (마이페이지 > 내 결재함에서 확인해주세요)`;
 }
 
+// appendRecord/updateRecord/deleteRecord는 시트에 직접 쓰고 끝나므로, 미러링 대상은
+// (Supabase를 먼저 보는) getKeyedList가 아니라 시트에서 바로 다시 읽어야 한다 —
+// 안 그러면 Supabase가 아직 못 따라간 예전 스냅샷을 그대로 다시 미러링해서, 방금 쓴
+// 변경이 Supabase·화면엔 영영 반영되지 않는다.
 async function afterWrite(): Promise<DecoratedLog[]> {
-  const raw = await getKeyedList(VEHICLE_LOG_TABLE);
+  const raw = await getAllRecords(VEHICLE_LOG_TABLE);
   await mirrorKeyedTableToSupabase({ tableName: VEHICLE_LOG_TABLE.sheetName, primaryKey: VEHICLE_LOG_TABLE.primaryKey }, raw);
   return getVehicleLogList();
 }
@@ -168,7 +172,7 @@ export async function actOnVehicleLog(id: string, action: '승인' | '반려', c
   await updateRecord(VEHICLE_LOG_TABLE, { id }, record);
   await mirrorKeyedTableToSupabase(
     { tableName: VEHICLE_LOG_TABLE.sheetName, primaryKey: VEHICLE_LOG_TABLE.primaryKey },
-    await getKeyedList(VEHICLE_LOG_TABLE)
+    await getAllRecords(VEHICLE_LOG_TABLE)
   );
 
   const redecorated = await decorate(record, staffList, true);

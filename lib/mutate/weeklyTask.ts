@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { addKeyedRecord, deleteKeyedRecord, getKeyedList } from '@/lib/mutate/keyedTable';
+import { getAllRecords } from '@/lib/sheets/keyedTable';
 import { getSheetsClient } from '@/lib/sheets/client';
 import { WEEKLY_TASK_TABLE } from '@/lib/sheets/registry';
 import { mirrorKeyedTableToSupabase } from '@/lib/supabase/keyedTable';
@@ -130,7 +131,10 @@ async function setSingleCell(id: string, column: string, value: boolean): Promis
     requestBody: { values: [[value]] },
   });
 
-  const all2 = await getKeyedList(WEEKLY_TASK_TABLE);
+  // 방금 시트에 직접 썼으므로, Supabase를 먼저 보는 getKeyedList 대신 시트에서 바로 다시 읽는다 —
+  // 안 그러면 미러링 대상이 (아직 못 따라간) Supabase 스냅샷이 되어 이 체크 변경이 Supabase엔
+  // 영영 반영되지 않는다.
+  const all2 = await getAllRecords(WEEKLY_TASK_TABLE);
   await mirrorKeyedTableToSupabase({ tableName: WEEKLY_TASK_TABLE.sheetName, primaryKey: WEEKLY_TASK_TABLE.primaryKey }, all2);
 }
 

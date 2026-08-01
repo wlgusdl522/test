@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { getKeyedList } from '@/lib/mutate/keyedTable';
-import { appendRecord, updateRecord, deleteRecord } from '@/lib/sheets/keyedTable';
+import { appendRecord, updateRecord, deleteRecord, getAllRecords } from '@/lib/sheets/keyedTable';
 import { ITEM_CHECK_PHOTO_SLOTS, ITEM_CHECK_PHOTO_TABLE } from '@/lib/sheets/registry';
 import { mirrorKeyedTableToSupabase } from '@/lib/supabase/keyedTable';
 import { deleteDriveFileFromUrl, uploadImageDataUrl } from '@/lib/drive/upload';
@@ -11,8 +11,10 @@ function nowTimestamp(): string {
   return new Date().toISOString().slice(0, 19).replace('T', ' ');
 }
 
+// appendRecord/updateRecord/deleteRecord는 시트에만 쓰므로, 미러링 대상은 Supabase를
+// 먼저 보는 getKeyedList가 아니라 시트에서 바로 다시 읽어야 방금 쓴 변경이 반영된다.
 async function afterWrite(): Promise<Record<string, string>[]> {
-  const all = await getKeyedList(ITEM_CHECK_PHOTO_TABLE);
+  const all = await getAllRecords(ITEM_CHECK_PHOTO_TABLE);
   await mirrorKeyedTableToSupabase(
     { tableName: ITEM_CHECK_PHOTO_TABLE.sheetName, primaryKey: ITEM_CHECK_PHOTO_TABLE.primaryKey },
     all
@@ -83,6 +85,6 @@ export async function setItemCheckPhotoPrinted(id: string, printed: boolean): Pr
   await updateRecord(ITEM_CHECK_PHOTO_TABLE, { id }, { ...existing, 인쇄일시: value });
   await mirrorKeyedTableToSupabase(
     { tableName: ITEM_CHECK_PHOTO_TABLE.sheetName, primaryKey: ITEM_CHECK_PHOTO_TABLE.primaryKey },
-    await getKeyedList(ITEM_CHECK_PHOTO_TABLE)
+    await getAllRecords(ITEM_CHECK_PHOTO_TABLE)
   );
 }

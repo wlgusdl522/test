@@ -145,7 +145,11 @@ export async function addVehicleRequestsRecurring(
     requestBody: { values: rows },
   });
 
-  const all = await getKeyedList(VEHICLE_REQUEST_TABLE);
+  // 방금 시트에 직접 append했으므로, Supabase를 먼저 보는 getKeyedList가 아니라
+  // 항상 시트에서 곧바로 다시 읽어야 한다 — 안 그러면 미러링 대상 목록 자체가
+  // (아직 새 행을 못 받은) Supabase의 예전 스냅샷이 되어 새로 만든 행이 Supabase에
+  // 영영 반영되지 않는다(스프레드시트엔 있는데 Supabase·웹앱엔 안 보이는 원인이었음).
+  const all = await getAllRecords(VEHICLE_REQUEST_TABLE);
   await mirrorKeyedTableToSupabase({ tableName: VEHICLE_REQUEST_TABLE.sheetName, primaryKey: VEHICLE_REQUEST_TABLE.primaryKey }, all);
 
   const dateColumnIndex = VEHICLE_REQUEST_TABLE.headers.indexOf('사용일자');
