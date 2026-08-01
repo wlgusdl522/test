@@ -11,9 +11,9 @@ export const dynamic = 'force-dynamic';
 export default async function VehicleMyRequestsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ym?: string; all?: string; mine?: string }>;
+  searchParams: Promise<{ ym?: string; all?: string; mine?: string; deleted?: string; seriesDeleted?: string }>;
 }) {
-  const { ym, all, mine } = await searchParams;
+  const { ym, all, mine, deleted, seriesDeleted } = await searchParams;
   const [me, allRequests, allLogs] = await Promise.all([
     getViewerStaffRecord(),
     getVehicleRequestList(),
@@ -35,6 +35,11 @@ export default async function VehicleMyRequestsPage({
 
   return (
     <div>
+      {(deleted === '1' || seriesDeleted === '1') && (
+        <div className="mb-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+          {seriesDeleted === '1' ? '이후 반복 예약을 전부 삭제했습니다.' : '삭제했습니다.'}
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <a
           href={`/vehicles/requests?${mineParam.replace(/^&/, '')}`}
@@ -99,6 +104,9 @@ export default async function VehicleMyRequestsPage({
                       <a href={`/vehicles?edit=${r.id}`} className={btnSecondary}>수정</a>
                       <form action={deleteVehicleRequestFormAction}>
                         <input type="hidden" name="id" value={r.id} />
+                        {ym && <input type="hidden" name="ym" value={ym} />}
+                        {showAll && <input type="hidden" name="all" value="1" />}
+                        {mineOnly && <input type="hidden" name="mine" value="1" />}
                         <ConfirmSubmitButton confirmMessage="이 신청을 삭제할까요?" className={btnDanger}>
                           {r.반복그룹ID ? '삭제(이 건만)' : '삭제'}
                         </ConfirmSubmitButton>
@@ -106,6 +114,9 @@ export default async function VehicleMyRequestsPage({
                       {r.반복그룹ID && (
                         <form action={deleteVehicleRequestSeriesFormAction}>
                           <input type="hidden" name="id" value={r.id} />
+                          {ym && <input type="hidden" name="ym" value={ym} />}
+                          {showAll && <input type="hidden" name="all" value="1" />}
+                          {mineOnly && <input type="hidden" name="mine" value="1" />}
                           <ConfirmSubmitButton
                             confirmMessage="이 날짜 이후의 반복 예약을 전부 삭제할까요?"
                             title="이 날짜 이후 반복 전체 삭제"

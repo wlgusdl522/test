@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import {
   addVehicleRequest,
   addVehicleRequestsRecurring,
@@ -81,10 +82,26 @@ export async function deleteVehicleRequestSeriesAction(formData: FormData): Prom
 }
 
 // 서버 컴포넌트의 <form action={...}>는 void 반환만 허용해서, 최신 목록을 돌려주는 위 두
-// 함수를 그 자리에 바로 못 쓴다 — 신청내역 페이지의 삭제 버튼 전용으로 값만 버리는 래퍼.
+// 함수를 그 자리에 바로 못 쓴다 — 신청내역 페이지의 삭제 버튼 전용 래퍼. 삭제 후에는
+// (조회 필터를 그대로 유지한 채) 성공 표시용 쿼리파라미터를 붙여 redirect한다 — 그냥
+// revalidatePath만으로는 "잘 지워졌다"는 게 화면에 안 보여서 사용자가 직접 새로고침하게 됐었다.
+function requestsRedirectUrl(formData: FormData, flag: string): string {
+  const params = new URLSearchParams();
+  const ym = formData.get('ym');
+  const all = formData.get('all');
+  const mine = formData.get('mine');
+  if (ym) params.set('ym', String(ym));
+  if (all) params.set('all', String(all));
+  if (mine) params.set('mine', String(mine));
+  params.set(flag, '1');
+  return `/vehicles/requests?${params.toString()}`;
+}
+
 export async function deleteVehicleRequestFormAction(formData: FormData): Promise<void> {
   await deleteVehicleRequestAction(formData);
+  redirect(requestsRedirectUrl(formData, 'deleted'));
 }
 export async function deleteVehicleRequestSeriesFormAction(formData: FormData): Promise<void> {
   await deleteVehicleRequestSeriesAction(formData);
+  redirect(requestsRedirectUrl(formData, 'seriesDeleted'));
 }
