@@ -49,6 +49,7 @@ export default function VehicleReservationClient({
   const [prefillDate, setPrefillDate] = useState<string | null>(initialNew ? initialDate : null);
   const [formOpen, setFormOpen] = useState(!!initialEditId || initialNew);
   const [formError, setFormError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const logIdSet = useMemo(() => new Set(hasLogRequestIds), [hasLogRequestIds]);
@@ -58,12 +59,14 @@ export default function VehicleReservationClient({
     setEditingId(null);
     setPrefillDate(date);
     setFormError(null);
+    setSuccessMessage(null);
     setFormOpen(true);
   }
   function openEdit(id: string) {
     setEditingId(id);
     setPrefillDate(null);
     setFormError(null);
+    setSuccessMessage(null);
     setFormOpen(true);
   }
   function closeForm() {
@@ -84,16 +87,27 @@ export default function VehicleReservationClient({
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const wasEditing = !!editingId;
+    if (wasEditing) fd.set('id', editingId as string);
     setFormError(null);
     startTransition(async () => {
       try {
-        if (editingId) {
-          fd.set('id', editingId);
-          await updateVehicleRequestAction(fd);
-        } else {
-          await addVehicleRequestAction(fd);
-        }
+        const result = wasEditing
+          ? await updateVehicleRequestAction(fd)
+          : await addVehicleRequestAction(fd);
         setFormOpen(false);
+        // 방금 만든(또는 수정한) 예약이 바로 눈에 보이도록, 그 날짜로 화면을 옮긴다.
+        // 반복 신청이면 실제로 첫 회차가 등록된 날짜로 이동 — 처음 입력한 날짜가 반복 요일과
+        // 안 맞으면 그 날짜엔 아무것도 안 만들어져서 "신청했는데 아무것도 안 보인다"로 이어졌었다.
+        setAnchorDate(result.date);
+        setWeekSelectedDate(null);
+        setSuccessMessage(
+          wasEditing
+            ? '수정했습니다.'
+            : result.count > 1
+              ? `${result.count}건 등록했습니다 (${result.date}부터).`
+              : '신청했습니다.'
+        );
         router.refresh();
       } catch (err) {
         setFormError(err instanceof Error ? err.message : '신청 중 오류가 발생했습니다.');
@@ -108,7 +122,10 @@ export default function VehicleReservationClient({
     <div>
       <div className="flex items-center justify-between mb-4">
         <VehicleViewSwitch view={view} onChange={handleViewChange} />
-        <button type="button" onClick={() => openNew(anchorDate)} className={btn}>예약하기</button>
+        <div className="flex items-center gap-3">
+          {successMessage && <span className="text-sm text-emerald-600 dark:text-emerald-400">{successMessage}</span>}
+          <button type="button" onClick={() => openNew(anchorDate)} className={btn}>예약하기</button>
+        </div>
       </div>
 
       {view === 'month' && (

@@ -73,6 +73,26 @@ export default function Sidebar({ userName, userSubtitle }: { userName: string; 
 
       <div className="flex flex-1 flex-col gap-1 overflow-y-auto">
         {NAV_SECTIONS.map((section) => {
+          // 항목이 하나뿐인 섹션은 펼치고 접는 과정 없이 바로 클릭할 수 있는 단일 링크로 보여준다.
+          if (section.items.length === 1) {
+            const item = section.items[0];
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            return (
+              <Link
+                key={section.label}
+                href={item.href}
+                className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-semibold transition-colors ${
+                  active
+                    ? 'bg-brand-tint text-brand'
+                    : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900'
+                }`}
+              >
+                <SectionIcon label={section.label} />
+                {section.label}
+              </Link>
+            );
+          }
+
           const open = openSections.has(section.label);
           return (
             <div key={section.label}>

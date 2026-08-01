@@ -28,27 +28,34 @@ async function payloadFromForm(formData: FormData): Promise<Record<string, strin
   };
 }
 
-export async function addVehicleRequestAction(formData: FormData) {
+export async function addVehicleRequestAction(
+  formData: FormData
+): Promise<{ date: string; count: number }> {
   const payload = await payloadFromForm(formData);
   const isRecurring = formData.get('recurring') === 'on';
 
+  let result: { date: string; count: number };
   if (isRecurring) {
     const weekdays = formData.getAll('weekday').map(Number);
     const untilDate = String(formData.get('untilDate') ?? '');
-    await addVehicleRequestsRecurring(payload, weekdays, untilDate);
+    const { count, firstDate } = await addVehicleRequestsRecurring(payload, weekdays, untilDate);
+    result = { date: firstDate, count };
   } else {
     await addVehicleRequest(payload);
+    result = { date: payload['사용일자'], count: 1 };
   }
   revalidatePath('/vehicles');
   revalidatePath('/vehicles/requests');
+  return result;
 }
 
-export async function updateVehicleRequestAction(formData: FormData) {
+export async function updateVehicleRequestAction(formData: FormData): Promise<{ date: string; count: number }> {
   const id = String(formData.get('id') ?? '');
   const payload = await payloadFromForm(formData);
   await updateVehicleRequest(id, payload);
   revalidatePath('/vehicles');
   revalidatePath('/vehicles/requests');
+  return { date: payload['사용일자'], count: 1 };
 }
 
 export async function deleteVehicleRequestAction(formData: FormData) {

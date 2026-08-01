@@ -94,10 +94,10 @@ export default async function VehicleLogMonthlyPrintPage({
                   <td className={td}>{r.목적지}</td>
                   <td className={td} style={{ textAlign: 'right' }}>{r.출발계기판}</td>
                   <td className={td} style={{ textAlign: 'right' }}>{r.도착계기판}</td>
-                  <td className={td} style={{ textAlign: 'right' }}>{r.주행거리}km</td>
+                  <td className={td} style={{ textAlign: 'right' }}>{Number(r.주행거리 || 0).toLocaleString()}km</td>
                   <td className={td} style={{ textAlign: 'right' }}>{r.주유금액 ? Number(r.주유금액).toLocaleString() : ''}</td>
                   <td className={td} style={{ textAlign: 'right' }}>{r.주유단가 ? Number(r.주유단가).toLocaleString() : ''}</td>
-                  <td className={td} style={{ textAlign: 'right' }}>{r.주유량 || ''}</td>
+                  <td className={td} style={{ textAlign: 'right' }}>{r.주유량 ? Number(r.주유량).toLocaleString() : ''}</td>
                 </tr>
               ))}
             </tbody>

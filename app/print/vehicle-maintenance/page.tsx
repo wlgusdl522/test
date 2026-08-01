@@ -86,7 +86,7 @@ export default async function VehicleMaintenancePrintPage({
                 <tr key={r.id}>
                   <td className={td}>{r.정비일자}</td>
                   <td className={td}>{r.정비내용}</td>
-                  <td className={td} style={{ textAlign: 'right' }}>{r.주행거리}</td>
+                  <td className={td} style={{ textAlign: 'right' }}>{Number(r.주행거리 || 0).toLocaleString()}</td>
                   <td className={td} style={{ textAlign: 'right' }}>{r.지출액 ? Number(r.지출액).toLocaleString() : ''}</td>
                   <td className={td}>{r.등록자명}</td>
                   <td className={td}>{r.비고}</td>

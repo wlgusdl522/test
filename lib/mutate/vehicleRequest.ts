@@ -83,7 +83,7 @@ export async function addVehicleRequestsRecurring(
   payload: Record<string, string>,
   weekdays: number[],
   untilDate: string
-): Promise<{ count: number }> {
+): Promise<{ count: number; firstDate: string }> {
   requireFields(payload);
   if (!weekdays.length) throw new Error('반복할 요일을 선택해주세요.');
   if (!untilDate) throw new Error('반복 종료일을 입력해주세요.');
@@ -144,7 +144,8 @@ export async function addVehicleRequestsRecurring(
   const all = await getKeyedList(VEHICLE_REQUEST_TABLE);
   await mirrorKeyedTableToSupabase({ tableName: VEHICLE_REQUEST_TABLE.sheetName, primaryKey: VEHICLE_REQUEST_TABLE.primaryKey }, all);
 
-  return { count: rows.length };
+  const dateColumnIndex = VEHICLE_REQUEST_TABLE.headers.indexOf('사용일자');
+  return { count: rows.length, firstDate: rows[0][dateColumnIndex] };
 }
 
 // 반복 일정 중 하나를 지울 때 "이번 건만"(deleteVehicleRequest)이 아니라 "이 날짜 이후 전체"를 지운다.

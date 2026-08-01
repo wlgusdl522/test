@@ -104,7 +104,7 @@ export default async function VehicleMaintenancePage({
               <td className={td}>{r.정비일자}</td>
               <td className={td}>{r.차량번호}</td>
               <td className={td}>{r.정비내용}</td>
-              <td className={td}>{r.주행거리}</td>
+              <td className={td}>{Number(r.주행거리 || 0).toLocaleString()}</td>
               <td className={td}>{Number(r.지출액 || 0).toLocaleString()}원</td>
               <td className={td}>{r.등록자명}</td>
               <td className={`${td} flex gap-1.5`}>

@@ -152,7 +152,7 @@ export default async function VehicleLogsPage({
               <td className={td}>{r.차량번호}</td>
               <td className={td}>{r.운전자명}</td>
               <td className={td}>{r.목적}</td>
-              <td className={td}>{r.주행거리}km</td>
+              <td className={td}>{Number(r.주행거리 || 0).toLocaleString()}km</td>
               <td className={`${td} flex gap-1.5`}>
                 <a href={`/vehicles/logs?edit=${r.id}#log-form`} className={btnSecondary}>수정</a>
                 <form action={deleteVehicleLogAction}>
