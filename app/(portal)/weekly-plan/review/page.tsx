@@ -3,7 +3,7 @@ import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getReviewCompletionStatus } from '@/lib/mutate/reviewStatus';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { btn, btnSecondary, card, h1, h2, inputBase, page, tableWrap, table, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnSecondary, card, h1, h2, inputBase, pageWide, tableWrap, table, td, th, trZebraHover } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
 import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
 import SupervisorReviewList from '@/components/weekly/SupervisorReviewList';
@@ -11,6 +11,8 @@ import { setReviewCompletionAction } from './actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const WEEKDAY_LABELS = ['월', '화', '수', '목', '금', '토'];
 
 function mondayOf(date: Date): string {
   const d = new Date(date);
@@ -35,8 +37,16 @@ export default async function ReviewPage({
   const reviewTeam = params.team ?? me?.소속팀 ?? teams[0] ?? '';
   const reviewTasks = await getWeeklyTasks(reviewTeam, weekStart);
 
+  const monday = new Date(`${weekStart}T00:00:00`);
+  const dayDates: string[] = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(monday);
+    d.setDate(d.getDate() + i);
+    dayDates.push(d.toISOString().slice(0, 10));
+  }
+
   return (
-    <main className={page}>
+    <main className={pageWide}>
       <div className="flex items-center justify-between">
         <h1 className={h1}>부서장 확인</h1>
         <a href={`/print/weekly-plan-rollup?weekStart=${weekStart}`} target="_blank" className="text-sm text-brand hover:underline">부서별 취합 인쇄</a>
@@ -63,6 +73,8 @@ export default async function ReviewPage({
             highlighted: t.회의록후보 === 'TRUE' || t.회의록후보 === 'true',
             reflected: t.부서장반영 === 'TRUE' || t.부서장반영 === 'true',
           }))}
+          dayDates={dayDates}
+          weekdayLabels={WEEKDAY_LABELS}
         />
       </div>
 

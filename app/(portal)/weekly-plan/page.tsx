@@ -1,7 +1,8 @@
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
+import { getStaffList } from '@/lib/mutate/staff';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { btnSecondary, card, h1, inputBase, page } from '@/lib/ui';
-import WeeklyTaskEntryTab from '@/components/weekly/WeeklyTaskEntryTab';
+import { btnSecondary, card, h1, inputBase, pageWide } from '@/lib/ui';
+import WeeklyPlanWorkspace from '@/components/weekly/WeeklyPlanWorkspace';
 import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
 
 export const runtime = 'nodejs';
@@ -34,8 +35,11 @@ export default async function WeeklyPlanPage({
   const weekStart = params.weekStart ?? mondayOf(new Date());
   const viewerEmail = (me?.['이메일(아이디)'] ?? '').toLowerCase();
 
-  const teamTasks = await getWeeklyTasks(team, weekStart);
+  const [teamTasks, staffList] = await Promise.all([getWeeklyTasks(team, weekStart), getStaffList()]);
   const myTasks = teamTasks.filter((t) => (t['이메일(아이디)'] ?? '').toLowerCase() === viewerEmail);
+  const roster = staffList
+    .filter((s) => s['소속팀'] === team && s['재직상태'] !== '퇴사')
+    .map((s) => ({ email: s['이메일(아이디)'], name: s['성명'] }));
 
   const monday = new Date(`${weekStart}T00:00:00`);
   const dayDates: string[] = [];
@@ -46,7 +50,7 @@ export default async function WeeklyPlanPage({
   }
 
   return (
-    <main className={page}>
+    <main className={pageWide}>
       <div className="flex items-center justify-between">
         <h1 className={h1}>주간업무계획</h1>
         <a href={`/print/weekly-plan-team?team=${encodeURIComponent(team)}&weekStart=${weekStart}`} target="_blank" className="text-sm text-brand hover:underline">인쇄</a>
@@ -65,11 +69,19 @@ export default async function WeeklyPlanPage({
           <button type="submit" className={btnSecondary}>조회</button>
         </form>
 
-        <WeeklyTaskEntryTab
+        <WeeklyPlanWorkspace
           dayDates={dayDates}
           weekdayLabels={WEEKDAY_LABELS}
           initialTasks={myTasks.map((t) => ({ id: t.id, 날짜: t.날짜, 업무내용: t.업무내용, 회의록후보: t.회의록후보 }))}
           myName={me?.성명 ?? ''}
+          myEmail={viewerEmail}
+          roster={roster}
+          teamTasks={teamTasks.map((t) => ({
+            email: t['이메일(아이디)'] ?? '',
+            name: t['성명'] ?? '',
+            날짜: t['날짜'],
+            업무내용: t['업무내용'],
+          }))}
         />
       </div>
     </main>
