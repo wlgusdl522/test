@@ -14,21 +14,17 @@ export function isLeaveTagContent(content: string): boolean {
   return !!parseLeaveTag(content);
 }
 
-const WEEKDAY_LABELS_FULL = ['일', '월', '화', '수', '목', '금', '토'];
+function formatMD(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
 
-// 그 주 업무 중 휴가 태그가 붙은 항목을 날짜별로 모아 "7/7(화) 홍길동(연가)" 형태로 정리한다.
+// 그 주 업무 중 휴가 태그가 붙은 항목을 날짜순으로 정리한다 — "- 권지현(7/27, 가족돌봄)" 형태.
 export function summarizeLeaveEntries(tasks: Record<string, string>[]): string {
-  const byDate = new Map<string, string[]>();
-  for (const t of tasks) {
-    if (!parseLeaveTag(t.업무내용)) continue;
-    if (!byDate.has(t.날짜)) byDate.set(t.날짜, []);
-    byDate.get(t.날짜)!.push(t.업무내용);
-  }
-  const dates = [...byDate.keys()].sort();
-  return dates
-    .map((iso) => {
-      const d = new Date(`${iso}T00:00:00`);
-      return `${d.getMonth() + 1}/${d.getDate()}(${WEEKDAY_LABELS_FULL[d.getDay()]}) ${byDate.get(iso)!.join(', ')}`;
-    })
-    .join('\n');
+  const entries = tasks
+    .map((t) => ({ tag: parseLeaveTag(t.업무내용), date: t.날짜 }))
+    .filter((e): e is { tag: { name: string; type: string }; date: string } => e.tag !== null)
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+
+  return entries.map(({ tag, date }) => `- ${tag.name}(${formatMD(date)}, ${tag.type})`).join('\n');
 }
