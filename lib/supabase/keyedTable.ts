@@ -64,8 +64,7 @@ export async function mirrorKeyedTableToSupabase(
       if (deleteAllError) console.error(`[Supabase 미러 실패] ${config.tableName} 전체 삭제`, deleteAllError);
     }
     if (records.length > 0) {
-      const rows = records.map((r) => ({ ...r, updated_at: new Date().toISOString() }));
-      const { error: insertError } = await table(config.tableName).insert(rows);
+      const { error: insertError } = await table(config.tableName).insert(records);
       if (insertError) console.error(`[Supabase 미러 실패] ${config.tableName} 재삽입`, insertError);
     }
     return;
@@ -90,8 +89,7 @@ export async function mirrorKeyedTableToSupabase(
   }
 
   if (records.length > 0) {
-    const rows = records.map((r) => ({ ...r, updated_at: new Date().toISOString() }));
-    const { error: upsertError } = await table(config.tableName).upsert(rows, {
+    const { error: upsertError } = await table(config.tableName).upsert(records, {
       onConflict: keyColumns(config).join(','),
     });
     if (upsertError) console.error(`[Supabase 미러 실패] ${config.tableName} upsert`, upsertError);

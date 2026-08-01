@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { addKeyedRecord, getKeyedList, updateKeyedRecord } from '@/lib/mutate/keyedTable';
+import { getAllRecords } from '@/lib/sheets/keyedTable';
 import { REVIEW_STATUS_TABLE } from '@/lib/sheets/registry';
 import { getViewerStaffRecord, requireIsSupervisorForTeam, requireViewerEmail } from '@/lib/auth-helpers';
 
@@ -25,7 +26,9 @@ export async function setReviewCompletion(team: string, weekStart: string, flag:
   const viewerEmail = await requireViewerEmail();
   const me = await getViewerStaffRecord();
 
-  const all = await getKeyedList(REVIEW_STATUS_TABLE);
+  // Supabase 미러가 방금 쓴 내용을 아직 못 따라온 순간 존재 여부를 잘못 판단해서 중복 행이
+  // 생기는 걸 막기 위해, 존재 확인만큼은 캐시(getKeyedList)가 아니라 원본 시트를 직접 읽는다.
+  const all = await getAllRecords(REVIEW_STATUS_TABLE);
   const existing = all.find((r) => r['소속팀'] === team && r['주시작일'] === weekStart);
   const id = existing?.id ?? randomUUID();
   const record: Record<string, string> = {
