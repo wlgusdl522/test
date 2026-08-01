@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { inputBase } from '@/lib/ui';
 
 const VIEWS = [
@@ -9,13 +8,17 @@ const VIEWS = [
   { value: 'day', label: '일간' },
 ];
 
-export default function VehicleViewSwitch({ view, date }: { view: string; date: string }) {
-  const router = useRouter();
-
+export default function VehicleViewSwitch({
+  view,
+  onChange,
+}: {
+  view: string;
+  onChange: (view: 'month' | 'week' | 'day') => void;
+}) {
   return (
     <select
       value={view}
-      onChange={(e) => router.push(`/vehicles?view=${e.target.value}&date=${date}`)}
+      onChange={(e) => onChange(e.target.value as 'month' | 'week' | 'day')}
       className={`${inputBase} w-auto text-sm py-1.5`}
     >
       {VIEWS.map((v) => (

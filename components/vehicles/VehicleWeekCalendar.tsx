@@ -1,3 +1,5 @@
+'use client';
+
 import { badgeBase, badgeTone } from '@/lib/ui';
 
 type Req = Record<string, string>;
@@ -18,14 +20,20 @@ function vehicleLabel(vehicleNo: string, vehicles: { 차량번호: string; 차�
 
 export default function VehicleWeekCalendar({
   date,
+  selectedDate,
   requests,
   vehicles,
-  hasLogByRequestId,
+  hasLogRequestIds,
+  onSelectDate,
+  onNavigate,
 }: {
   date: string;
+  selectedDate: string | null;
   requests: Req[];
   vehicles: { 차량번호: string; 차종: string }[];
-  hasLogByRequestId: Set<string>;
+  hasLogRequestIds: Set<string>;
+  onSelectDate: (iso: string) => void;
+  onNavigate: (iso: string) => void;
 }) {
   const weekStart = mondayOf(date);
   const start = new Date(`${weekStart}T00:00:00`);
@@ -53,36 +61,41 @@ export default function VehicleWeekCalendar({
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <a href={`/vehicles?view=week&date=${prevWeekIso}`} className="text-sm text-brand hover:underline">◀ 이전주</a>
+        <button type="button" onClick={() => onNavigate(prevWeekIso)} className="text-sm text-brand hover:underline">◀ 이전주</button>
         <span className="text-sm font-semibold">{firstMD} ~ {lastMD}</span>
-        <a href={`/vehicles?view=week&date=${nextWeekIso}`} className="text-sm text-brand hover:underline">다음주 ▶</a>
+        <button type="button" onClick={() => onNavigate(nextWeekIso)} className="text-sm text-brand hover:underline">다음주 ▶</button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
         {dayDates.map((iso, i) => {
           const dayRequests = byDate.get(iso) ?? [];
           const isToday = iso === new Date().toISOString().slice(0, 10);
+          const isSelected = iso === selectedDate;
           return (
-            <div key={iso} className={`rounded-md border p-2 min-h-32 ${isToday ? 'border-brand' : 'border-zinc-200 dark:border-zinc-800'}`}>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className={`text-xs font-semibold ${isToday ? 'text-brand' : 'text-zinc-600 dark:text-zinc-300'}`}>
-                  {WEEKDAY_LABELS[i]} {Number(iso.slice(8, 10))}
-                </span>
-                <a href={`/vehicles?view=week&date=${iso}&new=1`} className="text-xs text-brand hover:underline">+ 예약</a>
-              </div>
-              <div className="flex flex-col gap-1">
+            <button
+              type="button"
+              key={iso}
+              onClick={() => onSelectDate(iso)}
+              className={`text-left rounded-md border p-2 min-h-32 hover:border-brand ${
+                isSelected ? 'border-brand bg-brand-tint' : isToday ? 'border-brand' : 'border-zinc-200 dark:border-zinc-800'
+              }`}
+            >
+              <span className={`text-xs font-semibold ${isToday ? 'text-brand' : 'text-zinc-600 dark:text-zinc-300'}`}>
+                {WEEKDAY_LABELS[i]} {Number(iso.slice(8, 10))}
+              </span>
+              <div className="mt-1.5 flex flex-col gap-1">
                 {dayRequests.length === 0 ? (
                   <span className="text-xs text-zinc-300 dark:text-zinc-700">-</span>
                 ) : dayRequests.map((r) => (
                   <div key={r.id} className="text-xs">
-                    <span className={`${badgeBase} ${hasLogByRequestId.has(r.id) ? badgeTone.green : badgeTone.blue} mb-0.5`}>
+                    <span className={`${badgeBase} ${hasLogRequestIds.has(r.id) ? badgeTone.green : badgeTone.blue} mb-0.5`}>
                       {vehicleLabel(r.차량번호, vehicles)}
                     </span>
-                    <div className="text-zinc-600 dark:text-zinc-400 truncate">{r.신청자명} · {r.목적}</div>
+                    <div className="text-zinc-600 dark:text-zinc-400 truncate">{r.신청자명} · {r.출발시간 || '-'}~{r.복귀시간 || '-'}</div>
                   </div>
                 ))}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>

@@ -1,0 +1,236 @@
+'use client';
+
+import { useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { btn, input, inputBase, label } from '@/lib/ui';
+import Modal from '@/components/Modal';
+import VehicleSelectWithFuelWarning from '@/components/vehicles/VehicleSelectWithFuelWarning';
+import VehicleRequestCalendar from '@/components/vehicles/VehicleRequestCalendar';
+import VehicleWeekCalendar from '@/components/vehicles/VehicleWeekCalendar';
+import VehicleDayDetailTable from '@/components/vehicles/VehicleDayDetailTable';
+import VehicleViewSwitch from '@/components/vehicles/VehicleViewSwitch';
+import { addVehicleRequestAction, updateVehicleRequestAction } from '@/app/(portal)/vehicles/actions';
+
+type Req = Record<string, string>;
+type View = 'month' | 'week' | 'day';
+
+const WEEKDAYS = [
+  { value: 0, label: '일' }, { value: 1, label: '월' }, { value: 2, label: '화' },
+  { value: 3, label: '수' }, { value: 4, label: '목' }, { value: 5, label: '금' }, { value: 6, label: '토' },
+];
+
+export default function VehicleReservationClient({
+  initialView,
+  initialDate,
+  initialEditId,
+  initialNew,
+  requests,
+  vehicles,
+  hasLogRequestIds,
+  fuelWarningByVehicle,
+  viewerEmail,
+}: {
+  initialView: View;
+  initialDate: string;
+  initialEditId: string;
+  initialNew: boolean;
+  requests: Req[];
+  vehicles: { 차량번호: string; 차종: string }[];
+  hasLogRequestIds: string[];
+  fuelWarningByVehicle: Record<string, boolean>;
+  viewerEmail: string;
+}) {
+  const router = useRouter();
+  const [view, setView] = useState<View>(initialView);
+  const [anchorDate, setAnchorDate] = useState(initialDate);
+  const [weekSelectedDate, setWeekSelectedDate] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(initialEditId || null);
+  const [prefillDate, setPrefillDate] = useState<string | null>(initialNew ? initialDate : null);
+  const [formOpen, setFormOpen] = useState(!!initialEditId || initialNew);
+  const [isPending, startTransition] = useTransition();
+
+  const logIdSet = useMemo(() => new Set(hasLogRequestIds), [hasLogRequestIds]);
+  const editing = editingId ? requests.find((r) => r.id === editingId) ?? null : null;
+
+  function openNew(date: string) {
+    setEditingId(null);
+    setPrefillDate(date);
+    setFormOpen(true);
+  }
+  function openEdit(id: string) {
+    setEditingId(id);
+    setPrefillDate(null);
+    setFormOpen(true);
+  }
+  function closeForm() {
+    setFormOpen(false);
+  }
+  function handleViewChange(v: View) {
+    setView(v);
+    setWeekSelectedDate(null);
+  }
+  function handleNavigate(iso: string) {
+    setAnchorDate(iso);
+    setWeekSelectedDate(null);
+  }
+  function handleMutated() {
+    router.refresh();
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    startTransition(async () => {
+      if (editingId) {
+        fd.set('id', editingId);
+        await updateVehicleRequestAction(fd);
+      } else {
+        await addVehicleRequestAction(fd);
+      }
+      setFormOpen(false);
+      router.refresh();
+    });
+  }
+
+  const monthRequests = requests.filter((r) => r.사용일자 === anchorDate);
+  const weekDetailRequests = weekSelectedDate ? requests.filter((r) => r.사용일자 === weekSelectedDate) : [];
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <VehicleViewSwitch view={view} onChange={handleViewChange} />
+        <button type="button" onClick={() => openNew(anchorDate)} className={btn}>예약하기</button>
+      </div>
+
+      {view === 'month' && (
+        <>
+          <VehicleRequestCalendar
+            date={anchorDate}
+            requests={requests}
+            vehicles={vehicles}
+            hasLogRequestIds={logIdSet}
+            onSelectDate={setAnchorDate}
+            onNavigate={handleNavigate}
+          />
+          <VehicleDayDetailTable
+            date={anchorDate}
+            requests={monthRequests}
+            vehicles={vehicles}
+            hasLogRequestIds={logIdSet}
+            viewerEmail={viewerEmail}
+            onEdit={openEdit}
+            onAdd={openNew}
+            onMutated={handleMutated}
+            showAddButton={false}
+          />
+        </>
+      )}
+
+      {view === 'week' && (
+        <>
+          <VehicleWeekCalendar
+            date={anchorDate}
+            selectedDate={weekSelectedDate}
+            requests={requests}
+            vehicles={vehicles}
+            hasLogRequestIds={logIdSet}
+            onSelectDate={setWeekSelectedDate}
+            onNavigate={handleNavigate}
+          />
+          {weekSelectedDate && (
+            <div className="mt-4">
+              <VehicleDayDetailTable
+                date={weekSelectedDate}
+                requests={weekDetailRequests}
+                vehicles={vehicles}
+                hasLogRequestIds={logIdSet}
+                viewerEmail={viewerEmail}
+                onEdit={openEdit}
+                onAdd={openNew}
+                onMutated={handleMutated}
+                showAddButton
+              />
+            </div>
+          )}
+        </>
+      )}
+
+      {view === 'day' && (
+        <VehicleDayDetailTable
+          date={anchorDate}
+          requests={monthRequests}
+          vehicles={vehicles}
+          hasLogRequestIds={logIdSet}
+          viewerEmail={viewerEmail}
+          onEdit={openEdit}
+          onAdd={openNew}
+          onMutated={handleMutated}
+          showAddButton={false}
+        />
+      )}
+
+      {formOpen && (
+        <Modal title={editing ? '신청 수정' : '신규 신청'} onClose={closeForm}>
+          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
+            <label className={label}>
+              차량 *
+              <VehicleSelectWithFuelWarning
+                vehicles={vehicles}
+                defaultValue={editing?.차량번호 ?? ''}
+                fuelWarningByVehicle={fuelWarningByVehicle}
+              />
+            </label>
+            <label className={label}>
+              사용일자 *
+              <input type="date" name="date" defaultValue={editing?.사용일자 ?? prefillDate ?? anchorDate} required className={input} />
+            </label>
+            <label className={label}>
+              출발시간
+              <input type="time" name="startTime" defaultValue={editing?.출발시간 ?? ''} className={input} />
+            </label>
+            <label className={label}>
+              복귀시간
+              <input type="time" name="endTime" defaultValue={editing?.복귀시간 ?? ''} className={input} />
+            </label>
+            <label className={label}>
+              목적 *
+              <input name="purpose" defaultValue={editing?.목적 ?? ''} required className={input} />
+            </label>
+            <label className={label}>
+              목적지
+              <input name="destination" defaultValue={editing?.목적지 ?? ''} className={input} />
+            </label>
+            <label className={label}>
+              동승자
+              <input name="companions" defaultValue={editing?.동승자 ?? ''} className={input} />
+            </label>
+            <label className={label}>
+              비고
+              <input name="note" defaultValue={editing?.비고 ?? ''} className={input} />
+            </label>
+
+            {!editing && (
+              <div className="col-span-2 rounded-md border border-dashed border-zinc-300 dark:border-zinc-700 p-3">
+                <label className="text-sm"><input type="checkbox" name="recurring" /> 반복 일정으로 등록</label>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  {WEEKDAYS.map((w) => (
+                    <label key={w.value} className="text-xs text-zinc-600 dark:text-zinc-400">
+                      <input type="checkbox" name="weekday" value={w.value} /> {w.label}
+                    </label>
+                  ))}
+                  <label className="text-xs text-zinc-600 dark:text-zinc-400">
+                    반복 종료일 <input type="date" name="untilDate" className={`${inputBase} inline-block w-auto`} />
+                  </label>
+                </div>
+              </div>
+            )}
+
+            <div className="col-span-2 flex items-center gap-3">
+              <button type="submit" disabled={isPending} className={btn}>{isPending ? '저장 중...' : editing ? '저장' : '신청'}</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </div>
+  );
+}

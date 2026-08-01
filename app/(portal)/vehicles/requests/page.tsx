@@ -52,19 +52,20 @@ export default async function VehicleMyRequestsPage({
       <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
-            <th className={th}>사용일자</th><th className={th}>차량</th>
+            <th className={th}>사용일자</th><th className={th}>차량</th><th className={th}>시간</th>
             <th className={th}>목적</th><th className={th}>목적지</th><th className={th}>운행일지</th><th className={th}></th>
           </tr>
         </thead>
         <tbody>
           {myRequests.length === 0 ? (
-            <tr><td className={td} colSpan={6}><span className="text-zinc-400">해당 기간에 신청한 내역이 없습니다.</span></td></tr>
+            <tr><td className={td} colSpan={7}><span className="text-zinc-400">해당 기간에 신청한 내역이 없습니다.</span></td></tr>
           ) : myRequests.map((r) => {
             const linkedLog = logByRequestId.get(r.id);
             return (
               <tr key={r.id} className={trZebraHover}>
                 <td className={td}>{r.사용일자}</td>
                 <td className={td}>{r.차량번호}</td>
+                <td className={td}>{r.출발시간 || '-'} ~ {r.복귀시간 || '-'}</td>
                 <td className={td}>{r.목적}</td>
                 <td className={td}>{r.목적지}</td>
                 <td className={td}>

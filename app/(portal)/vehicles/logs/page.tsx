@@ -1,12 +1,12 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
-import { getMyPendingVehicleLogApprovals, getVehicleLogList } from '@/lib/mutate/vehicleLog';
+import { getVehicleLogList } from '@/lib/mutate/vehicleLog';
 import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
-import { btn, btnDanger, btnSecondary, card, input, inputBase, label, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnSecondary, input, inputBase, label, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import PrinterIcon from '@/components/icons/PrinterIcon';
-import StatusBadge from '@/components/StatusBadge';
 import FormToggle from '@/components/FormToggle';
-import { actOnVehicleLogAction, addVehicleLogAction, deleteVehicleLogAction, updateVehicleLogAction } from './actions';
+import VehicleSelectWithOdometer from '@/components/vehicles/VehicleSelectWithOdometer';
+import { addVehicleLogAction, deleteVehicleLogAction, updateVehicleLogAction } from './actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,9 +17,8 @@ export default async function VehicleLogsPage({
   searchParams: Promise<{ edit?: string; requestId?: string; ym?: string; all?: string }>;
 }) {
   const { edit, requestId, ym, all } = await searchParams;
-  const [allLogs, pending, vehicles, vehicleRequests] = await Promise.all([
+  const [allLogs, vehicles, vehicleRequests] = await Promise.all([
     getVehicleLogList(),
-    getMyPendingVehicleLogApprovals(),
     getKeyedList(VEHICLE_LIST_TABLE),
     getVehicleRequestList(),
   ]);
@@ -32,6 +31,14 @@ export default async function VehicleLogsPage({
 
   const logs = allLogs.filter((r) => !activeYm || r.운행일자.startsWith(activeYm));
 
+  const lastOdoByVehicle: Record<string, string> = {};
+  for (const v of vehicles) {
+    const vehicleLogs = allLogs
+      .filter((l) => l.차량번호 === v.차량번호)
+      .sort((a, b) => b.운행일자.localeCompare(a.운행일자));
+    lastOdoByVehicle[v.차량번호] = vehicleLogs[0]?.도착계기판 ?? '';
+  }
+
   return (
     <>
       <div className="flex items-center justify-end mb-2">
@@ -40,40 +47,6 @@ export default async function VehicleLogsPage({
           운행일지 월별 인쇄
         </a>
       </div>
-
-      {pending.length > 0 && (
-        <div className={`${card} mb-5`}>
-          <h3 className="text-sm font-semibold mb-2 text-zinc-700 dark:text-zinc-200">내 결재 대기 ({pending.length}건)</h3>
-          <div className={tableWrap}><table className={table}>
-            <thead>
-              <tr><th className={th}>차량</th><th className={th}>운행일자</th><th className={th}>운전자</th><th className={th}>단계</th><th className={th}></th></tr>
-            </thead>
-            <tbody>
-              {pending.map((r) => (
-                <tr key={r.id} className={trZebraHover}>
-                  <td className={td}>{r.차량번호}</td>
-                  <td className={td}>{r.운행일자}</td>
-                  <td className={td}>{r.운전자명}</td>
-                  <td className={td}>{r.현재결재단계}</td>
-                  <td className={`${td} flex items-center gap-1.5`}>
-                    <form action={actOnVehicleLogAction}>
-                      <input type="hidden" name="id" value={r.id} />
-                      <input type="hidden" name="action" value="승인" />
-                      <button type="submit" className={btn}>승인</button>
-                    </form>
-                    <form action={actOnVehicleLogAction} className="flex items-center gap-1">
-                      <input type="hidden" name="id" value={r.id} />
-                      <input type="hidden" name="action" value="반려" />
-                      <input name="comment" placeholder="반려 사유" className={`${inputBase} w-28 text-xs`} />
-                      <button type="submit" className={btnDanger}>반려</button>
-                    </form>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table></div>
-        </div>
-      )}
 
       <div className="flex items-center gap-2 mb-4">
         <a
@@ -102,12 +75,13 @@ export default async function VehicleLogsPage({
           <form action={editing ? updateVehicleLogAction : addVehicleLogAction} className="grid grid-cols-2 gap-3">
             {editing && <input type="hidden" name="id" value={editing.id} />}
             <input type="hidden" name="requestId" value={editing?.신청ID ?? prefillRequest?.id ?? ''} />
-            <label className={label}>
-              차량 *
-              <select name="vehicleNo" defaultValue={editing?.차량번호 ?? prefillRequest?.차량번호 ?? ''} required className={input}>
-                {vehicles.map((v) => <option key={v.차량번호} value={v.차량번호}>{v.차종} ({v.차량번호})</option>)}
-              </select>
-            </label>
+            <VehicleSelectWithOdometer
+              vehicles={vehicles.map((v) => ({ 차량번호: v.차량번호, 차종: v.차종 }))}
+              defaultVehicle={editing?.차량번호 ?? prefillRequest?.차량번호 ?? ''}
+              lastOdoByVehicle={lastOdoByVehicle}
+              odoStart={editing ? editing.출발계기판 ?? '' : lastOdoByVehicle[prefillRequest?.차량번호 ?? ''] ?? ''}
+              allowAutoFill={!editing}
+            />
             <label className={label}>
               운행일자 *
               <input type="date" name="date" defaultValue={editing?.운행일자 ?? prefillRequest?.사용일자 ?? todayIso} required className={input} />
@@ -127,10 +101,6 @@ export default async function VehicleLogsPage({
             <label className={label}>
               목적지
               <input name="destination" defaultValue={editing?.목적지 ?? prefillRequest?.목적지 ?? ''} className={input} />
-            </label>
-            <label className={label}>
-              출발계기판(km)
-              <input type="number" name="odoStart" defaultValue={editing?.출발계기판 ?? ''} className={input} />
             </label>
             <label className={label}>
               도착계기판(km)
@@ -171,12 +141,12 @@ export default async function VehicleLogsPage({
         <thead>
           <tr>
             <th className={th}>운행일자</th><th className={th}>차량</th><th className={th}>운전자</th>
-            <th className={th}>목적</th><th className={th}>주행거리</th><th className={th}>결재상태</th><th className={th}></th>
+            <th className={th}>목적</th><th className={th}>주행거리</th><th className={th}></th>
           </tr>
         </thead>
         <tbody>
           {logs.length === 0 ? (
-            <tr><td className={td} colSpan={7}><span className="text-zinc-400">해당 기간에 등록된 운행일지가 없습니다.</span></td></tr>
+            <tr><td className={td} colSpan={6}><span className="text-zinc-400">해당 기간에 등록된 운행일지가 없습니다.</span></td></tr>
           ) : logs.map((r) => (
             <tr key={r.id} className={trZebraHover}>
               <td className={td}>{r.운행일자}</td>
@@ -184,7 +154,6 @@ export default async function VehicleLogsPage({
               <td className={td}>{r.운전자명}</td>
               <td className={td}>{r.목적}</td>
               <td className={td}>{r.주행거리}km</td>
-              <td className={td}><StatusBadge status={r.결재상태} /></td>
               <td className={`${td} flex gap-1.5`}>
                 <a href={`/vehicles/logs?edit=${r.id}#log-form`} className={btnSecondary}>수정</a>
                 <form action={deleteVehicleLogAction}>
