@@ -1,5 +1,6 @@
 import { auth } from '@/auth';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { normalizeSupabaseRow } from '@/lib/supabase/keyedTable';
 import { getSystemSettings } from '@/lib/mutate/settings';
 
 export const SUPERVISOR_POSITIONS = ['관장', '부장', '과장', '팀장'];
@@ -21,9 +22,8 @@ export async function getViewerStaffRecord(): Promise<Record<string, string> | n
   const email = await requireViewerEmail();
   const { data, error } = await getSupabaseServerClient().from('직원관리').select('*');
   if (error || !data) return null;
-  const match = (data as Record<string, string>[]).find(
-    (r) => (r['이메일(아이디)'] ?? '').toLowerCase() === email
-  );
+  const rows = (data as Record<string, unknown>[]).map(normalizeSupabaseRow);
+  const match = rows.find((r) => (r['이메일(아이디)'] ?? '').toLowerCase() === email);
   return match ?? null;
 }
 

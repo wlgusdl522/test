@@ -36,6 +36,21 @@ function pickSafeFilterColumn(sample: Record<string, string> | undefined): strin
   return col ?? null;
 }
 
+// PostgREST는 boolean 컬럼을 실제 JS boolean으로 내려준다(구글시트에서 읽을 때는 항상 문자열이라
+// 나머지 코드 전체가 `=== 'TRUE'`로 비교함). true/false를 그대로 두면 이 비교가 항상 거짓이 되므로,
+// 시트에서 읽을 때와 똑같은 'TRUE'/'FALSE' 문자열로 맞춰준다.
+function normalizeSupabaseValue(v: unknown): string {
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
+  return String(v);
+}
+
+export function normalizeSupabaseRow(row: Record<string, unknown>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(row)) out[k] = normalizeSupabaseValue(v);
+  return out;
+}
+
 export async function getAllFromSupabase(
   config: SupabaseKeyedTableConfig
 ): Promise<Record<string, string>[] | null> {
@@ -44,7 +59,7 @@ export async function getAllFromSupabase(
     console.error(`[Supabase 읽기 실패] ${config.tableName}`, error);
     return null;
   }
-  return (data ?? []) as Record<string, string>[];
+  return ((data ?? []) as Record<string, unknown>[]).map(normalizeSupabaseRow);
 }
 
 export async function mirrorKeyedTableToSupabase(
