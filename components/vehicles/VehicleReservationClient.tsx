@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { btn, input, inputBase, label } from '@/lib/ui';
 import Modal from '@/components/Modal';
@@ -44,11 +44,11 @@ export default function VehicleReservationClient({
   const router = useRouter();
   const [view, setView] = useState<View>(initialView);
   const [anchorDate, setAnchorDate] = useState(initialDate);
-  // 서버가 새 props를 내려줄 때(다른 탭에서 변경 후 돌아오는 등)도 반영되도록 동기화하되,
-  // add/update/delete 직후에는 서버 refresh를 기다리지 않고 즉시 반환된 최신 목록으로 갱신한다 —
-  // router.refresh()만 믿으면 반영 시점이 애매해서 "신청했는데 달력엔 안 보인다"가 될 수 있다.
+  // add/update/delete 직후 서버가 돌려준 최신 목록으로 바로 갱신한다(아래 참고).
+  // 주의: 여기서 initialRequests prop 변화를 다시 useEffect로 되받아오면 안 된다 — router.refresh()가
+  // 완료되며 내려주는 props가 방금 커밋된 결과보다 늦게(또는 아직 반영 전 상태로) 도착하면 좋은
+  // 로컬 상태를 stale한 값으로 덮어써 버려서 "예약했는데 화면엔 안 보인다"가 재발한다.
   const [requests, setRequests] = useState(initialRequests);
-  useEffect(() => setRequests(initialRequests), [initialRequests]);
   const [weekSelectedDate, setWeekSelectedDate] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(initialEditId || null);
   const [prefillDate, setPrefillDate] = useState<string | null>(initialNew ? initialDate : null);
