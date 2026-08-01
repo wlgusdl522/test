@@ -10,6 +10,7 @@ import { resolveApprovalLineLabels } from '@/lib/approval/approvalLine';
 import { btnSecondary, h1, inputBase, pageWide } from '@/lib/ui';
 import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
 import MeetingComposer from '@/components/weekly/MeetingComposer';
+import PrinterIcon from '@/components/icons/PrinterIcon';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -47,7 +48,10 @@ export default async function MeetingPage({
     <main className={pageWide}>
       <div className="flex items-center justify-between">
         <h1 className={h1}>회의록 정리</h1>
-        <a href={`/print/weekly-plan-meeting?team=${encodeURIComponent(team)}&date=${date}`} target="_blank" className="text-sm text-brand hover:underline">회의록 인쇄</a>
+        <a href={`/print/weekly-plan-meeting?team=${encodeURIComponent(team)}&date=${date}`} target="_blank" className={btnSecondary}>
+          <PrinterIcon />
+          회의록 인쇄
+        </a>
       </div>
 
       <WeeklyPlanTabs active="/weekly-plan/meeting" />

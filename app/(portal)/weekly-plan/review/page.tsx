@@ -6,6 +6,7 @@ import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { btnSecondary, card, h1, h2, inputBase, pageWide } from '@/lib/ui';
 import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
 import SupervisorReviewList from '@/components/weekly/SupervisorReviewList';
+import PrinterIcon from '@/components/icons/PrinterIcon';
 import { setReviewCompletionAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -48,7 +49,10 @@ export default async function ReviewPage({
     <main className={pageWide}>
       <div className="flex items-center justify-between">
         <h1 className={h1}>부서장 확인</h1>
-        <a href={`/print/weekly-plan-rollup?weekStart=${weekStart}`} target="_blank" className="text-sm text-brand hover:underline">부서별 취합 인쇄</a>
+        <a href={`/print/weekly-plan-rollup?weekStart=${weekStart}`} target="_blank" className={btnSecondary}>
+          <PrinterIcon />
+          부서별 취합 인쇄
+        </a>
       </div>
 
       <WeeklyPlanTabs active="/weekly-plan/review" />
@@ -69,12 +73,16 @@ export default async function ReviewPage({
             <a
               key={team}
               href={`/weekly-plan/review?team=${encodeURIComponent(team)}&weekStart=${weekStart}`}
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs border transition-colors ${
-                active ? 'border-brand bg-brand-tint text-brand font-medium' : 'border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300'
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs border transition-colors ${
+                active ? 'border-brand ring-1 ring-brand' : 'border-transparent'
+              } ${
+                done
+                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+                  : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'
               }`}
             >
-              <span>{done ? '✓' : '☐'}</span>
-              {team}
+              <span className="font-semibold">{team}</span>
+              <span>{done ? '✓ 완료' : '미완료'}</span>
             </a>
           );
         })}

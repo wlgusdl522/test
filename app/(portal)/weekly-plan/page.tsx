@@ -4,6 +4,7 @@ import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { btnSecondary, card, h1, inputBase, pageWide } from '@/lib/ui';
 import WeeklyPlanWorkspace from '@/components/weekly/WeeklyPlanWorkspace';
 import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
+import PrinterIcon from '@/components/icons/PrinterIcon';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -53,7 +54,10 @@ export default async function WeeklyPlanPage({
     <main className={pageWide}>
       <div className="flex items-center justify-between">
         <h1 className={h1}>주간업무계획</h1>
-        <a href={`/print/weekly-plan-team?team=${encodeURIComponent(team)}&weekStart=${weekStart}`} target="_blank" className="text-sm text-brand hover:underline">인쇄</a>
+        <a href={`/print/weekly-plan-team?team=${encodeURIComponent(team)}&weekStart=${weekStart}`} target="_blank" className={btnSecondary}>
+          <PrinterIcon />
+          인쇄
+        </a>
       </div>
 
       <WeeklyPlanTabs active="/weekly-plan" />
