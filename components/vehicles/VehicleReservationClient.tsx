@@ -9,6 +9,7 @@ import VehicleRequestCalendar from '@/components/vehicles/VehicleRequestCalendar
 import VehicleWeekCalendar from '@/components/vehicles/VehicleWeekCalendar';
 import VehicleDayDetailTable from '@/components/vehicles/VehicleDayDetailTable';
 import VehicleViewSwitch from '@/components/vehicles/VehicleViewSwitch';
+import TimeSelect10Min from '@/components/vehicles/TimeSelect10Min';
 import { addVehicleRequestAction, updateVehicleRequestAction } from '@/app/(portal)/vehicles/actions';
 
 type Req = Record<string, string>;
@@ -47,6 +48,7 @@ export default function VehicleReservationClient({
   const [editingId, setEditingId] = useState<string | null>(initialEditId || null);
   const [prefillDate, setPrefillDate] = useState<string | null>(initialNew ? initialDate : null);
   const [formOpen, setFormOpen] = useState(!!initialEditId || initialNew);
+  const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const logIdSet = useMemo(() => new Set(hasLogRequestIds), [hasLogRequestIds]);
@@ -55,11 +57,13 @@ export default function VehicleReservationClient({
   function openNew(date: string) {
     setEditingId(null);
     setPrefillDate(date);
+    setFormError(null);
     setFormOpen(true);
   }
   function openEdit(id: string) {
     setEditingId(id);
     setPrefillDate(null);
+    setFormError(null);
     setFormOpen(true);
   }
   function closeForm() {
@@ -80,15 +84,20 @@ export default function VehicleReservationClient({
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    setFormError(null);
     startTransition(async () => {
-      if (editingId) {
-        fd.set('id', editingId);
-        await updateVehicleRequestAction(fd);
-      } else {
-        await addVehicleRequestAction(fd);
+      try {
+        if (editingId) {
+          fd.set('id', editingId);
+          await updateVehicleRequestAction(fd);
+        } else {
+          await addVehicleRequestAction(fd);
+        }
+        setFormOpen(false);
+        router.refresh();
+      } catch (err) {
+        setFormError(err instanceof Error ? err.message : '신청 중 오류가 발생했습니다.');
       }
-      setFormOpen(false);
-      router.refresh();
     });
   }
 
@@ -186,11 +195,11 @@ export default function VehicleReservationClient({
             </label>
             <label className={label}>
               출발시간
-              <input type="time" name="startTime" defaultValue={editing?.출발시간 ?? ''} className={input} />
+              <TimeSelect10Min name="startTime" defaultValue={editing?.출발시간 ?? ''} />
             </label>
             <label className={label}>
               복귀시간
-              <input type="time" name="endTime" defaultValue={editing?.복귀시간 ?? ''} className={input} />
+              <TimeSelect10Min name="endTime" defaultValue={editing?.복귀시간 ?? ''} />
             </label>
             <label className={label}>
               목적 *
@@ -222,6 +231,12 @@ export default function VehicleReservationClient({
                     반복 종료일 <input type="date" name="untilDate" className={`${inputBase} inline-block w-auto`} />
                   </label>
                 </div>
+              </div>
+            )}
+
+            {formError && (
+              <div className="col-span-2 rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-400">
+                {formError}
               </div>
             )}
 

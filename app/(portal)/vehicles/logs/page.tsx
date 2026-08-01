@@ -6,6 +6,7 @@ import { btn, btnSecondary, input, inputBase, label, table, tableWrap, td, th, t
 import PrinterIcon from '@/components/icons/PrinterIcon';
 import FormToggle from '@/components/FormToggle';
 import VehicleSelectWithOdometer from '@/components/vehicles/VehicleSelectWithOdometer';
+import CollapsibleCheckSection from '@/components/vehicles/CollapsibleCheckSection';
 import { addVehicleLogAction, deleteVehicleLogAction, updateVehicleLogAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -56,7 +57,7 @@ export default async function VehicleLogsPage({
           이번달
         </a>
         <form method="get" className="flex items-center gap-1.5">
-          <input type="month" name="ym" defaultValue={ym ?? ''} className={`${inputBase} w-auto text-xs py-1`} />
+          <input type="month" name="ym" defaultValue={ym || currentYm} className={`${inputBase} w-auto text-xs py-1`} />
           <button type="submit" className={`${btnSecondary} text-xs py-1`}>조회</button>
         </form>
         <a
@@ -111,23 +112,21 @@ export default async function VehicleLogsPage({
               <input name="note" defaultValue={editing?.비고 ?? ''} className={input} />
             </label>
 
-            <div className="col-span-2 rounded-md border border-dashed border-zinc-300 dark:border-zinc-700 p-3">
-              <label className="text-sm"><input type="checkbox" name="needsFuel" defaultChecked={editing?.주유필요 === 'Y'} /> 이번 운행에 주유함</label>
-              <div className="mt-2 flex flex-wrap gap-3">
-                <input type="number" name="fuelAmount" defaultValue={editing?.주유금액 ?? ''} placeholder="주유금액" className={`${inputBase} w-auto`} />
-                <input type="number" name="fuelUnitPrice" defaultValue={editing?.주유단가 ?? ''} placeholder="주유단가" className={`${inputBase} w-auto`} />
-                <input type="number" name="fuelLiters" defaultValue={editing?.주유량 ?? ''} placeholder="주유량(L)" className={`${inputBase} w-auto`} />
-              </div>
-            </div>
+            <CollapsibleCheckSection
+              checkboxName="needsFuel"
+              checkLabel="이번 운행에 주유함"
+              defaultChecked={editing?.주유필요 === 'Y'}
+            >
+              <input type="number" name="fuelAmount" defaultValue={editing?.주유금액 ?? ''} placeholder="주유금액" className={`${inputBase} w-auto`} />
+              <input type="number" name="fuelUnitPrice" defaultValue={editing?.주유단가 ?? ''} placeholder="주유단가" className={`${inputBase} w-auto`} />
+              <input type="number" name="fuelLiters" defaultValue={editing?.주유량 ?? ''} placeholder="주유량(L)" className={`${inputBase} w-auto`} />
+            </CollapsibleCheckSection>
 
             {!editing && (
-              <div className="col-span-2 rounded-md border border-dashed border-zinc-300 dark:border-zinc-700 p-3">
-                <label className="text-sm"><input type="checkbox" name="needsMaintenance" /> 이번 운행 중 정비 진행</label>
-                <div className="mt-2 flex flex-wrap gap-3">
-                  <input name="maintenanceContent" placeholder="정비내용" className={`${inputBase} w-auto flex-1`} />
-                  <input type="number" name="maintenanceCost" placeholder="지출액" className={`${inputBase} w-auto`} />
-                </div>
-              </div>
+              <CollapsibleCheckSection checkboxName="needsMaintenance" checkLabel="이번 운행 중 정비 진행">
+                <input name="maintenanceContent" placeholder="정비내용" className={`${inputBase} w-auto flex-1`} />
+                <input type="number" name="maintenanceCost" placeholder="지출액" className={`${inputBase} w-auto`} />
+              </CollapsibleCheckSection>
             )}
 
             <div className="col-span-2 flex items-center gap-3">

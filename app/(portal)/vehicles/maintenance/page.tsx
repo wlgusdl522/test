@@ -43,7 +43,7 @@ export default async function VehicleMaintenancePage({
           이번달
         </a>
         <form method="get" className="flex items-center gap-1.5">
-          <input type="month" name="ym" defaultValue={ym ?? ''} className={`${inputBase} w-auto text-xs py-1`} />
+          <input type="month" name="ym" defaultValue={ym || currentYm} className={`${inputBase} w-auto text-xs py-1`} />
           <button type="submit" className={`${btnSecondary} text-xs py-1`}>조회</button>
         </form>
         <a

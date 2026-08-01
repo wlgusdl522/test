@@ -19,8 +19,34 @@ function requireFields(payload: Record<string, string>) {
   }
 }
 
+// 시간이 비어있으면 하루 전체를 막는 것으로 보고 겹침을 판정한다(부분적으로만 아는 경우 안전한 쪽으로).
+function timesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string): boolean {
+  const aS = aStart || '00:00';
+  const aE = aEnd || '23:59';
+  const bS = bStart || '00:00';
+  const bE = bEnd || '23:59';
+  return aS < bE && bS < aE;
+}
+
+async function assertNoOverlap(payload: Record<string, string>, excludeId?: string) {
+  const all = await getKeyedList(VEHICLE_REQUEST_TABLE);
+  const conflict = all.find(
+    (r) =>
+      r.id !== excludeId &&
+      r['차량번호'] === payload['차량번호'] &&
+      r['사용일자'] === payload['사용일자'] &&
+      timesOverlap(r['출발시간'], r['복귀시간'], payload['출발시간'], payload['복귀시간'])
+  );
+  if (conflict) {
+    throw new Error(
+      `이미 ${conflict['신청자명']}님이 같은 시간대(${conflict['출발시간'] || '00:00'}~${conflict['복귀시간'] || '23:59'})에 이 차량을 예약해서 신청이 중복됩니다.`
+    );
+  }
+}
+
 export async function addVehicleRequest(payload: Record<string, string>): Promise<Record<string, string>[]> {
   requireFields(payload);
+  await assertNoOverlap(payload);
   const record: Record<string, string> = {};
   VEHICLE_REQUEST_TABLE.headers.forEach((h) => {
     if (h === 'id') record[h] = randomUUID();
@@ -35,6 +61,7 @@ export async function updateVehicleRequest(
   payload: Record<string, string>
 ): Promise<Record<string, string>[]> {
   requireFields(payload);
+  await assertNoOverlap(payload, id);
   const existing = (await getKeyedList(VEHICLE_REQUEST_TABLE)).find((r) => r.id === id);
   if (!existing) throw new Error('수정할 신청을 찾을 수 없습니다.');
   const record: Record<string, string> = {};
@@ -73,6 +100,7 @@ export async function addVehicleRequestsRecurring(
   const groupId = randomUUID();
   const MAX_OCCURRENCES = 260;
   const rows: string[][] = [];
+  const existing = await getKeyedList(VEHICLE_REQUEST_TABLE);
 
   const cur = new Date(start);
   while (cur <= end) {
@@ -81,6 +109,17 @@ export async function addVehicleRequestsRecurring(
         throw new Error(`반복 기간이 너무 길어서(${MAX_OCCURRENCES}건 초과) 한 번에 등록할 수 없습니다. 종료일을 줄여서 나눠 등록해주세요.`);
       }
       const iso = cur.toISOString().slice(0, 10);
+      const conflict = existing.find(
+        (r) =>
+          r['차량번호'] === payload['차량번호'] &&
+          r['사용일자'] === iso &&
+          timesOverlap(r['출발시간'], r['복귀시간'], payload['출발시간'], payload['복귀시간'])
+      );
+      if (conflict) {
+        throw new Error(
+          `${iso}에 이미 ${conflict['신청자명']}님의 예약이 있어 반복 등록이 중단됐습니다. 아직 등록되지 않았으니 겹치는 날짜를 확인해주세요.`
+        );
+      }
       rows.push(
         VEHICLE_REQUEST_TABLE.headers.map((h) => {
           if (h === 'id') return randomUUID();

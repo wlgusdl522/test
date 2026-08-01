@@ -6,12 +6,21 @@ type Req = Record<string, string>;
 
 const WEEKDAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 
+// 브라우저의 로컬 타임존(KST)에서 new Date(...).toISOString()을 쓰면 UTC로 변환되면서
+// 날짜가 하루 밀리는 문제가 있어, 로컬 연/월/일 getter로만 문자열을 만든다.
+function toLocalIso(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function mondayOf(iso: string): string {
   const d = new Date(`${iso}T00:00:00`);
   const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
-  return d.toISOString().slice(0, 10);
+  return toLocalIso(d);
 }
 
 function vehicleLabel(vehicleNo: string, vehicles: { 차량번호: string; 차종: string }[]): string {
@@ -41,12 +50,12 @@ export default function VehicleWeekCalendar({
   for (let i = 0; i < 7; i++) {
     const d = new Date(start);
     d.setDate(d.getDate() + i);
-    dayDates.push(d.toISOString().slice(0, 10));
+    dayDates.push(toLocalIso(d));
   }
   const prevWeek = new Date(start); prevWeek.setDate(prevWeek.getDate() - 7);
   const nextWeek = new Date(start); nextWeek.setDate(nextWeek.getDate() + 7);
-  const prevWeekIso = prevWeek.toISOString().slice(0, 10);
-  const nextWeekIso = nextWeek.toISOString().slice(0, 10);
+  const prevWeekIso = toLocalIso(prevWeek);
+  const nextWeekIso = toLocalIso(nextWeek);
 
   const byDate = new Map<string, Req[]>();
   for (const r of requests) {
@@ -69,7 +78,7 @@ export default function VehicleWeekCalendar({
       <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
         {dayDates.map((iso, i) => {
           const dayRequests = byDate.get(iso) ?? [];
-          const isToday = iso === new Date().toISOString().slice(0, 10);
+          const isToday = iso === toLocalIso(new Date());
           const isSelected = iso === selectedDate;
           return (
             <button
