@@ -2,6 +2,7 @@ import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
 import { getVehicleLogList } from '@/lib/mutate/vehicleLog';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { badgeBase, badgeTone, btnDanger, btnSecondary, inputBase, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
 import { deleteVehicleRequestFormAction, deleteVehicleRequestSeriesFormAction } from '@/app/(portal)/vehicles/actions';
 
 export const runtime = 'nodejs';
@@ -98,12 +99,20 @@ export default async function VehicleMyRequestsPage({
                       <a href={`/vehicles?edit=${r.id}`} className={btnSecondary}>수정</a>
                       <form action={deleteVehicleRequestFormAction}>
                         <input type="hidden" name="id" value={r.id} />
-                        <button type="submit" className={btnDanger}>{r.반복그룹ID ? '삭제(이 건만)' : '삭제'}</button>
+                        <ConfirmSubmitButton confirmMessage="이 신청을 삭제할까요?" className={btnDanger}>
+                          {r.반복그룹ID ? '삭제(이 건만)' : '삭제'}
+                        </ConfirmSubmitButton>
                       </form>
                       {r.반복그룹ID && (
                         <form action={deleteVehicleRequestSeriesFormAction}>
                           <input type="hidden" name="id" value={r.id} />
-                          <button type="submit" title="이 날짜 이후 반복 전체 삭제" className={btnSecondary}>이후 전체삭제</button>
+                          <ConfirmSubmitButton
+                            confirmMessage="이 날짜 이후의 반복 예약을 전부 삭제할까요?"
+                            title="이 날짜 이후 반복 전체 삭제"
+                            className={btnSecondary}
+                          >
+                            이후 전체삭제
+                          </ConfirmSubmitButton>
                         </form>
                       )}
                     </>

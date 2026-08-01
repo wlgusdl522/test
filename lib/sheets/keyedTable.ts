@@ -73,7 +73,7 @@ export async function appendRecord(config: KeyedTableConfig, record: Record<stri
   await getSheetsClient().spreadsheets.values.append({
     spreadsheetId: config.spreadsheetId,
     range: `${config.sheetName}!A${DATA_START_ROW}`,
-    valueInputOption: 'USER_ENTERED',
+    valueInputOption: 'RAW',
     requestBody: { values: [recordToRow(config, record)] },
   });
 }
@@ -92,7 +92,7 @@ export async function updateRecord(
   await getSheetsClient().spreadsheets.values.update({
     spreadsheetId: config.spreadsheetId,
     range: `${config.sheetName}!A${rowNumber}:${colLetter(config.headers.length)}${rowNumber}`,
-    valueInputOption: 'USER_ENTERED',
+    valueInputOption: 'RAW',
     requestBody: { values: [recordToRow(config, record)] },
   });
 }
@@ -111,7 +111,7 @@ export async function upsertRecord(
     await getSheetsClient().spreadsheets.values.update({
       spreadsheetId: config.spreadsheetId,
       range: `${config.sheetName}!A${rowNumber}:${colLetter(config.headers.length)}${rowNumber}`,
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption: 'RAW',
       requestBody: { values: [recordToRow(config, record)] },
     });
   }

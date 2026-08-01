@@ -21,7 +21,7 @@ export async function appendSimpleListItem(sheetName: string, value: string): Pr
   await getSheetsClient().spreadsheets.values.append({
     spreadsheetId: STAFF_SHEET_ID,
     range: `${sheetName}!A${DATA_START_ROW}`,
-    valueInputOption: 'USER_ENTERED',
+    valueInputOption: 'RAW',
     requestBody: { values: [[value, '']] },
   });
 }
@@ -73,7 +73,7 @@ export async function moveSimpleListItem(
   await getSheetsClient().spreadsheets.values.update({
     spreadsheetId: STAFF_SHEET_ID,
     range: `${sheetName}!A${DATA_START_ROW}:A${DATA_START_ROW + reordered.length - 1}`,
-    valueInputOption: 'USER_ENTERED',
+    valueInputOption: 'RAW',
     requestBody: { values: reordered.map((v) => [v]) },
   });
 }

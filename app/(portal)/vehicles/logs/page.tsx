@@ -5,6 +5,7 @@ import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
 import { btn, btnSecondary, input, inputBase, label, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import PrinterIcon from '@/components/icons/PrinterIcon';
 import FormToggle from '@/components/FormToggle';
+import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
 import VehicleSelectWithOdometer from '@/components/vehicles/VehicleSelectWithOdometer';
 import CollapsibleCheckSection from '@/components/vehicles/CollapsibleCheckSection';
 import { addVehicleLogAction, deleteVehicleLogAction, updateVehicleLogAction } from './actions';
@@ -157,7 +158,7 @@ export default async function VehicleLogsPage({
                 <a href={`/vehicles/logs?edit=${r.id}#log-form`} className={btnSecondary}>수정</a>
                 <form action={deleteVehicleLogAction}>
                   <input type="hidden" name="id" value={r.id} />
-                  <button type="submit" className={btnSecondary}>삭제</button>
+                  <ConfirmSubmitButton confirmMessage="이 운행일지를 삭제할까요?" className={btnSecondary}>삭제</ConfirmSubmitButton>
                 </form>
               </td>
             </tr>

@@ -3,6 +3,7 @@ import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getVehicleMaintenanceList } from '@/lib/mutate/vehicleMaintenance';
 import { btn, btnDanger, btnSecondary, input, inputBase, label, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import FormToggle from '@/components/FormToggle';
+import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
 import PrinterIcon from '@/components/icons/PrinterIcon';
 import { addVehicleMaintenanceAction, deleteVehicleMaintenanceAction, updateVehicleMaintenanceAction } from './actions';
 
@@ -111,7 +112,7 @@ export default async function VehicleMaintenancePage({
                 <a href={`/vehicles/maintenance?edit=${r.id}`} className={btnSecondary}>수정</a>
                 <form action={deleteVehicleMaintenanceAction}>
                   <input type="hidden" name="id" value={r.id} />
-                  <button type="submit" className={btnDanger}>삭제</button>
+                  <ConfirmSubmitButton confirmMessage="이 정비 기록을 삭제할까요?" className={btnDanger}>삭제</ConfirmSubmitButton>
                 </form>
               </td>
             </tr>

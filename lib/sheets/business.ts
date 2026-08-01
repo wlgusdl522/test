@@ -24,7 +24,7 @@ export async function appendBusinessToSheet(name: string, team: string): Promise
   await getSheetsClient().spreadsheets.values.append({
     spreadsheetId: STAFF_SHEET_ID,
     range: `${BUSINESS_LIST_SHEET_NAME}!A${DATA_START_ROW}`,
-    valueInputOption: 'USER_ENTERED',
+    valueInputOption: 'RAW',
     requestBody: { values: [[name, team, '']] },
   });
 }

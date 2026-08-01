@@ -141,7 +141,7 @@ export async function addVehicleRequestsRecurring(
   await getSheetsClient().spreadsheets.values.append({
     spreadsheetId: VEHICLE_REQUEST_TABLE.spreadsheetId,
     range: `${VEHICLE_REQUEST_TABLE.sheetName}!A3`,
-    valueInputOption: 'USER_ENTERED',
+    valueInputOption: 'RAW',
     requestBody: { values: rows },
   });
 

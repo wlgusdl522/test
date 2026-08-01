@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { btnDanger, btnSecondary, card, table, tableWrap, td, th } from '@/lib/ui';
 import { deleteVehicleRequestAction } from '@/app/(portal)/vehicles/actions';
 
@@ -32,13 +32,20 @@ export default function VehicleDayDetailTable({
   showAddButton?: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [statusText, setStatusText] = useState<string | null>(null);
 
   function handleDelete(id: string) {
+    if (!window.confirm('이 예약을 삭제할까요?')) return;
+    setDeletingId(id);
+    setStatusText(null);
     startTransition(async () => {
       const fd = new FormData();
       fd.set('id', id);
       const result = await deleteVehicleRequestAction(fd);
       onMutated(result.requests);
+      setDeletingId(null);
+      setStatusText('삭제했습니다.');
     });
   }
 
@@ -46,9 +53,12 @@ export default function VehicleDayDetailTable({
     <div className={card}>
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-semibold">{date} 예약 현황</h3>
-        {showAddButton && (
-          <button type="button" onClick={() => onAdd(date)} className="text-sm text-brand hover:underline">+ 예약</button>
-        )}
+        <div className="flex items-center gap-3">
+          {statusText && <span className="text-xs text-emerald-600 dark:text-emerald-400">{statusText}</span>}
+          {showAddButton && (
+            <button type="button" onClick={() => onAdd(date)} className="text-sm text-brand hover:underline">+ 예약</button>
+          )}
+        </div>
       </div>
       {requests.length === 0 ? (
         <p className="text-sm text-zinc-400">이 날짜에 등록된 예약이 없습니다.</p>
@@ -75,7 +85,9 @@ export default function VehicleDayDetailTable({
                     {isMine && (
                       <>
                         <button type="button" onClick={() => onEdit(r.id)} className={btnSecondary}>수정</button>
-                        <button type="button" onClick={() => handleDelete(r.id)} disabled={isPending} className={btnDanger}>삭제</button>
+                        <button type="button" onClick={() => handleDelete(r.id)} disabled={isPending} className={btnDanger}>
+                          {isPending && deletingId === r.id ? '삭제 중...' : '삭제'}
+                        </button>
                       </>
                     )}
                   </td>

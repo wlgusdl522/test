@@ -126,7 +126,7 @@ async function setSingleCell(id: string, column: string, value: boolean): Promis
   await getSheetsClient().spreadsheets.values.update({
     spreadsheetId: WEEKLY_TASK_TABLE.spreadsheetId,
     range: `${WEEKLY_TASK_TABLE.sheetName}!${colLetter}${rowNumber}`,
-    valueInputOption: 'USER_ENTERED',
+    valueInputOption: 'RAW',
     requestBody: { values: [[value]] },
   });
 
