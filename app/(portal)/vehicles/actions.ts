@@ -39,24 +39,24 @@ export async function addVehicleRequestAction(formData: FormData) {
   } else {
     await addVehicleRequest(payload);
   }
-  revalidatePath('/vehicles/requests');
+  revalidatePath('/vehicles');
 }
 
 export async function updateVehicleRequestAction(formData: FormData) {
   const id = String(formData.get('id') ?? '');
   const payload = await payloadFromForm(formData);
   await updateVehicleRequest(id, payload);
-  revalidatePath('/vehicles/requests');
+  revalidatePath('/vehicles');
 }
 
 export async function deleteVehicleRequestAction(formData: FormData) {
   const id = String(formData.get('id') ?? '');
   await deleteVehicleRequest(id);
-  revalidatePath('/vehicles/requests');
+  revalidatePath('/vehicles');
 }
 
 export async function deleteVehicleRequestSeriesAction(formData: FormData) {
   const id = String(formData.get('id') ?? '');
   await deleteVehicleRequestSeriesFrom(id);
-  revalidatePath('/vehicles/requests');
+  revalidatePath('/vehicles');
 }

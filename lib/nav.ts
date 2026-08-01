@@ -24,10 +24,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: '차량관리',
     items: [
-      { href: '/vehicles/requests', label: '차량사용신청' },
-      { href: '/vehicles/logs', label: '차량운행일지' },
-      { href: '/vehicles/maintenance', label: '차량정비대장' },
-      { href: '/settings/vehicles', label: '차량목록' },
+      { href: '/vehicles', label: '차량관리' },
     ],
   },
   {
@@ -44,6 +41,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/settings/simple-lists', label: '팀 / 직급 / 결재라인' },
       { href: '/settings/business-list', label: '사업목록' },
+      { href: '/settings/vehicles', label: '차량목록' },
       { href: '/settings/permissions', label: '권한설정' },
       { href: '/settings/approval-rules', label: '결재라인 전결기준' },
       { href: '/settings/system', label: '시스템 설정값' },

@@ -1,7 +1,7 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getVehicleMaintenanceList } from '@/lib/mutate/vehicleMaintenance';
-import { btn, btnDanger, btnSecondary, card, h1, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, input, label, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import FormToggle from '@/components/FormToggle';
 import { addVehicleMaintenanceAction, deleteVehicleMaintenanceAction, updateVehicleMaintenanceAction } from './actions';
 
@@ -21,9 +21,7 @@ export default async function VehicleMaintenancePage({
   const editing = edit ? records.find((r) => r.id === edit) : null;
 
   return (
-    <main className={pageWide}>
-      <h1 className={h1}>차량정비대장</h1>
-
+    <>
       <FormToggle label={editing ? '정비 기록 수정' : '정비 등록'} defaultOpen={!!editing}>
       <form action={editing ? updateVehicleMaintenanceAction : addVehicleMaintenanceAction} className={`${card} grid grid-cols-2 gap-3`}>
         {editing && <input type="hidden" name="id" value={editing.id} />}
@@ -87,6 +85,6 @@ export default async function VehicleMaintenancePage({
           ))}
         </tbody>
       </table></div>
-    </main>
+    </>
   );
 }

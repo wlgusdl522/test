@@ -2,7 +2,8 @@ import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
 import { getMyPendingVehicleLogApprovals, getVehicleLogList } from '@/lib/mutate/vehicleLog';
 import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
-import { btn, btnDanger, btnSecondary, card, h1, h2, input, inputBase, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h2, input, inputBase, label, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import PrinterIcon from '@/components/icons/PrinterIcon';
 import StatusBadge from '@/components/StatusBadge';
 import FormToggle from '@/components/FormToggle';
 import { actOnVehicleLogAction, addVehicleLogAction, deleteVehicleLogAction, updateVehicleLogAction } from './actions';
@@ -32,10 +33,12 @@ export default async function VehicleLogsPage({
   });
 
   return (
-    <main className={pageWide}>
-      <div className="flex items-center justify-between">
-        <h1 className={h1}>차량운행일지</h1>
-        <a href="/print/vehicle-log-monthly" target="_blank" className="text-sm text-brand hover:underline">월별 인쇄</a>
+    <>
+      <div className="flex items-center justify-end mb-2">
+        <a href="/print/vehicle-log-monthly" target="_blank" className={btnSecondary}>
+          <PrinterIcon />
+          월별 인쇄
+        </a>
       </div>
 
       <form method="get" className="flex gap-2 mb-3">
@@ -164,6 +167,6 @@ export default async function VehicleLogsPage({
           ))}
         </tbody>
       </table></div>
-    </main>
+    </>
   );
 }

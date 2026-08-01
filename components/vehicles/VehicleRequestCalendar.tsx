@@ -47,9 +47,9 @@ export default function VehicleRequestCalendar({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <a href={`/vehicles/requests?view=calendar&month=${prevMonth}`} className="text-sm text-brand hover:underline">◀ 이전달</a>
+        <a href={`/vehicles?month=${prevMonth}`} className="text-sm text-brand hover:underline">◀ 이전달</a>
         <span className="text-sm font-semibold">{year}년 {monthNum}월</span>
-        <a href={`/vehicles/requests?view=calendar&month=${nextMonth}`} className="text-sm text-brand hover:underline">다음달 ▶</a>
+        <a href={`/vehicles?month=${nextMonth}`} className="text-sm text-brand hover:underline">다음달 ▶</a>
       </div>
 
       <div className="grid grid-cols-7 gap-1 mb-4">
@@ -64,7 +64,7 @@ export default function VehicleRequestCalendar({
           return (
             <a
               key={iso}
-              href={`/vehicles/requests?view=calendar&month=${month}&date=${iso}`}
+              href={`/vehicles?month=${month}&date=${iso}`}
               className={`min-h-20 rounded-md border p-1 text-xs flex flex-col gap-0.5 hover:border-brand ${
                 isSelected ? 'border-brand bg-brand-tint' : 'border-zinc-200 dark:border-zinc-800'
               }`}
@@ -91,7 +91,7 @@ export default function VehicleRequestCalendar({
         <div className={card}>
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold">{selectedDate} 예약 현황</h3>
-            <a href={`/vehicles/requests?date=${selectedDate}`} className="text-sm text-brand hover:underline">+ 예약</a>
+            <a href={`/vehicles?month=${month}&date=${selectedDate}#request-form`} className="text-sm text-brand hover:underline">+ 예약</a>
           </div>
           {selectedRequests.length === 0 ? (
             <p className="text-sm text-zinc-400">이 날짜에 등록된 예약이 없습니다.</p>

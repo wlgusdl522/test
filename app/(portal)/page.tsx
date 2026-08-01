@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 const QUICK_LINKS = [
   { href: '/weekly-plan', label: '주간업무', desc: '이번 주 업무 입력' },
   { href: '/expenses', label: '카드사용대장', desc: '지출 등록' },
-  { href: '/vehicles/requests', label: '차량사용신청', desc: '차량 예약' },
+  { href: '/vehicles', label: '차량관리', desc: '차량 예약' },
   { href: '/staff/directory', label: '전직원 주소록', desc: '연락처 찾기' },
 ];
 
