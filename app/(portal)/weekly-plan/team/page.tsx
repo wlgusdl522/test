@@ -4,8 +4,7 @@ import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getStaffList } from '@/lib/mutate/staff';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { hasPageAccess } from '@/lib/mutate/permissions';
-import { btn, btnSecondary, h1, inputBase, page, table, td, th, tableWrap } from '@/lib/ui';
-import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
+import { btn, btnSecondary, inputBase, table, td, th, tableWrap } from '@/lib/ui';
 import PrinterIcon from '@/components/icons/PrinterIcon';
 import PageAccessDenied from '@/components/PageAccessDenied';
 
@@ -38,13 +37,7 @@ export default async function WeeklyPlanTeamPage({
   const viewerEmail = (me?.['이메일(아이디)'] ?? '').toLowerCase();
 
   if (!(await hasPageAccess('weekly-plan-team-view'))) {
-    return (
-      <main className={page}>
-        <h1 className={h1}>전체보기</h1>
-        <WeeklyPlanTabs active="/weekly-plan/team" />
-        <PageAccessDenied />
-      </main>
-    );
+    return <PageAccessDenied />;
   }
 
   const tasks = await getWeeklyTasks(team, weekStart);
@@ -59,11 +52,7 @@ export default async function WeeklyPlanTeamPage({
   }
 
   return (
-    <main className={page}>
-      <h1 className={h1}>전체보기</h1>
-
-      <WeeklyPlanTabs active="/weekly-plan/team" />
-
+    <>
       <form method="get" className="flex gap-2 mb-6">
         <select name="team" defaultValue={team} className={`${inputBase} w-auto`}>
           {teams.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -119,6 +108,6 @@ export default async function WeeklyPlanTeamPage({
         </table>
       </div>
       <p className="mt-2 text-xs text-zinc-400">내 줄은 배경색으로 강조돼요.</p>
-    </main>
+    </>
   );
 }

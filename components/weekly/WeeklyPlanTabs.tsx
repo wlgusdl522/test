@@ -1,31 +1,17 @@
-import Link from 'next/link';
+import { hasPageAccess } from '@/lib/mutate/permissions';
+import WeeklyPlanTabsClient from './WeeklyPlanTabsClient';
 
 const TABS = [
-  { href: '/weekly-plan', label: '작성' },
-  { href: '/weekly-plan/team', label: '전체보기' },
-  { href: '/weekly-plan/review', label: '부서장확인' },
-  { href: '/weekly-plan/meeting', label: '회의록작성' },
+  { href: '/weekly-plan', label: '작성', pageId: 'weekly-plan-write' },
+  { href: '/weekly-plan/team', label: '전체보기', pageId: 'weekly-plan-team-view' },
+  { href: '/weekly-plan/review', label: '부서장확인', pageId: 'weekly-plan-review' },
+  { href: '/weekly-plan/meeting', label: '회의록작성', pageId: 'weekly-plan-meeting' },
 ];
 
-export default function WeeklyPlanTabs({ active }: { active: string }) {
-  return (
-    <div className="flex gap-1 mb-5 border-b border-zinc-200 dark:border-zinc-800">
-      {TABS.map((t) => {
-        const isActive = t.href === active;
-        return (
-          <Link
-            key={t.href}
-            href={t.href}
-            className={`-mb-px rounded-t-md border border-b-0 px-3.5 py-2 text-sm transition-colors ${
-              isActive
-                ? 'border-zinc-200 bg-white font-medium text-brand dark:border-zinc-800 dark:bg-zinc-900'
-                : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
-            }`}
-          >
-            {t.label}
-          </Link>
-        );
-      })}
-    </div>
-  );
+// 권한설정에서 막힌 탭은 목록에 아예 안 보이게 — 눌러야만 "권한 없음"을 확인하는 대신
+// 애초에 볼 수 없는 탭은 노출하지 않는다.
+export default async function WeeklyPlanTabs() {
+  const checks = await Promise.all(TABS.map((t) => hasPageAccess(t.pageId)));
+  const visible = TABS.filter((_, i) => checks[i]).map(({ href, label }) => ({ href, label }));
+  return <WeeklyPlanTabsClient tabs={visible} />;
 }

@@ -1,11 +1,11 @@
+import Link from 'next/link';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getReviewCompletionStatus } from '@/lib/mutate/reviewStatus';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { hasPageAccess } from '@/lib/mutate/permissions';
-import { btnSecondary, card, h1, h2, inputBase, pageWide } from '@/lib/ui';
-import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
+import { btnSecondary, card, h2, inputBase } from '@/lib/ui';
 import SupervisorReviewList from '@/components/weekly/SupervisorReviewList';
 import PrinterIcon from '@/components/icons/PrinterIcon';
 import PageAccessDenied from '@/components/PageAccessDenied';
@@ -39,13 +39,7 @@ export default async function ReviewPage({
   const reviewTeam = params.team ?? me?.소속팀 ?? teams[0] ?? '';
 
   if (!(await hasPageAccess('weekly-plan-review'))) {
-    return (
-      <main className={pageWide}>
-        <h1 className={h1}>부서장 확인</h1>
-        <WeeklyPlanTabs active="/weekly-plan/review" />
-        <PageAccessDenied />
-      </main>
-    );
+    return <PageAccessDenied />;
   }
 
   const reviewTasks = await getWeeklyTasks(reviewTeam, weekStart);
@@ -59,16 +53,13 @@ export default async function ReviewPage({
   }
 
   return (
-    <main className={pageWide}>
-      <div className="flex items-center justify-between">
-        <h1 className={h1}>부서장 확인</h1>
+    <>
+      <div className="flex items-center justify-end mb-2">
         <a href={`/print/weekly-plan-rollup?weekStart=${weekStart}`} target="_blank" className={btnSecondary}>
           <PrinterIcon />
           부서별 취합 인쇄
         </a>
       </div>
-
-      <WeeklyPlanTabs active="/weekly-plan/review" />
 
       <form method="get" className="flex gap-2 mb-4">
         <select name="team" defaultValue={reviewTeam} className={`${inputBase} w-auto`}>
@@ -83,7 +74,7 @@ export default async function ReviewPage({
           const done = status[team]?.완료여부 ?? false;
           const active = team === reviewTeam;
           return (
-            <a
+            <Link
               key={team}
               href={`/weekly-plan/review?team=${encodeURIComponent(team)}&weekStart=${weekStart}`}
               className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs border transition-colors ${
@@ -96,7 +87,7 @@ export default async function ReviewPage({
             >
               <span className="font-semibold">{team}</span>
               <span>{done ? '✓ 완료' : '미완료'}</span>
-            </a>
+            </Link>
           );
         })}
       </div>
@@ -130,6 +121,6 @@ export default async function ReviewPage({
           weekStart={weekStart}
         />
       </div>
-    </main>
+    </>
   );
 }

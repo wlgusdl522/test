@@ -8,8 +8,7 @@ import { summarizeLeaveEntries } from '@/lib/weeklyLeave';
 import { groupHighlightedTasksByCategory } from '@/lib/meetingSummary';
 import { resolveApprovalLineLabels } from '@/lib/approval/approvalLine';
 import { hasPageAccess } from '@/lib/mutate/permissions';
-import { btnSecondary, h1, inputBase, pageWide } from '@/lib/ui';
-import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
+import { btnSecondary, inputBase } from '@/lib/ui';
 import MeetingComposer from '@/components/weekly/MeetingComposer';
 import PrinterIcon from '@/components/icons/PrinterIcon';
 import PageAccessDenied from '@/components/PageAccessDenied';
@@ -40,13 +39,7 @@ export default async function MeetingPage({
   const date = params.date ?? mondayOf(new Date());
 
   if (!(await hasPageAccess('weekly-plan-meeting'))) {
-    return (
-      <main className={pageWide}>
-        <h1 className={h1}>회의록 정리</h1>
-        <WeeklyPlanTabs active="/weekly-plan/meeting" />
-        <PageAccessDenied />
-      </main>
-    );
+    return <PageAccessDenied />;
   }
 
   const [meta, weekStart] = [await getMeetingMeta(team, date), mondayOf(new Date(date))];
@@ -57,16 +50,13 @@ export default async function MeetingPage({
   const signaturePositions = resolveApprovalLineLabels(['과장', '부장', '관장'], team, staffList);
 
   return (
-    <main className={pageWide}>
-      <div className="flex items-center justify-between">
-        <h1 className={h1}>회의록 정리</h1>
+    <>
+      <div className="flex items-center justify-end mb-2">
         <a href={`/print/weekly-plan-meeting?team=${encodeURIComponent(team)}&date=${date}`} target="_blank" className={btnSecondary}>
           <PrinterIcon />
           회의록 인쇄
         </a>
       </div>
-
-      <WeeklyPlanTabs active="/weekly-plan/meeting" />
 
       <form method="get" className="flex gap-2 mb-6">
         <select name="team" defaultValue={team} className={`${inputBase} w-auto`}>
@@ -89,6 +79,6 @@ export default async function MeetingPage({
         initialLeave={meta?.휴가및일정 || leaveSuggestion}
         initialSupervision={meta?.슈퍼비전 ?? ''}
       />
-    </main>
+    </>
   );
 }

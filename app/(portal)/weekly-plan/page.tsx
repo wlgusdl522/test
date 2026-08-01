@@ -2,9 +2,8 @@ import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getStaffList } from '@/lib/mutate/staff';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { hasPageAccess } from '@/lib/mutate/permissions';
-import { btnSecondary, card, h1, inputBase, page, pageWide } from '@/lib/ui';
+import { btnSecondary, card, inputBase } from '@/lib/ui';
 import WeeklyPlanWorkspace from '@/components/weekly/WeeklyPlanWorkspace';
-import WeeklyPlanTabs from '@/components/weekly/WeeklyPlanTabs';
 import PrinterIcon from '@/components/icons/PrinterIcon';
 import PageAccessDenied from '@/components/PageAccessDenied';
 
@@ -39,13 +38,7 @@ export default async function WeeklyPlanPage({
   const viewerEmail = (me?.['이메일(아이디)'] ?? '').toLowerCase();
 
   if (!(await hasPageAccess('weekly-plan-write'))) {
-    return (
-      <main className={page}>
-        <h1 className={h1}>주간업무계획</h1>
-        <WeeklyPlanTabs active="/weekly-plan" />
-        <PageAccessDenied />
-      </main>
-    );
+    return <PageAccessDenied />;
   }
 
   const [teamTasks, staffList] = await Promise.all([getWeeklyTasks(team, weekStart), getStaffList()]);
@@ -63,16 +56,13 @@ export default async function WeeklyPlanPage({
   }
 
   return (
-    <main className={pageWide}>
-      <div className="flex items-center justify-between">
-        <h1 className={h1}>주간업무계획</h1>
+    <>
+      <div className="flex items-center justify-end mb-2">
         <a href={`/print/weekly-plan-team?team=${encodeURIComponent(team)}&weekStart=${weekStart}`} target="_blank" className={btnSecondary}>
           <PrinterIcon />
           인쇄
         </a>
       </div>
-
-      <WeeklyPlanTabs active="/weekly-plan" />
 
       <div className={card}>
         <div className="flex items-center gap-2 mb-1">
@@ -100,6 +90,6 @@ export default async function WeeklyPlanPage({
           }))}
         />
       </div>
-    </main>
+    </>
   );
 }
