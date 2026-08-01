@@ -19,6 +19,27 @@ function mondayOf(date: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+function formatMD(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+// 같은 사람이 같은 업무를 여러 날 체크했으면 한 줄로 합쳐서 "업무내용(첫날~마지막날)"로 보여준다.
+function groupHighlighted(tasks: Record<string, string>[]): { name: string; label: string }[] {
+  const map = new Map<string, { name: string; text: string; dates: string[] }>();
+  for (const t of tasks) {
+    const key = `${t.성명}::${t.업무내용}`;
+    if (!map.has(key)) map.set(key, { name: t.성명, text: t.업무내용, dates: [] });
+    map.get(key)!.dates.push(t.날짜);
+  }
+  return Array.from(map.values()).map(({ name, text, dates }) => {
+    const sorted = [...dates].sort();
+    const dateLabel =
+      sorted.length === 1 ? formatMD(sorted[0]) : `${formatMD(sorted[0])}~${formatMD(sorted[sorted.length - 1])}`;
+    return { name, label: `${text}(${dateLabel})` };
+  });
+}
+
 export default async function MeetingPage({
   searchParams,
 }: {
@@ -49,10 +70,16 @@ export default async function MeetingPage({
         <button type="submit" className={btnSecondary}>조회</button>
       </form>
 
-      <h2 className={h2}>이번 주 회의록후보 업무</h2>
-      <ul className="mb-6 list-disc pl-5 text-sm text-zinc-700 dark:text-zinc-300">
-        {highlightedTasks.map((t) => <li key={t.id}>{t.날짜} — {t.성명}: {t.업무내용}</li>)}
-      </ul>
+      <h2 className={h2}>이번 주 회의록 반영 업무</h2>
+      {highlightedTasks.length === 0 ? (
+        <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-400">체크된 업무가 없습니다.</p>
+      ) : (
+        <ul className="mb-6 list-disc pl-5 text-sm text-zinc-700 dark:text-zinc-300">
+          {groupHighlighted(highlightedTasks).map((g, i) => (
+            <li key={i}><b>{g.name}</b>: {g.label}</li>
+          ))}
+        </ul>
+      )}
 
       <form action={saveMeetingMetaAction} className={`${card} flex flex-col gap-3`}>
         <input type="hidden" name="team" value={team} />
