@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { addCardLedgerRecord, deleteCardLedgerRecord, updateCardLedgerRecord } from '@/lib/mutate/cardLedger';
 import { getViewerStaffRecord, requireViewerEmail } from '@/lib/auth-helpers';
+import { mineRedirectUrl } from '@/lib/expensesNav';
 
 async function payloadFromForm(formData: FormData): Promise<Record<string, string>> {
   const viewerEmail = await requireViewerEmail();
@@ -25,13 +26,13 @@ async function payloadFromForm(formData: FormData): Promise<Record<string, strin
 
 export async function addCardLedgerAction(formData: FormData): Promise<void> {
   const { id } = await addCardLedgerRecord(await payloadFromForm(formData));
-  redirect(`/expenses/mine?focus=${id}`);
+  redirect(mineRedirectUrl(formData, { focus: id }));
 }
 
 export async function updateCardLedgerAction(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '');
   await updateCardLedgerRecord(id, await payloadFromForm(formData));
-  redirect(`/expenses/mine?focus=${id}`);
+  redirect(mineRedirectUrl(formData, { focus: id }));
 }
 
 export async function deleteCardLedgerAction(formData: FormData) {

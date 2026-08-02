@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { deleteItemCheckPhoto, saveItemCheckPhoto } from '@/lib/mutate/itemCheckPhoto';
 import { ITEM_CHECK_PHOTO_SLOTS } from '@/lib/sheets/registry';
+import { mineRedirectUrl } from '@/lib/expensesNav';
 
 async function fileToDataUrl(file: File | null): Promise<string> {
   if (!file || file.size === 0) return '';
@@ -26,7 +27,7 @@ export async function saveItemCheckPhotoAction(formData: FormData): Promise<void
     payload[slot] = await fileToDataUrl(formData.get(slot) as File | null);
   }
   await saveItemCheckPhoto(payload, existingId);
-  redirect(`/expenses/mine?focus=${ledgerId}`);
+  redirect(mineRedirectUrl(formData, { focus: ledgerId }));
 }
 
 export async function deleteItemCheckPhotoAction(formData: FormData) {

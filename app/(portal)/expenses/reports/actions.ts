@@ -9,6 +9,7 @@ import {
   updateItemCheckReport,
 } from '@/lib/mutate/itemCheckReport';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
+import { mineRedirectUrl } from '@/lib/expensesNav';
 
 async function payloadFromForm(formData: FormData): Promise<Record<string, string>> {
   const me = await getViewerStaffRecord();
@@ -41,14 +42,14 @@ async function payloadFromForm(formData: FormData): Promise<Record<string, strin
 export async function addItemCheckReportAction(formData: FormData): Promise<void> {
   const ledgerId = String(formData.get('ledgerId') ?? '');
   await addItemCheckReport(await payloadFromForm(formData));
-  redirect(`/expenses/mine?focus=${ledgerId}`);
+  redirect(mineRedirectUrl(formData, { focus: ledgerId }));
 }
 
 export async function updateItemCheckReportAction(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '');
   const ledgerId = String(formData.get('ledgerId') ?? '');
   await updateItemCheckReport(id, await payloadFromForm(formData));
-  redirect(`/expenses/mine?focus=${ledgerId}`);
+  redirect(mineRedirectUrl(formData, { focus: ledgerId }));
 }
 
 export async function deleteItemCheckReportAction(formData: FormData) {

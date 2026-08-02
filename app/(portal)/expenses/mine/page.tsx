@@ -94,8 +94,32 @@ export default async function CardLedgerMinePage({
 
   const statusQuery = status ? `&status=${status}` : '';
 
+  // 행 클릭/사진·조서 등록 링크는 지금 걸려있는 월/전체보기/상태 필터를 그대로 들고 다녀야 한다 —
+  // 안 그러면 "전체보기"로 예전 달 항목을 클릭했는데 수정 화면으로 넘어가면서 기본 필터(이번달)로
+  // 되돌아가버려 방금 클릭한 행을 포함한 목록 전체가 사라진 것처럼 보인다.
+  function buildQuery(params: Record<string, string | undefined>): string {
+    const sp = new URLSearchParams();
+    if (ym) sp.set('ym', ym);
+    if (all) sp.set('all', all);
+    if (status) sp.set('status', status);
+    for (const [k, v] of Object.entries(params)) {
+      if (v) sp.set(k, v);
+    }
+    const qs = sp.toString();
+    return `/expenses/mine${qs ? `?${qs}` : ''}`;
+  }
+  const backHref = buildQuery({});
+  const filterHiddenFields = (
+    <>
+      {ym && <input type="hidden" name="ym" value={ym} />}
+      {showAll && <input type="hidden" name="all" value="1" />}
+      {status && <input type="hidden" name="status" value={status} />}
+    </>
+  );
+
   const entryForm = (
     <form key={edit ?? 'new'} action={editing ? updateCardLedgerAction : addCardLedgerAction} className="flex flex-col gap-3">
+      {filterHiddenFields}
       {editing && <input type="hidden" name="id" value={editing.id} />}
       <label className={label}>
         구분 *
@@ -131,7 +155,7 @@ export default async function CardLedgerMinePage({
       </label>
       <div className="flex items-center gap-3">
         <button type="submit" className={btn}>{editing ? '저장' : '등록'}</button>
-        {editing && <a href="/expenses/mine" className="text-xs text-zinc-500 hover:underline">취소</a>}
+        {editing && <a href={backHref} className="text-xs text-zinc-500 hover:underline">취소</a>}
       </div>
     </form>
   );
@@ -196,7 +220,7 @@ export default async function CardLedgerMinePage({
               <Fragment key={r.id}>
                 <tr className={trZebraHover}>
                   <td className={td}>
-                    {locked ? r.사용일자 : <a href={`/expenses/mine?edit=${r.id}`} className="block">{r.사용일자}</a>}
+                    {locked ? r.사용일자 : <a href={buildQuery({ edit: r.id })} className="block">{r.사용일자}</a>}
                   </td>
                   <td className={td}>
                     {locked ? (
@@ -205,7 +229,7 @@ export default async function CardLedgerMinePage({
                         <div className="text-xs text-zinc-500">{r.사용내역}</div>
                       </>
                     ) : (
-                      <a href={`/expenses/mine?edit=${r.id}`} className="block">
+                      <a href={buildQuery({ edit: r.id })} className="block">
                         <div className="font-medium">{resolveBusinessName(r.예산과목, budgetItems)}</div>
                         <div className="text-xs text-zinc-500">{r.사용내역}</div>
                       </a>
@@ -214,7 +238,7 @@ export default async function CardLedgerMinePage({
                   </td>
                   <td className={td}>
                     {locked ? `${parseAmount(r.사용금액).toLocaleString()}원` : (
-                      <a href={`/expenses/mine?edit=${r.id}`} className="block">{parseAmount(r.사용금액).toLocaleString()}원</a>
+                      <a href={buildQuery({ edit: r.id })} className="block">{parseAmount(r.사용금액).toLocaleString()}원</a>
                     )}
                   </td>
                   <td className={td}>{exempt ? '' : dayBadge(daysSince(r.사용일자), settings.cardLedgerWarnDays, settings.cardLedgerDangerDays)}</td>
@@ -227,15 +251,15 @@ export default async function CardLedgerMinePage({
                       ) : (
                         <>
                           {hasPhoto ? (
-                            <a href={`/expenses/mine?photoEdit=${r.id}`} className={`${badgeBase} ${badgeTone.green} hover:underline`}>사진 완료</a>
+                            <a href={buildQuery({ photoEdit: r.id })} className={`${badgeBase} ${badgeTone.green} hover:underline`}>사진 완료</a>
                           ) : (
-                            <a href={`/expenses/mine?photoFor=${r.id}`} className={`${badgeBase} ${badgeTone.red} hover:underline`}>사진 등록</a>
+                            <a href={buildQuery({ photoFor: r.id })} className={`${badgeBase} ${badgeTone.red} hover:underline`}>사진 등록</a>
                           )}
                           {reportRequired && (
                             hasReport ? (
-                              <a href={`/expenses/mine?reportEdit=${r.id}`} className={`${badgeBase} ${badgeTone.green} hover:underline`}>조서 완료</a>
+                              <a href={buildQuery({ reportEdit: r.id })} className={`${badgeBase} ${badgeTone.green} hover:underline`}>조서 완료</a>
                             ) : (
-                              <a href={`/expenses/mine?reportFor=${r.id}`} className={`${badgeBase} ${badgeTone.red} hover:underline`}>조서 등록</a>
+                              <a href={buildQuery({ reportFor: r.id })} className={`${badgeBase} ${badgeTone.red} hover:underline`}>조서 등록</a>
                             )
                           )}
                           {r.상태 === '반려' && <span className={`${badgeBase} ${badgeTone.red}`}>반려</span>}
@@ -257,28 +281,28 @@ export default async function CardLedgerMinePage({
                 {expand === 'photoNew' && (
                   <tr>
                     <td colSpan={6} className="p-0 border border-[#e3e6ea] dark:border-zinc-800">
-                      <PhotoForm ledgerId={r.id} budgetItems={budgetItems} ledger={r} />
+                      <PhotoForm ledgerId={r.id} budgetItems={budgetItems} ledger={r} backHref={backHref} filterHiddenFields={filterHiddenFields} />
                     </td>
                   </tr>
                 )}
                 {expand === 'photoEdit' && photo && (
                   <tr>
                     <td colSpan={6} className="p-0 border border-[#e3e6ea] dark:border-zinc-800">
-                      <PhotoForm ledgerId={r.id} budgetItems={budgetItems} ledger={r} editing={photo} />
+                      <PhotoForm ledgerId={r.id} budgetItems={budgetItems} ledger={r} editing={photo} backHref={backHref} filterHiddenFields={filterHiddenFields} />
                     </td>
                   </tr>
                 )}
                 {expand === 'reportNew' && (
                   <tr>
                     <td colSpan={6} className="p-0 border border-[#e3e6ea] dark:border-zinc-800">
-                      <ReportForm ledgerId={r.id} ledger={r} />
+                      <ReportForm ledgerId={r.id} ledger={r} backHref={backHref} filterHiddenFields={filterHiddenFields} />
                     </td>
                   </tr>
                 )}
                 {expand === 'reportEdit' && report && (
                   <tr>
                     <td colSpan={6} className="p-0 border border-[#e3e6ea] dark:border-zinc-800">
-                      <ReportForm ledgerId={r.id} ledger={r} editing={report} />
+                      <ReportForm ledgerId={r.id} ledger={r} editing={report} backHref={backHref} filterHiddenFields={filterHiddenFields} />
                     </td>
                   </tr>
                 )}
@@ -295,15 +319,18 @@ export default async function CardLedgerMinePage({
 }
 
 function PhotoForm({
-  ledgerId, budgetItems, ledger, editing,
+  ledgerId, budgetItems, ledger, editing, backHref, filterHiddenFields,
 }: {
   ledgerId: string;
   budgetItems: Record<string, string>[];
   ledger: Record<string, string>;
   editing?: Record<string, string>;
+  backHref: string;
+  filterHiddenFields: React.ReactNode;
 }) {
   return (
     <form action={saveItemCheckPhotoAction} encType="multipart/form-data" className={`${card} m-2 grid grid-cols-2 gap-3`}>
+      {filterHiddenFields}
       <input type="hidden" name="ledgerId" value={ledgerId} />
       {editing && <input type="hidden" name="id" value={editing.id} />}
       <p className="col-span-2 text-sm font-semibold -mb-1">물품검수사진 {editing ? '수정' : '등록'}</p>
@@ -335,7 +362,7 @@ function PhotoForm({
       ))}
       <div className="col-span-2 flex items-center gap-3">
         <button type="submit" className={btn}>{editing ? '저장' : '등록'}</button>
-        <a href="/expenses/mine" className="text-xs text-zinc-500 hover:underline">닫기</a>
+        <a href={backHref} className="text-xs text-zinc-500 hover:underline">닫기</a>
         {editing && (
           <form action={deleteItemCheckPhotoAction} className="inline">
             <input type="hidden" name="id" value={editing.id} />
@@ -348,14 +375,17 @@ function PhotoForm({
 }
 
 function ReportForm({
-  ledgerId, ledger, editing,
+  ledgerId, ledger, editing, backHref, filterHiddenFields,
 }: {
   ledgerId: string;
   ledger: Record<string, string>;
   editing?: Record<string, string>;
+  backHref: string;
+  filterHiddenFields: React.ReactNode;
 }) {
   return (
     <form action={editing ? updateItemCheckReportAction : addItemCheckReportAction} className={`${card} m-2 grid grid-cols-2 gap-3`}>
+      {filterHiddenFields}
       <input type="hidden" name="ledgerId" value={ledgerId} />
       {editing && <input type="hidden" name="id" value={editing.id} />}
       <p className="col-span-2 text-sm font-semibold -mb-1">
@@ -438,7 +468,7 @@ function ReportForm({
       </label>
       <div className="col-span-2 flex items-center gap-3">
         <button type="submit" className={btn}>{editing ? '저장' : '제출'}</button>
-        <a href="/expenses/mine" className="text-xs text-zinc-500 hover:underline">닫기</a>
+        <a href={backHref} className="text-xs text-zinc-500 hover:underline">닫기</a>
         {editing && (
           <form action={deleteItemCheckReportAction} className="inline">
             <input type="hidden" name="id" value={editing.id} />
