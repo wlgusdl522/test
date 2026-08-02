@@ -11,9 +11,9 @@ import {
   input, inputBase, label, selectFilter, table, tableWrap, td, th, trZebraHover,
 } from '@/lib/ui';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
-import InlineToggle from '@/components/InlineToggle';
 import TrashIcon from '@/components/icons/TrashIcon';
 import CardLedgerEntryFields from '@/components/expenses/CardLedgerEntryFields';
+import CardLedgerSplitLayout from '@/components/expenses/CardLedgerSplitLayout';
 import CardTypeTabs from '@/components/expenses/CardTypeTabs';
 import { parseAmount } from '@/lib/format';
 import { addCardLedgerAction, deleteCardLedgerAction, updateCardLedgerAction } from '../actions';
@@ -94,53 +94,55 @@ export default async function CardLedgerMinePage({
 
   const statusQuery = status ? `&status=${status}` : '';
 
-  return (
-    <div className="flex gap-6 items-start">
-      <div className="w-[340px] shrink-0">
-        <InlineToggle key={edit ?? 'new'} label={editing ? '카드사용 내역 수정' : '카드사용 입력'} defaultOpen={!!editing}>
-          <form action={editing ? updateCardLedgerAction : addCardLedgerAction} className="flex flex-col gap-3">
-            {editing && <input type="hidden" name="id" value={editing.id} />}
-            <label className={label}>
-              구분 *
-              <CardTypeTabs defaultValue={editing?.구분 ?? '체크카드'} />
-            </label>
-            <label className={label}>
-              사용일자 *
-              <input type="date" name="date" defaultValue={editing?.사용일자 ?? todayKst()} required className={input} />
-            </label>
-            <label className={label}>
-              담당자명
-              <input name="name" defaultValue={editing?.담당자명 ?? me?.성명 ?? ''} className={input} />
-            </label>
-            <label className={label}>
-              예산과목 *
-              <select name="budgetItem" defaultValue={editing?.예산과목 ?? ''} required className={input}>
-                {budgetItems.map((b) => <option key={b.예산과목명} value={b.예산과목명}>{b.예산과목명}</option>)}
-              </select>
-            </label>
-            <CardLedgerEntryFields
-              defaultAmount={editing?.사용금액}
-              defaultExempt={editing?.검수불요여부 === 'Y'}
-              defaultExemptReason={editing?.검수불요사유}
-              reportThreshold={settings.itemCheckReportThreshold}
-            />
-            <label className={label}>
-              카드번호(뒤 4자리)
-              <input name="cardNo" defaultValue={editing?.카드번호 ?? ''} maxLength={4} className={input} />
-            </label>
-            <label className={label}>
-              사용내역 *
-              <input name="description" defaultValue={editing?.사용내역 ?? ''} required className={input} />
-            </label>
-            <div className="flex items-center gap-3">
-              <button type="submit" className={btn}>{editing ? '저장' : '등록'}</button>
-              {editing && <a href="/expenses/mine" className="text-xs text-zinc-500 hover:underline">취소</a>}
-            </div>
-          </form>
-        </InlineToggle>
+  const entryForm = (
+    <form action={editing ? updateCardLedgerAction : addCardLedgerAction} className="flex flex-col gap-3">
+      {editing && <input type="hidden" name="id" value={editing.id} />}
+      <label className={label}>
+        구분 *
+        <CardTypeTabs defaultValue={editing?.구분 ?? '체크카드'} />
+      </label>
+      <label className={label}>
+        사용일자 *
+        <input type="date" name="date" defaultValue={editing?.사용일자 ?? todayKst()} required className={input} />
+      </label>
+      <label className={label}>
+        담당자명
+        <input name="name" defaultValue={editing?.담당자명 ?? me?.성명 ?? ''} className={input} />
+      </label>
+      <label className={label}>
+        예산과목 *
+        <select name="budgetItem" defaultValue={editing?.예산과목 ?? ''} required className={input}>
+          {budgetItems.map((b) => <option key={b.예산과목명} value={b.예산과목명}>{b.예산과목명}</option>)}
+        </select>
+      </label>
+      <CardLedgerEntryFields
+        defaultAmount={editing?.사용금액}
+        defaultExempt={editing?.검수불요여부 === 'Y'}
+        defaultExemptReason={editing?.검수불요사유}
+        reportThreshold={settings.itemCheckReportThreshold}
+      />
+      <label className={label}>
+        카드번호(뒤 4자리)
+        <input name="cardNo" defaultValue={editing?.카드번호 ?? ''} maxLength={4} className={input} />
+      </label>
+      <label className={label}>
+        사용내역 *
+        <input name="description" defaultValue={editing?.사용내역 ?? ''} required className={input} />
+      </label>
+      <div className="flex items-center gap-3">
+        <button type="submit" className={btn}>{editing ? '저장' : '등록'}</button>
+        {editing && <a href="/expenses/mine" className="text-xs text-zinc-500 hover:underline">취소</a>}
       </div>
+    </form>
+  );
 
-      <div className="flex-1 min-w-0">
+  return (
+    <CardLedgerSplitLayout
+      key={edit ?? 'new'}
+      formLabel={editing ? '카드사용 내역 수정' : '카드사용 입력'}
+      defaultOpen={!!editing}
+      form={entryForm}
+    >
         <form method="get" className="flex items-center gap-1.5 mb-3 flex-wrap">
           <a
             href={`/expenses/mine${statusQuery ? `?${statusQuery.slice(1)}` : ''}`}
@@ -289,8 +291,7 @@ export default async function CardLedgerMinePage({
           )}
         </tbody>
       </table></div>
-      </div>
-    </div>
+    </CardLedgerSplitLayout>
   );
 }
 
