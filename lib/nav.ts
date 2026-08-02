@@ -31,9 +31,10 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: '지출관리',
-    flat: true,
     items: [
-      { href: '/expenses', label: '지출관리' },
+      { href: '/expenses', label: '카드사용입력' },
+      { href: '/expenses/mine', label: '담당자 조회' },
+      { href: '/expenses/review', label: '회계 조회·인쇄' },
     ],
   },
   {

@@ -1,16 +1,12 @@
 import { h1, pageWide } from '@/lib/ui';
-import { isAccountingViewer } from '@/lib/auth-helpers';
-import ExpenseTabsClient from '@/components/expenses/ExpenseTabsClient';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export default async function ExpensesLayout({ children }: { children: React.ReactNode }) {
-  const canReview = await isAccountingViewer();
+export default function ExpensesLayout({ children }: { children: React.ReactNode }) {
   return (
     <main className={pageWide}>
-      <h1 className={h1}>지출관리</h1>
-      <ExpenseTabsClient canReview={canReview} />
+      <h1 className={`${h1} mb-5`}>카드사용대장</h1>
       {children}
     </main>
   );
