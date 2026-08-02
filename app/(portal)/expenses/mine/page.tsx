@@ -95,7 +95,7 @@ export default async function CardLedgerMinePage({
   const statusQuery = status ? `&status=${status}` : '';
 
   const entryForm = (
-    <form action={editing ? updateCardLedgerAction : addCardLedgerAction} className="flex flex-col gap-3">
+    <form key={edit ?? 'new'} action={editing ? updateCardLedgerAction : addCardLedgerAction} className="flex flex-col gap-3">
       {editing && <input type="hidden" name="id" value={editing.id} />}
       <label className={label}>
         구분 *
@@ -138,9 +138,8 @@ export default async function CardLedgerMinePage({
 
   return (
     <CardLedgerSplitLayout
-      key={edit ?? 'new'}
       formLabel={editing ? '카드사용 내역 수정' : '카드사용 입력'}
-      defaultOpen={!!editing}
+      editKey={edit}
       form={entryForm}
     >
         <form method="get" className="flex items-center gap-1.5 mb-3 flex-wrap">

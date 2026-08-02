@@ -1,20 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { btn, card } from '@/lib/ui';
 
 export default function CardLedgerSplitLayout({
   formLabel,
-  defaultOpen,
+  editKey,
   form,
   children,
 }: {
   formLabel: string;
-  defaultOpen?: boolean;
+  editKey?: string;
   form: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(defaultOpen ?? false);
+  const [open, setOpen] = useState(() => !!editKey);
+
+  // 다른 행을 눌러 수정 대상이 바뀌면(=editKey가 바뀌면) 패널이 접혀 있어도 자동으로 펼친다.
+  // 이 컴포넌트 자체는 절대 리마운트하지 않으므로(그러면 목록까지 같이 깜빡인다), 폼 안쪽
+  // 내용은 별도로 <form key={editKey}>에서만 리마운트해서 값을 새로 채운다.
+  useEffect(() => {
+    setOpen(!!editKey);
+  }, [editKey]);
 
   return (
     <div className="flex gap-6 items-start">
