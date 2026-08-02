@@ -11,7 +11,6 @@ import {
   input, label, selectFilter, table, tableWrap, td, th, trZebraHover,
 } from '@/lib/ui';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
-import InlineToggle from '@/components/InlineToggle';
 import CardLedgerEntryFields from '@/components/expenses/CardLedgerEntryFields';
 import CardTypeTabs from '@/components/expenses/CardTypeTabs';
 import { addCardLedgerAction, deleteCardLedgerAction, updateCardLedgerAction } from '../actions';
@@ -83,9 +82,10 @@ export default async function CardLedgerMinePage({
   });
 
   return (
-    <>
-      <InlineToggle label={editing ? '카드사용 내역 수정' : '카드사용 입력'} defaultOpen={!!editing}>
-        <form action={editing ? updateCardLedgerAction : addCardLedgerAction} className="grid grid-cols-2 gap-3">
+    <div className="flex gap-6 items-start">
+      <div className={`${card} w-[340px] shrink-0`}>
+        <p className="text-sm font-semibold mb-3">{editing ? '카드사용 내역 수정' : '카드사용 입력'}</p>
+        <form action={editing ? updateCardLedgerAction : addCardLedgerAction} className="flex flex-col gap-3">
           {editing && <input type="hidden" name="id" value={editing.id} />}
           <label className={label}>
             구분 *
@@ -115,27 +115,29 @@ export default async function CardLedgerMinePage({
             카드번호(뒤 4자리)
             <input name="cardNo" defaultValue={editing?.카드번호 ?? ''} maxLength={4} className={input} />
           </label>
-          <label className={`${label} col-span-2`}>
+          <label className={label}>
             사용내역 *
             <input name="description" defaultValue={editing?.사용내역 ?? ''} required className={input} />
           </label>
           <div className="flex items-center gap-3">
             <button type="submit" className={btn}>{editing ? '저장' : '등록'}</button>
+            {editing && <a href="/expenses/mine" className="text-xs text-zinc-500 hover:underline">취소</a>}
           </div>
         </form>
-      </InlineToggle>
+      </div>
 
-      <form method="get" className="flex gap-2 mb-3">
-        <select name="status" defaultValue={status ?? 'all'} className={selectFilter}>
-          <option value="all">전체 상태</option>
-          <option value="photoMissing">사진 미등록</option>
-          <option value="reportMissing">조서 미등록</option>
-        </select>
-        <button type="submit" className={btnSecondary}>조회</button>
-        <span className="text-xs text-zinc-400 self-center">정렬: 사용일자 최신순 · 경과일 경고 {settings.cardLedgerWarnDays}일 / 위험 {settings.cardLedgerDangerDays}일</span>
-      </form>
+      <div className="flex-1 min-w-0">
+        <form method="get" className="flex gap-2 mb-3">
+          <select name="status" defaultValue={status ?? 'all'} className={selectFilter}>
+            <option value="all">전체 상태</option>
+            <option value="photoMissing">사진 미등록</option>
+            <option value="reportMissing">조서 미등록</option>
+          </select>
+          <button type="submit" className={btnSecondary}>조회</button>
+          <span className="text-xs text-zinc-400 self-center">정렬: 사용일자 최신순 · 경과일 경고 {settings.cardLedgerWarnDays}일 / 위험 {settings.cardLedgerDangerDays}일</span>
+        </form>
 
-      <div className={tableWrap}><table className={table}>
+        <div className={tableWrap}><table className={table}>
         <thead>
           <tr>
             <th className={th}>사용일자</th><th className={th}>사업명/사용내역</th>
@@ -244,7 +246,8 @@ export default async function CardLedgerMinePage({
           )}
         </tbody>
       </table></div>
-    </>
+      </div>
+    </div>
   );
 }
 

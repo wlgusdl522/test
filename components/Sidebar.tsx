@@ -28,7 +28,12 @@ function SectionIcon({ label }: { label: string }) {
 export default function Sidebar({ userName, userSubtitle }: { userName: string; userSubtitle: string }) {
   const pathname = usePathname();
   const [openSections, setOpenSections] = useState<Set<string>>(
-    () => new Set(NAV_SECTIONS.filter((s) => s.items.some((i) => i.href === pathname)).map((s) => s.label))
+    () =>
+      new Set(
+        NAV_SECTIONS.filter((s) => s.items.some((i) => pathname === i.href || pathname.startsWith(`${i.href}/`))).map(
+          (s) => s.label
+        )
+      )
   );
 
   function toggle(label: string) {
