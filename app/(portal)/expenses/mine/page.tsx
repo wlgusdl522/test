@@ -11,7 +11,7 @@ import {
   input, label, selectFilter, table, tableWrap, td, th, trZebraHover,
 } from '@/lib/ui';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
-import FormToggle from '@/components/FormToggle';
+import InlineToggle from '@/components/InlineToggle';
 import CardLedgerEntryFields from '@/components/expenses/CardLedgerEntryFields';
 import CardTypeTabs from '@/components/expenses/CardTypeTabs';
 import { addCardLedgerAction, deleteCardLedgerAction, updateCardLedgerAction } from '../actions';
@@ -84,7 +84,7 @@ export default async function CardLedgerMinePage({
 
   return (
     <>
-      <FormToggle label={editing ? '카드사용 내역 수정' : '카드사용 입력'} defaultOpen={!!editing}>
+      <InlineToggle label={editing ? '카드사용 내역 수정' : '카드사용 입력'} defaultOpen={!!editing}>
         <form action={editing ? updateCardLedgerAction : addCardLedgerAction} className="grid grid-cols-2 gap-3">
           {editing && <input type="hidden" name="id" value={editing.id} />}
           <label className={label}>
@@ -123,7 +123,7 @@ export default async function CardLedgerMinePage({
             <button type="submit" className={btn}>{editing ? '저장' : '등록'}</button>
           </div>
         </form>
-      </FormToggle>
+      </InlineToggle>
 
       <form method="get" className="flex gap-2 mb-3">
         <select name="status" defaultValue={status ?? 'all'} className={selectFilter}>

@@ -88,7 +88,7 @@ export default function Sidebar({ userName, userSubtitle }: { userName: string; 
                 }`}
               >
                 <SectionIcon label={section.label} />
-                {section.label}
+                {item.label}
               </Link>
             );
           }
