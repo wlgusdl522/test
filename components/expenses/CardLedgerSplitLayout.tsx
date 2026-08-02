@@ -23,13 +23,28 @@ export default function CardLedgerSplitLayout({
     setOpen(!!editKey);
   }, [editKey]);
 
+  const toggleBtn = (
+    <button type="button" onClick={() => setOpen((v) => !v)} className={btn}>
+      {open ? '접기 ▲' : `+ ${formLabel}`}
+    </button>
+  );
+
+  // 닫혀 있을 땐 왼쪽에 아무 칸도 남기지 않는다 — 버튼은 목록 위에 한 줄로만 놓여서
+  // 목록이 폭 전체를 그대로 쓴다. 열렸을 때만 왼쪽에 실제 폼 칸(340px)이 생긴다.
+  if (!open) {
+    return (
+      <div>
+        <div className="mb-3">{toggleBtn}</div>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="flex gap-6 items-start">
-      <div className={open ? 'w-[340px] shrink-0' : 'shrink-0'}>
-        <button type="button" onClick={() => setOpen((v) => !v)} className={btn}>
-          {open ? '접기 ▲' : `+ ${formLabel}`}
-        </button>
-        {open && <div className={`${card} mt-3`}>{form}</div>}
+      <div className="w-[340px] shrink-0">
+        {toggleBtn}
+        <div className={`${card} mt-3`}>{form}</div>
       </div>
       <div className="flex-1 min-w-0">{children}</div>
     </div>
