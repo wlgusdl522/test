@@ -6,6 +6,7 @@ import { mirrorKeyedTableToSupabase } from '@/lib/supabase/keyedTable';
 import { deleteDriveFileFromUrl, uploadImageDataUrl } from '@/lib/drive/upload';
 import { ITEM_CHECK_PHOTO_FOLDER_ID } from '@/lib/sheets/sheetIds';
 import { requireViewerEmail } from '@/lib/auth-helpers';
+import { recomputeCardLedgerStatus } from '@/lib/mutate/cardLedger';
 
 function nowTimestamp(): string {
   return new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -64,7 +65,9 @@ export async function saveItemCheckPhoto(
   if (isNew) await appendRecord(ITEM_CHECK_PHOTO_TABLE, record);
   else await updateRecord(ITEM_CHECK_PHOTO_TABLE, { id }, record);
 
-  return afterWrite();
+  const result = await afterWrite();
+  await recomputeCardLedgerStatus(record['카드사용대장ID']);
+  return result;
 }
 
 export async function deleteItemCheckPhoto(id: string): Promise<Record<string, string>[]> {
@@ -74,7 +77,9 @@ export async function deleteItemCheckPhoto(id: string): Promise<Record<string, s
     if (existing[slot]) await deleteDriveFileFromUrl(existing[slot]);
   }
   await deleteRecord(ITEM_CHECK_PHOTO_TABLE, { id });
-  return afterWrite();
+  const result = await afterWrite();
+  await recomputeCardLedgerStatus(existing['카드사용대장ID']);
+  return result;
 }
 
 // 회계담당자(또는 관리자)만 켜고 끌 수 있는 "회계확인" 표시 — 인가는 호출부(Server Action)에서 확인한다.

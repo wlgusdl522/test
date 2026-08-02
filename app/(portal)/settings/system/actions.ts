@@ -11,6 +11,8 @@ export async function saveSystemSettingsAction(formData: FormData) {
     itemCheckReportJandiWebhook: String(formData.get('itemCheckReportJandiWebhook') ?? ''),
     vehicleLogApprovalMode: String(formData.get('vehicleLogApprovalMode') ?? ''),
     vehicleManagerEmail: String(formData.get('vehicleManagerEmail') ?? ''),
+    cardLedgerWarnDays: Number(formData.get('cardLedgerWarnDays') ?? 5),
+    cardLedgerDangerDays: Number(formData.get('cardLedgerDangerDays') ?? 10),
   });
   revalidatePath('/settings/system');
 }

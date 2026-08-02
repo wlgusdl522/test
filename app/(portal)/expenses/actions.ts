@@ -1,5 +1,6 @@
 'use server';
 
+import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { addCardLedgerRecord, deleteCardLedgerRecord, updateCardLedgerRecord } from '@/lib/mutate/cardLedger';
 import { getViewerStaffRecord, requireViewerEmail } from '@/lib/auth-helpers';
@@ -7,6 +8,7 @@ import { getViewerStaffRecord, requireViewerEmail } from '@/lib/auth-helpers';
 async function payloadFromForm(formData: FormData): Promise<Record<string, string>> {
   const viewerEmail = await requireViewerEmail();
   const me = await getViewerStaffRecord();
+  const exempt = formData.get('exempt') === 'on';
   return {
     구분: String(formData.get('type') ?? ''),
     사용일자: String(formData.get('date') ?? ''),
@@ -16,22 +18,24 @@ async function payloadFromForm(formData: FormData): Promise<Record<string, strin
     예산과목: String(formData.get('budgetItem') ?? ''),
     사용내역: String(formData.get('description') ?? ''),
     카드번호: String(formData.get('cardNo') ?? ''),
+    검수불요여부: exempt ? 'Y' : 'N',
+    검수불요사유: exempt ? String(formData.get('exemptReason') ?? '').trim() : '',
   };
 }
 
-export async function addCardLedgerAction(formData: FormData) {
-  await addCardLedgerRecord(await payloadFromForm(formData));
-  revalidatePath('/expenses');
+export async function addCardLedgerAction(formData: FormData): Promise<void> {
+  const { id } = await addCardLedgerRecord(await payloadFromForm(formData));
+  redirect(`/expenses/mine?focus=${id}`);
 }
 
-export async function updateCardLedgerAction(formData: FormData) {
+export async function updateCardLedgerAction(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '');
   await updateCardLedgerRecord(id, await payloadFromForm(formData));
-  revalidatePath('/expenses');
+  redirect(`/expenses/mine?focus=${id}`);
 }
 
 export async function deleteCardLedgerAction(formData: FormData) {
   const id = String(formData.get('id') ?? '');
   await deleteCardLedgerRecord(id);
-  revalidatePath('/expenses');
+  revalidatePath('/expenses/mine');
 }

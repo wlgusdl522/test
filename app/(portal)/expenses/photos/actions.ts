@@ -1,9 +1,9 @@
 'use server';
 
+import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { deleteItemCheckPhoto, saveItemCheckPhoto, setItemCheckPhotoPrinted } from '@/lib/mutate/itemCheckPhoto';
+import { deleteItemCheckPhoto, saveItemCheckPhoto } from '@/lib/mutate/itemCheckPhoto';
 import { ITEM_CHECK_PHOTO_SLOTS } from '@/lib/sheets/registry';
-import { requireIsAccountingViewer } from '@/lib/auth-helpers';
 
 async function fileToDataUrl(file: File | null): Promise<string> {
   if (!file || file.size === 0) return '';
@@ -11,10 +11,11 @@ async function fileToDataUrl(file: File | null): Promise<string> {
   return `data:${file.type};base64,${buffer.toString('base64')}`;
 }
 
-export async function saveItemCheckPhotoAction(formData: FormData) {
+export async function saveItemCheckPhotoAction(formData: FormData): Promise<void> {
   const existingId = String(formData.get('id') ?? '') || undefined;
+  const ledgerId = String(formData.get('ledgerId') ?? '');
   const payload: Record<string, string> = {
-    카드사용대장ID: String(formData.get('ledgerId') ?? ''),
+    카드사용대장ID: ledgerId,
     사업명: String(formData.get('business') ?? ''),
     프로그램명: String(formData.get('program') ?? ''),
     지출일자: String(formData.get('date') ?? ''),
@@ -25,18 +26,10 @@ export async function saveItemCheckPhotoAction(formData: FormData) {
     payload[slot] = await fileToDataUrl(formData.get(slot) as File | null);
   }
   await saveItemCheckPhoto(payload, existingId);
-  revalidatePath('/expenses/photos');
+  redirect(`/expenses/mine?focus=${ledgerId}`);
 }
 
 export async function deleteItemCheckPhotoAction(formData: FormData) {
   await deleteItemCheckPhoto(String(formData.get('id') ?? ''));
-  revalidatePath('/expenses/photos');
-}
-
-export async function setItemCheckPhotoPrintedAction(formData: FormData) {
-  await requireIsAccountingViewer();
-  const id = String(formData.get('id') ?? '');
-  const printed = formData.get('printed') === 'true';
-  await setItemCheckPhotoPrinted(id, printed);
-  revalidatePath('/expenses/photos');
+  revalidatePath('/expenses/mine');
 }

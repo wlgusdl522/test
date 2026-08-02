@@ -10,6 +10,8 @@ const KEYS = {
   ITEM_CHECK_REPORT_JANDI_WEBHOOK: 'ITEM_CHECK_REPORT_JANDI_WEBHOOK',
   VEHICLE_LOG_APPROVAL_MODE: 'VEHICLE_LOG_APPROVAL_MODE',
   VEHICLE_MANAGER_EMAIL: 'VEHICLE_MANAGER_EMAIL',
+  CARD_LEDGER_WARN_DAYS: 'CARD_LEDGER_WARN_DAYS',
+  CARD_LEDGER_DANGER_DAYS: 'CARD_LEDGER_DANGER_DAYS',
 } as const;
 
 export type SystemSettings = {
@@ -19,16 +21,20 @@ export type SystemSettings = {
   itemCheckReportJandiWebhook: string;
   vehicleLogApprovalMode: string;
   vehicleManagerEmail: string;
+  cardLedgerWarnDays: number;
+  cardLedgerDangerDays: number;
 };
 
 export async function getSystemSettings(): Promise<SystemSettings> {
-  const [threshold, assetManager, accounting, jandi, approvalMode, vehicleManager] = await Promise.all([
+  const [threshold, assetManager, accounting, jandi, approvalMode, vehicleManager, warnDays, dangerDays] = await Promise.all([
     getSetting(KEYS.ITEM_CHECK_REPORT_THRESHOLD),
     getSetting(KEYS.ITEM_CHECK_ASSET_MANAGER_EMAIL),
     getSetting(KEYS.ITEM_CHECK_ACCOUNTING_EMAIL),
     getSetting(KEYS.ITEM_CHECK_REPORT_JANDI_WEBHOOK),
     getSetting(KEYS.VEHICLE_LOG_APPROVAL_MODE),
     getSetting(KEYS.VEHICLE_MANAGER_EMAIL),
+    getSetting(KEYS.CARD_LEDGER_WARN_DAYS),
+    getSetting(KEYS.CARD_LEDGER_DANGER_DAYS),
   ]);
   return {
     itemCheckReportThreshold: Number(threshold) || 0,
@@ -37,6 +43,8 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     itemCheckReportJandiWebhook: jandi,
     vehicleLogApprovalMode: approvalMode || VEHICLE_LOG_APPROVAL_MODE_MANUAL,
     vehicleManagerEmail: vehicleManager,
+    cardLedgerWarnDays: Number(warnDays) || 5,
+    cardLedgerDangerDays: Number(dangerDays) || 10,
   };
 }
 
@@ -51,5 +59,7 @@ export async function setSystemSettings(settings: SystemSettings): Promise<void>
     setSetting(KEYS.ITEM_CHECK_REPORT_JANDI_WEBHOOK, settings.itemCheckReportJandiWebhook.trim()),
     setSetting(KEYS.VEHICLE_LOG_APPROVAL_MODE, settings.vehicleLogApprovalMode),
     setSetting(KEYS.VEHICLE_MANAGER_EMAIL, settings.vehicleManagerEmail.trim()),
+    setSetting(KEYS.CARD_LEDGER_WARN_DAYS, String(Number(settings.cardLedgerWarnDays) || 5)),
+    setSetting(KEYS.CARD_LEDGER_DANGER_DAYS, String(Number(settings.cardLedgerDangerDays) || 10)),
   ]);
 }

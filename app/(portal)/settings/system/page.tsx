@@ -41,6 +41,14 @@ export default async function SystemSettingsPage() {
           차량관리자 이메일
           <input name="vehicleManagerEmail" defaultValue={settings.vehicleManagerEmail} className={input} />
         </label>
+        <label className={label}>
+          카드사용대장 경과일 경고 기준(일)
+          <input type="number" name="cardLedgerWarnDays" defaultValue={settings.cardLedgerWarnDays} className={input} />
+        </label>
+        <label className={label}>
+          카드사용대장 경과일 위험 기준(일)
+          <input type="number" name="cardLedgerDangerDays" defaultValue={settings.cardLedgerDangerDays} className={input} />
+        </label>
         <div>
           <button type="submit" className={btn}>저장</button>
         </div>

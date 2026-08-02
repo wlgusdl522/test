@@ -14,6 +14,7 @@ export const VEHICLE_MAINTENANCE_HEADERS = [
 
 export const CARD_LEDGER_HEADERS = [
   'id', '구분', '사용일자', '담당자이메일', '담당자명', '사용금액', '예산과목', '사용내역', '카드번호', '등록일시',
+  '검수불요여부', '검수불요사유', '상태', '반려사유',
 ];
 
 export const WEEKLY_TASK_HEADERS = [

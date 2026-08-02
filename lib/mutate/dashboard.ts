@@ -44,12 +44,14 @@ export async function getMyRecordsSummary() {
   const pendingTasks: PendingTask[] = [];
 
   myLedger.forEach((r) => {
+    if (r.검수불요여부 === 'Y' || r.상태 === '인쇄완료') return;
     const hasPhoto = allPhotos.some((p) => p.카드사용대장ID === r.id);
     const report = allReports.find((p) => p.카드사용대장ID === r.id);
     const amount = Number(r.사용금액 || 0);
     const reportRequired = threshold > 0 && amount >= threshold;
     if (!hasPhoto) pendingTasks.push({ id: r.id, section: 'cardLedger', date: r.사용일자, title: r.사용내역, status: '사진필요' });
     if (reportRequired && !report) pendingTasks.push({ id: r.id, section: 'cardLedger', date: r.사용일자, title: r.사용내역, status: '조서필수' });
+    if (r.상태 === '반려') pendingTasks.push({ id: r.id, section: 'cardLedger', date: r.사용일자, title: r.사용내역, status: '반려' });
   });
   myReports.forEach((r) => {
     if (r.결재상태 === '반려') pendingTasks.push({ id: r.id, section: 'itemCheckReport', date: r.검수년월일, title: r.품명, status: '조서반려' });

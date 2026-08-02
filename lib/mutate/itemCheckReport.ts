@@ -14,6 +14,7 @@ import { getStaffList } from '@/lib/mutate/staff';
 import { getSystemSettings } from '@/lib/mutate/settings';
 import { notifyJandiPersonal } from '@/lib/notify/jandi';
 import { ADMIN_EMAILS, requireViewerEmail } from '@/lib/auth-helpers';
+import { recomputeCardLedgerStatus } from '@/lib/mutate/cardLedger';
 
 function nowTimestamp(): string {
   return new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -106,7 +107,9 @@ export async function addItemCheckReport(payload: Record<string, string>): Promi
   const decorated = await decorate(record, staffList);
   const fallback = (await getSystemSettings()).itemCheckReportJandiWebhook;
   await notifyJandiPersonal(decorated.현재결재자이메일, staffList, buildSubmitMessage(decorated), fallback);
-  return afterWrite();
+  const result = await afterWrite();
+  await recomputeCardLedgerStatus(record['카드사용대장ID']);
+  return result;
 }
 
 export async function updateItemCheckReport(id: string, payload: Record<string, string>): Promise<DecoratedReport[]> {
@@ -137,8 +140,11 @@ export async function updateItemCheckReport(id: string, payload: Record<string, 
 }
 
 export async function deleteItemCheckReport(id: string): Promise<DecoratedReport[]> {
+  const existing = (await getKeyedList(ITEM_CHECK_REPORT_TABLE)).find((r) => r.id === id);
   await deleteRecord(ITEM_CHECK_REPORT_TABLE, { id });
-  return afterWrite();
+  const result = await afterWrite();
+  if (existing) await recomputeCardLedgerStatus(existing['카드사용대장ID']);
+  return result;
 }
 
 function buildActionMessage(decorated: DecoratedReport, action: string, comment: string, actorName: string): string {

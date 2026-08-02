@@ -3,18 +3,17 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const TABS = [
-  { href: '/expenses', label: '카드사용대장' },
-  { href: '/expenses/photos', label: '물품검수사진' },
-  { href: '/expenses/reports', label: '물품검수조서' },
-];
-
-export default function ExpenseTabsClient() {
+export default function ExpenseTabsClient({ canReview }: { canReview: boolean }) {
   const pathname = usePathname();
+  const tabs = [
+    { href: '/expenses', label: '입력화면' },
+    { href: '/expenses/mine', label: '담당자 조회' },
+    ...(canReview ? [{ href: '/expenses/review', label: '회계 조회·인쇄' }] : []),
+  ];
 
   return (
     <div className="mb-5 flex gap-1 border-b border-zinc-200 dark:border-zinc-800">
-      {TABS.map((t) => {
+      {tabs.map((t) => {
         const active = pathname === t.href;
         return (
           <Link

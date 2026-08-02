@@ -1,14 +1,14 @@
 'use server';
 
+import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import {
   actOnItemCheckReport,
   addItemCheckReport,
   deleteItemCheckReport,
-  setItemCheckReportPrinted,
   updateItemCheckReport,
 } from '@/lib/mutate/itemCheckReport';
-import { getViewerStaffRecord, requireIsAccountingViewer } from '@/lib/auth-helpers';
+import { getViewerStaffRecord } from '@/lib/auth-helpers';
 
 async function payloadFromForm(formData: FormData): Promise<Record<string, string>> {
   const me = await getViewerStaffRecord();
@@ -38,20 +38,22 @@ async function payloadFromForm(formData: FormData): Promise<Record<string, strin
   };
 }
 
-export async function addItemCheckReportAction(formData: FormData) {
+export async function addItemCheckReportAction(formData: FormData): Promise<void> {
+  const ledgerId = String(formData.get('ledgerId') ?? '');
   await addItemCheckReport(await payloadFromForm(formData));
-  revalidatePath('/expenses/reports');
+  redirect(`/expenses/mine?focus=${ledgerId}`);
 }
 
-export async function updateItemCheckReportAction(formData: FormData) {
+export async function updateItemCheckReportAction(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '');
+  const ledgerId = String(formData.get('ledgerId') ?? '');
   await updateItemCheckReport(id, await payloadFromForm(formData));
-  revalidatePath('/expenses/reports');
+  redirect(`/expenses/mine?focus=${ledgerId}`);
 }
 
 export async function deleteItemCheckReportAction(formData: FormData) {
   await deleteItemCheckReport(String(formData.get('id') ?? ''));
-  revalidatePath('/expenses/reports');
+  revalidatePath('/expenses/mine');
 }
 
 export async function actOnItemCheckReportAction(formData: FormData) {
@@ -59,13 +61,6 @@ export async function actOnItemCheckReportAction(formData: FormData) {
   const action = String(formData.get('action') ?? '') as '승인' | '반려';
   const comment = String(formData.get('comment') ?? '');
   await actOnItemCheckReport(id, action, comment);
-  revalidatePath('/expenses/reports');
-}
-
-export async function setItemCheckReportPrintedAction(formData: FormData) {
-  await requireIsAccountingViewer();
-  const id = String(formData.get('id') ?? '');
-  const printed = formData.get('printed') === 'true';
-  await setItemCheckReportPrinted(id, printed);
-  revalidatePath('/expenses/reports');
+  revalidatePath('/expenses/mine');
+  revalidatePath('/mypage');
 }
