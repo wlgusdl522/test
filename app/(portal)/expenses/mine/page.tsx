@@ -11,6 +11,8 @@ import {
   input, inputBase, label, selectFilter, table, tableWrap, td, th, trZebraHover,
 } from '@/lib/ui';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
+import EditIcon from '@/components/icons/EditIcon';
+import TrashIcon from '@/components/icons/TrashIcon';
 import CardLedgerEntryFields from '@/components/expenses/CardLedgerEntryFields';
 import CardTypeTabs from '@/components/expenses/CardTypeTabs';
 import { parseAmount } from '@/lib/format';
@@ -20,6 +22,11 @@ import { addItemCheckReportAction, deleteItemCheckReportAction, updateItemCheckR
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const iconBtn =
+  'inline-flex items-center justify-center rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100';
+const iconBtnDanger =
+  'inline-flex items-center justify-center rounded-md p-1.5 text-[#b51c31] transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40';
 
 function todayKst(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
@@ -221,12 +228,18 @@ export default async function CardLedgerMinePage({
                       )}
                     </div>
                   </td>
-                  <td className={`${td} flex gap-1.5`}>
-                    {!locked && <a href={`/expenses/mine?edit=${r.id}`} className={btnSecondary}>수정</a>}
+                  <td className={`${td} flex gap-1`}>
+                    {!locked && (
+                      <a href={`/expenses/mine?edit=${r.id}`} title="수정" className={iconBtn}>
+                        <EditIcon className="h-4 w-4" />
+                      </a>
+                    )}
                     {!locked && (
                       <form action={deleteCardLedgerAction}>
                         <input type="hidden" name="id" value={r.id} />
-                        <ConfirmSubmitButton confirmMessage="이 내역을 삭제하시겠습니까?" className={btnDanger}>삭제</ConfirmSubmitButton>
+                        <ConfirmSubmitButton confirmMessage="이 내역을 삭제하시겠습니까?" title="삭제" className={iconBtnDanger}>
+                          <TrashIcon className="h-4 w-4" />
+                        </ConfirmSubmitButton>
                       </form>
                     )}
                   </td>
