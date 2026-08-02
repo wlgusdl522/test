@@ -97,6 +97,30 @@ export async function updateRecord(
   });
 }
 
+// 여러 행을 동시에 업데이트할 때 쓴다 — 행마다 updateRecord를 따로 호출하면 매번 읽기+쓰기
+// 왕복이 반복돼서 대량 처리(예: 회계 일괄 인쇄) 시 요청 수가 급증해 API 한도에 걸릴 수 있다.
+// 여기서는 대상 행 인덱스를 한 번에 구해서 values.batchUpdate 하나로 전부 갱신한다.
+export async function updateRecords(
+  config: KeyedTableConfig,
+  updates: { keyValues: Record<string, string>; record: Record<string, string> }[]
+): Promise<void> {
+  if (updates.length === 0) return;
+  const rows = await getRawRows(config);
+  const data = updates.map(({ keyValues, record }) => {
+    const idx = findRowIndex(config, rows, keyValues);
+    if (idx === -1) throw new Error(`수정할 항목을 찾을 수 없습니다: ${JSON.stringify(keyValues)}`);
+    const rowNumber = DATA_START_ROW + idx;
+    return {
+      range: `${config.sheetName}!A${rowNumber}:${colLetter(config.headers.length)}${rowNumber}`,
+      values: [recordToRow(config, record)],
+    };
+  });
+  await getSheetsClient().spreadsheets.values.batchUpdate({
+    spreadsheetId: config.spreadsheetId,
+    requestBody: { valueInputOption: 'RAW', data },
+  });
+}
+
 export async function upsertRecord(
   config: KeyedTableConfig,
   keyValues: Record<string, string>,

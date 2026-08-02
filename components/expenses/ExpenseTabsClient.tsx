@@ -3,16 +3,17 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export default function ExpenseTabsClient({ canReview }: { canReview: boolean }) {
+const TABS = [
+  { href: '/expenses/mine', label: '카드사용입력·조회' },
+  { href: '/expenses/review', label: '물품검수 인쇄' },
+];
+
+export default function ExpenseTabsClient() {
   const pathname = usePathname();
-  const tabs = [
-    { href: '/expenses/mine', label: '카드사용입력·조회' },
-    ...(canReview ? [{ href: '/expenses/review', label: '물품검수 인쇄' }] : []),
-  ];
 
   return (
     <div className="mb-5 flex gap-1 border-b border-zinc-200 dark:border-zinc-800">
-      {tabs.map((t) => {
+      {TABS.map((t) => {
         const active = pathname === t.href;
         return (
           <Link

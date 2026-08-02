@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord } from '@/lib/mutate/keyedTable';
+import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord, updateKeyedRecords } from '@/lib/mutate/keyedTable';
 import { getAllRecords } from '@/lib/sheets/keyedTable';
 import { CARD_LEDGER_TABLE, ITEM_CHECK_PHOTO_TABLE, ITEM_CHECK_REPORT_TABLE } from '@/lib/sheets/registry';
 import { getSystemSettings } from '@/lib/mutate/settings';
@@ -121,6 +121,28 @@ export async function printCardLedgerRecord(id: string): Promise<Record<string, 
     throw new Error('검수완료(사진/조서 등록 완료) 상태인 건만 인쇄할 수 있습니다.');
   }
   return updateKeyedRecord(CARD_LEDGER_TABLE, { id }, { ...existing, 상태: CARD_LEDGER_STATUS.PRINTED, 반려사유: '' });
+}
+
+// 회계 전용 — 여러 건을 한 번에 인쇄(=잠금) 처리한다. 건마다 읽기+쓰기+미러링을 반복하면
+// 선택 건수가 많을 때 API 요청이 급증하므로, 대상 전체를 한 번만 읽고 batchUpdate 한 번으로 처리한다.
+export async function printCardLedgerRecords(ids: string[]): Promise<Record<string, string>[]> {
+  if (ids.length === 0) return getKeyedList(CARD_LEDGER_TABLE);
+  const all = await getKeyedList(CARD_LEDGER_TABLE);
+  const targets = ids.map((id) => {
+    const existing = all.find((r) => r.id === id);
+    if (!existing) throw new Error(`내역을 찾을 수 없습니다: ${id}`);
+    if (existing['상태'] !== CARD_LEDGER_STATUS.DONE) {
+      throw new Error(`검수완료 상태인 건만 인쇄할 수 있습니다: ${existing['사용내역'] || id}`);
+    }
+    return existing;
+  });
+  return updateKeyedRecords(
+    CARD_LEDGER_TABLE,
+    targets.map((existing) => ({
+      keyValues: { id: existing.id },
+      record: { ...existing, 상태: CARD_LEDGER_STATUS.PRINTED, 반려사유: '' },
+    }))
+  );
 }
 
 // 회계 전용 — 인쇄(잠금)된 건을 반려하면 잠금이 풀리고 담당자가 다시 수정/재등록할 수 있게 된다.

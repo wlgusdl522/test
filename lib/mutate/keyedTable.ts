@@ -4,6 +4,7 @@ import {
   deleteRecords,
   getAllRecords,
   updateRecord,
+  updateRecords,
   upsertRecord,
   type KeyedTableConfig,
 } from '@/lib/sheets/keyedTable';
@@ -46,6 +47,14 @@ export async function updateKeyedRecord(
   record: Record<string, string>
 ): Promise<Record<string, string>[]> {
   await updateRecord(config, keyValues, record);
+  return afterSheetWrite(config);
+}
+
+export async function updateKeyedRecords(
+  config: KeyedTableConfig,
+  updates: { keyValues: Record<string, string>; record: Record<string, string> }[]
+): Promise<Record<string, string>[]> {
+  await updateRecords(config, updates);
   return afterSheetWrite(config);
 }
 
