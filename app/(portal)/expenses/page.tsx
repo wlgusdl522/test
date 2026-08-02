@@ -117,9 +117,9 @@ export default async function ExpensesPage({
                 <td className={`${td} flex flex-col gap-1`}>
                   <a
                     href={photo ? `/expenses/photos?editId=${photo.id}` : `/expenses/photos?ledgerId=${r.id}`}
-                    className="text-xs text-brand hover:underline"
+                    className={`text-xs hover:underline ${!photo ? 'text-[#b51c31] font-semibold' : 'text-brand'}`}
                   >
-                    {photo ? '사진 보기/수정' : '사진 등록'}
+                    {photo ? '사진 보기/수정' : '사진 등록(필수)'}
                   </a>
                   <a
                     href={report ? `/expenses/reports?edit=${report.id}` : `/expenses/reports?ledgerId=${r.id}`}
