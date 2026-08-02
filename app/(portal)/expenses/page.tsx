@@ -4,7 +4,7 @@ import { getCardLedgerList } from '@/lib/mutate/cardLedger';
 import { getItemCheckPhotoList } from '@/lib/mutate/itemCheckPhoto';
 import { getItemCheckReportList } from '@/lib/mutate/itemCheckReport';
 import { getSystemSettings } from '@/lib/mutate/settings';
-import { btn, btnDanger, btnSecondary, card, h1, input, inputBase, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, input, inputBase, label, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import FormToggle from '@/components/FormToggle';
 import { addCardLedgerAction, deleteCardLedgerAction, updateCardLedgerAction } from './actions';
 
@@ -35,9 +35,8 @@ export default async function ExpensesPage({
   });
 
   return (
-    <main className={pageWide}>
-      <div className="flex items-center justify-between">
-        <h1 className={h1}>카드사용대장</h1>
+    <>
+      <div className="flex items-center justify-end">
         <a href="/print/card-ledger" target="_blank" className="text-sm text-brand hover:underline">월별 인쇄</a>
       </div>
 
@@ -140,6 +139,6 @@ export default async function ExpensesPage({
           })}
         </tbody>
       </table></div>
-    </main>
+    </>
   );
 }

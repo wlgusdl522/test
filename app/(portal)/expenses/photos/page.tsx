@@ -3,7 +3,7 @@ import { getItemCheckPhotoList } from '@/lib/mutate/itemCheckPhoto';
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { BUDGET_ITEM_TABLE, ITEM_CHECK_PHOTO_SLOTS } from '@/lib/sheets/registry';
 import { isAccountingViewer } from '@/lib/auth-helpers';
-import { btn, btnDanger, btnSecondary, card, h1, h2, input, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h2, input, label, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import { deleteItemCheckPhotoAction, saveItemCheckPhotoAction, setItemCheckPhotoPrintedAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -33,9 +33,7 @@ export default async function ItemCheckPhotosPage({
   const editingPhoto = editId ? photos.find((p) => p.id === editId) : null;
 
   return (
-    <main className={pageWide}>
-      <h1 className={h1}>물품검수사진</h1>
-
+    <>
       {editingPhoto ? (
         <form action={saveItemCheckPhotoAction} className={`${card} grid grid-cols-2 gap-3`} encType="multipart/form-data">
           <input type="hidden" name="id" value={editingPhoto.id} />
@@ -169,6 +167,6 @@ export default async function ItemCheckPhotosPage({
           })}
         </tbody>
       </table></div>
-    </main>
+    </>
   );
 }

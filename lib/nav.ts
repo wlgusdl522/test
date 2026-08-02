@@ -31,11 +31,9 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: '지출관리',
+    flat: true,
     items: [
-      { href: '/expenses', label: '카드사용대장' },
-      { href: '/expenses/photos', label: '물품검수사진' },
-      { href: '/expenses/reports', label: '물품검수조서' },
-      { href: '/settings/budget-items', label: '예산과목' },
+      { href: '/expenses', label: '지출관리' },
     ],
   },
   {
@@ -44,6 +42,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: '/settings/simple-lists', label: '팀 / 직급 / 결재라인' },
       { href: '/settings/business-list', label: '사업목록' },
       { href: '/settings/vehicles', label: '차량목록' },
+      { href: '/settings/budget-items', label: '예산과목' },
       { href: '/settings/permissions', label: '권한설정' },
       { href: '/settings/approval-rules', label: '결재라인 전결기준' },
       { href: '/settings/system', label: '시스템 설정값' },

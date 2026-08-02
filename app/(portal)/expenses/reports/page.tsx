@@ -1,7 +1,7 @@
 import { getCardLedgerList } from '@/lib/mutate/cardLedger';
 import { getItemCheckReportList, getMyPendingItemCheckReportApprovals } from '@/lib/mutate/itemCheckReport';
 import { isAccountingViewer } from '@/lib/auth-helpers';
-import { btn, btnDanger, btnSecondary, card, h1, h2, input, inputBase, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h2, input, inputBase, label, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import StatusBadge from '@/components/StatusBadge';
 import FormToggle from '@/components/FormToggle';
 import {
@@ -31,9 +31,7 @@ export default async function ItemCheckReportsPage({
   const prefillLedger = !editing && ledgerId ? ledgerRecords.find((r) => r.id === ledgerId) : null;
 
   return (
-    <main className={pageWide}>
-      <h1 className={h1}>물품검수조서</h1>
-
+    <>
       {pending.length > 0 && (
         <>
           <h2 className={h2}>내 결재 대기 ({pending.length}건)</h2>
@@ -205,6 +203,6 @@ export default async function ItemCheckReportsPage({
           })}
         </tbody>
       </table></div>
-    </main>
+    </>
   );
 }
