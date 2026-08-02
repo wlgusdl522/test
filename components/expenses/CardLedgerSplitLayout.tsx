@@ -23,30 +23,23 @@ export default function CardLedgerSplitLayout({
     setOpen(!!editKey);
   }, [editKey]);
 
-  const toggleBtn = (
-    <button type="button" onClick={() => setOpen((v) => !v)} className={btn}>
-      {open ? '접기 ▲' : `+ ${formLabel}`}
-    </button>
-  );
-
-  // 닫혀 있을 땐 왼쪽에 아무 칸도 남기지 않는다 — 버튼은 목록 위에 한 줄로만 놓여서
-  // 목록이 폭 전체를 그대로 쓴다. 열렸을 때만 왼쪽에 실제 폼 칸(340px)이 생긴다.
-  if (!open) {
-    return (
-      <div>
-        <div className="mb-3">{toggleBtn}</div>
-        {children}
-      </div>
-    );
-  }
-
   return (
-    <div className="flex gap-6 items-start">
-      <div className="w-[340px] shrink-0">
-        {toggleBtn}
-        <div className={`${card} mt-3`}>{form}</div>
+    <div>
+      {/* 버튼은 항상 같은 자리에 고정 — 열고 닫을 때 버튼 자체가 사라졌다 나타나지 않아야
+          "화면이 전환된다"는 느낌 없이 자연스럽다. */}
+      <div className="mb-3">
+        <button type="button" onClick={() => setOpen((v) => !v)} className={btn}>
+          {open ? '접기 ▲' : `+ ${formLabel}`}
+        </button>
       </div>
-      <div className="flex-1 min-w-0">{children}</div>
+      <div className="flex gap-6 items-start">
+        <div
+          className={`shrink-0 overflow-hidden transition-[width] duration-200 ease-in-out ${open ? 'w-[340px]' : 'w-0'}`}
+        >
+          <div className={`${card} w-[340px]`}>{form}</div>
+        </div>
+        <div className="flex-1 min-w-0">{children}</div>
+      </div>
     </div>
   );
 }

@@ -248,6 +248,8 @@ export default async function CardLedgerMinePage({
                         <span className={`${badgeBase} ${badgeTone.gray}`}>검수불요</span>
                       ) : locked ? (
                         <span className={`${badgeBase} ${badgeTone.blue}`}>인쇄완료</span>
+                      ) : r.상태 === '검수완료' ? (
+                        <a href={buildQuery({ photoEdit: r.id })} className={`${badgeBase} ${badgeTone.green} hover:underline`}>검수완료</a>
                       ) : (
                         <>
                           {hasPhoto ? (
