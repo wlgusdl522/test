@@ -3,6 +3,7 @@ import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord } fr
 import { getAllRecords } from '@/lib/sheets/keyedTable';
 import { CARD_LEDGER_TABLE, ITEM_CHECK_PHOTO_TABLE, ITEM_CHECK_REPORT_TABLE } from '@/lib/sheets/registry';
 import { getSystemSettings } from '@/lib/mutate/settings';
+import { parseAmount } from '@/lib/format';
 
 export const CARD_LEDGER_STATUS = {
   PENDING: '검수대기',
@@ -37,7 +38,7 @@ export async function needsPhoto(ledger: Record<string, string>): Promise<boolea
 export async function needsReport(ledger: Record<string, string>, threshold?: number): Promise<boolean> {
   if (ledger['검수불요여부'] === 'Y') return false;
   const t = threshold ?? (await getSystemSettings()).itemCheckReportThreshold;
-  return t > 0 && Number(ledger['사용금액'] || 0) >= t;
+  return t > 0 && parseAmount(ledger['사용금액']) >= t;
 }
 
 export async function addCardLedgerRecord(payload: Record<string, string>): Promise<{ id: string; requests: Record<string, string>[] }> {
@@ -103,7 +104,7 @@ export async function recomputeCardLedgerStatus(ledgerId: string): Promise<void>
     getSystemSettings(),
   ]);
   const hasPhoto = photos.some((p) => p['카드사용대장ID'] === ledgerId);
-  const reportRequired = settings.itemCheckReportThreshold > 0 && Number(ledger['사용금액'] || 0) >= settings.itemCheckReportThreshold;
+  const reportRequired = settings.itemCheckReportThreshold > 0 && parseAmount(ledger['사용금액']) >= settings.itemCheckReportThreshold;
   const hasReport = reports.some((r) => r['카드사용대장ID'] === ledgerId);
   const complete = hasPhoto && (!reportRequired || hasReport);
   const newStatus = complete ? CARD_LEDGER_STATUS.DONE : CARD_LEDGER_STATUS.PENDING;

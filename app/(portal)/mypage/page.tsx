@@ -4,6 +4,7 @@ import { getMyPendingVehicleLogApprovals } from '@/lib/mutate/vehicleLog';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { btn, btnDanger, card, h1, h2, input, inputBase, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import { actOnItemCheckReportAction } from '@/app/(portal)/expenses/reports/actions';
+import { parseAmount } from '@/lib/format';
 import { actOnVehicleLogAction } from '@/app/(portal)/vehicles/logs/actions';
 import { saveMyJandiWebhookAction, saveMyStampAction } from './actions';
 
@@ -119,7 +120,7 @@ export default async function MyPage() {
 
       <h2 className={h2}>최근 카드사용대장</h2>
       <ul className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
-        {summary.cardLedger.map((r) => <li key={r.id}>{r.사용일자} · {r.사용내역} · {Number(r.사용금액 || 0).toLocaleString()}원</li>)}
+        {summary.cardLedger.map((r) => <li key={r.id}>{r.사용일자} · {r.사용내역} · {parseAmount(r.사용금액).toLocaleString()}원</li>)}
         {summary.cardLedger.length === 0 && <li className="text-zinc-400">없음</li>}
       </ul>
 

@@ -8,11 +8,12 @@ import { getViewerStaffRecord, requireViewerEmail } from '@/lib/auth-helpers';
 import { BUDGET_ITEM_TABLE, ITEM_CHECK_PHOTO_SLOTS } from '@/lib/sheets/registry';
 import {
   badgeBase, badgeTone, btn, btnDanger, btnSecondary, card,
-  input, label, selectFilter, table, tableWrap, td, th, trZebraHover,
+  input, inputBase, label, selectFilter, table, tableWrap, td, th, trZebraHover,
 } from '@/lib/ui';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
 import CardLedgerEntryFields from '@/components/expenses/CardLedgerEntryFields';
 import CardTypeTabs from '@/components/expenses/CardTypeTabs';
+import { parseAmount } from '@/lib/format';
 import { addCardLedgerAction, deleteCardLedgerAction, updateCardLedgerAction } from '../actions';
 import { deleteItemCheckPhotoAction, saveItemCheckPhotoAction } from '../photos/actions';
 import { addItemCheckReportAction, deleteItemCheckReportAction, updateItemCheckReportAction } from '../reports/actions';
@@ -46,12 +47,12 @@ export default async function CardLedgerMinePage({
   searchParams,
 }: {
   searchParams: Promise<{
-    status?: string; focus?: string; edit?: string;
+    status?: string; focus?: string; edit?: string; ym?: string; all?: string;
     photoFor?: string; photoEdit?: string;
     reportFor?: string; reportEdit?: string;
   }>;
 }) {
-  const { status, focus, edit, photoFor, photoEdit, reportFor, reportEdit } = await searchParams;
+  const { status, focus, edit, ym, all, photoFor, photoEdit, reportFor, reportEdit } = await searchParams;
   const viewerEmail = await requireViewerEmail();
   const [allLedger, photos, reports, budgetItems, settings, me] = await Promise.all([
     getCardLedgerList(),
@@ -64,8 +65,13 @@ export default async function CardLedgerMinePage({
 
   const editing = edit ? allLedger.find((r) => r.id === edit) : null;
 
+  const currentYm = todayKst().slice(0, 7);
+  const showAll = all === '1';
+  const activeYm = showAll ? '' : (ym || currentYm);
+
   const mine = allLedger
     .filter((r) => (r.담당자이메일 ?? '').toLowerCase() === viewerEmail)
+    .filter((r) => !activeYm || r.사용일자.startsWith(activeYm))
     .sort((a, b) => (b.사용일자 || '').localeCompare(a.사용일자 || '') || (b.등록일시 || '').localeCompare(a.등록일시 || ''));
 
   const photoByLedgerId = new Map(photos.map((p) => [p.카드사용대장ID, p]));
@@ -74,12 +80,14 @@ export default async function CardLedgerMinePage({
   const rows = mine.filter((r) => {
     const exempt = r.검수불요여부 === 'Y';
     const hasPhoto = photoByLedgerId.has(r.id);
-    const reportRequired = !exempt && settings.itemCheckReportThreshold > 0 && Number(r.사용금액 || 0) >= settings.itemCheckReportThreshold;
+    const reportRequired = !exempt && settings.itemCheckReportThreshold > 0 && parseAmount(r.사용금액) >= settings.itemCheckReportThreshold;
     const hasReport = reportByLedgerId.has(r.id);
     if (status === 'photoMissing') return !exempt && !hasPhoto;
     if (status === 'reportMissing') return reportRequired && !hasReport;
     return true;
   });
+
+  const statusQuery = status ? `&status=${status}` : '';
 
   return (
     <div className="flex gap-6 items-start">
@@ -127,14 +135,27 @@ export default async function CardLedgerMinePage({
       </div>
 
       <div className="flex-1 min-w-0">
-        <form method="get" className="flex gap-2 mb-3">
+        <form method="get" className="flex items-center gap-1.5 mb-3 flex-wrap">
+          <a
+            href={`/expenses/mine${statusQuery ? `?${statusQuery.slice(1)}` : ''}`}
+            className={`text-xs px-2.5 py-1 rounded-full ${!ym && !showAll ? 'bg-brand-tint text-brand-dark dark:text-brand font-medium' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'}`}
+          >
+            이번달
+          </a>
+          <input type="month" name="ym" defaultValue={ym || currentYm} className={`${inputBase} w-auto text-xs py-1`} />
+          <a
+            href={`/expenses/mine?all=1${statusQuery}`}
+            className={`text-xs px-2.5 py-1 rounded-full ${showAll ? 'bg-brand-tint text-brand-dark dark:text-brand font-medium' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'}`}
+          >
+            전체보기
+          </a>
           <select name="status" defaultValue={status ?? 'all'} className={selectFilter}>
             <option value="all">전체 상태</option>
             <option value="photoMissing">사진 미등록</option>
             <option value="reportMissing">조서 미등록</option>
           </select>
           <button type="submit" className={btnSecondary}>조회</button>
-          <span className="text-xs text-zinc-400 self-center">정렬: 사용일자 최신순 · 경과일 경고 {settings.cardLedgerWarnDays}일 / 위험 {settings.cardLedgerDangerDays}일</span>
+          <span className="text-xs text-zinc-400">경과일 경고 {settings.cardLedgerWarnDays}일 / 위험 {settings.cardLedgerDangerDays}일</span>
         </form>
 
         <div className={tableWrap}><table className={table}>
@@ -150,7 +171,7 @@ export default async function CardLedgerMinePage({
             const locked = r.상태 === '인쇄완료';
             const hasPhoto = photoByLedgerId.has(r.id);
             const photo = photoByLedgerId.get(r.id);
-            const reportRequired = !exempt && settings.itemCheckReportThreshold > 0 && Number(r.사용금액 || 0) >= settings.itemCheckReportThreshold;
+            const reportRequired = !exempt && settings.itemCheckReportThreshold > 0 && parseAmount(r.사용금액) >= settings.itemCheckReportThreshold;
             const hasReport = reportByLedgerId.has(r.id);
             const report = reportByLedgerId.get(r.id);
 
@@ -173,7 +194,7 @@ export default async function CardLedgerMinePage({
                     <div className="text-xs text-zinc-500">{r.사용내역}</div>
                     {r.상태 === '반려' && <div className="text-xs text-[#b51c31] mt-0.5">반려 사유: {r.반려사유}</div>}
                   </td>
-                  <td className={td}>{Number(r.사용금액 || 0).toLocaleString()}원</td>
+                  <td className={td}>{parseAmount(r.사용금액).toLocaleString()}원</td>
                   <td className={td}>{exempt ? '' : dayBadge(daysSince(r.사용일자), settings.cardLedgerWarnDays, settings.cardLedgerDangerDays)}</td>
                   <td className={`${td}`}>
                     <div className="flex flex-wrap gap-1 justify-end">
@@ -316,7 +337,7 @@ function ReportForm({
       <input type="hidden" name="ledgerId" value={ledgerId} />
       {editing && <input type="hidden" name="id" value={editing.id} />}
       <p className="col-span-2 text-sm font-semibold -mb-1">
-        물품검수조서 {editing ? '수정' : '등록'} <span className="font-normal text-zinc-500">({Number(ledger.사용금액 || 0).toLocaleString()}원 · 100만원 이상 건)</span>
+        물품검수조서 {editing ? '수정' : '등록'} <span className="font-normal text-zinc-500">({parseAmount(ledger.사용금액).toLocaleString()}원 · 100만원 이상 건)</span>
       </p>
       <label className={label}>
         품명 *

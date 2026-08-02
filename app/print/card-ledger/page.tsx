@@ -9,6 +9,7 @@ import { buildApprovalBoxData } from '@/lib/approval/approvalLine';
 import ApprovalBox from '@/components/print/ApprovalBox';
 import PrintButton from '@/components/print/PrintButton';
 import { btn, card, input, inputBase, table, tableWrap, td, th } from '@/lib/ui';
+import { parseAmount } from '@/lib/format';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -62,7 +63,7 @@ export default async function CardLedgerPrintPage({
       )}
 
       {sections.map(({ type: t, rows }) => {
-        const total = rows.reduce((sum, r) => sum + Number(r.사용금액 || 0), 0);
+        const total = rows.reduce((sum, r) => sum + parseAmount(r.사용금액), 0);
         const approvalData = buildApprovalBoxData(
           approvalLine,
           rule?.전결기준 ?? '',
@@ -97,7 +98,7 @@ export default async function CardLedgerPrintPage({
                     <tr key={r.id}>
                       <td className={td}>{r.사용일자}</td>
                       <td className={td}>{r.담당자명}</td>
-                      <td className={td} style={{ textAlign: 'right' }}>{Number(r.사용금액 || 0).toLocaleString()}원</td>
+                      <td className={td} style={{ textAlign: 'right' }}>{parseAmount(r.사용금액).toLocaleString()}원</td>
                       <td className={td}>{r.예산과목}</td>
                       <td className={td}>{r.사용내역}</td>
                       <td className={td}>{r.카드번호}</td>

@@ -6,6 +6,7 @@ import { requireIsAccountingViewer } from '@/lib/auth-helpers';
 import { ITEM_CHECK_PHOTO_SLOTS } from '@/lib/sheets/registry';
 import { badgeBase, badgeTone, btn, btnDanger, btnSecondary, card, inputBase, selectFilter, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import { printCardLedgerAction, rejectCardLedgerAction } from './actions';
+import { parseAmount } from '@/lib/format';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -79,7 +80,7 @@ export default async function CardLedgerReviewPage({
                     <div className="font-medium">{r.예산과목}</div>
                     <div className="text-xs text-zinc-500">{r.사용내역}</div>
                   </td>
-                  <td className={td}>{Number(r.사용금액 || 0).toLocaleString()}원</td>
+                  <td className={td}>{parseAmount(r.사용금액).toLocaleString()}원</td>
                   <td className={td}><span className={`${badgeBase} ${tone}`}>{r.상태}</span></td>
                   <td className={td}>
                     <a href={isExpanded ? '/expenses/review' : `/expenses/review?expand=${r.id}`} className="text-xs text-brand hover:underline">

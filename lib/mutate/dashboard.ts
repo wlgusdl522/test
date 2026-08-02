@@ -5,6 +5,7 @@ import { getItemCheckReportList } from '@/lib/mutate/itemCheckReport';
 import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
 import { getVehicleLogList } from '@/lib/mutate/vehicleLog';
 import { getSystemSettings } from '@/lib/mutate/settings';
+import { parseAmount } from '@/lib/format';
 
 export type PendingTask = {
   id: string;
@@ -47,7 +48,7 @@ export async function getMyRecordsSummary() {
     if (r.검수불요여부 === 'Y' || r.상태 === '인쇄완료') return;
     const hasPhoto = allPhotos.some((p) => p.카드사용대장ID === r.id);
     const report = allReports.find((p) => p.카드사용대장ID === r.id);
-    const amount = Number(r.사용금액 || 0);
+    const amount = parseAmount(r.사용금액);
     const reportRequired = threshold > 0 && amount >= threshold;
     if (!hasPhoto) pendingTasks.push({ id: r.id, section: 'cardLedger', date: r.사용일자, title: r.사용내역, status: '사진필요' });
     if (reportRequired && !report) pendingTasks.push({ id: r.id, section: 'cardLedger', date: r.사용일자, title: r.사용내역, status: '조서필수' });
