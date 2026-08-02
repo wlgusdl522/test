@@ -4,19 +4,26 @@ import { getItemCheckPhotoList } from '@/lib/mutate/itemCheckPhoto';
 import { getItemCheckReportList } from '@/lib/mutate/itemCheckReport';
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { getSystemSettings } from '@/lib/mutate/settings';
-import { requireViewerEmail } from '@/lib/auth-helpers';
+import { getViewerStaffRecord, requireViewerEmail } from '@/lib/auth-helpers';
 import { BUDGET_ITEM_TABLE, ITEM_CHECK_PHOTO_SLOTS } from '@/lib/sheets/registry';
 import {
   badgeBase, badgeTone, btn, btnDanger, btnSecondary, card,
   input, label, selectFilter, table, tableWrap, td, th, trZebraHover,
 } from '@/lib/ui';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
-import { deleteCardLedgerAction } from '../actions';
+import FormToggle from '@/components/FormToggle';
+import CardLedgerEntryFields from '@/components/expenses/CardLedgerEntryFields';
+import CardTypeTabs from '@/components/expenses/CardTypeTabs';
+import { addCardLedgerAction, deleteCardLedgerAction, updateCardLedgerAction } from '../actions';
 import { deleteItemCheckPhotoAction, saveItemCheckPhotoAction } from '../photos/actions';
 import { addItemCheckReportAction, deleteItemCheckReportAction, updateItemCheckReportAction } from '../reports/actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+function todayKst(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
+}
 
 function daysSince(dateStr: string): number {
   if (!dateStr) return 0;
@@ -40,20 +47,23 @@ export default async function CardLedgerMinePage({
   searchParams,
 }: {
   searchParams: Promise<{
-    status?: string; focus?: string;
+    status?: string; focus?: string; edit?: string;
     photoFor?: string; photoEdit?: string;
     reportFor?: string; reportEdit?: string;
   }>;
 }) {
-  const { status, focus, photoFor, photoEdit, reportFor, reportEdit } = await searchParams;
+  const { status, focus, edit, photoFor, photoEdit, reportFor, reportEdit } = await searchParams;
   const viewerEmail = await requireViewerEmail();
-  const [allLedger, photos, reports, budgetItems, settings] = await Promise.all([
+  const [allLedger, photos, reports, budgetItems, settings, me] = await Promise.all([
     getCardLedgerList(),
     getItemCheckPhotoList(),
     getItemCheckReportList(),
     getKeyedList(BUDGET_ITEM_TABLE),
     getSystemSettings(),
+    getViewerStaffRecord(),
   ]);
+
+  const editing = edit ? allLedger.find((r) => r.id === edit) : null;
 
   const mine = allLedger
     .filter((r) => (r.담당자이메일 ?? '').toLowerCase() === viewerEmail)
@@ -74,6 +84,47 @@ export default async function CardLedgerMinePage({
 
   return (
     <>
+      <FormToggle label={editing ? '카드사용 내역 수정' : '카드사용 입력'} defaultOpen={!!editing}>
+        <form action={editing ? updateCardLedgerAction : addCardLedgerAction} className="grid grid-cols-2 gap-3">
+          {editing && <input type="hidden" name="id" value={editing.id} />}
+          <label className={label}>
+            구분 *
+            <CardTypeTabs defaultValue={editing?.구분 ?? '체크카드'} />
+          </label>
+          <label className={label}>
+            사용일자 *
+            <input type="date" name="date" defaultValue={editing?.사용일자 ?? todayKst()} required className={input} />
+          </label>
+          <label className={label}>
+            담당자명
+            <input name="name" defaultValue={editing?.담당자명 ?? me?.성명 ?? ''} className={input} />
+          </label>
+          <label className={label}>
+            예산과목 *
+            <select name="budgetItem" defaultValue={editing?.예산과목 ?? ''} required className={input}>
+              {budgetItems.map((b) => <option key={b.예산과목명} value={b.예산과목명}>{b.예산과목명}</option>)}
+            </select>
+          </label>
+          <CardLedgerEntryFields
+            defaultAmount={editing?.사용금액}
+            defaultExempt={editing?.검수불요여부 === 'Y'}
+            defaultExemptReason={editing?.검수불요사유}
+            reportThreshold={settings.itemCheckReportThreshold}
+          />
+          <label className={label}>
+            카드번호(뒤 4자리)
+            <input name="cardNo" defaultValue={editing?.카드번호 ?? ''} maxLength={4} className={input} />
+          </label>
+          <label className={`${label} col-span-2`}>
+            사용내역 *
+            <input name="description" defaultValue={editing?.사용내역 ?? ''} required className={input} />
+          </label>
+          <div className="flex items-center gap-3">
+            <button type="submit" className={btn}>{editing ? '저장' : '등록'}</button>
+          </div>
+        </form>
+      </FormToggle>
+
       <form method="get" className="flex gap-2 mb-3">
         <select name="status" defaultValue={status ?? 'all'} className={selectFilter}>
           <option value="all">전체 상태</option>
@@ -148,7 +199,7 @@ export default async function CardLedgerMinePage({
                     </div>
                   </td>
                   <td className={`${td} flex gap-1.5`}>
-                    {!locked && <a href={`/expenses?edit=${r.id}`} className={btnSecondary}>수정</a>}
+                    {!locked && <a href={`/expenses/mine?edit=${r.id}`} className={btnSecondary}>수정</a>}
                     {!locked && (
                       <form action={deleteCardLedgerAction}>
                         <input type="hidden" name="id" value={r.id} />
