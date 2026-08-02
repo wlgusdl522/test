@@ -26,11 +26,16 @@ export default async function CardLedgerReviewPage({
 }) {
   await requireIsAccountingViewer();
   const { name, status, expand } = await searchParams;
-  const [all, photos, reports] = await Promise.all([
+  const [allUnsorted, photos, reports] = await Promise.all([
     getCardLedgerList(),
     getItemCheckPhotoList(),
     getItemCheckReportList(),
   ]);
+
+  // 회계가 처리할 건부터 눈에 띄어야 하므로 기본값은 "인쇄 대기" — 처리할 게 없는 날엔
+  // 전체 상태를 눌러 다 봐야 하지만, 매번 밀린 전체 목록에서 걸러야 하는 것보다는 낫다.
+  const effectiveStatus = status ?? '인쇄대기';
+  const all = [...allUnsorted].sort((a, b) => (b.사용일자 || '').localeCompare(a.사용일자 || ''));
 
   const names = [...new Set(all.map((r) => r.담당자명).filter(Boolean))].sort();
   const photoByLedgerId = new Map(photos.map((p) => [p.카드사용대장ID, p]));
@@ -38,10 +43,21 @@ export default async function CardLedgerReviewPage({
 
   const rows = all.filter((r) => {
     if (name && r.담당자명 !== name) return false;
-    if (status === '인쇄대기' && r.상태 !== '검수완료') return false;
-    if (status === '인쇄완료' && r.상태 !== '인쇄완료') return false;
+    if (effectiveStatus === '인쇄대기' && r.상태 !== '검수완료') return false;
+    if (effectiveStatus === '인쇄완료' && r.상태 !== '인쇄완료') return false;
     return true;
   });
+
+  function buildQuery(params: Record<string, string | undefined>): string {
+    const sp = new URLSearchParams();
+    if (name) sp.set('name', name);
+    if (status) sp.set('status', status);
+    for (const [k, v] of Object.entries(params)) {
+      if (v) sp.set(k, v);
+    }
+    const qs = sp.toString();
+    return `/expenses/review${qs ? `?${qs}` : ''}`;
+  }
 
   return (
     <>
@@ -50,10 +66,10 @@ export default async function CardLedgerReviewPage({
           <option value="">전체 담당자</option>
           {names.map((n) => <option key={n} value={n}>{n}</option>)}
         </select>
-        <select name="status" defaultValue={status ?? ''} className={selectFilter}>
-          <option value="">전체 상태</option>
+        <select name="status" defaultValue={effectiveStatus} className={selectFilter}>
           <option value="인쇄대기">인쇄 대기(검수완료)</option>
           <option value="인쇄완료">인쇄 완료</option>
+          <option value="all">전체 상태</option>
         </select>
         <button type="submit" className={btnSecondary}>조회</button>
       </form>
@@ -83,7 +99,7 @@ export default async function CardLedgerReviewPage({
                   <td className={td}>{parseAmount(r.사용금액).toLocaleString()}원</td>
                   <td className={td}><span className={`${badgeBase} ${tone}`}>{r.상태}</span></td>
                   <td className={td}>
-                    <a href={isExpanded ? '/expenses/review' : `/expenses/review?expand=${r.id}`} className="text-xs text-brand hover:underline">
+                    <a href={isExpanded ? buildQuery({}) : buildQuery({ expand: r.id })} className="text-xs text-brand hover:underline">
                       {isExpanded ? '닫기' : '상세보기'}
                     </a>
                   </td>
