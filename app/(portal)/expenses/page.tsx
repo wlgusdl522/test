@@ -2,12 +2,18 @@ import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { BUDGET_ITEM_TABLE } from '@/lib/sheets/registry';
 import { getCardLedgerList } from '@/lib/mutate/cardLedger';
 import { getSystemSettings } from '@/lib/mutate/settings';
+import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { btn, card, input, label } from '@/lib/ui';
 import CardLedgerEntryFields from '@/components/expenses/CardLedgerEntryFields';
+import CardTypeTabs from '@/components/expenses/CardTypeTabs';
 import { addCardLedgerAction, updateCardLedgerAction } from './actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+function todayKst(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
+}
 
 export default async function ExpensesPage({
   searchParams,
@@ -15,10 +21,11 @@ export default async function ExpensesPage({
   searchParams: Promise<{ edit?: string }>;
 }) {
   const { edit } = await searchParams;
-  const [allRecords, budgetItems, settings] = await Promise.all([
+  const [allRecords, budgetItems, settings, me] = await Promise.all([
     getCardLedgerList(),
     getKeyedList(BUDGET_ITEM_TABLE),
     getSystemSettings(),
+    getViewerStaffRecord(),
   ]);
   const editing = edit ? allRecords.find((r) => r.id === edit) : null;
 
@@ -27,19 +34,15 @@ export default async function ExpensesPage({
       {editing && <input type="hidden" name="id" value={editing.id} />}
       <label className={label}>
         구분 *
-        <select name="type" defaultValue={editing?.구분 ?? '체크카드'} className={input}>
-          <option value="체크카드">체크카드</option>
-          <option value="신용카드">신용카드</option>
-          <option value="계좌이체">계좌이체</option>
-        </select>
+        <CardTypeTabs defaultValue={editing?.구분 ?? '체크카드'} />
       </label>
       <label className={label}>
         사용일자 *
-        <input type="date" name="date" defaultValue={editing?.사용일자 ?? ''} required className={input} />
+        <input type="date" name="date" defaultValue={editing?.사용일자 ?? todayKst()} required className={input} />
       </label>
       <label className={label}>
         담당자명
-        <input name="name" defaultValue={editing?.담당자명 ?? ''} placeholder="본인 이름(비우면 자동)" className={input} />
+        <input name="name" defaultValue={editing?.담당자명 ?? me?.성명 ?? ''} className={input} />
       </label>
       <label className={label}>
         예산과목 *
