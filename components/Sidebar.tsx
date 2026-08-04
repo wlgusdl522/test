@@ -6,24 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NAV_SECTIONS, STANDALONE_NAV_ITEMS } from '@/lib/nav';
 import { signOutAction } from '@/lib/session-actions';
-
-const SECTION_ICON: Record<string, string> = {
-  인사관리: 'M17 20h5v-1a4 4 0 00-3-3.87M9 20H4v-1a4 4 0 013-3.87m6-3.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-4-4',
-  업무관리: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
-  차량관리: 'M8 17h8m-8 0a2 2 0 11-4 0 2 2 0 014 0zm8 0a2 2 0 104 0 2 2 0 00-4 0zm-9-6h10l2 6H5l2-6zm0 0l1-4h8l1 4',
-  지출관리: 'M3 10h18M7 15h1m4 0h1M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z',
-  설정: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z',
-};
-
-function SectionIcon({ label }: { label: string }) {
-  const d = SECTION_ICON[label];
-  if (!d) return null;
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-4 w-4 shrink-0">
-      <path strokeLinecap="round" strokeLinejoin="round" d={d} />
-    </svg>
-  );
-}
+import SectionIcon from '@/components/SectionIcon';
 
 export default function Sidebar({ userName, userSubtitle }: { userName: string; userSubtitle: string }) {
   const pathname = usePathname();

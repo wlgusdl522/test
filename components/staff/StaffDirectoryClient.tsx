@@ -5,6 +5,7 @@ import Avatar from '@/components/Avatar';
 import DetailPanel from '@/components/DetailPanel';
 import Tag from '@/components/Tag';
 import { h1, metaGrid, metaLabel, metaValue, pageFluid, pageSubtitle, searchInput, selectFilter } from '@/lib/ui';
+import { teamRank } from '@/lib/teamOrder';
 
 type StaffRow = Record<string, string>;
 
@@ -16,13 +17,6 @@ const POSITION_ORDER = ['관장', '부장', '과장', '팀장', '대리', '사�
 function positionRank(position: string): number {
   const idx = POSITION_ORDER.indexOf(position);
   return idx === -1 ? POSITION_ORDER.length : idx;
-}
-
-const TEAM_ORDER = ['미배정', '복지1팀', '복지2팀', '복지3팀', '총무팀', '요양센터', '데이케어센터'];
-
-function teamRank(team: string): number {
-  const idx = TEAM_ORDER.indexOf(team);
-  return idx === -1 ? TEAM_ORDER.length : idx;
 }
 
 export default function StaffDirectoryClient({ staff }: { staff: StaffRow[] }) {

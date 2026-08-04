@@ -2,7 +2,8 @@ import { getMyRecordsSummary } from '@/lib/mutate/dashboard';
 import { getMyPendingItemCheckReportApprovals } from '@/lib/mutate/itemCheckReport';
 import { getMyPendingVehicleLogApprovals } from '@/lib/mutate/vehicleLog';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { btn, btnDanger, card, h1, h2, input, inputBase, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { getNavLayout, setNavLayoutAction } from '@/lib/prefs-actions';
+import { btn, btnDanger, btnSecondary, card, h1, h2, input, inputBase, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
 import { actOnItemCheckReportAction } from '@/app/(portal)/expenses/reports/actions';
 import { parseAmount } from '@/lib/format';
 import { actOnVehicleLogAction } from '@/app/(portal)/vehicles/logs/actions';
@@ -12,16 +13,30 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export default async function MyPage() {
-  const [summary, pendingReports, pendingLogs, me] = await Promise.all([
+  const [summary, pendingReports, pendingLogs, me, navLayout] = await Promise.all([
     getMyRecordsSummary(),
     getMyPendingItemCheckReportApprovals(),
     getMyPendingVehicleLogApprovals(),
     getViewerStaffRecord(),
+    getNavLayout(),
   ]);
 
   return (
     <main className={pageWide}>
       <h1 className={h1}>마이페이지</h1>
+
+      <h2 className={h2}>화면 레이아웃</h2>
+      <div className={`${card} flex flex-wrap items-center gap-3`}>
+        <form action={setNavLayoutAction}>
+          <input type="hidden" name="layout" value="top" />
+          <button type="submit" className={navLayout === 'top' ? btn : btnSecondary}>상단 배치</button>
+        </form>
+        <form action={setNavLayoutAction}>
+          <input type="hidden" name="layout" value="left" />
+          <button type="submit" className={navLayout === 'left' ? btn : btnSecondary}>좌측 배치</button>
+        </form>
+        <p className="text-xs text-zinc-400">메뉴를 화면 상단 또는 좌측 중 원하는 위치에 배치할 수 있어요.</p>
+      </div>
 
       <h2 className={h2}>내 정보</h2>
       <div className={`${card} grid grid-cols-2 gap-2 text-sm`}>
