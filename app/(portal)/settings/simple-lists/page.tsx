@@ -1,6 +1,6 @@
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { APPROVAL_LINE_SHEET_NAME, POSITION_LIST_SHEET_NAME, TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
-import { btn, btnDanger, btnSecondary, h1, h2, input, pageWide } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, h1, h2, input, pageFluid } from '@/lib/ui';
 import FormToggle from '@/components/FormToggle';
 import { addItemAction, deleteItemAction, moveItemAction } from './actions';
 
@@ -19,7 +19,7 @@ export default async function SimpleListsSettingsPage() {
   );
 
   return (
-    <main className={pageWide}>
+    <main className={pageFluid}>
       <h1 className={h1}>설정 &gt; 팀 / 직급 / 결재라인</h1>
       <div className="grid grid-cols-3 gap-6">
         {lists.map((list) => (

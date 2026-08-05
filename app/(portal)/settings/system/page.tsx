@@ -1,5 +1,5 @@
 import { getSystemSettings, VEHICLE_LOG_APPROVAL_MODE_ELECTRONIC, VEHICLE_LOG_APPROVAL_MODE_MANUAL } from '@/lib/mutate/settings';
-import { btn, h1, hint, input, label, page } from '@/lib/ui';
+import { btn, h1, hint, input, label, pageFluid } from '@/lib/ui';
 import { saveSystemSettingsAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -9,7 +9,7 @@ export default async function SystemSettingsPage() {
   const settings = await getSystemSettings();
 
   return (
-    <main className={page}>
+    <main className={pageFluid}>
       <h1 className={h1}>설정 &gt; 시스템 설정값</h1>
       <p className={hint}>기존 Apps Script의 스크립트 속성(PropertiesService) 6개 값을 이관한 화면입니다.</p>
 

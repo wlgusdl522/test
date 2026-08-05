@@ -1,6 +1,6 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { BUDGET_ITEM_TABLE } from '@/lib/sheets/registry';
-import { btn, btnDanger, h1, hint, input, inputBase, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, cardTableWrap, h1, hint, input, inputBase, pageFluid, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
 import FormToggle from '@/components/FormToggle';
 import { addBudgetItemAction, deleteBudgetItemAction } from './actions';
 
@@ -11,7 +11,7 @@ export default async function BudgetItemsSettingsPage() {
   const items = await getKeyedList(BUDGET_ITEM_TABLE);
 
   return (
-    <main className={page}>
+    <main className={pageFluid}>
       <h1 className={h1}>설정 &gt; 예산과목</h1>
       <p className={hint}>
         카드사용대장 등록폼의 예산과목 드롭다운에 그대로 반영됩니다. &quot;사업비&quot;는 연계사업명을,
@@ -30,24 +30,24 @@ export default async function BudgetItemsSettingsPage() {
         </form>
       </FormToggle>
 
-      <div className={tableWrap}><table className={table}>
+      <div className={cardTableWrap}><table className={tableClean}>
         <thead>
           <tr>
-            <th className={th}>예산과목명</th>
-            <th className={th}>구분</th>
-            <th className={th}>연계사업명</th>
-            <th className={th}>소관팀</th>
-            <th className={th}></th>
+            <th className={thClean}>예산과목명</th>
+            <th className={thClean}>구분</th>
+            <th className={thClean}>연계사업명</th>
+            <th className={thClean}>소관팀</th>
+            <th className={thClean}></th>
           </tr>
         </thead>
         <tbody>
           {items.map((b) => (
-            <tr key={b.예산과목명} className={trZebraHover}>
-              <td className={td}>{b.예산과목명}</td>
-              <td className={td}>{b.구분}</td>
-              <td className={td}>{b.연계사업명}</td>
-              <td className={td}>{b.소관팀}</td>
-              <td className={td}>
+            <tr key={b.예산과목명} className={trHoverClean}>
+              <td className={tdClean}>{b.예산과목명}</td>
+              <td className={tdClean}>{b.구분}</td>
+              <td className={tdClean}>{b.연계사업명}</td>
+              <td className={tdClean}>{b.소관팀}</td>
+              <td className={tdClean}>
                 <form action={deleteBudgetItemAction}>
                   <input type="hidden" name="name" value={b.예산과목명} />
                   <button type="submit" className={btnDanger}>삭제</button>

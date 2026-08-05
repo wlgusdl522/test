@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { badgeBase, badgeTone, btn, table, td, th, tableWrap } from '@/lib/ui';
+import { badgeBase, badgeTone, btn, cardTableWrap, tableClean, tdClean, thClean } from '@/lib/ui';
 import { submitSupervisorReflectionsAction } from '@/app/(portal)/weekly-plan/actions';
 
 type ReviewTask = { id: string; 날짜: string; 성명: string; 업무내용: string; highlighted: boolean; reflected: boolean };
@@ -100,12 +100,12 @@ export default function SupervisorReviewList({
 
       <div>
         <h3 className="text-sm font-semibold mb-2 text-zinc-700 dark:text-zinc-200">반영 미리보기</h3>
-        <div className={tableWrap}>
-          <table className={table}>
+        <div className={cardTableWrap}>
+          <table className={tableClean}>
             <thead>
               <tr>
                 {dayDates.map((iso, i) => (
-                  <th key={iso} className={th}>{weekdayLabels[i]} ({formatMD(iso)})</th>
+                  <th key={iso} className={thClean}>{weekdayLabels[i]} ({formatMD(iso)})</th>
                 ))}
               </tr>
             </thead>
@@ -114,7 +114,7 @@ export default function SupervisorReviewList({
                 {dayDates.map((iso) => {
                   const dayTasks = reflectedTasks.filter((t) => t.날짜 === iso);
                   return (
-                    <td key={iso} className={`${td} align-top`}>
+                    <td key={iso} className={`${tdClean} align-top`}>
                       {dayTasks.length === 0
                         ? <span className="text-zinc-300 dark:text-zinc-700">-</span>
                         : dayTasks.map((t) => <div key={t.id}>• {t.성명}: {t.업무내용}</div>)}

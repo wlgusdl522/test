@@ -3,7 +3,7 @@ import { getMyPendingItemCheckReportApprovals } from '@/lib/mutate/itemCheckRepo
 import { getMyPendingVehicleLogApprovals } from '@/lib/mutate/vehicleLog';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { getNavLayout, setNavLayoutAction } from '@/lib/prefs-actions';
-import { btn, btnDanger, btnSecondary, card, h1, h2, input, inputBase, label, pageWide, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, cardTableWrap, h1, h2, input, inputBase, label, pageFluid, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
 import { actOnItemCheckReportAction } from '@/app/(portal)/expenses/reports/actions';
 import { parseAmount } from '@/lib/format';
 import { actOnVehicleLogAction } from '@/app/(portal)/vehicles/logs/actions';
@@ -22,7 +22,7 @@ export default async function MyPage() {
   ]);
 
   return (
-    <main className={pageWide}>
+    <main className={pageFluid}>
       <h1 className={h1}>마이페이지</h1>
 
       <h2 className={h2}>화면 레이아웃</h2>
@@ -83,17 +83,17 @@ export default async function MyPage() {
       {(pendingReports.length > 0 || pendingLogs.length > 0) && (
         <>
           <h2 className={h2}>내 결재함</h2>
-          <div className={tableWrap}><table className={table}>
+          <div className={cardTableWrap}><table className={tableClean}>
             <thead>
-              <tr><th className={th}>구분</th><th className={th}>내용</th><th className={th}>단계</th><th className={th}></th></tr>
+              <tr><th className={thClean}>구분</th><th className={thClean}>내용</th><th className={thClean}>단계</th><th className={thClean}></th></tr>
             </thead>
             <tbody>
               {pendingReports.map((r) => (
-                <tr key={`report-${r.id}`} className={trZebraHover}>
-                  <td className={td}>물품검수조서</td>
-                  <td className={td}>{r.품명} · {Number(r.금액 || 0).toLocaleString()}원</td>
-                  <td className={td}>{r.현재결재단계}</td>
-                  <td className={`${td} flex items-center gap-1.5`}>
+                <tr key={`report-${r.id}`} className={trHoverClean}>
+                  <td className={tdClean}>물품검수조서</td>
+                  <td className={tdClean}>{r.품명} · {Number(r.금액 || 0).toLocaleString()}원</td>
+                  <td className={tdClean}>{r.현재결재단계}</td>
+                  <td className={`${tdClean} flex items-center gap-1.5`}>
                     <form action={actOnItemCheckReportAction}>
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="action" value="승인" />
@@ -109,11 +109,11 @@ export default async function MyPage() {
                 </tr>
               ))}
               {pendingLogs.map((r) => (
-                <tr key={`log-${r.id}`} className={trZebraHover}>
-                  <td className={td}>차량운행일지</td>
-                  <td className={td}>{r.차량번호} · {r.목적}</td>
-                  <td className={td}>{r.현재결재단계}</td>
-                  <td className={`${td} flex items-center gap-1.5`}>
+                <tr key={`log-${r.id}`} className={trHoverClean}>
+                  <td className={tdClean}>차량운행일지</td>
+                  <td className={tdClean}>{r.차량번호} · {r.목적}</td>
+                  <td className={tdClean}>{r.현재결재단계}</td>
+                  <td className={`${tdClean} flex items-center gap-1.5`}>
                     <form action={actOnVehicleLogAction}>
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="action" value="승인" />

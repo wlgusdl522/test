@@ -7,8 +7,8 @@ import { getSystemSettings } from '@/lib/mutate/settings';
 import { getViewerStaffRecord, requireViewerEmail } from '@/lib/auth-helpers';
 import { BUDGET_ITEM_TABLE, ITEM_CHECK_PHOTO_SLOTS } from '@/lib/sheets/registry';
 import {
-  badgeBase, badgeTone, btn, btnDanger, btnSecondary, card,
-  input, inputBase, label, selectFilter, table, tableWrap, td, th, trZebraHover,
+  badgeBase, badgeTone, btn, btnDanger, btnSecondary, card, cardTableWrap,
+  input, inputBase, label, selectFilter, tableClean, tdClean, thClean, trHoverClean,
 } from '@/lib/ui';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
 import TrashIcon from '@/components/icons/TrashIcon';
@@ -189,11 +189,11 @@ export default async function CardLedgerMinePage({
           <span className="text-xs text-zinc-400">경과일 경고 {settings.cardLedgerWarnDays}일 / 위험 {settings.cardLedgerDangerDays}일</span>
         </form>
 
-        <div className={tableWrap}><table className={table}>
+        <div className={cardTableWrap}><table className={tableClean}>
         <thead>
           <tr>
-            <th className={th}>사용일자</th><th className={th}>사업명/사용내역</th>
-            <th className={th}>사용금액</th><th className={th}>경과</th><th className={th}>상태</th><th className={th}></th>
+            <th className={thClean}>사용일자</th><th className={thClean}>사업명/사용내역</th>
+            <th className={thClean}>사용금액</th><th className={thClean}>경과</th><th className={thClean}>상태</th><th className={thClean}></th>
           </tr>
         </thead>
         <tbody>
@@ -218,11 +218,11 @@ export default async function CardLedgerMinePage({
 
             return (
               <Fragment key={r.id}>
-                <tr className={trZebraHover}>
-                  <td className={td}>
+                <tr className={trHoverClean}>
+                  <td className={tdClean}>
                     {locked ? r.사용일자 : <a href={buildQuery({ edit: r.id })} className="block">{r.사용일자}</a>}
                   </td>
-                  <td className={td}>
+                  <td className={tdClean}>
                     {locked ? (
                       <>
                         <div className="font-medium">{resolveBusinessName(r.예산과목, budgetItems)}</div>
@@ -236,13 +236,13 @@ export default async function CardLedgerMinePage({
                     )}
                     {r.상태 === '반려' && <div className="text-xs text-[#b51c31] mt-0.5">반려 사유: {r.반려사유}</div>}
                   </td>
-                  <td className={td}>
+                  <td className={tdClean}>
                     {locked ? `${parseAmount(r.사용금액).toLocaleString()}원` : (
                       <a href={buildQuery({ edit: r.id })} className="block">{parseAmount(r.사용금액).toLocaleString()}원</a>
                     )}
                   </td>
-                  <td className={td}>{exempt || locked || r.상태 === '검수완료' ? '' : dayBadge(daysSince(r.사용일자), settings.cardLedgerWarnDays, settings.cardLedgerDangerDays)}</td>
-                  <td className={`${td}`}>
+                  <td className={tdClean}>{exempt || locked || r.상태 === '검수완료' ? '' : dayBadge(daysSince(r.사용일자), settings.cardLedgerWarnDays, settings.cardLedgerDangerDays)}</td>
+                  <td className={`${tdClean}`}>
                     <div className="flex flex-wrap gap-1 justify-end">
                       {exempt ? (
                         <span className={`${badgeBase} ${badgeTone.gray}`}>검수불요</span>
@@ -269,7 +269,7 @@ export default async function CardLedgerMinePage({
                       )}
                     </div>
                   </td>
-                  <td className={`${td} flex gap-1`}>
+                  <td className={`${tdClean} flex gap-1`}>
                     {!locked && (
                       <form action={deleteCardLedgerAction}>
                         <input type="hidden" name="id" value={r.id} />
@@ -312,7 +312,7 @@ export default async function CardLedgerMinePage({
             );
           })}
           {rows.length === 0 && (
-            <tr><td colSpan={6} className={`${td} text-center text-zinc-400`}>내역이 없습니다.</td></tr>
+            <tr><td colSpan={6} className={`${tdClean} text-center text-zinc-400`}>내역이 없습니다.</td></tr>
           )}
         </tbody>
       </table></div>

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { badgeBase, badgeTone, btn, btnSecondary, input, inputBase, table, td, th, tableWrap } from '@/lib/ui';
+import { badgeBase, badgeTone, btn, btnSecondary, cardTableWrap, input, inputBase, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
 import { submitWeeklyPlanAction } from '@/app/(portal)/weekly-plan/actions';
 import { FULL_DAY_LEAVE_TYPES, LEAVE_TYPES, parseLeaveTag } from '@/lib/weeklyLeave';
 
@@ -242,22 +242,22 @@ export default function WeeklyPlanWorkspace({
             <button type="submit" className={`${btnSecondary} text-xs py-1`}>조회</button>
           </form>
         </div>
-        <div className={tableWrap}>
-          <table className={table}>
+        <div className={cardTableWrap}>
+          <table className={tableClean}>
             <thead>
               <tr>
-                <th className={th}>담당자</th>
+                <th className={thClean}>담당자</th>
                 {dayDates.map((iso, i) => (
-                  <th key={iso} className={th}>{weekdayLabels[i]} ({new Date(`${iso}T00:00:00`).getMonth() + 1}/{new Date(`${iso}T00:00:00`).getDate()})</th>
+                  <th key={iso} className={thClean}>{weekdayLabels[i]} ({new Date(`${iso}T00:00:00`).getMonth() + 1}/{new Date(`${iso}T00:00:00`).getDate()})</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {isOwnTeam && (
                 <tr className="bg-brand-tint">
-                  <td className={td}><b>{myName}</b></td>
+                  <td className={tdClean}><b>{myName}</b></td>
                   {dayDates.map((iso) => (
-                    <td key={iso} className={td}>
+                    <td key={iso} className={tdClean}>
                       {(rowsByDay[iso] ?? []).length === 0
                         ? <span className="text-zinc-300 dark:text-zinc-700">-</span>
                         : (rowsByDay[iso] ?? []).map((r, i) => <div key={i}>• {r.text}</div>)}
@@ -268,12 +268,12 @@ export default function WeeklyPlanWorkspace({
               {roster
                 .filter((m) => !isOwnTeam || m.email.toLowerCase() !== myEmail.toLowerCase())
                 .map((member) => (
-                  <tr key={member.email}>
-                    <td className={td}>{member.name}</td>
+                  <tr key={member.email} className={trHoverClean}>
+                    <td className={tdClean}>{member.name}</td>
                     {dayDates.map((iso) => {
                       const dayTasks = teamTasks.filter((t) => t.email.toLowerCase() === member.email.toLowerCase() && t.날짜 === iso);
                       return (
-                        <td key={iso} className={td}>
+                        <td key={iso} className={tdClean}>
                           {dayTasks.length === 0
                             ? <span className="text-zinc-300 dark:text-zinc-700">-</span>
                             : dayTasks.map((t, i) => <div key={i}>• {t.업무내용}</div>)}

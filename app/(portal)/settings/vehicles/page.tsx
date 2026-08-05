@@ -1,6 +1,6 @@
 import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { VEHICLE_LIST_TABLE } from '@/lib/sheets/registry';
-import { btn, btnDanger, h1, input, inputBase, page } from '@/lib/ui';
+import { btn, btnDanger, h1, input, inputBase, pageFluid } from '@/lib/ui';
 import FormToggle from '@/components/FormToggle';
 import { addVehicleAction, deleteVehicleAction, updateVehicleAction } from './actions';
 
@@ -11,7 +11,7 @@ export default async function VehiclesSettingsPage() {
   const vehicles = await getKeyedList(VEHICLE_LIST_TABLE);
 
   return (
-    <main className={page}>
+    <main className={pageFluid}>
       <h1 className={h1}>설정 &gt; 차량관리 &gt; 차량목록</h1>
 
       <FormToggle label="차량 등록">

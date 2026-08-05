@@ -3,7 +3,7 @@ import { APPROVAL_JEONGYEOL_TABLE } from '@/lib/sheets/registry';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { APPROVAL_LINE_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { APPROVAL_LINE_USAGE_MODES, DAMDANG_DISPLAY_MODES, PRINTABLE_PAGES } from '@/lib/pages-registry';
-import { btn, h1, input, inputBase, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, cardTableWrap, h1, input, inputBase, pageFluid, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
 import { setApprovalRuleAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -20,23 +20,23 @@ export default async function ApprovalRulesSettingsPage() {
   });
 
   return (
-    <main className={page}>
+    <main className={pageFluid}>
       <h1 className={h1}>설정 &gt; 결재라인 &gt; 게시판별 전결기준</h1>
 
-      <div className={tableWrap}><table className={table}>
+      <div className={cardTableWrap}><table className={tableClean}>
         <thead>
           <tr>
-            <th className={th}>게시판</th>
-            <th className={th} colSpan={4}>전결 설정</th>
+            <th className={thClean}>게시판</th>
+            <th className={thClean} colSpan={4}>전결 설정</th>
           </tr>
         </thead>
         <tbody>
           {PRINTABLE_PAGES.map((p) => {
             const current = byPageId[p.id];
             return (
-              <tr key={p.id} className={trZebraHover}>
-                <td className={td}>{p.label}</td>
-                <td className={td} colSpan={4}>
+              <tr key={p.id} className={trHoverClean}>
+                <td className={tdClean}>{p.label}</td>
+                <td className={tdClean} colSpan={4}>
                   <form action={setApprovalRuleAction} className="flex items-center gap-2">
                     <input type="hidden" name="pageId" value={p.id} />
                     <input type="hidden" name="pageLabel" value={p.label} />

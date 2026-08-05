@@ -4,8 +4,8 @@ import { useState } from 'react';
 import DetailPanel from '@/components/DetailPanel';
 import { parseAmount } from '@/lib/format';
 import {
-  badgeBase, badgeTone, btn, btnDanger, inputBase, metaLabel, metaValue,
-  table, tableWrap, td, th, trZebraHover,
+  badgeBase, badgeTone, btn, btnDanger, cardTableWrap, inputBase, listRow, listRowActive, metaLabel, metaValue,
+  tableClean, tdClean, thClean,
 } from '@/lib/ui';
 import { printCardLedgerAction, printCardLedgerBatchAction, rejectCardLedgerAction } from '@/app/(portal)/expenses/review/actions';
 
@@ -68,12 +68,12 @@ export default function CardLedgerReviewClient({
             <button type="submit" className={btn}>선택 건 인쇄완료 처리</button>
           </div>
         )}
-        <div className={tableWrap}><table className={table}>
+        <div className={cardTableWrap}><table className={tableClean}>
           <thead>
             <tr>
-              {canManage && <th className={th}></th>}
-              <th className={th}>사용일자</th><th className={th}>담당자</th><th className={th}>사업명/사용내역</th>
-              <th className={th}>사용금액</th><th className={th}>상태</th>
+              {canManage && <th className={thClean}></th>}
+              <th className={thClean}>사용일자</th><th className={thClean}>담당자</th><th className={thClean}>사업명/사용내역</th>
+              <th className={thClean}>사용금액</th><th className={thClean}>상태</th>
             </tr>
           </thead>
           <tbody>
@@ -83,26 +83,26 @@ export default function CardLedgerReviewClient({
                 <tr
                   key={r.id}
                   onClick={() => setSelectedId(r.id)}
-                  className={`${trZebraHover} cursor-pointer ${active ? 'bg-brand-tint' : ''}`}
+                  className={active ? listRowActive : listRow}
                 >
                   {canManage && (
-                    <td className={td} onClick={(e) => e.stopPropagation()}>
+                    <td className={tdClean} onClick={(e) => e.stopPropagation()}>
                       {r.상태 === '검수완료' && <input type="checkbox" name="ids" value={r.id} />}
                     </td>
                   )}
-                  <td className={td}>{r.사용일자}</td>
-                  <td className={td}>{r.담당자명}</td>
-                  <td className={td}>
+                  <td className={tdClean}>{r.사용일자}</td>
+                  <td className={tdClean}>{r.담당자명}</td>
+                  <td className={tdClean}>
                     <div className="font-medium">{r.예산과목}</div>
                     <div className="text-xs text-zinc-500">{r.사용내역}</div>
                   </td>
-                  <td className={td}>{parseAmount(r.사용금액).toLocaleString()}원</td>
-                  <td className={td}>{statusBadge(r.상태)}</td>
+                  <td className={tdClean}>{parseAmount(r.사용금액).toLocaleString()}원</td>
+                  <td className={tdClean}>{statusBadge(r.상태)}</td>
                 </tr>
               );
             })}
             {rows.length === 0 && (
-              <tr><td colSpan={colCount} className={`${td} text-center text-zinc-400`}>내역이 없습니다.</td></tr>
+              <tr><td colSpan={colCount} className={`${tdClean} text-center text-zinc-400`}>내역이 없습니다.</td></tr>
             )}
           </tbody>
         </table></div>

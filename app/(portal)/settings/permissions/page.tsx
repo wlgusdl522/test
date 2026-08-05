@@ -1,6 +1,6 @@
 import { CONFIGURABLE_PAGES, PAGE_ACCESS_TIERS } from '@/lib/pages-registry';
 import { getActiveStaffList, getPageAccessExceptionMap, getPageAccessRuleMap } from '@/lib/mutate/permissions';
-import { btn, btnSecondary, h1, input, inputBase, page, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { btn, btnSecondary, cardTableWrap, h1, input, inputBase, pageFluid, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
 import { addExceptionAction, removeExceptionAction, setTierAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -14,15 +14,15 @@ export default async function PermissionsSettingsPage() {
   ]);
 
   return (
-    <main className={page}>
+    <main className={pageFluid}>
       <h1 className={h1}>설정 &gt; 권한설정</h1>
 
-      <div className={tableWrap}><table className={table}>
+      <div className={cardTableWrap}><table className={tableClean}>
         <thead>
           <tr>
-            <th className={th}>게시판(페이지)</th>
-            <th className={th}>볼 수 있는 최소 직급</th>
-            <th className={th}>개별 예외(직급 무관 항상 허용)</th>
+            <th className={thClean}>게시판(페이지)</th>
+            <th className={thClean}>볼 수 있는 최소 직급</th>
+            <th className={thClean}>개별 예외(직급 무관 항상 허용)</th>
           </tr>
         </thead>
         <tbody>
@@ -30,9 +30,9 @@ export default async function PermissionsSettingsPage() {
             const currentTier = rules[p.id] ?? '전체';
             const exceptedEmails = exceptions[p.id] ?? [];
             return (
-              <tr key={p.id} className={`align-top ${trZebraHover}`}>
-                <td className={td}>{p.label}</td>
-                <td className={td}>
+              <tr key={p.id} className={`align-top ${trHoverClean}`}>
+                <td className={tdClean}>{p.label}</td>
+                <td className={tdClean}>
                   <form action={setTierAction} className="flex gap-1.5">
                     <input type="hidden" name="pageId" value={p.id} />
                     <input type="hidden" name="pageLabel" value={p.label} />
@@ -42,7 +42,7 @@ export default async function PermissionsSettingsPage() {
                     <button type="submit" className={btn}>저장</button>
                   </form>
                 </td>
-                <td className={td}>
+                <td className={tdClean}>
                   <details>
                     <summary className="cursor-pointer text-xs text-zinc-500">예외 대상자 ({exceptedEmails.length}명)</summary>
                     <div className="mt-1.5 max-h-48 overflow-y-auto">
