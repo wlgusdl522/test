@@ -3,7 +3,7 @@
 import { Fragment, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { btn, btnSecondary, cardTableWrap, inputBase, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
-import { addGeneralLogCategoryAction, saveGeneralLogDayAction, type GeneralLogTargetUpdate } from '@/app/(portal)/general-work-log/actions';
+import { addGeneralLogCategoryAction, deleteGeneralLogCategoryAction, saveGeneralLogDayAction, type GeneralLogTargetUpdate } from '@/app/(portal)/general-work-log/actions';
 import type { GeneralLogRollupRow, GeneralLogContentRow } from '@/lib/mutate/generalLog';
 
 type ContentRow = { key: string; content: string };
@@ -51,6 +51,8 @@ export default function GeneralLogWorkspace({
   const [statusText, setStatusText] = useState('');
   const [isPending, startTransition] = useTransition();
   const [isAddingCategory, startAddingCategory] = useTransition();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [, startDeletingCategory] = useTransition();
 
   // 아직 로컬 상태에 키가 없는(방금 추가된) 항목의 한쪽 필드만 고치더라도, 다른쪽 필드는 서버 값으로
   // 채워 넣어야 나머지 필드가 빈 값으로 날아가지 않는다.
@@ -99,6 +101,23 @@ export default function GeneralLogWorkspace({
         router.refresh();
       } catch (err) {
         setStatusText(err instanceof Error ? err.message : '구분항목 추가 실패');
+      }
+    });
+  }
+
+  function handleDeleteCategory(row: GeneralLogRollupRow) {
+    if (!window.confirm(`"${row.세부항목}" 항목을 삭제할까요? 이미 입력된 일계 데이터는 남지만 화면에는 더 이상 보이지 않습니다.`)) {
+      return;
+    }
+    setDeletingId(row.id);
+    startDeletingCategory(async () => {
+      try {
+        await deleteGeneralLogCategoryAction(row.id);
+        router.refresh();
+      } catch (err) {
+        setStatusText(err instanceof Error ? err.message : '구분항목 삭제 실패');
+      } finally {
+        setDeletingId(null);
       }
     });
   }
@@ -193,12 +212,13 @@ export default function GeneralLogWorkspace({
               <th className={thClean}>누계(명)</th>
               <th className={thClean}>달성율(건)</th>
               <th className={thClean}>달성율(명)</th>
+              <th className={thClean}></th>
             </tr>
           </thead>
           <tbody>
             {rollup.length === 0 && (
               <tr>
-                <td className={tdClean} colSpan={12}>
+                <td className={tdClean} colSpan={13}>
                   <span className="text-zinc-400">등록된 구분항목이 없습니다. 아래에서 첫 항목을 추가해주세요.</span>
                 </td>
               </tr>
@@ -255,6 +275,17 @@ export default function GeneralLogWorkspace({
                       <td className={`${tdClean} text-right`}>{row.누계명 || '-'}</td>
                       <td className={`${tdClean} text-right`}>{row.달성율건}</td>
                       <td className={`${tdClean} text-right`}>{row.달성율명}</td>
+                      <td className={tdClean}>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(row)}
+                          disabled={deletingId === row.id}
+                          className="px-1.5 text-sm text-zinc-300 hover:text-red-500"
+                          aria-label="삭제"
+                        >
+                          {deletingId === row.id ? '...' : '×'}
+                        </button>
+                      </td>
                     </tr>
                   ))}
                   <tr className="bg-zinc-50 dark:bg-zinc-900/60 font-medium">
@@ -267,6 +298,7 @@ export default function GeneralLogWorkspace({
                     <td className={`${tdClean} text-right`}>{groupSum(group.rows, '월계명') || '-'}</td>
                     <td className={`${tdClean} text-right`}>{groupSum(group.rows, '누계건') || '-'}</td>
                     <td className={`${tdClean} text-right`}>{groupSum(group.rows, '누계명') || '-'}</td>
+                    <td className={tdClean}></td>
                     <td className={tdClean}></td>
                     <td className={tdClean}></td>
                   </tr>
@@ -286,6 +318,7 @@ export default function GeneralLogWorkspace({
                 <td className={`${tdClean} text-right`}>{grandCumPeople || '-'}</td>
                 <td className={`${tdClean} text-right`}>{rate(grandCumCount, grandTargetCount)}</td>
                 <td className={`${tdClean} text-right`}>{rate(grandCumPeople, grandTargetPeople)}</td>
+                <td className={tdClean}></td>
               </tr>
             )}
             <tr className="bg-zinc-50/60 dark:bg-zinc-900/30">
@@ -332,7 +365,7 @@ export default function GeneralLogWorkspace({
                   inputMode="numeric"
                 />
               </td>
-              <td className={tdClean} colSpan={6}>
+              <td className={tdClean} colSpan={7}>
                 <button
                   type="button"
                   onClick={handleAddCategory}
