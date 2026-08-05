@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireViewerEmail, getViewerStaffRecord } from '@/lib/auth-helpers';
-import { saveGeneralLogDaily, submitGeneralLogContentDay, saveGeneralLogNote } from '@/lib/mutate/generalLog';
+import { saveGeneralLogDaily, submitGeneralLogContentDay } from '@/lib/mutate/generalLog';
 import { addGeneralLogItem, updateGeneralLogItem } from '@/lib/mutate/generalLogItem';
 
 export type GeneralLogTargetUpdate = {
@@ -30,8 +30,7 @@ export async function saveGeneralLogDayAction(
 
   for (const t of targetUpdates) await updateGeneralLogItem(t.id, t);
   await saveGeneralLogDaily(businessName, date, dailyEntries, viewerEmail, name);
-  await submitGeneralLogContentDay(businessName, date, contentRows, viewerEmail, name);
-  await saveGeneralLogNote(businessName, date, note, viewerEmail, name);
+  await submitGeneralLogContentDay(businessName, date, contentRows, note, viewerEmail, name);
 
   revalidatePath('/general-work-log');
 }

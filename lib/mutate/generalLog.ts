@@ -1,7 +1,10 @@
 import { randomUUID } from 'crypto';
 import { deleteKeyedRecord, deleteKeyedRecords, getKeyedList, addKeyedRecord, upsertKeyedRecord } from '@/lib/mutate/keyedTable';
-import { GENERAL_LOG_CONTENT_TABLE, GENERAL_LOG_DAILY_TABLE, GENERAL_LOG_NOTE_TABLE } from '@/lib/sheets/registry';
+import { GENERAL_LOG_CONTENT_TABLE, GENERAL_LOG_DAILY_TABLE } from '@/lib/sheets/registry';
 import { getGeneralLogItems, type GeneralLogItem } from '@/lib/mutate/generalLogItem';
+
+const NOTE_KIND = '특이사항';
+const WORK_KIND = '업무';
 
 function nowTimestamp(): string {
   return new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -90,16 +93,22 @@ export type GeneralLogContentRow = { id: string; 업무내용: string; 실적: s
 export async function getGeneralLogContent(businessName: string, date: string): Promise<GeneralLogContentRow[]> {
   const all = await getKeyedList(GENERAL_LOG_CONTENT_TABLE);
   return all
-    .filter((r) => r['사업명'] === businessName && r['날짜'] === date)
-    .map((r) => ({ id: r.id, 업무내용: r['업무내용'] ?? '', 실적: r['실적'] ?? '', 비고: r['비고'] ?? '' }));
+    .filter((r) => r['사업명'] === businessName && r['날짜'] === date && r['구분'] !== NOTE_KIND)
+    .map((r) => ({ id: r.id, 업무내용: r['내용'] ?? '', 실적: r['실적'] ?? '', 비고: r['비고'] ?? '' }));
 }
 
-// 화면에서 그날 업무내용 행 전체를 다시 보내주므로, 기존 행을 모두 지우고 새로 넣는 전체 교체 방식을 쓴다 —
-// 행마다 텍스트가 자유롭게 바뀔 수 있어 텍스트 기준 diff(주간업무 방식)보다 통째로 바꾸는 편이 단순하다.
+export async function getGeneralLogNote(businessName: string, date: string): Promise<string> {
+  const all = await getKeyedList(GENERAL_LOG_CONTENT_TABLE);
+  return all.find((r) => r['사업명'] === businessName && r['날짜'] === date && r['구분'] === NOTE_KIND)?.['내용'] ?? '';
+}
+
+// 화면에서 그날 업무내용 행+특이사항 전체를 다시 보내주므로, 기존 행을 모두 지우고 새로 넣는
+// 전체 교체 방식을 쓴다 — 특이사항은 하루 한 줄뿐이라 별도 탭 없이 '구분'='특이사항' 행 하나로 같이 담는다.
 export async function submitGeneralLogContentDay(
   businessName: string,
   date: string,
   rows: { 업무내용: string; 실적: string; 비고: string }[],
+  note: string,
   viewerEmail: string,
   viewerName: string
 ): Promise<void> {
@@ -116,7 +125,8 @@ export async function submitGeneralLogContentDay(
       id: randomUUID(),
       사업명: businessName,
       날짜: date,
-      업무내용: row.업무내용,
+      구분: WORK_KIND,
+      내용: row.업무내용,
       실적: row.실적,
       비고: row.비고,
       작성자이메일: viewerEmail,
@@ -124,26 +134,18 @@ export async function submitGeneralLogContentDay(
       등록일시: now,
     });
   }
-}
-
-export async function getGeneralLogNote(businessName: string, date: string): Promise<string> {
-  const all = await getKeyedList(GENERAL_LOG_NOTE_TABLE);
-  return all.find((r) => r['사업명'] === businessName && r['날짜'] === date)?.['특이사항'] ?? '';
-}
-
-export async function saveGeneralLogNote(
-  businessName: string,
-  date: string,
-  text: string,
-  viewerEmail: string,
-  viewerName: string
-): Promise<void> {
-  const keyValues = { 사업명: businessName, 날짜: date };
-  await upsertKeyedRecord(GENERAL_LOG_NOTE_TABLE, keyValues, {
-    ...keyValues,
-    특이사항: text,
-    작성자이메일: viewerEmail,
-    작성자명: viewerName,
-    수정일시: nowTimestamp(),
-  });
+  if (note.trim()) {
+    await addKeyedRecord(GENERAL_LOG_CONTENT_TABLE, {
+      id: randomUUID(),
+      사업명: businessName,
+      날짜: date,
+      구분: NOTE_KIND,
+      내용: note,
+      실적: '',
+      비고: '',
+      작성자이메일: viewerEmail,
+      작성자명: viewerName,
+      등록일시: now,
+    });
+  }
 }
