@@ -4,10 +4,7 @@ export const WEEKLY_PLAN_SHEET_ID = '1gD3c4k-VLz_9yaOYidtsZ354tms4bfKfyZCbgVQNm4
 export const CARD_LEDGER_SHEET_ID = '1WBNt9PGWQDjwf0PtwgOOPqiJdqNdMUf1yugQenlMF-s'; // "3. 카드사용대장"
 export const VEHICLE_SHEET_ID = '1JtRFxBzH1Xh7chmyMlqlAv__qYC4INR3y7FMIWGKwpQ'; // "4. 차량관리"
 
-// "5. 총괄업무일지" — 총괄업무일지 전용 신규 스프레드시트. 아래 값은 실제 파일이 아직 없어서 임시로
-// 넣어둔 자리표시자다. 같은 구글 워크스페이스 계정으로 새 스프레드시트를 만든 뒤, 주소창의
-// docs.google.com/spreadsheets/d/<이 부분>/edit 값을 그대로 여기에 붙여넣으면 된다.
-export const GENERAL_WORK_LOG_SHEET_ID = 'PASTE_NEW_GENERAL_WORK_LOG_SPREADSHEET_ID_HERE';
+export const GENERAL_WORK_LOG_SHEET_ID = '1iMzG0lBTnjUdnYdGqXzo85PQ4szIfHtyHJxr14VGHnE'; // "5. 총괄업무일지"
 
 export const TEAM_LIST_SHEET_NAME = '팀목록';
 export const POSITION_LIST_SHEET_NAME = '직급목록';
