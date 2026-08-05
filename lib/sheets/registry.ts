@@ -1,5 +1,5 @@
 import type { KeyedTableConfig } from './keyedTable';
-import { CARD_LEDGER_SHEET_ID, STAFF_SHEET_ID, VEHICLE_SHEET_ID, WEEKLY_PLAN_SHEET_ID } from './sheetIds';
+import { CARD_LEDGER_SHEET_ID, GENERAL_WORK_LOG_SHEET_ID, STAFF_SHEET_ID, VEHICLE_SHEET_ID, WEEKLY_PLAN_SHEET_ID } from './sheetIds';
 
 export const VEHICLE_REQUEST_HEADERS = [
   'id', '차량번호', '신청자이메일', '신청자명', '소속팀',
@@ -172,5 +172,43 @@ export const VEHICLE_LOG_TABLE: KeyedTableConfig = {
   spreadsheetId: VEHICLE_SHEET_ID,
   sheetName: '차량운행일지',
   headers: VEHICLE_LOG_HEADERS,
+  primaryKey: 'id',
+};
+
+// 총괄업무일지: 사업(프로그램)마다 구분항목 트리와 목표(건/명)가 다르므로 항목 자체를 화면에서 직접
+// 추가·수정하고(GENERAL_LOG_ITEM_TABLE), 날짜별 실적은 항목ID를 참조하는 별도 테이블에 쌓는다.
+// 기존 "2. 주간업무계획" 파일 대신 총괄업무일지 전용 스프레드시트(GENERAL_WORK_LOG_SHEET_ID)를 쓴다.
+export const GENERAL_LOG_ITEM_HEADERS = [
+  'id', '사업명', '대분류', '중분류', '세부항목', '정렬순서', '목표건', '목표명',
+];
+
+export const GENERAL_LOG_ITEM_TABLE: KeyedTableConfig = {
+  spreadsheetId: GENERAL_WORK_LOG_SHEET_ID,
+  sheetName: '총괄업무일지_항목',
+  headers: GENERAL_LOG_ITEM_HEADERS,
+  primaryKey: 'id',
+};
+
+export const GENERAL_LOG_DAILY_HEADERS = [
+  '사업명', '날짜', '항목ID', '건', '명', '작성자이메일', '작성자명', '등록일시',
+];
+
+export const GENERAL_LOG_DAILY_TABLE: KeyedTableConfig = {
+  spreadsheetId: GENERAL_WORK_LOG_SHEET_ID,
+  sheetName: '총괄업무일지_일계',
+  headers: GENERAL_LOG_DAILY_HEADERS,
+  primaryKey: ['사업명', '날짜', '항목ID'],
+};
+
+// 업무내용 행과 특이사항을 한 탭에 같이 담는다 — 특이사항은 하루에 한 줄뿐이라 별도 탭을 두기보다
+// 구분 컬럼('업무' | '특이사항')으로만 나눈다.
+export const GENERAL_LOG_CONTENT_HEADERS = [
+  'id', '사업명', '날짜', '구분', '내용', '실적', '비고', '작성자이메일', '작성자명', '등록일시',
+];
+
+export const GENERAL_LOG_CONTENT_TABLE: KeyedTableConfig = {
+  spreadsheetId: GENERAL_WORK_LOG_SHEET_ID,
+  sheetName: '총괄업무일지_내용',
+  headers: GENERAL_LOG_CONTENT_HEADERS,
   primaryKey: 'id',
 };
