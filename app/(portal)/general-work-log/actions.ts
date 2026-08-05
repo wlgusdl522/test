@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireViewerEmail, getViewerStaffRecord } from '@/lib/auth-helpers';
 import { saveGeneralLogDaily, submitGeneralLogContentDay } from '@/lib/mutate/generalLog';
-import { addGeneralLogItem, updateGeneralLogItem } from '@/lib/mutate/generalLogItem';
+import { addGeneralLogItem, deleteGeneralLogItem, updateGeneralLogItem } from '@/lib/mutate/generalLogItem';
 
 export type GeneralLogTargetUpdate = {
   id: string;
@@ -48,5 +48,13 @@ export async function addGeneralLogCategoryAction(fields: {
 }): Promise<void> {
   await requireViewerEmail();
   await addGeneralLogItem(fields);
+  revalidatePath('/general-work-log');
+}
+
+// 이미 입력된 일계 데이터는 시트에 그대로 남지만, 항목 자체가 없어지므로 화면(통계표)에는
+// 더 이상 나오지 않는다.
+export async function deleteGeneralLogCategoryAction(id: string): Promise<void> {
+  await requireViewerEmail();
+  await deleteGeneralLogItem(id);
   revalidatePath('/general-work-log');
 }
