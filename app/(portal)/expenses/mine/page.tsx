@@ -241,7 +241,7 @@ export default async function CardLedgerMinePage({
                       <a href={buildQuery({ edit: r.id })} className="block">{parseAmount(r.사용금액).toLocaleString()}원</a>
                     )}
                   </td>
-                  <td className={td}>{exempt ? '' : dayBadge(daysSince(r.사용일자), settings.cardLedgerWarnDays, settings.cardLedgerDangerDays)}</td>
+                  <td className={td}>{exempt || locked || r.상태 === '검수완료' ? '' : dayBadge(daysSince(r.사용일자), settings.cardLedgerWarnDays, settings.cardLedgerDangerDays)}</td>
                   <td className={`${td}`}>
                     <div className="flex flex-wrap gap-1 justify-end">
                       {exempt ? (

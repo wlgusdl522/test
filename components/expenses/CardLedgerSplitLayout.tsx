@@ -26,8 +26,8 @@ export default function CardLedgerSplitLayout({
   return (
     <div>
       {/* 버튼은 항상 같은 자리에 고정 — 열고 닫을 때 버튼 자체가 사라졌다 나타나지 않아야
-          "화면이 전환된다"는 느낌 없이 자연스럽다. */}
-      <div className="mb-3">
+          "화면이 전환된다"는 느낌 없이 자연스럽다. 목록 위 "추가" 버튼 관례에 맞춰 우측 정렬. */}
+      <div className="mb-3 flex justify-end">
         <button type="button" onClick={() => setOpen((v) => !v)} className={btn}>
           {open ? '접기 ▲' : `+ ${formLabel}`}
         </button>
