@@ -43,7 +43,7 @@ export default function CardLedgerReviewClient({
     <div className="flex items-start gap-4">
       <form action={printCardLedgerBatchAction} className="min-w-0 flex-1">
         {canManage && (
-          <div className="mb-3">
+          <div className="mb-3 flex justify-end">
             <button type="submit" className={btn}>선택 건 인쇄완료 처리</button>
           </div>
         )}
@@ -131,13 +131,24 @@ export default function CardLedgerReviewClient({
               </div>
             )}
 
-            <a
-              href={`/print/card-ledger?ym=${selected.사용일자.slice(0, 7)}&type=${encodeURIComponent(selected.구분)}`}
-              target="_blank"
-              className="text-xs text-brand hover:underline"
-            >
-              이 달 카드사용대장 인쇄 미리보기 열기 ↗
-            </a>
+            <div>
+              <div className={metaLabel}>인쇄 미리보기</div>
+              <div className="relative mt-1 h-[420px] w-full overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800">
+                <iframe
+                  key={selected.id}
+                  src={`/print/card-ledger?ym=${selected.사용일자.slice(0, 7)}&type=${encodeURIComponent(selected.구분)}`}
+                  className="absolute left-0 top-0 origin-top-left border-0"
+                  style={{ width: '250%', height: '250%', transform: 'scale(0.4)' }}
+                />
+              </div>
+              <a
+                href={`/print/card-ledger?ym=${selected.사용일자.slice(0, 7)}&type=${encodeURIComponent(selected.구분)}`}
+                target="_blank"
+                className="mt-1 inline-block text-xs text-brand hover:underline"
+              >
+                전체 화면으로 열기 ↗
+              </a>
+            </div>
 
             {canManage && selected.상태 === '검수완료' && (
               <form action={printCardLedgerAction}>
