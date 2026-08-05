@@ -7,7 +7,7 @@ import { getMyPendingVehicleLogApprovals } from '@/lib/mutate/vehicleLog';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { parseLeaveTag } from '@/lib/weeklyLeave';
 import { parseAmount } from '@/lib/format';
-import { teamRank } from '@/lib/teamOrder';
+import { TEAM_ORDER } from '@/lib/teamOrder';
 import { NAV_SECTION_ICON_PATH } from '@/lib/nav';
 import { pageFluid, statCard } from '@/lib/ui';
 import ScheduleSlideshow, { type ScheduleSlide } from '@/components/home/ScheduleSlideshow';
@@ -119,18 +119,24 @@ export default async function HomePage() {
   const inspectionIncomplete = pendingTasks.filter((t) => t.status === '사진필요' || t.status === '조서필수');
   const myWeekTasks = allWeekTasks.filter((t) => (t['이메일(아이디)'] ?? '').toLowerCase() === viewerEmail);
 
-  // 전체 팀 취합 — 세로축 팀 × 가로축 요일로 된 캘린더 표. 휴가 태그는 위 슬라이드에 이미 있으니 제외.
-  const nonLeaveTeamTasks = allWeekTasks.filter((t) => !parseLeaveTag(t.업무내용));
-  const activeTeams = Array.from(new Set(nonLeaveTeamTasks.map((t) => t.소속팀)))
-    .filter(Boolean)
-    .sort((a, b) => teamRank(a) - teamRank(b));
   const dayColumnLabels = dayDates.map((iso, i) => dayLabel(iso, i));
+  const myWeekGridRow = {
+    label: me?.성명 || '내 업무',
+    cells: dayDates.map((iso) => myWeekTasks.filter((t) => t.날짜 === iso).map((t) => ({ primary: t.업무내용 }))),
+  };
+
+  // 전체 팀 취합 — 세로축 팀 × 가로축 요일로 된 캘린더 표. 회의록 후보로 표시한 업무만 보여준다.
+  // 이번 주에 올라온 업무가 없는 팀도 항상 행으로 보이도록 팀 목록은 데이터가 아니라 고정 순서에서 가져온다.
+  const meetingTeamTasks = allWeekTasks.filter(
+    (t) => !parseLeaveTag(t.업무내용) && (t.회의록후보 === 'TRUE' || t.회의록후보 === 'true')
+  );
+  const activeTeams = TEAM_ORDER.filter((t) => t !== '미배정');
   const teamGridRows = activeTeams.map((team) => ({
     label: team,
     cells: dayDates.map((iso) =>
-      nonLeaveTeamTasks
+      meetingTeamTasks
         .filter((t) => t.날짜 === iso && t.소속팀 === team)
-        .map((t) => ({ primary: t.성명, secondary: t.업무내용 }))
+        .map((t) => ({ primary: t.업무내용 }))
     ),
   }));
 
@@ -139,7 +145,11 @@ export default async function HomePage() {
       title: '검수 미완료 건',
       emptyText: '검수 미완료 건이 없습니다.',
       viewAllHref: '/expenses/mine',
-      items: inspectionIncomplete.map((t) => ({ title: t.title, meta: `${t.date} · ${t.status}` })),
+      items: inspectionIncomplete.map((t) => ({
+        title: t.title,
+        meta: `${t.date} · ${t.status}`,
+        href: t.status === '사진필요' ? `/expenses/mine?photoFor=${t.id}&all=1` : `/expenses/mine?reportFor=${t.id}&all=1`,
+      })),
     },
     {
       title: '결재 대기 건',
@@ -154,10 +164,12 @@ export default async function HomePage() {
       ],
     },
     {
+      kind: 'grid',
       title: '이번주 내 주간업무계획',
       emptyText: '이번 주 등록한 업무가 없습니다.',
-      viewAllHref: '/weekly-plan',
-      items: myWeekTasks.map((t) => ({ title: t.업무내용, meta: t.날짜 })),
+      columns: dayColumnLabels,
+      rows: [myWeekGridRow],
+      rowHeight: 360,
     },
     {
       kind: 'grid',

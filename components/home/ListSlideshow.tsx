@@ -3,13 +3,13 @@
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 
-type ListItem = { title: string; meta?: string; group?: string };
-type GridItem = { primary: string; secondary?: string };
+type ListItem = { title: string; meta?: string; group?: string; href?: string };
+type GridItem = { primary: string; secondary?: string; highlight?: boolean };
 
 type ListSlideBase = { title: string; emptyText: string };
 export type ListSlide =
   | (ListSlideBase & { kind?: 'list'; items: ListItem[]; viewAllHref?: string })
-  | (ListSlideBase & { kind: 'grid'; columns: string[]; rows: { label: string; cells: GridItem[][] }[] });
+  | (ListSlideBase & { kind: 'grid'; columns: string[]; rows: { label: string; cells: GridItem[][] }[]; rowHeight?: number });
 
 // 리스트/그리드 슬라이드 중 어느 게 나와도 패널 높이가 안 흔들리도록 모든 슬라이드가 이 높이를 공유한다
 // (그리드가 요일 6줄로 가장 길어서, 여기 맞춰 리스트 쪽은 아래 여백이 남는 식).
@@ -96,11 +96,15 @@ export default function ListSlideshow({ slides }: { slides: ListSlide[] }) {
                     <td className="whitespace-nowrap border border-zinc-100 p-1 align-top font-medium text-zinc-400 dark:border-zinc-800">{row.label}</td>
                     {row.cells.map((cell, ci) => (
                       <td key={ci} className="border border-zinc-100 align-top p-1 dark:border-zinc-800">
-                        <div className="flex h-[60px] flex-col gap-1 overflow-y-auto">
+                        <div className="flex flex-col gap-1 overflow-y-auto" style={{ height: slide.rowHeight ?? 60 }}>
                           {cell.map((it, i) => (
                             <div
                               key={i}
-                              className="rounded bg-brand-tint px-1.5 py-1 leading-tight text-brand-dark dark:bg-brand-tint/20 dark:text-brand"
+                              className={`rounded px-1.5 py-1 leading-tight ${
+                                it.highlight
+                                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-400'
+                                  : 'bg-brand-tint text-brand-dark dark:bg-brand-tint/20 dark:text-brand'
+                              }`}
                             >
                               <p className="truncate font-medium">{it.primary}</p>
                               {it.secondary && <p className="truncate text-zinc-500 dark:text-zinc-400">{it.secondary}</p>}
@@ -116,17 +120,28 @@ export default function ListSlideshow({ slides }: { slides: ListSlide[] }) {
           </div>
         ) : (
           <ul className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
-            {slide.items.slice(0, 6).map((item, i, arr) => (
-              <li key={i}>
-                {item.group && item.group !== arr[i - 1]?.group && (
-                  <p className="pt-2 text-[11px] font-semibold text-zinc-400 first:pt-0">{item.group}</p>
-                )}
+            {slide.items.slice(0, 6).map((item, i, arr) => {
+              const row = (
                 <div className="flex items-center justify-between gap-3 py-2.5 text-sm">
                   <span className="min-w-0 truncate text-zinc-700 dark:text-zinc-300">{item.title}</span>
                   {item.meta && <span className="shrink-0 text-xs text-zinc-400">{item.meta}</span>}
                 </div>
-              </li>
-            ))}
+              );
+              return (
+                <li key={i}>
+                  {item.group && item.group !== arr[i - 1]?.group && (
+                    <p className="pt-2 text-[11px] font-semibold text-zinc-400 first:pt-0">{item.group}</p>
+                  )}
+                  {item.href ? (
+                    <Link href={item.href} className="-mx-1 block rounded px-1 hover:bg-zinc-50 dark:hover:bg-zinc-800/60">
+                      {row}
+                    </Link>
+                  ) : (
+                    row
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
