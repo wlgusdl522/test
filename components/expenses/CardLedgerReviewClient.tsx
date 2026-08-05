@@ -21,7 +21,7 @@ function statusBadge(status: string) {
   return <span className={`${badgeBase} ${badgeTone[STATUS_TONE[status] ?? 'gray']}`}>{status}</span>;
 }
 
-// 인쇄 문서(카드사용대장/물품검수사진/물품검수조서)를 실제 크기 그대로 렌더링한 뒤 축소해서
+// 인쇄 문서(물품검수사진/물품검수조서)를 실제 크기 그대로 렌더링한 뒤 축소해서
 // 보여주는 썸네일 — 별도 인쇄 미리보기 렌더러를 새로 만들지 않고 기존 /print 페이지를 그대로 재사용한다.
 function PrintPreview({ href, height = 380, scale = 0.4 }: { href: string; height?: number; scale?: number }) {
   return (
@@ -143,15 +143,6 @@ export default function CardLedgerReviewClient({
                 <div className={metaValue}>{selected.검수불요사유}</div>
               </div>
             )}
-
-            <div>
-              <div className={metaLabel}>카드사용대장</div>
-              <PrintPreview
-                key={`ledger-${selected.id}`}
-                href={`/print/card-ledger?ym=${selected.사용일자.slice(0, 7)}&type=${encodeURIComponent(selected.구분)}`}
-                height={420}
-              />
-            </div>
 
             {canManage && selected.상태 === '검수완료' && (
               <form action={printCardLedgerAction}>
