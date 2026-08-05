@@ -17,7 +17,7 @@ function PhotoGroup({ urls }: { urls: string[] }) {
         gridTemplateColumns: single ? '1fr' : '1fr 1fr',
         gap: 10,
         margin: '0 auto 18px',
-        maxWidth: single ? 380 : 480,
+        maxWidth: single ? 640 : 680,
         justifyItems: 'center',
       }}
     >
