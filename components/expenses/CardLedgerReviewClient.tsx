@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import DetailPanel from '@/components/DetailPanel';
-import { ITEM_CHECK_PHOTO_SLOTS } from '@/lib/sheets/registry';
 import { parseAmount } from '@/lib/format';
 import {
   badgeBase, badgeTone, btn, btnDanger, inputBase, metaLabel, metaValue,
@@ -20,6 +19,28 @@ const STATUS_TONE: Record<string, keyof typeof badgeTone> = {
 
 function statusBadge(status: string) {
   return <span className={`${badgeBase} ${badgeTone[STATUS_TONE[status] ?? 'gray']}`}>{status}</span>;
+}
+
+// 인쇄 문서(카드사용대장/물품검수사진/물품검수조서)를 실제 크기 그대로 렌더링한 뒤 축소해서
+// 보여주는 썸네일 — 별도 인쇄 미리보기 렌더러를 새로 만들지 않고 기존 /print 페이지를 그대로 재사용한다.
+function PrintPreview({ href, height = 380, scale = 0.4 }: { href: string; height?: number; scale?: number }) {
+  return (
+    <div>
+      <div
+        className="relative w-full overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800"
+        style={{ height }}
+      >
+        <iframe
+          src={href}
+          className="absolute left-0 top-0 origin-top-left border-0"
+          style={{ width: `${100 / scale}%`, height: `${100 / scale}%`, transform: `scale(${scale})` }}
+        />
+      </div>
+      <a href={href} target="_blank" className="mt-1 inline-block text-xs text-brand hover:underline">
+        전체 화면으로 열기 ↗
+      </a>
+    </div>
+  );
 }
 
 export default function CardLedgerReviewClient({
@@ -98,22 +119,14 @@ export default function CardLedgerReviewClient({
             <div>
               <div className={metaLabel}>물품검수사진</div>
               {photo ? (
-                <div className="flex gap-2 mt-1">
-                  {ITEM_CHECK_PHOTO_SLOTS.filter((slot) => photo[slot]).map((slot) => (
-                    <a key={slot} href={photo[slot]} target="_blank" rel="noreferrer" className="text-xs text-brand hover:underline">
-                      {slot} 보기
-                    </a>
-                  ))}
-                </div>
+                <PrintPreview key={`photo-${photo.id}`} href={`/print/item-check-photo?id=${photo.id}`} height={340} />
               ) : <div className={metaValue}>미등록</div>}
             </div>
 
             {report && (
               <div>
                 <div className={metaLabel}>물품검수조서</div>
-                <a href={`/print/item-check-report?id=${report.id}`} target="_blank" className="text-xs text-brand hover:underline">
-                  조서 원문 보기
-                </a>
+                <PrintPreview key={`report-${report.id}`} href={`/print/item-check-report?id=${report.id}`} height={420} />
               </div>
             )}
 
@@ -132,22 +145,12 @@ export default function CardLedgerReviewClient({
             )}
 
             <div>
-              <div className={metaLabel}>인쇄 미리보기</div>
-              <div className="relative mt-1 h-[420px] w-full overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800">
-                <iframe
-                  key={selected.id}
-                  src={`/print/card-ledger?ym=${selected.사용일자.slice(0, 7)}&type=${encodeURIComponent(selected.구분)}`}
-                  className="absolute left-0 top-0 origin-top-left border-0"
-                  style={{ width: '250%', height: '250%', transform: 'scale(0.4)' }}
-                />
-              </div>
-              <a
+              <div className={metaLabel}>카드사용대장</div>
+              <PrintPreview
+                key={`ledger-${selected.id}`}
                 href={`/print/card-ledger?ym=${selected.사용일자.slice(0, 7)}&type=${encodeURIComponent(selected.구분)}`}
-                target="_blank"
-                className="mt-1 inline-block text-xs text-brand hover:underline"
-              >
-                전체 화면으로 열기 ↗
-              </a>
+                height={420}
+              />
             </div>
 
             {canManage && selected.상태 === '검수완료' && (
