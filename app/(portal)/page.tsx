@@ -3,11 +3,12 @@ import { getMyApprovalCount, getMyRecordsSummary } from '@/lib/mutate/dashboard'
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
 import { getMyPendingItemCheckReportApprovals } from '@/lib/mutate/itemCheckReport';
-import { getMyPendingVehicleLogApprovals } from '@/lib/mutate/vehicleLog';
+import { getMyPendingVehicleLogApprovals, getVehicleLogList } from '@/lib/mutate/vehicleLog';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { parseLeaveTag } from '@/lib/weeklyLeave';
 import { parseAmount } from '@/lib/format';
 import { TEAM_ORDER } from '@/lib/teamOrder';
+import { hasVehicleUseEnded } from '@/lib/vehicleTimeOverlap';
 import { NAV_SECTION_ICON_PATH } from '@/lib/nav';
 import { pageFluid, statCard } from '@/lib/ui';
 import ScheduleSlideshow, { type ScheduleSlide } from '@/components/home/ScheduleSlideshow';
@@ -34,9 +35,17 @@ function dayLabel(iso: string, weekdayIndex: number): string {
 const SHORTCUTS = [
   { href: '/weekly-plan', label: '주간업무', desc: '이번 주 업무 입력', tone: 'blue', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
   { href: '/expenses', label: '카드사용대장', desc: '지출 등록', tone: 'emerald', icon: NAV_SECTION_ICON_PATH.지출관리 },
-  { href: '/vehicles/requests', label: '차량사용신청', desc: '차량 예약', tone: 'amber', icon: NAV_SECTION_ICON_PATH.차량관리 },
+  { href: '/vehicles?new=1', label: '차량사용신청', desc: '차량 예약', tone: 'amber', icon: NAV_SECTION_ICON_PATH.차량관리 },
   { href: '/staff/directory', label: '전직원 주소록', desc: '연락처 찾기', tone: 'violet', icon: NAV_SECTION_ICON_PATH.인사관리 },
   { href: '/mypage', label: '내 결재함', desc: '결재 대기 확인', tone: 'cyan', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+  {
+    href: 'https://web-ten-sigma-h3hmsi041o.vercel.app/documents/dashboard',
+    label: '공문결재시스템',
+    desc: '공문 접수·결재',
+    tone: 'rose',
+    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+    external: true,
+  },
 ] as const;
 
 const TONE_BADGE: Record<string, string> = {
@@ -45,6 +54,7 @@ const TONE_BADGE: Record<string, string> = {
   amber: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400',
   violet: 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400',
   cyan: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400',
+  rose: 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400',
 };
 
 function ShortcutIcon({ d, className = 'h-4 w-4' }: { d: string; className?: string }) {
@@ -65,12 +75,13 @@ export default async function HomePage() {
     return d.toISOString().slice(0, 10);
   });
 
-  const [me, summary, approvalCount, allWeekTasks, vehicleRequests, pendingReports, pendingLogs] = await Promise.all([
+  const [me, summary, approvalCount, allWeekTasks, vehicleRequests, vehicleLogs, pendingReports, pendingLogs] = await Promise.all([
     getViewerStaffRecord(),
     getMyRecordsSummary(),
     getMyApprovalCount(),
     getWeeklyTasks(null, weekStart),
     getVehicleRequestList(),
+    getVehicleLogList(),
     getMyPendingItemCheckReportApprovals(),
     getMyPendingVehicleLogApprovals(),
   ]);
@@ -119,6 +130,34 @@ export default async function HomePage() {
   const inspectionIncomplete = pendingTasks.filter((t) => t.status === '사진필요' || t.status === '조서필수');
   const myWeekTasks = allWeekTasks.filter((t) => (t['이메일(아이디)'] ?? '').toLowerCase() === viewerEmail);
 
+  // 내 차량예약현황 — 최근(지난 7일)부터 담주까지(다음 14일) 내 예약만, 최대 10건.
+  // 사용 시간이 지났는데 운행일지가 없으면 바로 작성하러 갈 수 있게 링크를 건다.
+  const nextWeekEndIso = (() => {
+    const d = new Date(now);
+    d.setDate(d.getDate() + 14);
+    return d.toISOString().slice(0, 10);
+  })();
+  const recentStartIso = (() => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 7);
+    return d.toISOString().slice(0, 10);
+  })();
+  const myLogByRequestId = new Map(vehicleLogs.filter((l) => l.신청ID).map((l) => [l.신청ID, l]));
+  const myVehicleItems = vehicleRequests
+    .filter((r) => (r.신청자이메일 ?? '').toLowerCase() === viewerEmail)
+    .filter((r) => r.사용일자 >= recentStartIso && r.사용일자 <= nextWeekEndIso)
+    .sort((a, b) => a.사용일자.localeCompare(b.사용일자) || (a.출발시간 || '').localeCompare(b.출발시간 || ''))
+    .slice(0, 10)
+    .map((r) => {
+      const hasLog = myLogByRequestId.has(r.id);
+      const ended = hasVehicleUseEnded(r.사용일자, r.복귀시간);
+      return {
+        title: `${r.사용일자.slice(5)} · ${r.차량번호} · ${r.목적}`,
+        meta: hasLog ? '작성완료' : ended ? '일지작성 필요' : '예약됨',
+        href: !hasLog && ended ? `/vehicles/logs?requestId=${r.id}#log-form` : '/vehicles/requests',
+      };
+    });
+
   const dayColumnLabels = dayDates.map((iso, i) => dayLabel(iso, i));
   const myWeekGridRow = {
     label: me?.성명 || '내 업무',
@@ -142,14 +181,25 @@ export default async function HomePage() {
 
   const listSlides: ListSlide[] = [
     {
-      title: '검수 미완료 건',
-      emptyText: '검수 미완료 건이 없습니다.',
-      viewAllHref: '/expenses/mine',
-      items: inspectionIncomplete.map((t) => ({
-        title: t.title,
-        meta: `${t.date} · ${t.status}`,
-        href: t.status === '사진필요' ? `/expenses/mine?photoFor=${t.id}&all=1` : `/expenses/mine?reportFor=${t.id}&all=1`,
-      })),
+      kind: 'split',
+      title: '검수 미완료 건 · 내 차량예약현황',
+      emptyText: '',
+      left: {
+        title: '검수 미완료 건',
+        emptyText: '검수 미완료 건이 없습니다.',
+        viewAllHref: '/expenses/mine',
+        items: inspectionIncomplete.map((t) => ({
+          title: t.title,
+          meta: `${t.date} · ${t.status}`,
+          href: t.status === '사진필요' ? `/expenses/mine?photoFor=${t.id}&all=1` : `/expenses/mine?reportFor=${t.id}&all=1`,
+        })),
+      },
+      right: {
+        title: '내 차량예약현황',
+        emptyText: '최근~다음주 등록된 차량 예약이 없습니다.',
+        viewAllHref: '/vehicles/requests',
+        items: myVehicleItems,
+      },
     },
     {
       title: '결재 대기 건',
@@ -210,21 +260,35 @@ export default async function HomePage() {
 
       <p className="mb-3 text-[13px] font-semibold uppercase tracking-wide text-zinc-500">바로가기</p>
       <div className="mb-8 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        {SHORTCUTS.map((s) => (
-          <Link
-            key={s.href}
-            href={s.href}
-            className="flex items-start gap-2.5 rounded-xl border border-zinc-200/80 bg-white p-3 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
-          >
-            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${TONE_BADGE[s.tone]}`}>
-              <ShortcutIcon d={s.icon} />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-semibold text-zinc-900 dark:text-zinc-100">{s.label}</span>
-              <span className="block truncate text-xs text-zinc-500">{s.desc}</span>
-            </span>
-          </Link>
-        ))}
+        {SHORTCUTS.map((s) => {
+          const cardClassName =
+            'flex items-start gap-2.5 rounded-xl border border-zinc-200/80 bg-white p-3 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900';
+          const cardContent = (
+            <>
+              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${TONE_BADGE[s.tone]}`}>
+                <ShortcutIcon d={s.icon} />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-zinc-900 dark:text-zinc-100">{s.label}</span>
+                <span className="block truncate text-xs text-zinc-500">{s.desc}</span>
+              </span>
+            </>
+          );
+
+          if ('external' in s && s.external) {
+            return (
+              <a key={s.href} href={s.href} target="_blank" rel="noopener noreferrer" className={cardClassName}>
+                {cardContent}
+              </a>
+            );
+          }
+
+          return (
+            <Link key={s.href} href={s.href} className={cardClassName}>
+              {cardContent}
+            </Link>
+          );
+        })}
       </div>
 
       <div className="rounded-xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">

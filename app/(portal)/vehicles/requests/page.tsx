@@ -1,9 +1,10 @@
 import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
 import { getVehicleLogList } from '@/lib/mutate/vehicleLog';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { badgeBase, badgeTone, btnDanger, btnSecondary, inputBase, table, tableWrap, td, th, trZebraHover } from '@/lib/ui';
+import { badgeBase, badgeTone, btnDanger, btnSecondary, cardTableWrap, inputBase, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
 import { deleteVehicleRequestFormAction, deleteVehicleRequestSeriesFormAction } from '@/app/(portal)/vehicles/actions';
+import { hasVehicleUseEnded } from '@/lib/vehicleTimeOverlap';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -37,7 +38,7 @@ export default async function VehicleMyRequestsPage({
     <div>
       {(deleted === '1' || seriesDeleted === '1') && (
         <div className="mb-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
-          {seriesDeleted === '1' ? '이후 반복 예약을 전부 삭제했습니다.' : '삭제했습니다.'}
+          {seriesDeleted === '1' ? '이후 반복 예약을 전부 취소했습니다.' : '예약을 취소했습니다.'}
         </div>
       )}
       <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -69,36 +70,41 @@ export default async function VehicleMyRequestsPage({
         </a>
       </div>
 
-      <div className={tableWrap}><table className={table}>
+      <div className={cardTableWrap}><table className={tableClean}>
         <thead>
           <tr>
-            <th className={th}>사용일자</th><th className={th}>차량</th><th className={th}>신청자</th><th className={th}>시간</th>
-            <th className={th}>목적</th><th className={th}>목적지</th><th className={th}>운행일지</th><th className={th}></th>
+            <th className={thClean}>사용일자</th><th className={thClean}>차량</th><th className={thClean}>신청자</th><th className={thClean}>시간</th>
+            <th className={thClean}>목적</th><th className={thClean}>목적지</th><th className={thClean}>상태</th><th className={thClean}></th>
           </tr>
         </thead>
         <tbody>
           {requests.length === 0 ? (
-            <tr><td className={td} colSpan={8}><span className="text-zinc-400">해당 조건에 맞는 신청 내역이 없습니다.</span></td></tr>
+            <tr><td className={tdClean} colSpan={8}><span className="text-zinc-400">해당 조건에 맞는 신청 내역이 없습니다.</span></td></tr>
           ) : requests.map((r) => {
             const linkedLog = logByRequestId.get(r.id);
             const isMine = (r.신청자이메일 ?? '').toLowerCase() === viewerEmail;
             return (
-              <tr key={r.id} className={trZebraHover}>
-                <td className={td}>{r.사용일자}</td>
-                <td className={td}>{r.차량번호}</td>
-                <td className={td}>{r.신청자명}</td>
-                <td className={td}>{r.출발시간 || '-'} ~ {r.복귀시간 || '-'}</td>
-                <td className={td}>{r.목적}</td>
-                <td className={td}>{r.목적지}</td>
-                <td className={td}>
-                  <a
-                    href={linkedLog ? `/vehicles/logs?edit=${linkedLog.id}#log-form` : `/vehicles/logs?requestId=${r.id}#log-form`}
-                    className={`${badgeBase} ${linkedLog ? badgeTone.green : badgeTone.blue} hover:opacity-80`}
-                  >
-                    {linkedLog ? '작성됨' : '작성'}
-                  </a>
+              <tr key={r.id} className={trHoverClean}>
+                <td className={tdClean}>{r.사용일자}</td>
+                <td className={tdClean}>{r.차량번호}</td>
+                <td className={tdClean}>{r.신청자명}</td>
+                <td className={tdClean}>{r.출발시간 || '-'} ~ {r.복귀시간 || '-'}</td>
+                <td className={tdClean}>{r.목적}</td>
+                <td className={tdClean}>{r.목적지}</td>
+                <td className={tdClean}>
+                  {linkedLog ? (
+                    <a href={`/vehicles/logs?edit=${linkedLog.id}#log-form`} className={`${badgeBase} ${badgeTone.green} hover:opacity-80`}>
+                      작성완료
+                    </a>
+                  ) : hasVehicleUseEnded(r.사용일자, r.복귀시간) ? (
+                    <a href={`/vehicles/logs?requestId=${r.id}#log-form`} className={`${badgeBase} ${badgeTone.red} hover:opacity-80`}>
+                      일지작성
+                    </a>
+                  ) : (
+                    <span className={`${badgeBase} ${badgeTone.gray}`}>예약됨</span>
+                  )}
                 </td>
-                <td className={`${td} flex gap-1.5`}>
+                <td className={`${tdClean} flex gap-1.5`}>
                   {isMine && (
                     <>
                       <a href={`/vehicles?edit=${r.id}`} className={btnSecondary}>수정</a>
@@ -107,8 +113,8 @@ export default async function VehicleMyRequestsPage({
                         {ym && <input type="hidden" name="ym" value={ym} />}
                         {showAll && <input type="hidden" name="all" value="1" />}
                         {mineOnly && <input type="hidden" name="mine" value="1" />}
-                        <ConfirmSubmitButton confirmMessage="이 신청을 삭제할까요?" className={btnDanger}>
-                          {r.반복그룹ID ? '삭제(이 건만)' : '삭제'}
+                        <ConfirmSubmitButton confirmMessage="이 예약을 취소할까요?" className={btnDanger}>
+                          {r.반복그룹ID ? '예약 취소(이 건만)' : '예약 취소'}
                         </ConfirmSubmitButton>
                       </form>
                       {r.반복그룹ID && (
@@ -118,11 +124,11 @@ export default async function VehicleMyRequestsPage({
                           {showAll && <input type="hidden" name="all" value="1" />}
                           {mineOnly && <input type="hidden" name="mine" value="1" />}
                           <ConfirmSubmitButton
-                            confirmMessage="이 날짜 이후의 반복 예약을 전부 삭제할까요?"
-                            title="이 날짜 이후 반복 전체 삭제"
+                            confirmMessage="이 날짜 이후의 반복 예약을 전부 취소할까요?"
+                            title="이 날짜 이후 반복 전체 취소"
                             className={btnSecondary}
                           >
-                            이후 전체삭제
+                            이후 전체취소
                           </ConfirmSubmitButton>
                         </form>
                       )}

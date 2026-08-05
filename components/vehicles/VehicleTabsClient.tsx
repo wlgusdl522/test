@@ -19,7 +19,7 @@ const TOP_TABS = [
 const SUB_TABS: Record<string, { href: string; label: string }[]> = {
   '/vehicles': [
     { href: '/vehicles', label: '예약' },
-    { href: '/vehicles/requests', label: '신청내역' },
+    { href: '/vehicles/requests', label: '전체예약내역' },
   ],
   '/vehicles/logs': [
     { href: '/vehicles/logs', label: '운행일지' },

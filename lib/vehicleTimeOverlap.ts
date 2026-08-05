@@ -10,6 +10,12 @@ export function timesOverlap(aStart: string, aEnd: string, bStart: string, bEnd:
   return aS < bE && bS < aE;
 }
 
+// 예약의 사용 시간대(복귀시간, 없으면 하루 끝)가 이미 지났는지 — 지났으면 "일지작성"으로 유도한다.
+export function hasVehicleUseEnded(date: string, endTime: string, now: Date = new Date()): boolean {
+  const end = new Date(`${date}T${endTime || '23:59'}:00`);
+  return end.getTime() < now.getTime();
+}
+
 export function findOverlappingRequest(
   requests: Record<string, string>[],
   target: { 차량번호: string; 사용일자: string; 출발시간: string; 복귀시간: string },

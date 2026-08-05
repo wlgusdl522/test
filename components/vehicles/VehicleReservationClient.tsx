@@ -189,6 +189,7 @@ export default function VehicleReservationClient({
             hasLogRequestIds={logIdSet}
             onSelectDate={setAnchorDate}
             onNavigate={handleNavigate}
+            onOpenNew={openNew}
           />
           <VehicleDayDetailTable
             date={anchorDate}

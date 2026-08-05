@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { btnDanger, btnSecondary, card, table, tableWrap, td, th } from '@/lib/ui';
+import { badgeBase, badgeTone, btnDanger, btnSecondary, card, cardTableWrap, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
 import { deleteVehicleRequestAction } from '@/app/(portal)/vehicles/actions';
+import { hasVehicleUseEnded } from '@/lib/vehicleTimeOverlap';
 
 type Req = Record<string, string>;
 
@@ -36,7 +37,7 @@ export default function VehicleDayDetailTable({
   const [statusText, setStatusText] = useState<string | null>(null);
 
   function handleDelete(id: string) {
-    if (!window.confirm('이 예약을 삭제할까요?')) return;
+    if (!window.confirm('이 예약을 취소할까요?')) return;
     setDeletingId(id);
     setStatusText(null);
     startTransition(async () => {
@@ -45,7 +46,7 @@ export default function VehicleDayDetailTable({
       const result = await deleteVehicleRequestAction(fd);
       onMutated(result.requests);
       setDeletingId(null);
-      setStatusText('삭제했습니다.');
+      setStatusText('예약을 취소했습니다.');
     });
   }
 
@@ -63,30 +64,40 @@ export default function VehicleDayDetailTable({
       {requests.length === 0 ? (
         <p className="text-sm text-zinc-400">이 날짜에 등록된 예약이 없습니다.</p>
       ) : (
-        <div className={tableWrap}><table className={table}>
+        <div className={cardTableWrap}><table className={tableClean}>
           <thead>
             <tr>
-              <th className={th}>차량</th><th className={th}>신청자</th><th className={th}>시간</th>
-              <th className={th}>목적</th><th className={th}>목적지</th><th className={th}>상태</th><th className={th}></th>
+              <th className={thClean}>차량</th><th className={thClean}>신청자</th><th className={thClean}>시간</th>
+              <th className={thClean}>목적</th><th className={thClean}>목적지</th><th className={thClean}>상태</th><th className={thClean}></th>
             </tr>
           </thead>
           <tbody>
             {requests.map((r) => {
               const isMine = (r.신청자이메일 ?? '').toLowerCase() === viewerEmail.toLowerCase();
               return (
-                <tr key={r.id}>
-                  <td className={td}>{vehicleLabel(r.차량번호, vehicles)}</td>
-                  <td className={td}>{r.신청자명}</td>
-                  <td className={td}>{r.출발시간 || '-'} ~ {r.복귀시간 || '-'}</td>
-                  <td className={td}>{r.목적}</td>
-                  <td className={td}>{r.목적지}</td>
-                  <td className={td}>{hasLogRequestIds.has(r.id) ? '운행완료' : '예약됨'}</td>
-                  <td className={`${td} flex gap-1.5`}>
+                <tr key={r.id} className={trHoverClean}>
+                  <td className={tdClean}>{vehicleLabel(r.차량번호, vehicles)}</td>
+                  <td className={tdClean}>{r.신청자명}</td>
+                  <td className={tdClean}>{r.출발시간 || '-'} ~ {r.복귀시간 || '-'}</td>
+                  <td className={tdClean}>{r.목적}</td>
+                  <td className={tdClean}>{r.목적지}</td>
+                  <td className={tdClean}>
+                    {hasLogRequestIds.has(r.id) ? (
+                      <span className={`${badgeBase} ${badgeTone.green}`}>작성완료</span>
+                    ) : hasVehicleUseEnded(r.사용일자 ?? date, r.복귀시간) ? (
+                      <a href={`/vehicles/logs?requestId=${r.id}#log-form`} className={`${badgeBase} ${badgeTone.red} hover:opacity-80`}>
+                        일지작성
+                      </a>
+                    ) : (
+                      <span className={`${badgeBase} ${badgeTone.gray}`}>예약됨</span>
+                    )}
+                  </td>
+                  <td className={`${tdClean} flex gap-1.5`}>
                     {isMine && (
                       <>
                         <button type="button" onClick={() => onEdit(r.id)} className={btnSecondary}>수정</button>
                         <button type="button" onClick={() => handleDelete(r.id)} disabled={isPending} className={btnDanger}>
-                          {isPending && deletingId === r.id ? '삭제 중...' : '삭제'}
+                          {isPending && deletingId === r.id ? '취소 중...' : '예약 취소'}
                         </button>
                       </>
                     )}

@@ -13,6 +13,7 @@ export default function VehicleRequestCalendar({
   hasLogRequestIds,
   onSelectDate,
   onNavigate,
+  onOpenNew,
 }: {
   date: string; // yyyy-MM-dd, 달력의 기준(선택된) 날짜
   requests: Req[];
@@ -20,6 +21,7 @@ export default function VehicleRequestCalendar({
   hasLogRequestIds: Set<string>;
   onSelectDate: (iso: string) => void;
   onNavigate: (iso: string) => void;
+  onOpenNew: (iso: string) => void;
 }) {
   const month = date.slice(0, 7);
   const [year, monthNum] = month.split('-').map(Number);
@@ -68,8 +70,10 @@ export default function VehicleRequestCalendar({
               type="button"
               key={iso}
               onClick={() => onSelectDate(iso)}
+              onDoubleClick={() => onOpenNew(iso)}
+              title="더블클릭하면 이 날짜로 바로 예약할 수 있어요"
               className={`min-h-20 rounded-md border p-1 text-xs flex flex-col gap-0.5 items-stretch text-left hover:border-brand ${
-                isSelected ? 'border-brand bg-brand-tint' : 'border-zinc-200 dark:border-zinc-800'
+                isSelected ? 'border-brand bg-brand-tint' : 'border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900'
               }`}
             >
               <span className="font-semibold">{Number(iso.slice(-2))}</span>
