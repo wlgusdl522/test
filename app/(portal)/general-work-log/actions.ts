@@ -20,7 +20,7 @@ export async function saveGeneralLogDayAction(
   businessName: string,
   date: string,
   dailyEntries: { 항목ID: string; 건: string; 명: string }[],
-  contentRows: { 업무내용: string; 실적: string; 비고: string }[],
+  contentRows: { 업무내용: string }[],
   note: string,
   targetUpdates: GeneralLogTargetUpdate[]
 ): Promise<void> {

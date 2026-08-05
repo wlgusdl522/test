@@ -88,13 +88,13 @@ export async function saveGeneralLogDaily(
   }
 }
 
-export type GeneralLogContentRow = { id: string; 업무내용: string; 실적: string; 비고: string };
+export type GeneralLogContentRow = { id: string; 업무내용: string };
 
 export async function getGeneralLogContent(businessName: string, date: string): Promise<GeneralLogContentRow[]> {
   const all = await getKeyedList(GENERAL_LOG_CONTENT_TABLE);
   return all
     .filter((r) => r['사업명'] === businessName && r['날짜'] === date && r['구분'] !== NOTE_KIND)
-    .map((r) => ({ id: r.id, 업무내용: r['내용'] ?? '', 실적: r['실적'] ?? '', 비고: r['비고'] ?? '' }));
+    .map((r) => ({ id: r.id, 업무내용: r['내용'] ?? '' }));
 }
 
 export async function getGeneralLogNote(businessName: string, date: string): Promise<string> {
@@ -104,10 +104,12 @@ export async function getGeneralLogNote(businessName: string, date: string): Pro
 
 // 화면에서 그날 업무내용 행+특이사항 전체를 다시 보내주므로, 기존 행을 모두 지우고 새로 넣는
 // 전체 교체 방식을 쓴다 — 특이사항은 하루 한 줄뿐이라 별도 탭 없이 '구분'='특이사항' 행 하나로 같이 담는다.
+// 실적/비고는 화면에서 안 쓰기로 해서 항상 빈 값으로 쓰지만, 이미 만들어둔 시트 탭과 열 순서를
+// 맞추기 위해 헤더 자체는 그대로 둔다.
 export async function submitGeneralLogContentDay(
   businessName: string,
   date: string,
-  rows: { 업무내용: string; 실적: string; 비고: string }[],
+  rows: { 업무내용: string }[],
   note: string,
   viewerEmail: string,
   viewerName: string
@@ -127,8 +129,8 @@ export async function submitGeneralLogContentDay(
       날짜: date,
       구분: WORK_KIND,
       내용: row.업무내용,
-      실적: row.실적,
-      비고: row.비고,
+      실적: '',
+      비고: '',
       작성자이메일: viewerEmail,
       작성자명: viewerName,
       등록일시: now,

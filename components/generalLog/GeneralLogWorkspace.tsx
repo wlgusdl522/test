@@ -6,14 +6,14 @@ import { btn, btnSecondary, cardTableWrap, inputBase, tableClean, tdClean, thCle
 import { addGeneralLogCategoryAction, saveGeneralLogDayAction, type GeneralLogTargetUpdate } from '@/app/(portal)/general-work-log/actions';
 import type { GeneralLogRollupRow, GeneralLogContentRow } from '@/lib/mutate/generalLog';
 
-type ContentRow = { key: string; content: string; perf: string; note: string };
+type ContentRow = { key: string; content: string };
 type Counts = Record<string, { 건: string; 명: string }>;
 type Targets = Record<string, { 목표건: string; 목표명: string }>;
 type NewCategoryDraft = { 대분류: string; 중분류: string; 세부항목: string; 목표건: string; 목표명: string };
 
 function toContentRows(rows: GeneralLogContentRow[]): ContentRow[] {
-  if (rows.length === 0) return [{ key: crypto.randomUUID(), content: '', perf: '', note: '' }];
-  return rows.map((r) => ({ key: r.id, content: r.업무내용, perf: r.실적, note: r.비고 }));
+  if (rows.length === 0) return [{ key: crypto.randomUUID(), content: '' }];
+  return rows.map((r) => ({ key: r.id, content: r.업무내용 }));
 }
 
 const numInput = `${inputBase} w-16 text-right px-1.5`;
@@ -71,15 +71,15 @@ export default function GeneralLogWorkspace({
   }
 
   function addContentRow() {
-    setContentRows((prev) => [...prev, { key: crypto.randomUUID(), content: '', perf: '', note: '' }]);
+    setContentRows((prev) => [...prev, { key: crypto.randomUUID(), content: '' }]);
   }
 
   function removeContentRow(key: string) {
     setContentRows((prev) => prev.filter((r) => r.key !== key));
   }
 
-  function updateContentRow(key: string, field: 'content' | 'perf' | 'note', value: string) {
-    setContentRows((prev) => prev.map((r) => (r.key === key ? { ...r, [field]: value } : r)));
+  function updateContentRow(key: string, value: string) {
+    setContentRows((prev) => prev.map((r) => (r.key === key ? { ...r, content: value } : r)));
   }
 
   function handleAddCategory() {
@@ -111,7 +111,7 @@ export default function GeneralLogWorkspace({
     }));
     const rowsToSave = contentRows
       .filter((r) => r.content.trim())
-      .map((r) => ({ 업무내용: r.content, 실적: r.perf, 비고: r.note }));
+      .map((r) => ({ 업무내용: r.content }));
     // 목표값을 바꾼 항목만 골라서 보낸다 — rollup(서버가 내려준 최신값)과 다른 것만 변경으로 취급하므로,
     // "행 추가" 직후 새로고침 없이 바로 목표를 고쳐도 정확히 잡힌다.
     const targetUpdates: GeneralLogTargetUpdate[] = rollup
@@ -349,7 +349,7 @@ export default function GeneralLogWorkspace({
 
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">업무내용 / 실적</h3>
+          <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">업무내용</h3>
           <button type="button" onClick={addContentRow} className={`${inputBase} !py-1 !px-2.5 text-xs`}>
             + 행 추가
           </button>
@@ -359,8 +359,6 @@ export default function GeneralLogWorkspace({
             <thead>
               <tr>
                 <th className={thClean}>업무내용</th>
-                <th className={thClean}>실적</th>
-                <th className={thClean}>비고</th>
                 <th className={thClean}></th>
               </tr>
             </thead>
@@ -371,24 +369,8 @@ export default function GeneralLogWorkspace({
                     <input
                       className={inputBase}
                       value={row.content}
-                      onChange={(e) => updateContentRow(row.key, 'content', e.target.value)}
-                      placeholder="업무내용"
-                    />
-                  </td>
-                  <td className={tdClean}>
-                    <input
-                      className={`${inputBase} w-32`}
-                      value={row.perf}
-                      onChange={(e) => updateContentRow(row.key, 'perf', e.target.value)}
-                      placeholder="예: 2명"
-                    />
-                  </td>
-                  <td className={tdClean}>
-                    <input
-                      className={inputBase}
-                      value={row.note}
-                      onChange={(e) => updateContentRow(row.key, 'note', e.target.value)}
-                      placeholder="비고"
+                      onChange={(e) => updateContentRow(row.key, e.target.value)}
+                      placeholder="예: 대상자 상담 - 4명(홍길동 외)"
                     />
                   </td>
                   <td className={tdClean}>
