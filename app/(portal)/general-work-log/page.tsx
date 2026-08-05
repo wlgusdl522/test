@@ -45,20 +45,11 @@ export default async function GeneralWorkLogPage({
           </select>
           <input type="date" name="date" defaultValue={date} className={`${inputBase} w-auto`} />
           <button type="submit" className={btnSecondary}>조회</button>
-          <a href="/settings/general-log-items" className={`${btnSecondary} ml-auto`}>구분항목 설정</a>
         </form>
 
         {!business ? (
           <p className="text-sm text-zinc-500">
             먼저 사업목록을 등록해주세요. (설정 &gt; 사업목록)
-          </p>
-        ) : rollup.length === 0 ? (
-          <p className="text-sm text-zinc-500">
-            &quot;{business}&quot;에 등록된 구분항목이 없습니다.{' '}
-            <a href={`/settings/general-log-items?business=${encodeURIComponent(business)}`} className="underline">
-              구분항목 설정
-            </a>
-            에서 먼저 추가해주세요.
           </p>
         ) : (
           <GeneralLogWorkspace

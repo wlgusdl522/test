@@ -2,12 +2,14 @@
 
 import { Fragment, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { btn, cardTableWrap, inputBase, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
-import { saveGeneralLogDayAction } from '@/app/(portal)/general-work-log/actions';
+import { btn, btnSecondary, cardTableWrap, inputBase, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
+import { addGeneralLogCategoryAction, saveGeneralLogDayAction, type GeneralLogTargetUpdate } from '@/app/(portal)/general-work-log/actions';
 import type { GeneralLogRollupRow, GeneralLogContentRow } from '@/lib/mutate/generalLog';
 
 type ContentRow = { key: string; content: string; perf: string; note: string };
 type Counts = Record<string, { 건: string; 명: string }>;
+type Targets = Record<string, { 목표건: string; 목표명: string }>;
+type NewCategoryDraft = { 대분류: string; 중분류: string; 세부항목: string; 목표건: string; 목표명: string };
 
 function toContentRows(rows: GeneralLogContentRow[]): ContentRow[] {
   if (rows.length === 0) return [{ key: crypto.randomUUID(), content: '', perf: '', note: '' }];
@@ -15,6 +17,11 @@ function toContentRows(rows: GeneralLogContentRow[]): ContentRow[] {
 }
 
 const numInput = `${inputBase} w-16 text-right px-1.5`;
+const emptyDraft: NewCategoryDraft = { 대분류: '', 중분류: '', 세부항목: '', 목표건: '', 목표명: '' };
+
+function rate(actual: number, target: number): number {
+  return target > 0 ? Math.round((actual / target) * 1000) / 10 : 0;
+}
 
 export default function GeneralLogWorkspace({
   business,
@@ -35,13 +42,32 @@ export default function GeneralLogWorkspace({
       rollup.map((r) => [r.id, { 건: r.일계건 ? String(r.일계건) : '', 명: r.일계명 ? String(r.일계명) : '' }])
     )
   );
+  const [targets, setTargets] = useState<Targets>(() =>
+    Object.fromEntries(rollup.map((r) => [r.id, { 목표건: r.목표건, 목표명: r.목표명 }]))
+  );
   const [contentRows, setContentRows] = useState<ContentRow[]>(() => toContentRows(initialContent));
   const [note, setNote] = useState(initialNote);
+  const [newCategory, setNewCategory] = useState<NewCategoryDraft>(emptyDraft);
   const [statusText, setStatusText] = useState('');
   const [isPending, startTransition] = useTransition();
+  const [isAddingCategory, startAddingCategory] = useTransition();
 
+  // 아직 로컬 상태에 키가 없는(방금 추가된) 항목의 한쪽 필드만 고치더라도, 다른쪽 필드는 서버 값으로
+  // 채워 넣어야 나머지 필드가 빈 값으로 날아가지 않는다.
   function setCount(itemId: string, field: '건' | '명', value: string) {
-    setCounts((prev) => ({ ...prev, [itemId]: { ...prev[itemId], [field]: value } }));
+    setCounts((prev) => {
+      const row = rollup.find((r) => r.id === itemId);
+      const seed = prev[itemId] ?? { 건: row?.일계건 ? String(row.일계건) : '', 명: row?.일계명 ? String(row.일계명) : '' };
+      return { ...prev, [itemId]: { ...seed, [field]: value } };
+    });
+  }
+
+  function setTarget(itemId: string, field: '목표건' | '목표명', value: string) {
+    setTargets((prev) => {
+      const row = rollup.find((r) => r.id === itemId);
+      const seed = prev[itemId] ?? { 목표건: row?.목표건 ?? '', 목표명: row?.목표명 ?? '' };
+      return { ...prev, [itemId]: { ...seed, [field]: value } };
+    });
   }
 
   function addContentRow() {
@@ -56,20 +82,55 @@ export default function GeneralLogWorkspace({
     setContentRows((prev) => prev.map((r) => (r.key === key ? { ...r, [field]: value } : r)));
   }
 
+  function handleAddCategory() {
+    if (!newCategory.세부항목.trim()) return;
+    startAddingCategory(async () => {
+      try {
+        await addGeneralLogCategoryAction({
+          사업명: business,
+          대분류: newCategory.대분류,
+          중분류: newCategory.중분류,
+          세부항목: newCategory.세부항목,
+          정렬순서: String(rollup.length),
+          목표건: newCategory.목표건,
+          목표명: newCategory.목표명,
+        });
+        setNewCategory(emptyDraft);
+        router.refresh();
+      } catch (err) {
+        setStatusText(err instanceof Error ? err.message : '구분항목 추가 실패');
+      }
+    });
+  }
+
   function handleSubmit() {
     const dailyEntries = rollup.map((r) => ({
       항목ID: r.id,
-      건: counts[r.id]?.건 ?? '',
-      명: counts[r.id]?.명 ?? '',
+      건: countFor(r, '건'),
+      명: countFor(r, '명'),
     }));
     const rowsToSave = contentRows
       .filter((r) => r.content.trim())
       .map((r) => ({ 업무내용: r.content, 실적: r.perf, 비고: r.note }));
+    // 목표값을 바꾼 항목만 골라서 보낸다 — rollup(서버가 내려준 최신값)과 다른 것만 변경으로 취급하므로,
+    // "행 추가" 직후 새로고침 없이 바로 목표를 고쳐도 정확히 잡힌다.
+    const targetUpdates: GeneralLogTargetUpdate[] = rollup
+      .filter((r) => targetFor(r, '목표건') !== (r.목표건 ?? '') || targetFor(r, '목표명') !== (r.목표명 ?? ''))
+      .map((r) => ({
+        id: r.id,
+        사업명: r.사업명,
+        대분류: r.대분류,
+        중분류: r.중분류,
+        세부항목: r.세부항목,
+        정렬순서: String(r.정렬순서),
+        목표건: targetFor(r, '목표건'),
+        목표명: targetFor(r, '목표명'),
+      }));
 
     setStatusText('저장 중...');
     startTransition(async () => {
       try {
-        await saveGeneralLogDayAction(business, date, dailyEntries, rowsToSave, note);
+        await saveGeneralLogDayAction(business, date, dailyEntries, rowsToSave, note, targetUpdates);
         setStatusText('저장 완료');
         router.refresh();
       } catch (err) {
@@ -89,12 +150,26 @@ export default function GeneralLogWorkspace({
   function groupSum(rows: GeneralLogRollupRow[], field: keyof GeneralLogRollupRow): number {
     return rows.reduce((acc, r) => acc + (Number(r[field]) || 0), 0);
   }
+  // 방금 "행 추가"로 만든 항목은 새로고침 직후 counts/targets 로컬 상태에 아직 키가 없으므로,
+  // 그럴 땐 서버가 내려준 rollup 행 값을 그대로 쓴다(0/빈 값으로 잘못 표시되는 것을 막는다).
+  function countFor(row: GeneralLogRollupRow, field: '건' | '명'): string {
+    const local = counts[row.id]?.[field];
+    if (local !== undefined) return local;
+    const serverVal = field === '건' ? row.일계건 : row.일계명;
+    return serverVal ? String(serverVal) : '';
+  }
+  function targetFor(row: GeneralLogRollupRow, field: '목표건' | '목표명'): string {
+    return targets[row.id]?.[field] ?? (field === '목표건' ? row.목표건 : row.목표명);
+  }
   function groupCountSum(rows: GeneralLogRollupRow[], field: '건' | '명'): number {
-    return rows.reduce((acc, r) => acc + Number(counts[r.id]?.[field] || 0), 0);
+    return rows.reduce((acc, r) => acc + Number(countFor(r, field) || 0), 0);
+  }
+  function groupTargetSum(rows: GeneralLogRollupRow[], field: '목표건' | '목표명'): number {
+    return rows.reduce((acc, r) => acc + Number(targetFor(r, field) || 0), 0);
   }
 
-  const grandTargetCount = groupSum(rollup, '목표건');
-  const grandTargetPeople = groupSum(rollup, '목표명');
+  const grandTargetCount = groupTargetSum(rollup, '목표건');
+  const grandTargetPeople = groupTargetSum(rollup, '목표명');
   const grandCumCount = groupSum(rollup, '누계건');
   const grandCumPeople = groupSum(rollup, '누계명');
 
@@ -121,6 +196,13 @@ export default function GeneralLogWorkspace({
             </tr>
           </thead>
           <tbody>
+            {rollup.length === 0 && (
+              <tr>
+                <td className={tdClean} colSpan={12}>
+                  <span className="text-zinc-400">등록된 구분항목이 없습니다. 아래에서 첫 항목을 추가해주세요.</span>
+                </td>
+              </tr>
+            )}
             {groups.map((group, gi) => {
               const showMajor = group.대분류 !== prevMajor;
               prevMajor = group.대분류;
@@ -135,12 +217,26 @@ export default function GeneralLogWorkspace({
                         </td>
                       )}
                       <td className={tdClean}>{row.세부항목}</td>
-                      <td className={`${tdClean} text-right`}>{row.목표건 || '-'}</td>
-                      <td className={`${tdClean} text-right`}>{row.목표명 || '-'}</td>
                       <td className={tdClean}>
                         <input
                           className={numInput}
-                          value={counts[row.id]?.건 ?? ''}
+                          value={targetFor(row, '목표건')}
+                          onChange={(e) => setTarget(row.id, '목표건', e.target.value)}
+                          inputMode="numeric"
+                        />
+                      </td>
+                      <td className={tdClean}>
+                        <input
+                          className={numInput}
+                          value={targetFor(row, '목표명')}
+                          onChange={(e) => setTarget(row.id, '목표명', e.target.value)}
+                          inputMode="numeric"
+                        />
+                      </td>
+                      <td className={tdClean}>
+                        <input
+                          className={numInput}
+                          value={countFor(row, '건')}
                           onChange={(e) => setCount(row.id, '건', e.target.value)}
                           inputMode="numeric"
                         />
@@ -148,7 +244,7 @@ export default function GeneralLogWorkspace({
                       <td className={tdClean}>
                         <input
                           className={numInput}
-                          value={counts[row.id]?.명 ?? ''}
+                          value={countFor(row, '명')}
                           onChange={(e) => setCount(row.id, '명', e.target.value)}
                           inputMode="numeric"
                         />
@@ -163,8 +259,8 @@ export default function GeneralLogWorkspace({
                   ))}
                   <tr className="bg-zinc-50 dark:bg-zinc-900/60 font-medium">
                     <td className={tdClean} colSpan={2}>{group.중분류 || group.대분류} 소계</td>
-                    <td className={`${tdClean} text-right`}>{groupSum(group.rows, '목표건') || '-'}</td>
-                    <td className={`${tdClean} text-right`}>{groupSum(group.rows, '목표명') || '-'}</td>
+                    <td className={`${tdClean} text-right`}>{groupTargetSum(group.rows, '목표건') || '-'}</td>
+                    <td className={`${tdClean} text-right`}>{groupTargetSum(group.rows, '목표명') || '-'}</td>
                     <td className={`${tdClean} text-right`}>{groupCountSum(group.rows, '건') || '-'}</td>
                     <td className={`${tdClean} text-right`}>{groupCountSum(group.rows, '명') || '-'}</td>
                     <td className={`${tdClean} text-right`}>{groupSum(group.rows, '월계건') || '-'}</td>
@@ -177,18 +273,75 @@ export default function GeneralLogWorkspace({
                 </Fragment>
               );
             })}
-            <tr className="bg-brand-tint font-semibold">
-              <td className={tdClean} colSpan={2}>합계</td>
-              <td className={`${tdClean} text-right`}>{grandTargetCount || '-'}</td>
-              <td className={`${tdClean} text-right`}>{grandTargetPeople || '-'}</td>
-              <td className={`${tdClean} text-right`}>{groupCountSum(rollup, '건') || '-'}</td>
-              <td className={`${tdClean} text-right`}>{groupCountSum(rollup, '명') || '-'}</td>
-              <td className={`${tdClean} text-right`}>{groupSum(rollup, '월계건') || '-'}</td>
-              <td className={`${tdClean} text-right`}>{groupSum(rollup, '월계명') || '-'}</td>
-              <td className={`${tdClean} text-right`}>{grandCumCount || '-'}</td>
-              <td className={`${tdClean} text-right`}>{grandCumPeople || '-'}</td>
-              <td className={`${tdClean} text-right`}>{rate(grandCumCount, grandTargetCount)}</td>
-              <td className={`${tdClean} text-right`}>{rate(grandCumPeople, grandTargetPeople)}</td>
+            {rollup.length > 0 && (
+              <tr className="bg-brand-tint font-semibold">
+                <td className={tdClean} colSpan={2}>합계</td>
+                <td className={`${tdClean} text-right`}>{grandTargetCount || '-'}</td>
+                <td className={`${tdClean} text-right`}>{grandTargetPeople || '-'}</td>
+                <td className={`${tdClean} text-right`}>{groupCountSum(rollup, '건') || '-'}</td>
+                <td className={`${tdClean} text-right`}>{groupCountSum(rollup, '명') || '-'}</td>
+                <td className={`${tdClean} text-right`}>{groupSum(rollup, '월계건') || '-'}</td>
+                <td className={`${tdClean} text-right`}>{groupSum(rollup, '월계명') || '-'}</td>
+                <td className={`${tdClean} text-right`}>{grandCumCount || '-'}</td>
+                <td className={`${tdClean} text-right`}>{grandCumPeople || '-'}</td>
+                <td className={`${tdClean} text-right`}>{rate(grandCumCount, grandTargetCount)}</td>
+                <td className={`${tdClean} text-right`}>{rate(grandCumPeople, grandTargetPeople)}</td>
+              </tr>
+            )}
+            <tr className="bg-zinc-50/60 dark:bg-zinc-900/30">
+              <td className={tdClean} colSpan={2}>
+                <span className="text-xs text-zinc-400">새 구분항목</span>
+              </td>
+              <td className={tdClean} colSpan={2}>
+                <div className="flex gap-1.5">
+                  <input
+                    className={`${inputBase} w-24`}
+                    placeholder="대분류"
+                    value={newCategory.대분류}
+                    onChange={(e) => setNewCategory((prev) => ({ ...prev, 대분류: e.target.value }))}
+                  />
+                  <input
+                    className={`${inputBase} w-24`}
+                    placeholder="중분류"
+                    value={newCategory.중분류}
+                    onChange={(e) => setNewCategory((prev) => ({ ...prev, 중분류: e.target.value }))}
+                  />
+                  <input
+                    className={inputBase}
+                    placeholder="세부항목 *"
+                    value={newCategory.세부항목}
+                    onChange={(e) => setNewCategory((prev) => ({ ...prev, 세부항목: e.target.value }))}
+                  />
+                </div>
+              </td>
+              <td className={tdClean}>
+                <input
+                  className={numInput}
+                  placeholder="목표"
+                  value={newCategory.목표건}
+                  onChange={(e) => setNewCategory((prev) => ({ ...prev, 목표건: e.target.value }))}
+                  inputMode="numeric"
+                />
+              </td>
+              <td className={tdClean}>
+                <input
+                  className={numInput}
+                  placeholder="목표"
+                  value={newCategory.목표명}
+                  onChange={(e) => setNewCategory((prev) => ({ ...prev, 목표명: e.target.value }))}
+                  inputMode="numeric"
+                />
+              </td>
+              <td className={tdClean} colSpan={6}>
+                <button
+                  type="button"
+                  onClick={handleAddCategory}
+                  disabled={isAddingCategory || !newCategory.세부항목.trim()}
+                  className={btnSecondary}
+                >
+                  {isAddingCategory ? '추가 중...' : '+ 행 추가'}
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -274,8 +427,4 @@ export default function GeneralLogWorkspace({
       </div>
     </div>
   );
-}
-
-function rate(actual: number, target: number): number {
-  return target > 0 ? Math.round((actual / target) * 1000) / 10 : 0;
 }
