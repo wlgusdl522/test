@@ -174,3 +174,49 @@ export const VEHICLE_LOG_TABLE: KeyedTableConfig = {
   headers: VEHICLE_LOG_HEADERS,
   primaryKey: 'id',
 };
+
+// 총괄업무일지: 사업(프로그램)마다 구분항목 트리와 목표(건/명)가 다르므로 항목 자체를 설정 화면에서
+// 관리하고(GENERAL_LOG_ITEM_TABLE), 날짜별 실적은 항목ID를 참조하는 별도 테이블에 쌓는다.
+export const GENERAL_LOG_ITEM_HEADERS = [
+  'id', '사업명', '대분류', '중분류', '세부항목', '정렬순서', '목표건', '목표명',
+];
+
+export const GENERAL_LOG_ITEM_TABLE: KeyedTableConfig = {
+  spreadsheetId: WEEKLY_PLAN_SHEET_ID,
+  sheetName: '총괄업무일지_항목',
+  headers: GENERAL_LOG_ITEM_HEADERS,
+  primaryKey: 'id',
+};
+
+export const GENERAL_LOG_DAILY_HEADERS = [
+  '사업명', '날짜', '항목ID', '건', '명', '작성자이메일', '작성자명', '등록일시',
+];
+
+export const GENERAL_LOG_DAILY_TABLE: KeyedTableConfig = {
+  spreadsheetId: WEEKLY_PLAN_SHEET_ID,
+  sheetName: '총괄업무일지_일계',
+  headers: GENERAL_LOG_DAILY_HEADERS,
+  primaryKey: ['사업명', '날짜', '항목ID'],
+};
+
+export const GENERAL_LOG_CONTENT_HEADERS = [
+  'id', '사업명', '날짜', '업무내용', '실적', '비고', '작성자이메일', '작성자명', '등록일시',
+];
+
+export const GENERAL_LOG_CONTENT_TABLE: KeyedTableConfig = {
+  spreadsheetId: WEEKLY_PLAN_SHEET_ID,
+  sheetName: '총괄업무일지_내용',
+  headers: GENERAL_LOG_CONTENT_HEADERS,
+  primaryKey: 'id',
+};
+
+export const GENERAL_LOG_NOTE_HEADERS = [
+  '사업명', '날짜', '특이사항', '작성자이메일', '작성자명', '수정일시',
+];
+
+export const GENERAL_LOG_NOTE_TABLE: KeyedTableConfig = {
+  spreadsheetId: WEEKLY_PLAN_SHEET_ID,
+  sheetName: '총괄업무일지_특이사항',
+  headers: GENERAL_LOG_NOTE_HEADERS,
+  primaryKey: ['사업명', '날짜'],
+};

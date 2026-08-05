@@ -28,6 +28,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: '업무관리',
     items: [
       { href: '/weekly-plan', label: '주간업무', description: '업무 입력·회의록·부서장 확인' },
+      { href: '/general-work-log', label: '총괄업무일지', description: '사업별 일계·월계·누계 실적 및 업무내용 기록' },
     ],
   },
   {
@@ -48,6 +49,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/settings/simple-lists', label: '팀 / 직급 / 결재라인', description: '팀·직급·결재라인 목록 관리' },
       { href: '/settings/business-list', label: '사업목록', description: '사업명·소관팀 목록 관리' },
+      { href: '/settings/general-log-items', label: '총괄업무일지 구분항목', description: '사업별 구분항목·목표(건/명) 관리' },
       { href: '/settings/vehicles', label: '차량목록', description: '보유 차량 목록 관리' },
       { href: '/settings/budget-items', label: '예산과목', description: '지출 예산 과목 관리' },
       { href: '/settings/permissions', label: '권한설정', description: '직원별 권한 설정' },
