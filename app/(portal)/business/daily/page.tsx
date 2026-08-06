@@ -1,5 +1,4 @@
-import { getViewerBusinessList } from '@/lib/mutate/business';
-import { buildWorklogItems, getBusinessSettings } from '@/lib/mutate/businessPlan';
+import { buildWorklogItems, getBusinessSettings, getViewerWorklogBusinessNames } from '@/lib/mutate/businessPlan';
 import { dayValue, getDailyEntries, getMemo, rangeSum } from '@/lib/mutate/worklogEntry';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
@@ -27,10 +26,10 @@ export default async function BusinessDailyPage({
   if (!(await hasPageAccess('business-daily'))) return <PageAccessDenied />;
 
   const { business: businessParam, date: dateParam } = await searchParams;
-  const businesses = await getViewerBusinessList();
-  const business = businessParam || businesses[0]?.name || '';
-  if (!business || !businesses.some((b) => b.name === business)) {
-    return <p className="text-sm text-zinc-500">담당하시는 사업이 없습니다. 설정 &gt; 직원관리에서 담당사업을 등록해주세요.</p>;
+  const businesses = await getViewerWorklogBusinessNames();
+  const business = businessParam || businesses[0] || '';
+  if (!business || !businesses.includes(business)) {
+    return <p className="text-sm text-zinc-500">공유받은 사업이 없습니다. 목표설정 화면에서 사업 담당자에게 공유를 요청해주세요.</p>;
   }
   const date = dateParam || todayKst();
 

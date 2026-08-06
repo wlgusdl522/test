@@ -2,9 +2,6 @@
 
 import { revalidatePath } from 'next/cache';
 import { addBusiness, deleteBusiness } from '@/lib/mutate/business';
-import { upsertBusinessSettings } from '@/lib/mutate/businessPlan';
-import { setBusinessShares } from '@/lib/mutate/businessShare';
-import { getActiveStaffList } from '@/lib/mutate/permissions';
 
 export async function addBusinessAction(formData: FormData) {
   await addBusiness(String(formData.get('name') ?? ''), String(formData.get('team') ?? ''));
@@ -14,23 +11,4 @@ export async function addBusinessAction(formData: FormData) {
 export async function deleteBusinessAction(formData: FormData) {
   await deleteBusiness(String(formData.get('name') ?? ''));
   revalidatePath('/settings/business-list');
-}
-
-export async function saveBusinessSettingsAction(formData: FormData): Promise<void> {
-  const 사업명 = String(formData.get('business') ?? '');
-  const 결재라인 = String(formData.get('approvalLine') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
-  const grandGoal = Number(formData.get('grandGoal'));
-  await upsertBusinessSettings(사업명, {
-    총목표: Number.isFinite(grandGoal) ? grandGoal : 0,
-    활동내용라벨: String(formData.get('actLabel') ?? '').trim() || '활동내용',
-    결재라인,
-  });
-
-  const shareEmails = formData.getAll('shareEmails').map((v) => String(v));
-  const staff = await getActiveStaffList();
-  const staffByEmail = new Map(staff.map((s) => [s.email.toLowerCase(), s.name]));
-  await setBusinessShares(사업명, shareEmails, staffByEmail);
-
-  revalidatePath('/settings/business-list');
-  revalidatePath('/business');
 }

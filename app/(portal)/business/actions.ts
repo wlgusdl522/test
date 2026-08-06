@@ -5,13 +5,17 @@ import {
   addBasis,
   addBusinessSub,
   addPlanItem,
+  createWorklogBusiness,
   deleteBasis,
   deleteBusinessSub,
   deletePlanItem,
   updateBasis,
   updateBusinessSub,
   updatePlanItem,
+  upsertBusinessSettings,
 } from '@/lib/mutate/businessPlan';
+import { setBusinessShares } from '@/lib/mutate/businessShare';
+import { getActiveStaffList } from '@/lib/mutate/permissions';
 
 function str(formData: FormData, key: string): string {
   return String(formData.get(key) ?? '');
@@ -19,6 +23,29 @@ function str(formData: FormData, key: string): string {
 function numOrZero(formData: FormData, key: string): number {
   const n = Number(formData.get(key));
   return Number.isFinite(n) ? n : 0;
+}
+async function staffByEmailMap(): Promise<Map<string, string>> {
+  const staff = await getActiveStaffList();
+  return new Map(staff.map((s) => [s.email.toLowerCase(), s.name]));
+}
+
+export async function createWorklogBusinessAction(formData: FormData): Promise<void> {
+  const shareEmails = formData.getAll('shareEmails').map((v) => String(v));
+  await createWorklogBusiness(str(formData, 'name'), shareEmails, await staffByEmailMap());
+  revalidatePath('/business');
+}
+
+export async function saveWorklogBusinessSettingsAction(formData: FormData): Promise<void> {
+  const 사업명 = str(formData, 'business');
+  const 결재라인 = str(formData, 'approvalLine').split(',').map((s) => s.trim()).filter(Boolean);
+  await upsertBusinessSettings(사업명, {
+    총목표: numOrZero(formData, 'grandGoal'),
+    활동내용라벨: str(formData, 'actLabel').trim() || '활동내용',
+    결재라인,
+  });
+  const shareEmails = formData.getAll('shareEmails').map((v) => String(v));
+  await setBusinessShares(사업명, shareEmails, await staffByEmailMap());
+  revalidatePath('/business');
 }
 
 export async function addSubAction(formData: FormData): Promise<void> {

@@ -9,11 +9,11 @@ const TABS = [
   { href: '/business/monthly', label: '월별현황' },
 ];
 
-export default function BusinessTabsClient({ businesses }: { businesses: { name: string; team: string }[] }) {
+export default function BusinessTabsClient({ businesses }: { businesses: string[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const current = searchParams.get('business') || businesses[0]?.name || '';
+  const current = searchParams.get('business') || businesses[0] || '';
 
   function onBusinessChange(name: string) {
     const sp = new URLSearchParams(searchParams);
@@ -24,20 +24,20 @@ export default function BusinessTabsClient({ businesses }: { businesses: { name:
   return (
     <div className="mb-5">
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {businesses.map((b) => {
-          const isActive = b.name === current;
+        {businesses.map((name) => {
+          const isActive = name === current;
           return (
             <button
-              key={b.name}
+              key={name}
               type="button"
-              onClick={() => onBusinessChange(b.name)}
+              onClick={() => onBusinessChange(name)}
               className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-brand text-white'
                   : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
               }`}
             >
-              {b.name}
+              {name}
             </button>
           );
         })}

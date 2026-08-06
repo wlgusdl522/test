@@ -1,17 +1,19 @@
-import { getBusinessList } from '@/lib/mutate/business';
 import {
   buildWorklogItems,
   getBusinessPlanTree,
   getBusinessSettings,
+  getWorklogBusinessNames,
   planGoal,
   type BasisRow,
   type BusinessSubNode,
   type PlanItem,
 } from '@/lib/mutate/businessPlan';
-import { hasPageAccess } from '@/lib/mutate/permissions';
-import { btn, btnDanger, btnSecondary, card, h2, hint, input, inputBase, selectFilter, statCard } from '@/lib/ui';
+import { getAllBusinessShares } from '@/lib/mutate/businessShare';
+import { getActiveStaffList, hasPageAccess } from '@/lib/mutate/permissions';
+import { btn, btnDanger, btnSecondary, card, h2, hint, input, inputBase, label, selectFilter, statCard } from '@/lib/ui';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
 import CopyPlanTableButton from '@/components/business/CopyPlanTableButton';
+import FormToggle from '@/components/FormToggle';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import {
   addBasisAction,
@@ -20,6 +22,7 @@ import {
   deleteBasisAction,
   deletePlanAction,
   deleteSubAction,
+  saveWorklogBusinessSettingsAction,
   updateBasisAction,
   updatePlanAction,
   updateSubAction,
@@ -105,18 +108,21 @@ export default async function BusinessGoalPage({
   if (!(await hasPageAccess('business-goal'))) return <PageAccessDenied />;
 
   const { business: businessParam } = await searchParams;
-  const businesses = await getBusinessList();
-  const business = businessParam || businesses[0]?.name || '';
+  const businesses = await getWorklogBusinessNames();
+  const business = businessParam || businesses[0] || '';
 
   if (!business) {
-    return <p className="text-sm text-zinc-500">설정 &gt; 사업목록에서 사업을 먼저 등록해주세요.</p>;
+    return <p className="text-sm text-zinc-500">등록된 사업이 없습니다. 위 &ldquo;새 사업 만들기&rdquo;로 만들어주세요.</p>;
   }
 
-  const [settings, tree, worklogItems] = await Promise.all([
+  const [settings, tree, worklogItems, staff, sharesMap] = await Promise.all([
     getBusinessSettings(business),
     getBusinessPlanTree(business),
     buildWorklogItems(business),
+    getActiveStaffList(),
+    getAllBusinessShares(),
   ]);
+  const shared = sharesMap[business] ?? [];
 
   let totalGp = 0;
   let totalGc = 0;
@@ -160,7 +166,35 @@ export default async function BusinessGoalPage({
           <div className="mt-1 text-xl font-bold text-zinc-800 dark:text-zinc-100">
             {nf(settings.총목표)}<span className="ml-1 text-xs font-normal text-zinc-400">명</span>
           </div>
-          <a href="/settings/business-list" className="text-[11px] text-brand hover:underline">설정 &gt; 사업목록에서 수정</a>
+          <FormToggle label={`${business} · 사업설정`}>
+            <form action={saveWorklogBusinessSettingsAction} className="flex flex-col gap-3">
+              <input type="hidden" name="business" value={business} />
+              <label className={label}>
+                총목표(명)
+                <input name="grandGoal" type="number" min="0" defaultValue={settings.총목표} className={inputBase} />
+              </label>
+              <label className={label}>
+                활동내용 라벨
+                <input name="actLabel" defaultValue={settings.활동내용라벨} className={inputBase} />
+              </label>
+              <label className={label}>
+                결재라인 (쉼표로 구분)
+                <input name="approvalLine" defaultValue={settings.결재라인.join(', ')} className={inputBase} />
+              </label>
+              <div className={label}>
+                공유 대상 (일계입력·월별현황·일지인쇄 접근 허용)
+                <div className="mt-1 grid max-h-48 grid-cols-2 gap-1 overflow-y-auto rounded-md border border-zinc-200 p-2 dark:border-zinc-700">
+                  {staff.map((s) => (
+                    <label key={s.email} className="flex items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                      <input type="checkbox" name="shareEmails" value={s.email} defaultChecked={shared.includes(s.email.toLowerCase())} />
+                      {s.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <button type="submit" className={`${btn} w-fit`}>저장</button>
+            </form>
+          </FormToggle>
         </div>
         <div className={statCard}>
           <div className="text-[10.5px] font-semibold tracking-wide text-zinc-400">검증</div>

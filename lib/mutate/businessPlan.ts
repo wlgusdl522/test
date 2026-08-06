@@ -1,4 +1,6 @@
 import { randomUUID } from 'crypto';
+import { ADMIN_EMAILS, requireViewerEmail } from '@/lib/auth-helpers';
+import { getBusinessNamesSharedWith, setBusinessShares } from '@/lib/mutate/businessShare';
 import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord, upsertKeyedRecord } from '@/lib/mutate/keyedTable';
 import {
   BUSINESS_PLAN_BASIS_TABLE,
@@ -91,6 +93,37 @@ export async function upsertBusinessSettings(
     활동내용라벨: merged.활동내용라벨,
     결재라인JSON: JSON.stringify(merged.결재라인),
   });
+}
+
+// 총괄업무일지는 설정 > 사업목록(예산과목·담당사업 등 다른 기능도 같이 쓰는 범용 목록)을
+// 더 이상 참조하지 않고, "사업설정" 행 자체가 곧 "총괄업무일지에 등록된 사업"이 된다.
+// 새 사업은 목표설정 화면에서 이름 + 공유 대상을 같이 입력해서 바로 만든다.
+export async function getWorklogBusinessNames(): Promise<string[]> {
+  const list = await getKeyedList(BUSINESS_SETTINGS_TABLE);
+  return list.map((r) => r.사업명).filter(Boolean);
+}
+
+// 목표설정(계획서)은 전 직원이 같이 보지만, 일계입력/월별현황/일지인쇄는 이 사업을 공유받은
+// 사람만 볼 수 있다 — 관리자는 예외로 전체 열람.
+export async function getViewerWorklogBusinessNames(): Promise<string[]> {
+  const email = await requireViewerEmail();
+  const all = await getWorklogBusinessNames();
+  if (ADMIN_EMAILS.includes(email)) return all;
+  const shared = new Set(await getBusinessNamesSharedWith(email));
+  return all.filter((name) => shared.has(name));
+}
+
+export async function createWorklogBusiness(
+  사업명: string,
+  shareEmails: string[],
+  staffByEmail: Map<string, string>
+): Promise<void> {
+  const trimmed = 사업명.trim();
+  if (!trimmed) throw new Error('사업명을 입력해주세요.');
+  const existing = await getWorklogBusinessNames();
+  if (existing.includes(trimmed)) throw new Error('이미 등록된 사업명입니다.');
+  await upsertBusinessSettings(trimmed, { 총목표: 0, 활동내용라벨: '활동내용', 결재라인: DEFAULT_APPROVAL_LINE });
+  await setBusinessShares(trimmed, shareEmails, staffByEmail);
 }
 
 // ── 세부사업 / 계획항목 / 산출근거 조회 (계획서 트리 전체) ──────────────
