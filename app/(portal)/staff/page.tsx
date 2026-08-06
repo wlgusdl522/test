@@ -107,6 +107,13 @@ export default async function StaffPage({
           </select>
         </label>
         <label className={label}>
+          토요당직제외여부
+          <select name="saturdayDutyExcluded" defaultValue={editing?.토요당직제외여부 ?? 'N'} className={input}>
+            <option value="N">N</option>
+            <option value="Y">Y</option>
+          </select>
+        </label>
+        <label className={label}>
           재직상태
           <select name="status" defaultValue={editing?.재직상태 ?? '재직'} className={input}>
             <option value="재직">재직</option>

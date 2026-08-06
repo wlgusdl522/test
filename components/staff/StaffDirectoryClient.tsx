@@ -147,6 +147,10 @@ export default function StaffDirectoryClient({ staff }: { staff: StaffRow[] }) {
                 <div className={metaLabel}>당직대상여부</div>
                 <div className={metaValue}>{selected.당직대상여부 || '-'}</div>
               </div>
+              <div>
+                <div className={metaLabel}>토요당직제외여부</div>
+                <div className={metaValue}>{selected.토요당직제외여부 || '-'}</div>
+              </div>
               <div className="col-span-2">
                 <div className={metaLabel}>담당사업</div>
                 <div className={metaValue}>{selected.담당사업 || '-'}</div>

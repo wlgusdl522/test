@@ -22,6 +22,7 @@ function staffPayloadFromForm(formData: FormData): Record<string, string> {
     담당사업: businesses.join(', '),
     '직급/직책': String(formData.get('position') ?? ''),
     당직대상여부: String(formData.get('dutyEligible') ?? 'Y'),
+    토요당직제외여부: String(formData.get('saturdayDutyExcluded') ?? 'N'),
     내선번호: String(formData.get('extension') ?? ''),
     휴대폰번호: String(formData.get('mobile') ?? ''),
     입사일: String(formData.get('hireDate') ?? ''),

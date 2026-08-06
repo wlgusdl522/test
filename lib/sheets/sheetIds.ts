@@ -13,3 +13,4 @@ export const APPROVAL_LINE_SHEET_NAME = '결재라인';
 // Drive 업로드 폴더 (업무포털 공유 드라이브 폴더 안에 위치, Code.js와 동일한 폴더 재사용)
 export const ITEM_CHECK_PHOTO_FOLDER_ID = '1p3VMhrkWf0vadUeOqgf1eARyG4itcH3n';
 export const STAFF_STAMP_FOLDER_ID = '1amadx4xhlIISS4Yxn6wO0ebEd9p7EmWa';
+export const DUTY_SIGNATURE_FOLDER_ID = '1qThex3gbk7I-2Y5xDUC-IK58EHDOqzTI'; // "당직싸인이미지업로드" (공유 드라이브 — files.create에 supportsAllDrives 필요)
