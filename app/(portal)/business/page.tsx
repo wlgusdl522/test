@@ -122,171 +122,195 @@ export default async function BusinessGoalPage({
         <div className="mb-3 flex items-center justify-between">
           <h2 className={h2}>{business} 세부사업계획(안) <span className="ml-2 text-xs font-normal text-zinc-400">단위 : 천원</span></h2>
         </div>
-        <div className="overflow-x-auto rounded-md border border-[#c7ccd3] dark:border-zinc-700">
-          <table className="w-full min-w-[980px] border-collapse text-[12.5px]">
+        <div className="overflow-x-auto rounded-md border border-[#8f8a7d] dark:border-zinc-700">
+          <table className="w-full min-w-[1180px] border-collapse text-[12.5px]">
             <colgroup>
-              <col className="w-[190px]" />
+              <col className="w-[42px]" />
+              <col className="w-[170px]" />
+              <col className="w-[100px]" />
               <col className="w-[110px]" />
               <col />
-              <col className="w-[230px]" />
+              <col className="w-[220px]" />
             </colgroup>
             <thead>
               <tr>
+                <th className={th}>사업분류</th>
                 <th className={th}>세부사업</th>
                 <th className={th}>목표<br />(회·건·명)</th>
-                <th className={th}>사업내용 · 산출근거</th>
-                <th className={th}>기대효과</th>
+                <th className={th}>예산</th>
+                <th className={th}>사 업 내 용</th>
+                <th className={th}>기 대 효 과</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ sub, plans }) => {
-                if (plans.length === 0) {
-                  return (
-                    <tr key={sub.id}>
-                      <td className={`${td} bg-[#f7f5ef] text-center font-bold dark:bg-zinc-800/60`}>
-                        <SubNameForm sub={sub} />
-                      </td>
-                      <td className={`${td} text-center text-zinc-400`}>-</td>
-                      <td className={td}>
-                        <form action={addPlanAction} className="flex gap-2">
-                          <input type="hidden" name="subId" value={sub.id} />
-                          <input name="title" placeholder="새 계획항목 제목" required className={input} />
-                          <button type="submit" className={btn}>＋ 계획항목 추가</button>
-                        </form>
-                      </td>
-                      <td className={`${td} bg-[#fcfbf8]`}>
-                        <EffectForm sub={sub} />
-                      </td>
-                    </tr>
-                  );
-                }
-                return plans.map(({ plan, goal }, pi) => (
-                  <tr key={plan.id}>
-                    {pi === 0 && (
-                      <td className={`${td} bg-[#f7f5ef] text-center font-bold dark:bg-zinc-800/60`} rowSpan={plans.length}>
-                        <SubNameForm sub={sub} />
-                        <div className="mt-2 flex flex-col gap-1">
-                          <form action={addPlanAction}>
+              {(() => {
+                const totalDataRows = rows.reduce((a, r) => a + Math.max(r.plans.length, 1), 0);
+                let firstRowRendered = false;
+                return rows.map(({ sub, plans }) => {
+                  if (plans.length === 0) {
+                    const isFirst = !firstRowRendered;
+                    firstRowRendered = true;
+                    return (
+                      <tr key={sub.id}>
+                        {isFirst && <BusinessClsCell business={business} rowSpan={totalDataRows + 1} />}
+                        <td className={`${td} bg-[#f7f5ef] text-center font-bold dark:bg-zinc-800/60`}>
+                          <SubNameForm sub={sub} />
+                        </td>
+                        <td className={`${td} text-center text-zinc-400`}>-</td>
+                        <td className={`${td} text-center text-zinc-400`}>-</td>
+                        <td className={td}>
+                          <form action={addPlanAction} className="flex gap-2">
                             <input type="hidden" name="subId" value={sub.id} />
-                            <input type="hidden" name="title" value="새 계획항목" />
-                            <button type="submit" className={`${btnSecondary} w-full`}>＋ 계획</button>
+                            <input name="title" placeholder="새 계획항목 제목" required className={input} />
+                            <button type="submit" className={btn}>＋ 계획항목 추가</button>
                           </form>
-                          <form action={deleteSubAction}>
-                            <input type="hidden" name="id" value={sub.id} />
-                            <ConfirmSubmitButton
-                              confirmMessage="이 세부사업과 연결된 계획항목·산출근거가 모두 삭제됩니다. 계속할까요?"
-                              className={`${btnDanger} w-full`}
-                            >
-                              세부사업 삭제
-                            </ConfirmSubmitButton>
-                          </form>
-                        </div>
-                      </td>
-                    )}
-                    <td className={`${td} bg-[#fcfbf8] text-right`}>
-                      <div className="text-[15px] font-bold text-brand">{nf(goal.gp)}<span className="ml-0.5 text-[11px] font-normal text-zinc-400">명</span></div>
-                      <div className="text-[11px] text-zinc-400">{nf(goal.gc)}건</div>
-                    </td>
-                    <td className={td}>
-                      <form action={updatePlanAction} className="flex flex-col gap-2">
-                        <input type="hidden" name="id" value={plan.id} />
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-bold text-zinc-400">{pi + 1})</span>
-                          <input name="title" defaultValue={plan.제목} className={`${inputSm} font-bold`} />
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                          <label className="flex items-center gap-1">
-                            예산(천원)
-                            <input name="budget" type="number" min="0" defaultValue={plan.예산} className={`${inputBase} w-28 text-right`} />
-                          </label>
-                          <label className="ml-auto flex items-center gap-1">
-                            업무일지 표기
-                            <select name="mode" defaultValue={plan.표기방식} className={selectFilter}>
-                              {Object.entries(MODE_LABEL).map(([m, l]) => <option key={m} value={m}>{l}</option>)}
-                            </select>
-                          </label>
-                        </div>
-                        <div className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">‧ 사업내용</div>
-                        <textarea
-                          name="content"
-                          defaultValue={plan.사업내용}
-                          placeholder="사업내용"
-                          className="min-h-[52px] rounded-md border border-zinc-200 bg-[#fcfbf8] px-3 py-2 text-xs leading-relaxed dark:border-zinc-700 dark:bg-zinc-950"
-                        />
-                        <button type="submit" className={`${btnSecondary} w-fit`}>계획 저장</button>
-                      </form>
-
-                      <div className="mt-2 rounded-md border border-zinc-200 bg-[#f8f6f0] p-2 dark:border-zinc-700 dark:bg-zinc-900/40">
-                        <div className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">‧ 산출근거</div>
-                        <div className="mt-1 flex flex-col gap-1.5">
-                          {plan.basis.map((b) => (
-                            <form key={b.id} action={updateBasisAction} className="flex flex-wrap items-center gap-1.5 text-xs">
-                              <input type="hidden" name="id" value={b.id} />
-                              <input name="label" defaultValue={b.라벨} className={`${inputBase} w-40`} />
-                              {b.직접입력여부 ? (
-                                <>
-                                  <span className="rounded-full bg-[#faf0ee] px-1.5 py-0.5 text-[10px] font-bold text-[#a63228] dark:bg-red-950/30 dark:text-red-300">직접</span>
-                                  <input name="gc" type="number" min="0" defaultValue={b.직접건} className={`${inputBase} w-16 text-right`} /> 건
-                                  <input name="gp" type="number" min="0" defaultValue={b.직접명} className={`${inputBase} w-16 text-right`} /> 명
-                                </>
-                              ) : (
-                                <>
-                                  <input name="per" type="number" min="0" defaultValue={b.인원} className={`${inputBase} w-16 text-right`} /> 명 ×
-                                  <input name="times" type="number" min="0" defaultValue={b.횟수} className={`${inputBase} w-16 text-right`} />
-                                  <select name="unit" defaultValue={b.단위} className={selectFilter}>
-                                    {['월', '회', '일'].map((u) => <option key={u}>{u}</option>)}
-                                  </select>
-                                  <span className="font-bold text-brand">= {nf(b.인원 * b.횟수)}명</span>
-                                </>
-                              )}
-                              <label className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
-                                <input type="checkbox" name="direct" defaultChecked={b.직접입력여부} /> 직접입력
-                              </label>
-                              <button type="submit" className={btnSecondary}>저장</button>
-                            </form>
-                          ))}
-                        </div>
-                        <div className="mt-1.5 flex items-center gap-1.5">
-                          <form action={addBasisAction}>
-                            <input type="hidden" name="planId" value={plan.id} />
-                            <input type="hidden" name="direct" value="0" />
-                            <button type="submit" className={btnSecondary}>＋ 산출식 (인원×횟수)</button>
-                          </form>
-                          <form action={addBasisAction}>
-                            <input type="hidden" name="planId" value={plan.id} />
-                            <input type="hidden" name="direct" value="1" />
-                            <button type="submit" className={btnSecondary}>＋ 직접 입력 (건/명)</button>
-                          </form>
-                          {plan.basis.length > 1 && (
-                            <form action={deleteBasisAction} className="ml-auto flex items-center gap-1">
-                              <select name="id" className={selectFilter}>
-                                {plan.basis.map((b) => <option key={b.id} value={b.id}>{b.라벨 || '(라벨 없음)'} 삭제</option>)}
-                              </select>
-                              <button type="submit" className={btnDanger}>삭제</button>
-                            </form>
-                          )}
-                          <form action={deletePlanAction} className={plan.basis.length > 1 ? '' : 'ml-auto'}>
+                        </td>
+                        <td className={`${td} bg-[#fcfbf8]`}>
+                          <EffectForm sub={sub} />
+                        </td>
+                      </tr>
+                    );
+                  }
+                  return plans.map(({ plan, goal }, pi) => {
+                    const isFirst = !firstRowRendered;
+                    firstRowRendered = true;
+                    return (
+                      <tr key={plan.id}>
+                        {isFirst && <BusinessClsCell business={business} rowSpan={totalDataRows + 1} />}
+                        {pi === 0 && (
+                          <td className={`${td} bg-[#f7f5ef] text-center font-bold dark:bg-zinc-800/60`} rowSpan={plans.length}>
+                            <SubNameForm sub={sub} />
+                            <div className="mt-2 flex flex-col gap-1">
+                              <form action={addPlanAction}>
+                                <input type="hidden" name="subId" value={sub.id} />
+                                <input type="hidden" name="title" value="새 계획항목" />
+                                <button type="submit" className={`${btnSecondary} w-full`}>＋ 계획</button>
+                              </form>
+                              <form action={deleteSubAction}>
+                                <input type="hidden" name="id" value={sub.id} />
+                                <ConfirmSubmitButton
+                                  confirmMessage="이 세부사업과 연결된 계획항목·산출근거가 모두 삭제됩니다. 계속할까요?"
+                                  className={`${btnDanger} w-full`}
+                                >
+                                  세부사업 삭제
+                                </ConfirmSubmitButton>
+                              </form>
+                            </div>
+                          </td>
+                        )}
+                        <td className={`${td} bg-[#fcfbf8] text-right`}>
+                          <form id={`plan-${plan.id}`} action={updatePlanAction}>
                             <input type="hidden" name="id" value={plan.id} />
-                            <ConfirmSubmitButton confirmMessage="이 계획항목과 산출근거가 모두 삭제됩니다. 계속할까요?" className={btnDanger}>
-                              계획항목 삭제
-                            </ConfirmSubmitButton>
                           </form>
-                        </div>
-                      </div>
-                    </td>
-                    {pi === 0 && (
-                      <td className={`${td} bg-[#fcfbf8]`} rowSpan={plans.length}>
-                        <EffectForm sub={sub} />
-                      </td>
-                    )}
-                  </tr>
-                ));
-              })}
+                          <div className="text-[15px] font-bold text-brand">{nf(goal.gp)}<span className="ml-0.5 text-[11px] font-normal text-zinc-400">명</span></div>
+                          <div className="text-[11px] text-zinc-400">{nf(goal.gc)}건</div>
+                        </td>
+                        <td className={`${td} bg-[#fcfbf8]`}>
+                          <input
+                            form={`plan-${plan.id}`}
+                            name="budget"
+                            type="number"
+                            min="0"
+                            defaultValue={plan.예산}
+                            className={`${inputBase} w-full text-right`}
+                          />
+                        </td>
+                        <td className={td}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-bold text-zinc-400">{pi + 1})</span>
+                            <input form={`plan-${plan.id}`} name="title" defaultValue={plan.제목} className={`${inputSm} font-bold`} />
+                          </div>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                            <label className="flex items-center gap-1">
+                              업무일지 표기
+                              <select form={`plan-${plan.id}`} name="mode" defaultValue={plan.표기방식} className={selectFilter}>
+                                {Object.entries(MODE_LABEL).map(([m, l]) => <option key={m} value={m}>{l}</option>)}
+                              </select>
+                            </label>
+                            <button type="submit" form={`plan-${plan.id}`} className={btnSecondary}>계획 저장</button>
+                          </div>
+                          <div className="mt-1.5 text-[11px] font-bold text-zinc-500 dark:text-zinc-400">‧ 사업내용</div>
+                          <textarea
+                            form={`plan-${plan.id}`}
+                            name="content"
+                            defaultValue={plan.사업내용}
+                            placeholder="사업내용"
+                            className="min-h-[52px] w-full rounded-md border border-zinc-200 bg-[#fcfbf8] px-3 py-2 text-xs leading-relaxed dark:border-zinc-700 dark:bg-zinc-950"
+                          />
+
+                          <div className="mt-2 rounded-md border border-zinc-200 bg-[#f8f6f0] p-2 dark:border-zinc-700 dark:bg-zinc-900/40">
+                            <div className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">‧ 산출근거</div>
+                            <div className="mt-1 flex flex-col gap-1.5">
+                              {plan.basis.map((b) => (
+                                <form key={b.id} action={updateBasisAction} className="flex flex-wrap items-center gap-1.5 text-xs">
+                                  <input type="hidden" name="id" value={b.id} />
+                                  <input name="label" defaultValue={b.라벨} className={`${inputBase} w-40`} />
+                                  {b.직접입력여부 ? (
+                                    <>
+                                      <span className="rounded-full bg-[#faf0ee] px-1.5 py-0.5 text-[10px] font-bold text-[#a63228] dark:bg-red-950/30 dark:text-red-300">직접</span>
+                                      <input name="gc" type="number" min="0" defaultValue={b.직접건} className={`${inputBase} w-16 text-right`} /> 건
+                                      <input name="gp" type="number" min="0" defaultValue={b.직접명} className={`${inputBase} w-16 text-right`} /> 명
+                                    </>
+                                  ) : (
+                                    <>
+                                      <input name="per" type="number" min="0" defaultValue={b.인원} className={`${inputBase} w-16 text-right`} /> 명 ×
+                                      <input name="times" type="number" min="0" defaultValue={b.횟수} className={`${inputBase} w-16 text-right`} />
+                                      <select name="unit" defaultValue={b.단위} className={selectFilter}>
+                                        {['월', '회', '일'].map((u) => <option key={u}>{u}</option>)}
+                                      </select>
+                                      <span className="font-bold text-brand">= {nf(b.인원 * b.횟수)}명</span>
+                                    </>
+                                  )}
+                                  <label className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
+                                    <input type="checkbox" name="direct" defaultChecked={b.직접입력여부} /> 직접입력
+                                  </label>
+                                  <button type="submit" className={btnSecondary}>저장</button>
+                                </form>
+                              ))}
+                            </div>
+                            <div className="mt-1.5 flex items-center gap-1.5">
+                              <form action={addBasisAction}>
+                                <input type="hidden" name="planId" value={plan.id} />
+                                <input type="hidden" name="direct" value="0" />
+                                <button type="submit" className={btnSecondary}>＋ 산출식 (인원×횟수)</button>
+                              </form>
+                              <form action={addBasisAction}>
+                                <input type="hidden" name="planId" value={plan.id} />
+                                <input type="hidden" name="direct" value="1" />
+                                <button type="submit" className={btnSecondary}>＋ 직접 입력 (건/명)</button>
+                              </form>
+                              {plan.basis.length > 1 && (
+                                <form action={deleteBasisAction} className="ml-auto flex items-center gap-1">
+                                  <select name="id" className={selectFilter}>
+                                    {plan.basis.map((b) => <option key={b.id} value={b.id}>{b.라벨 || '(라벨 없음)'} 삭제</option>)}
+                                  </select>
+                                  <button type="submit" className={btnDanger}>삭제</button>
+                                </form>
+                              )}
+                              <form action={deletePlanAction} className={plan.basis.length > 1 ? '' : 'ml-auto'}>
+                                <input type="hidden" name="id" value={plan.id} />
+                                <ConfirmSubmitButton confirmMessage="이 계획항목과 산출근거가 모두 삭제됩니다. 계속할까요?" className={btnDanger}>
+                                  계획항목 삭제
+                                </ConfirmSubmitButton>
+                              </form>
+                            </div>
+                          </div>
+                        </td>
+                        {pi === 0 && (
+                          <td className={`${td} bg-[#fcfbf8]`} rowSpan={plans.length}>
+                            <EffectForm sub={sub} />
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  });
+                });
+              })()}
               <tr className="bg-[#eef1f5] font-bold dark:bg-zinc-800">
-                <td className={td}>소 계</td>
+                <td className={td} colSpan={2}>소 계</td>
                 <td className={`${td} text-right`}>{nf(totalGp)}명<div className="text-[11px] font-normal text-zinc-400">{nf(totalGc)}건</div></td>
-                <td className={td}>예산 {nf(totalBudget)}천원</td>
-                <td className={td}></td>
+                <td className={`${td} text-right`}>{nf(totalBudget)}</td>
+                <td className={td} colSpan={2}></td>
               </tr>
             </tbody>
           </table>
@@ -329,6 +353,14 @@ export default async function BusinessGoalPage({
         </div>
       </div>
     </div>
+  );
+}
+
+function BusinessClsCell({ business, rowSpan }: { business: string; rowSpan: number }) {
+  return (
+    <td className={`${td} bg-[#f1efe8] text-center font-bold dark:bg-zinc-800`} rowSpan={rowSpan}>
+      <div className="mx-auto [text-orientation:upright] [writing-mode:vertical-rl] tracking-wide">{business}</div>
+    </td>
   );
 }
 
