@@ -15,7 +15,7 @@ export default async function PermissionsSettingsPage() {
 
   return (
     <main className={pageFluid}>
-      <h1 className={h1}>설정 &gt; 권한설정</h1>
+      <h1 className={`${h1} mb-5`}>설정 &gt; 권한설정</h1>
 
       <div className={cardTableWrap}><table className={tableClean}>
         <thead>

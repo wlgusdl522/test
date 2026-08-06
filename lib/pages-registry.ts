@@ -14,6 +14,7 @@ export const CONFIGURABLE_PAGES = [
 
 export const PRINTABLE_PAGES = [
   { id: 'card-ledger', label: '카드사용대장' },
+  { id: 'transit-card', label: '교통카드사용대장' },
   { id: 'weekly-plan-team', label: '주간업무계획 (팀별)' },
   { id: 'weekly-plan-rollup', label: '주간업무계획 (부서별 취합)' },
   { id: 'vehicle-maintenance', label: '차량정비대장' },

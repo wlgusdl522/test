@@ -36,6 +36,7 @@ const SHORTCUTS = [
   { href: '/weekly-plan', label: '주간업무', desc: '이번 주 업무 입력', tone: 'blue', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
   { href: '/expenses', label: '카드사용대장', desc: '지출 등록', tone: 'emerald', icon: NAV_SECTION_ICON_PATH.지출관리 },
   { href: '/vehicles?new=1', label: '차량사용신청', desc: '차량 예약', tone: 'amber', icon: NAV_SECTION_ICON_PATH.차량관리 },
+  { href: '/transit-card?new=1', label: '교통카드 사용등록', desc: '교통카드 사용 등록', tone: 'sky', icon: NAV_SECTION_ICON_PATH.차량관리 },
   { href: '/staff/directory', label: '전직원 주소록', desc: '연락처 찾기', tone: 'violet', icon: NAV_SECTION_ICON_PATH.인사관리 },
   { href: '/mypage', label: '내 결재함', desc: '결재 대기 확인', tone: 'cyan', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
   {
@@ -54,6 +55,7 @@ const TONE_BADGE: Record<string, string> = {
   amber: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400',
   violet: 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400',
   cyan: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400',
+  sky: 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400',
   rose: 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400',
 };
 
