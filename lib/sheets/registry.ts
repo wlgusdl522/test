@@ -1,5 +1,5 @@
 import type { KeyedTableConfig } from './keyedTable';
-import { CARD_LEDGER_SHEET_ID, STAFF_SHEET_ID, VEHICLE_SHEET_ID, WEEKLY_PLAN_SHEET_ID } from './sheetIds';
+import { CARD_LEDGER_SHEET_ID, STAFF_SHEET_ID, VEHICLE_SHEET_ID, WEEKLY_PLAN_SHEET_ID, WORKLOG_SHEET_ID } from './sheetIds';
 
 export const VEHICLE_REQUEST_HEADERS = [
   'id', '차량번호', '신청자이메일', '신청자명', '소속팀',
@@ -173,4 +173,66 @@ export const VEHICLE_LOG_TABLE: KeyedTableConfig = {
   sheetName: '차량운행일지',
   headers: VEHICLE_LOG_HEADERS,
   primaryKey: 'id',
+};
+
+// ── 사업관리(총괄업무일지) ──────────────────────────────────────────
+// 사업설정/세부사업/계획항목/산출근거 4단계로 세부사업계획서를 그대로 입력받고,
+// 산출근거 한 줄(직접입력 또는 인원×횟수)이 곧 업무일지의 목표 항목 하나가 된다.
+// 항목ID는 별도 테이블 없이 파생 규칙으로만 존재: merge 모드면 계획항목ID, 아니면
+// `계획항목ID-산출근거ID` — lib/mutate/businessPlan.ts의 buildWorklogItems가 계산한다.
+
+export const BUSINESS_SETTINGS_HEADERS = ['id', '사업명', '총목표', '활동내용라벨', '결재라인JSON'];
+
+export const BUSINESS_SETTINGS_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '사업설정',
+  headers: BUSINESS_SETTINGS_HEADERS,
+  primaryKey: '사업명',
+};
+
+export const BUSINESS_SUB_HEADERS = ['id', '사업명', '세부사업명', '기대효과', '정렬순서'];
+
+export const BUSINESS_SUB_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '세부사업',
+  headers: BUSINESS_SUB_HEADERS,
+  primaryKey: 'id',
+};
+
+export const BUSINESS_PLAN_ITEM_HEADERS = ['id', '세부사업ID', '제목', '표기방식', '예산', '사업내용', '정렬순서'];
+
+export const BUSINESS_PLAN_ITEM_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '계획항목',
+  headers: BUSINESS_PLAN_ITEM_HEADERS,
+  primaryKey: 'id',
+};
+
+export const BUSINESS_PLAN_BASIS_HEADERS = [
+  'id', '계획항목ID', '라벨', '직접입력여부', '인원', '횟수', '단위', '직접건', '직접명', '정렬순서',
+];
+
+export const BUSINESS_PLAN_BASIS_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '산출근거',
+  headers: BUSINESS_PLAN_BASIS_HEADERS,
+  primaryKey: 'id',
+};
+
+export const WORKLOG_DAILY_HEADERS = ['id', '사업명', '항목ID', '날짜', '건', '명', '작성자이메일', '작성자명', '등록일시'];
+
+export const WORKLOG_DAILY_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '일일실적',
+  headers: WORKLOG_DAILY_HEADERS,
+  primaryKey: ['항목ID', '날짜'],
+};
+
+export const WORKLOG_MEMO_HEADERS = ['id', '사업명', '날짜', '활동내용', '특이사항', '작성자이메일', '작성자명', '등록일시'];
+
+export const WORKLOG_MEMO_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '일일메모',
+  headers: WORKLOG_MEMO_HEADERS,
+  primaryKey: ['사업명', '날짜'],
 };
