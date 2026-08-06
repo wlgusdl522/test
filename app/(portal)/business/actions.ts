@@ -11,7 +11,6 @@ import {
   updateBasis,
   updateBusinessSub,
   updatePlanItem,
-  upsertBusinessSettings,
 } from '@/lib/mutate/businessPlan';
 
 function str(formData: FormData, key: string): string {
@@ -20,17 +19,6 @@ function str(formData: FormData, key: string): string {
 function numOrZero(formData: FormData, key: string): number {
   const n = Number(formData.get(key));
   return Number.isFinite(n) ? n : 0;
-}
-
-export async function saveBusinessSettingsAction(formData: FormData): Promise<void> {
-  const 사업명 = str(formData, 'business');
-  const 결재라인 = str(formData, 'approvalLine').split(',').map((s) => s.trim()).filter(Boolean);
-  await upsertBusinessSettings(사업명, {
-    총목표: numOrZero(formData, 'grandGoal'),
-    활동내용라벨: str(formData, 'actLabel').trim() || '활동내용',
-    결재라인,
-  });
-  revalidatePath('/business');
 }
 
 export async function addSubAction(formData: FormData): Promise<void> {

@@ -55,6 +55,27 @@ export async function getBusinessSettings(사업명: string): Promise<BusinessSe
   };
 }
 
+// 설정 > 사업목록에서 사업별 총목표/활동내용라벨/결재라인을 한 번에 보여줄 때 쓴다
+// (사업 수만큼 getBusinessSettings를 반복 호출하면 시트를 그만큼 다시 읽어오게 되어 비효율적).
+export async function getAllBusinessSettings(): Promise<Record<string, BusinessSettings>> {
+  const list = await getKeyedList(BUSINESS_SETTINGS_TABLE);
+  const map: Record<string, BusinessSettings> = {};
+  list.forEach((row) => {
+    let 결재라인: string[] = [];
+    try {
+      결재라인 = JSON.parse(row.결재라인JSON || '[]');
+    } catch {
+      결재라인 = [];
+    }
+    map[row.사업명] = {
+      총목표: num(row.총목표),
+      활동내용라벨: row.활동내용라벨 || '활동내용',
+      결재라인: 결재라인.length ? 결재라인 : DEFAULT_APPROVAL_LINE,
+    };
+  });
+  return map;
+}
+
 export async function upsertBusinessSettings(
   사업명: string,
   patch: Partial<BusinessSettings>

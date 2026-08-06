@@ -1,4 +1,4 @@
-import { getBusinessList } from '@/lib/mutate/business';
+import { getViewerBusinessList } from '@/lib/mutate/business';
 import {
   buildWorklogItems,
   getBusinessPlanTree,
@@ -9,7 +9,7 @@ import {
   type PlanItem,
 } from '@/lib/mutate/businessPlan';
 import { hasPageAccess } from '@/lib/mutate/permissions';
-import { btn, btnDanger, btnSecondary, card, h2, hint, input, inputBase, label, selectFilter, statCard } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, card, h2, hint, input, inputBase, selectFilter, statCard } from '@/lib/ui';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
 import CopyPlanTableButton from '@/components/business/CopyPlanTableButton';
 import PageAccessDenied from '@/components/PageAccessDenied';
@@ -20,7 +20,6 @@ import {
   deleteBasisAction,
   deletePlanAction,
   deleteSubAction,
-  saveBusinessSettingsAction,
   updateBasisAction,
   updatePlanAction,
   updateSubAction,
@@ -106,11 +105,11 @@ export default async function BusinessGoalPage({
   if (!(await hasPageAccess('business-goal'))) return <PageAccessDenied />;
 
   const { business: businessParam } = await searchParams;
-  const businesses = await getBusinessList();
+  const businesses = await getViewerBusinessList();
   const business = businessParam || businesses[0]?.name || '';
 
   if (!business) {
-    return <p className="text-sm text-zinc-500">설정 &gt; 사업목록에서 사업을 먼저 등록해주세요.</p>;
+    return <p className="text-sm text-zinc-500">담당하시는 사업이 없습니다. 설정 &gt; 직원관리에서 담당사업을 등록해주세요.</p>;
   }
 
   const [settings, tree, worklogItems] = await Promise.all([
@@ -142,25 +141,6 @@ export default async function BusinessGoalPage({
         <b>목표 건수 24 / 목표 인원 3,600</b>이 그대로 들어갑니다. 계획서를 고치면 일지 목표도 같이 바뀝니다.
       </div>
 
-      <div className={card}>
-        <form action={saveBusinessSettingsAction} className="flex flex-wrap items-end gap-4 p-4">
-          <input type="hidden" name="business" value={business} />
-          <label className={label}>
-            총목표(명)
-            <input name="grandGoal" type="number" min="0" defaultValue={settings.총목표} className={`${inputBase} w-32`} />
-          </label>
-          <label className={label}>
-            활동내용 라벨
-            <input name="actLabel" defaultValue={settings.활동내용라벨} className={`${inputBase} w-36`} />
-          </label>
-          <label className={label}>
-            결재라인 (쉼표로 구분)
-            <input name="approvalLine" defaultValue={settings.결재라인.join(', ')} className={`${inputBase} w-64`} />
-          </label>
-          <button type="submit" className={btnSecondary}>사업 설정 저장</button>
-        </form>
-      </div>
-
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className={statCard}>
           <div className="text-[10.5px] font-semibold tracking-wide text-zinc-400">계획 목표 합계</div>
@@ -180,6 +160,7 @@ export default async function BusinessGoalPage({
           <div className="mt-1 text-xl font-bold text-zinc-800 dark:text-zinc-100">
             {nf(settings.총목표)}<span className="ml-1 text-xs font-normal text-zinc-400">명</span>
           </div>
+          <a href="/settings/business-list" className="text-[11px] text-brand hover:underline">설정 &gt; 사업목록에서 수정</a>
         </div>
         <div className={statCard}>
           <div className="text-[10.5px] font-semibold tracking-wide text-zinc-400">검증</div>

@@ -1,4 +1,4 @@
-import { getBusinessList } from '@/lib/mutate/business';
+import { getViewerBusinessList } from '@/lib/mutate/business';
 import { buildWorklogItems, getBusinessSettings, type WorklogItem } from '@/lib/mutate/businessPlan';
 import { type DailyEntry, dayValue, getDailyEntries, getMemo, getWrittenDates, rangeSum } from '@/lib/mutate/worklogEntry';
 import ApprovalBox from '@/components/print/ApprovalBox';
@@ -23,15 +23,15 @@ export default async function BusinessWorklogPrintPage({
   searchParams: Promise<{ business?: string; from?: string; to?: string; only?: string }>;
 }) {
   const { business: businessParam, from, to, only } = await searchParams;
-  const businesses = await getBusinessList();
+  const businesses = await getViewerBusinessList();
   const business = businessParam || businesses[0]?.name || '';
   const today = todayKst();
   const rangeFrom = from || today;
   const rangeTo = to || today;
   const onlyWritten = only === undefined ? true : only === '1';
 
-  if (!business) {
-    return <div className="p-6"><p className="text-sm text-zinc-500">사업을 선택해주세요.</p></div>;
+  if (!business || !businesses.some((b) => b.name === business)) {
+    return <div className="p-6"><p className="text-sm text-zinc-500">담당하시는 사업이 없습니다. 설정 &gt; 직원관리에서 담당사업을 등록해주세요.</p></div>;
   }
 
   const [settings, items, entries, writtenDates] = await Promise.all([
