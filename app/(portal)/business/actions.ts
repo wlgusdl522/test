@@ -13,6 +13,7 @@ import {
   updateBusinessSub,
   updatePlanItem,
   upsertBusinessSettings,
+  type BusinessSubNode,
 } from '@/lib/mutate/businessPlan';
 import { setBusinessShares } from '@/lib/mutate/businessShare';
 import { getActiveStaffList } from '@/lib/mutate/permissions';
@@ -45,6 +46,23 @@ export async function saveWorklogBusinessSettingsAction(formData: FormData): Pro
   });
   const shareEmails = formData.getAll('shareEmails').map((v) => String(v));
   await setBusinessShares(사업명, shareEmails, await staffByEmailMap());
+  revalidatePath('/business');
+}
+
+// 세부사업계획 표 전체를 편집 중엔 로컬 state로만 들고 있다가, 이 액션 한 번으로 바뀐 값을
+// 전부 저장한다 — 칸마다 따로 있던 저장 버튼을 하나로 합치기 위한 일괄 저장.
+export async function saveBusinessPlanAction(subs: BusinessSubNode[]): Promise<void> {
+  for (const s of subs) {
+    await updateBusinessSub(s.id, { 세부사업명: s.세부사업명, 기대효과: s.기대효과 });
+    for (const p of s.plans) {
+      await updatePlanItem(p.id, { 제목: p.제목, 표기방식: p.표기방식, 예산: p.예산, 사업내용: p.사업내용 });
+      for (const b of p.basis) {
+        await updateBasis(b.id, {
+          라벨: b.라벨, 직접입력여부: b.직접입력여부, 인원: b.인원, 횟수: b.횟수, 단위: b.단위, 직접건: b.직접건, 직접명: b.직접명,
+        });
+      }
+    }
+  }
   revalidatePath('/business');
 }
 
