@@ -236,3 +236,13 @@ export const WORKLOG_MEMO_TABLE: KeyedTableConfig = {
   headers: WORKLOG_MEMO_HEADERS,
   primaryKey: ['사업명', '날짜'],
 };
+
+// 직원관리의 "담당사업"에 없어도, 총괄업무일지를 같이 보고 써야 하는 직원을 사업별로 추가 공유한다.
+export const BUSINESS_SHARE_HEADERS = ['id', '사업명', '이메일', '성명'];
+
+export const BUSINESS_SHARE_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '사업공유',
+  headers: BUSINESS_SHARE_HEADERS,
+  primaryKey: ['사업명', '이메일'],
+};

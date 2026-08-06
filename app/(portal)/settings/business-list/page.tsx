@@ -1,5 +1,7 @@
 import { getBusinessList } from '@/lib/mutate/business';
 import { DEFAULT_APPROVAL_LINE, getAllBusinessSettings } from '@/lib/mutate/businessPlan';
+import { getAllBusinessShares } from '@/lib/mutate/businessShare';
+import { getActiveStaffList } from '@/lib/mutate/permissions';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { btn, btnDanger, cardTableWrap, h1, input, inputBase, label, pageFluid, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
@@ -10,10 +12,12 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export default async function BusinessListSettingsPage() {
-  const [businesses, teams, settingsMap] = await Promise.all([
+  const [businesses, teams, settingsMap, staff, sharesMap] = await Promise.all([
     getBusinessList(),
     getSimpleList(TEAM_LIST_SHEET_NAME),
     getAllBusinessSettings(),
+    getActiveStaffList(),
+    getAllBusinessShares(),
   ]);
 
   return (
@@ -38,6 +42,7 @@ export default async function BusinessListSettingsPage() {
         <tbody>
           {businesses.map((b) => {
             const s = settingsMap[b.name] ?? { 총목표: 0, 활동내용라벨: '활동내용', 결재라인: DEFAULT_APPROVAL_LINE };
+            const shared = sharesMap[b.name] ?? [];
             return (
               <tr key={b.name} className={trHoverClean}>
                 <td className={tdClean}>{b.name}</td>
@@ -59,6 +64,22 @@ export default async function BusinessListSettingsPage() {
                           결재라인 (쉼표로 구분)
                           <input name="approvalLine" defaultValue={s.결재라인.join(', ')} className={inputBase} />
                         </label>
+                        <div className={label}>
+                          공유 대상 (담당사업이 아니어도 총괄업무일지 접근 허용)
+                          <div className="mt-1 grid max-h-40 grid-cols-2 gap-1 overflow-y-auto rounded-md border border-zinc-200 p-2 dark:border-zinc-700">
+                            {staff.map((st) => (
+                              <label key={st.email} className="flex items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                                <input
+                                  type="checkbox"
+                                  name="shareEmails"
+                                  value={st.email}
+                                  defaultChecked={shared.includes(st.email.toLowerCase())}
+                                />
+                                {st.name}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
                         <button type="submit" className={`${btn} w-fit`}>저장</button>
                       </form>
                     </FormToggle>

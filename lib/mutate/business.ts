@@ -1,4 +1,5 @@
 import { ADMIN_EMAILS, getViewerStaffRecord, requireViewerEmail } from '@/lib/auth-helpers';
+import { getBusinessNamesSharedWith } from '@/lib/mutate/businessShare';
 import {
   appendBusinessToSheet,
   deleteBusinessFromSheet,
@@ -13,16 +14,20 @@ export async function getBusinessList(): Promise<BusinessItem[]> {
   return getBusinessListFromSheet();
 }
 
-// 총괄업무일지(사업관리)는 직원관리의 "담당사업"에 등록된 사업만 보여준다 — 관리자는 전체.
-// 나눔참여(후원)/나눔참여(자원봉사)처럼 사업목록을 여러 개로 나눠 담당자를 다르게 배정하거나,
-// 여러 직원이 같은 사업을 공유하고 싶으면 각자의 직원관리 > 담당사업에 그 사업명을 추가하면 된다.
+// 총괄업무일지(사업관리)는 (1) 직원관리의 "담당사업"에 등록된 사업, (2) 설정 > 사업목록에서
+// 따로 공유해준 사업만 보여준다 — 관리자는 전체. 나눔참여(후원)/나눔참여(자원봉사)처럼
+// 사업목록을 여러 개로 나눠서 서로 다른 사람과 공유하고 싶으면 사업목록에서 그 사업의
+// "사업설정"을 열어 공유 대상을 체크하면 된다(담당사업 필드를 직접 안 고쳐도 됨).
 export async function getViewerBusinessList(): Promise<BusinessItem[]> {
   const email = await requireViewerEmail();
   const all = await getBusinessList();
   if (ADMIN_EMAILS.includes(email)) return all;
-  const me = await getViewerStaffRecord();
-  const mine = (me?.담당사업 ?? '').split(',').map((s) => s.trim()).filter(Boolean);
-  return all.filter((b) => mine.includes(b.name));
+  const [me, shared] = await Promise.all([getViewerStaffRecord(), getBusinessNamesSharedWith(email)]);
+  const mine = new Set([
+    ...(me?.담당사업 ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+    ...shared,
+  ]);
+  return all.filter((b) => mine.has(b.name));
 }
 
 export async function seedBusinessListFromSheet(): Promise<BusinessItem[]> {
