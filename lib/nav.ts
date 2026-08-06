@@ -33,12 +33,6 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: '사업관리',
-    items: [
-      { href: '/general-work-log', label: '총괄업무일지', description: '사업별 구분항목·목표 설정 및 일계·월계·누계 실적 기록' },
-    ],
-  },
-  {
     label: '차량관리',
     flat: true,
     items: [
@@ -50,6 +44,13 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/expenses', label: '카드사용대장', description: '지출 등록·검수·결재' },
       { href: '/transit-card', label: '교통카드사용대장', description: '교통카드 사용 등록·조회' },
+    ],
+  },
+  {
+    label: '사업관리',
+    items: [
+      { href: '/business', label: '세부사업계획', description: '세부사업계획서 입력' },
+      { href: '/business/daily', label: '총괄업무일지', description: '업무입력 · 월별현황 · 일지인쇄' },
     ],
   },
   {

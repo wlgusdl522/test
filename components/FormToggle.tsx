@@ -7,19 +7,25 @@ import Modal from '@/components/Modal';
 export default function FormToggle({
   label,
   defaultOpen = false,
+  wrapperClassName = 'mb-5',
+  buttonLabel,
+  buttonClassName,
   children,
 }: {
   label: string;
   defaultOpen?: boolean;
+  wrapperClassName?: string;
+  buttonLabel?: string;
+  buttonClassName?: string;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="mb-5">
+    <div className={wrapperClassName}>
       {!open && (
-        <button type="button" onClick={() => setOpen(true)} className={btn}>
-          + {label}
+        <button type="button" onClick={() => setOpen(true)} className={buttonClassName ?? btn}>
+          {buttonLabel ?? `+ ${label}`}
         </button>
       )}
       {open && (

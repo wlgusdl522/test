@@ -1,5 +1,5 @@
 import type { KeyedTableConfig } from './keyedTable';
-import { CARD_LEDGER_SHEET_ID, GENERAL_WORK_LOG_SHEET_ID, STAFF_SHEET_ID, VEHICLE_SHEET_ID, WEEKLY_PLAN_SHEET_ID } from './sheetIds';
+import { CARD_LEDGER_SHEET_ID, STAFF_SHEET_ID, VEHICLE_SHEET_ID, WEEKLY_PLAN_SHEET_ID, WORKLOG_SHEET_ID } from './sheetIds';
 
 export const VEHICLE_REQUEST_HEADERS = [
   'id', '차량번호', '신청자이메일', '신청자명', '소속팀',
@@ -177,40 +177,74 @@ export const VEHICLE_LOG_TABLE: KeyedTableConfig = {
   primaryKey: 'id',
 };
 
-// 총괄업무일지: 사업(프로그램)마다 구분항목 트리와 목표(건/명)가 다르므로 항목 자체를 화면에서 직접
-// 추가·수정하고(GENERAL_LOG_ITEM_TABLE), 날짜별 실적은 항목ID를 참조하는 별도 테이블에 쌓는다.
-// 기존 "2. 주간업무계획" 파일 대신 총괄업무일지 전용 스프레드시트(GENERAL_WORK_LOG_SHEET_ID)를 쓴다.
-export const GENERAL_LOG_ITEM_HEADERS = [
-  'id', '사업명', '대분류', '중분류', '세부항목', '정렬순서', '목표건', '목표명',
-];
+// ── 사업관리(총괄업무일지) ──────────────────────────────────────────
+// 사업설정/세부사업/계획항목/산출근거 4단계로 세부사업계획서를 그대로 입력받고,
+// 산출근거 한 줄(직접입력 또는 인원×횟수)이 곧 업무일지의 목표 항목 하나가 된다.
+// 항목ID는 별도 테이블 없이 파생 규칙으로만 존재: merge 모드면 계획항목ID, 아니면
+// `계획항목ID-산출근거ID` — lib/mutate/businessPlan.ts의 buildWorklogItems가 계산한다.
 
-export const GENERAL_LOG_ITEM_TABLE: KeyedTableConfig = {
-  spreadsheetId: GENERAL_WORK_LOG_SHEET_ID,
-  sheetName: '총괄업무일지_항목',
-  headers: GENERAL_LOG_ITEM_HEADERS,
+export const BUSINESS_SETTINGS_HEADERS = ['id', '사업명', '총목표', '활동내용라벨', '결재라인JSON'];
+
+export const BUSINESS_SETTINGS_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '사업설정',
+  headers: BUSINESS_SETTINGS_HEADERS,
+  primaryKey: '사업명',
+};
+
+export const BUSINESS_SUB_HEADERS = ['id', '사업명', '세부사업명', '기대효과', '정렬순서'];
+
+export const BUSINESS_SUB_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '세부사업',
+  headers: BUSINESS_SUB_HEADERS,
   primaryKey: 'id',
 };
 
-export const GENERAL_LOG_DAILY_HEADERS = [
-  '사업명', '날짜', '항목ID', '건', '명', '작성자이메일', '작성자명', '등록일시',
-];
+export const BUSINESS_PLAN_ITEM_HEADERS = ['id', '세부사업ID', '제목', '표기방식', '예산', '사업내용', '정렬순서'];
 
-export const GENERAL_LOG_DAILY_TABLE: KeyedTableConfig = {
-  spreadsheetId: GENERAL_WORK_LOG_SHEET_ID,
-  sheetName: '총괄업무일지_일계',
-  headers: GENERAL_LOG_DAILY_HEADERS,
-  primaryKey: ['사업명', '날짜', '항목ID'],
+export const BUSINESS_PLAN_ITEM_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '계획항목',
+  headers: BUSINESS_PLAN_ITEM_HEADERS,
+  primaryKey: 'id',
 };
 
-// 업무내용 행과 특이사항을 한 탭에 같이 담는다 — 특이사항은 하루에 한 줄뿐이라 별도 탭을 두기보다
-// 구분 컬럼('업무' | '특이사항')으로만 나눈다.
-export const GENERAL_LOG_CONTENT_HEADERS = [
-  'id', '사업명', '날짜', '구분', '내용', '실적', '비고', '작성자이메일', '작성자명', '등록일시',
+export const BUSINESS_PLAN_BASIS_HEADERS = [
+  'id', '계획항목ID', '라벨', '직접입력여부', '인원', '횟수', '단위', '직접건', '직접명', '정렬순서',
 ];
 
-export const GENERAL_LOG_CONTENT_TABLE: KeyedTableConfig = {
-  spreadsheetId: GENERAL_WORK_LOG_SHEET_ID,
-  sheetName: '총괄업무일지_내용',
-  headers: GENERAL_LOG_CONTENT_HEADERS,
+export const BUSINESS_PLAN_BASIS_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '산출근거',
+  headers: BUSINESS_PLAN_BASIS_HEADERS,
   primaryKey: 'id',
+};
+
+export const WORKLOG_DAILY_HEADERS = ['id', '사업명', '항목ID', '날짜', '건', '명', '작성자이메일', '작성자명', '등록일시'];
+
+export const WORKLOG_DAILY_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '일일실적',
+  headers: WORKLOG_DAILY_HEADERS,
+  primaryKey: ['항목ID', '날짜'],
+};
+
+export const WORKLOG_MEMO_HEADERS = ['id', '사업명', '날짜', '활동내용', '특이사항', '작성자이메일', '작성자명', '등록일시'];
+
+export const WORKLOG_MEMO_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '일일메모',
+  headers: WORKLOG_MEMO_HEADERS,
+  primaryKey: ['사업명', '날짜'],
+};
+
+// 직원관리의 "담당사업"에 없어도, 총괄업무일지를 같이 보고 써야 하는 직원을 사업별로 추가 공유한다.
+export const BUSINESS_SHARE_HEADERS = ['id', '사업명', '이메일', '성명'];
+
+export const BUSINESS_SHARE_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '사업공유',
+  headers: BUSINESS_SHARE_HEADERS,
+  primaryKey: ['사업명', '이메일'],
 };
