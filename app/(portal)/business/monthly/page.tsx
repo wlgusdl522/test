@@ -34,7 +34,7 @@ export default async function BusinessMonthlyPage({
   const businesses = await getViewerWorklogBusinessNames();
   const business = businessParam || businesses[0] || '';
   if (!business || !businesses.includes(business)) {
-    return <p className="text-sm text-zinc-500">공유받은 사업이 없습니다. 목표설정 화면에서 사업 담당자에게 공유를 요청해주세요.</p>;
+    return <p className="text-sm text-zinc-500">공유받은 사업이 없습니다. 세부사업계획 화면에서 사업 담당자에게 공유를 요청해주세요.</p>;
   }
   const ym = ymParam || todayKst().slice(0, 7);
   const [y, m] = ym.split('-').map(Number);

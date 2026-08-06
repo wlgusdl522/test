@@ -48,7 +48,8 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: '사업관리',
     items: [
-      { href: '/business', label: '총괄업무일지', description: '세부사업계획서 · 일계입력 · 월별현황' },
+      { href: '/business', label: '세부사업계획', description: '세부사업계획서 입력' },
+      { href: '/business/daily', label: '총괄업무일지', description: '업무입력 · 월별현황 · 일지인쇄' },
     ],
   },
   {

@@ -29,7 +29,7 @@ export default async function BusinessDailyPage({
   const businesses = await getViewerWorklogBusinessNames();
   const business = businessParam || businesses[0] || '';
   if (!business || !businesses.includes(business)) {
-    return <p className="text-sm text-zinc-500">공유받은 사업이 없습니다. 목표설정 화면에서 사업 담당자에게 공유를 요청해주세요.</p>;
+    return <p className="text-sm text-zinc-500">공유받은 사업이 없습니다. 세부사업계획 화면에서 사업 담당자에게 공유를 요청해주세요.</p>;
   }
   const date = dateParam || todayKst();
 

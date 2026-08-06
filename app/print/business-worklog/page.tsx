@@ -30,7 +30,7 @@ export default async function BusinessWorklogPrintPage({
   const onlyWritten = only === undefined ? true : only === '1';
 
   if (!business || !businesses.includes(business)) {
-    return <div className="p-6"><p className="text-sm text-zinc-500">공유받은 사업이 없습니다. 목표설정 화면에서 사업 담당자에게 공유를 요청해주세요.</p></div>;
+    return <div className="p-6"><p className="text-sm text-zinc-500">공유받은 사업이 없습니다. 세부사업계획 화면에서 사업 담당자에게 공유를 요청해주세요.</p></div>;
   }
 
   const [settings, items, entries, writtenDates] = await Promise.all([

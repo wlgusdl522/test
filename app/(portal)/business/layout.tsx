@@ -18,7 +18,7 @@ export default async function BusinessLayout({ children }: { children: React.Rea
   return (
     <main className={pageFluid}>
       <div className="mb-2 flex items-center justify-between">
-        <h1 className={h1}>총괄업무일지</h1>
+        <h1 className={h1}>사업관리</h1>
         <FormToggle label="새 사업 만들기">
           <form action={createWorklogBusinessAction} className="flex flex-col gap-3">
             <label className={label}>
@@ -26,7 +26,7 @@ export default async function BusinessLayout({ children }: { children: React.Rea
               <input name="name" required className={input} />
             </label>
             <div className={label}>
-              공유 대상 (이 사업의 일계입력·월별현황·일지인쇄를 볼 수 있는 직원)
+              공유 대상 (이 사업의 총괄업무일지 - 업무입력·월별현황·일지인쇄를 볼 수 있는 직원)
               <ShareStaffChecklist groups={staffGroups} />
             </div>
             <button type="submit" className={`${btn} w-fit`}>만들기</button>

@@ -143,11 +143,6 @@ export default async function BusinessGoalPage({
 
   return (
     <div>
-      <div className="mb-5 rounded-md border-l-[3px] border-l-brand bg-brand-tint/40 px-4 py-3 text-[12.5px] leading-relaxed text-zinc-700 dark:text-zinc-300">
-        <b className="text-brand">산출근거 한 줄 = 업무일지 한 항목.</b> &ldquo;150명 × 24회&rdquo;를 입력하면 업무일지에{' '}
-        <b>목표 건수 24 / 목표 인원 3,600</b>이 그대로 들어갑니다. 계획서를 고치면 일지 목표도 같이 바뀝니다.
-      </div>
-
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className={statCard}>
           <div className="text-[10.5px] font-semibold tracking-wide text-zinc-400">계획 목표 합계</div>
@@ -167,33 +162,6 @@ export default async function BusinessGoalPage({
           <div className="mt-1 text-xl font-bold text-zinc-800 dark:text-zinc-100">
             {nf(settings.총목표)}<span className="ml-1 text-xs font-normal text-zinc-400">명</span>
           </div>
-          <FormToggle
-            label={`${business} · 사업설정`}
-            buttonLabel="사업설정 수정"
-            buttonClassName="text-[11px] text-brand hover:underline"
-            wrapperClassName=""
-          >
-            <form action={saveWorklogBusinessSettingsAction} className="flex flex-col gap-3">
-              <input type="hidden" name="business" value={business} />
-              <label className={label}>
-                총목표(명)
-                <input name="grandGoal" type="number" min="0" defaultValue={settings.총목표} className={inputBase} />
-              </label>
-              <label className={label}>
-                활동내용 라벨
-                <input name="actLabel" defaultValue={settings.활동내용라벨} className={inputBase} />
-              </label>
-              <label className={label}>
-                결재라인 (쉼표로 구분)
-                <input name="approvalLine" defaultValue={settings.결재라인.join(', ')} className={inputBase} />
-              </label>
-              <div className={label}>
-                공유 대상 (일계입력·월별현황·일지인쇄 접근 허용)
-                <ShareStaffChecklist groups={staffGroups} checkedEmails={shared} />
-              </div>
-              <button type="submit" className={`${btn} w-fit`}>저장</button>
-            </form>
-          </FormToggle>
         </div>
         <div className={statCard}>
           <div className="text-[10.5px] font-semibold tracking-wide text-zinc-400">검증</div>
@@ -206,7 +174,36 @@ export default async function BusinessGoalPage({
 
       <div className={card}>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className={h2}>{business} 세부사업계획(안) <span className="ml-2 text-xs font-normal text-zinc-400">단위 : 천원</span></h2>
+          <div className="flex items-center gap-3">
+            <h2 className={h2}>{business} 세부사업계획(안) <span className="ml-2 text-xs font-normal text-zinc-400">단위 : 천원</span></h2>
+            <FormToggle
+              label={`${business} · 사업설정`}
+              buttonLabel="사업설정 수정"
+              buttonClassName="text-[11px] text-brand hover:underline"
+              wrapperClassName=""
+            >
+              <form action={saveWorklogBusinessSettingsAction} className="flex flex-col gap-3">
+                <input type="hidden" name="business" value={business} />
+                <label className={label}>
+                  총목표(명)
+                  <input name="grandGoal" type="number" min="0" defaultValue={settings.총목표} className={inputBase} />
+                </label>
+                <label className={label}>
+                  활동내용 라벨
+                  <input name="actLabel" defaultValue={settings.활동내용라벨} className={inputBase} />
+                </label>
+                <label className={label}>
+                  결재라인 (쉼표로 구분)
+                  <input name="approvalLine" defaultValue={settings.결재라인.join(', ')} className={inputBase} />
+                </label>
+                <div className={label}>
+                  공유 대상 (업무입력·월별현황·일지인쇄 접근 허용)
+                  <ShareStaffChecklist groups={staffGroups} checkedEmails={shared} />
+                </div>
+                <button type="submit" className={`${btn} w-fit`}>저장</button>
+              </form>
+            </FormToggle>
+          </div>
           <CopyPlanTableButton html={planTableHtml} className={btnSecondary} />
         </div>
         <div className="overflow-x-auto rounded-md border border-[#8f8a7d] dark:border-zinc-700">
@@ -411,7 +408,7 @@ export default async function BusinessGoalPage({
 
       <div className={card}>
         <h2 className={h2}>생성된 업무일지 항목 <span className="ml-2 text-xs font-normal text-zinc-400">{worklogItems.length}개</span></h2>
-        <p className={hint}>목표설정 표의 산출근거가 이 항목들로 파생되어 일계입력·월별현황에 그대로 쓰입니다.</p>
+        <p className={hint}>세부사업계획 표의 산출근거가 이 항목들로 파생되어 업무입력·월별현황에 그대로 쓰입니다.</p>
         <div className="overflow-x-auto rounded-md border border-[#c7ccd3] dark:border-zinc-700">
           <table className="w-full min-w-[600px] border-collapse text-[12.5px]">
             <thead>
