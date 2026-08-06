@@ -34,7 +34,7 @@ export async function saveBusinessSettingsAction(formData: FormData): Promise<vo
 }
 
 export async function addSubAction(formData: FormData): Promise<void> {
-  await addBusinessSub(str(formData, 'business'), str(formData, 'name'), str(formData, 'effect'));
+  await addBusinessSub(str(formData, 'business'));
   revalidatePath('/business');
 }
 

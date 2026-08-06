@@ -109,13 +109,16 @@ export async function getBusinessPlanTree(사업명: string): Promise<BusinessSu
 }
 
 // ── 세부사업 CRUD ─────────────────────────────────────────────────
-export async function addBusinessSub(사업명: string, 세부사업명: string, 기대효과: string): Promise<void> {
-  if (!세부사업명.trim()) throw new Error('세부사업명을 입력해주세요.');
+// 시안(HTML)의 addSub()와 동일하게: 이름을 미리 받지 않고 바로 "새 세부사업" 한 줄을 만들고
+// 그 안에 기본 계획항목·산출근거까지 같이 생성한다. 이름/내용은 생성된 행에서 바로 고쳐 쓴다.
+export async function addBusinessSub(사업명: string): Promise<void> {
   const subs = await getKeyedList(BUSINESS_SUB_TABLE);
   const nextOrder = Math.max(0, ...subs.filter((s) => s.사업명 === 사업명).map((s) => num(s.정렬순서))) + 1;
+  const subId = randomUUID();
   await addKeyedRecord(BUSINESS_SUB_TABLE, {
-    id: randomUUID(), 사업명, 세부사업명: 세부사업명.trim(), 기대효과, 정렬순서: String(nextOrder),
+    id: subId, 사업명, 세부사업명: '새 세부사업', 기대효과: '', 정렬순서: String(nextOrder),
   });
+  await addPlanItem(subId, '새 계획항목');
 }
 
 export async function updateBusinessSub(id: string, patch: { 세부사업명?: string; 기대효과?: string }): Promise<void> {
@@ -168,6 +171,11 @@ export async function updatePlanItem(
 }
 
 export async function deletePlanItem(id: string): Promise<void> {
+  const items = await getKeyedList(BUSINESS_PLAN_ITEM_TABLE);
+  const existing = items.find((i) => i.id === id);
+  if (!existing) return;
+  const siblings = items.filter((i) => i.세부사업ID === existing.세부사업ID);
+  if (siblings.length <= 1) throw new Error('세부사업에는 계획항목이 최소 1개 있어야 합니다.');
   const basisRows = await getKeyedList(BUSINESS_PLAN_BASIS_TABLE);
   for (const b of basisRows.filter((row) => row.계획항목ID === id)) {
     await deleteKeyedRecord(BUSINESS_PLAN_BASIS_TABLE, { id: b.id });

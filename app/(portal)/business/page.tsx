@@ -389,10 +389,8 @@ export default async function BusinessGoalPage({
           </table>
         </div>
 
-        <form action={addSubAction} className="mt-3 flex gap-2">
+        <form action={addSubAction} className="mt-3">
           <input type="hidden" name="business" value={business} />
-          <input name="name" placeholder="새 세부사업명" required className={input} />
-          <input name="effect" placeholder="기대효과" className={input} />
           <button type="submit" className={btn}>＋ 세부사업 추가</button>
         </form>
       </div>
