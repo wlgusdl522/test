@@ -1,7 +1,5 @@
 import type { KeyedTableConfig } from './keyedTable';
-import {
-  CARD_LEDGER_SHEET_ID, GENERAL_WORK_LOG_SHEET_ID, STAFF_SHEET_ID, VEHICLE_SHEET_ID, WEEKLY_PLAN_SHEET_ID, WORKLOG_SHEET_ID,
-} from './sheetIds';
+import { CARD_LEDGER_SHEET_ID, STAFF_SHEET_ID, VEHICLE_SHEET_ID, WEEKLY_PLAN_SHEET_ID, WORKLOG_SHEET_ID } from './sheetIds';
 
 export const VEHICLE_REQUEST_HEADERS = [
   'id', '차량번호', '신청자이메일', '신청자명', '소속팀',
@@ -178,10 +176,6 @@ export const VEHICLE_LOG_TABLE: KeyedTableConfig = {
 };
 
 // ── 사업관리(총괄업무일지) ──────────────────────────────────────────
-// 이 스프레드시트를 대상으로 두 구현이 병렬로 존재한다 — general-work-log(기존 총괄업무일지_*
-// 탭, 사업당 단일 화면)는 그대로 유지하고, 아래 사업설정/세부사업/계획항목/산출근거는 그 옆에
-// 추가된 별도 모듈(/business/*, 세부사업계획서 전체를 입력받는 4화면 구조)이다. 서로 다른 탭을
-// 쓰므로 데이터는 겹치지 않는다.
 // 사업설정/세부사업/계획항목/산출근거 4단계로 세부사업계획서를 그대로 입력받고,
 // 산출근거 한 줄(직접입력 또는 인원×횟수)이 곧 업무일지의 목표 항목 하나가 된다.
 // 항목ID는 별도 테이블 없이 파생 규칙으로만 존재: merge 모드면 계획항목ID, 아니면
@@ -241,42 +235,4 @@ export const WORKLOG_MEMO_TABLE: KeyedTableConfig = {
   sheetName: '일일메모',
   headers: WORKLOG_MEMO_HEADERS,
   primaryKey: ['사업명', '날짜'],
-};
-
-// 총괄업무일지(general-work-log): 사업(프로그램)마다 구분항목 트리와 목표(건/명)가 다르므로 항목
-// 자체를 화면에서 직접 추가·수정하고(GENERAL_LOG_ITEM_TABLE), 날짜별 실적은 항목ID를 참조하는
-// 별도 테이블에 쌓는다. 위 사업설정/세부사업/... 과는 별개 화면(/general-work-log)에서 쓰인다.
-export const GENERAL_LOG_ITEM_HEADERS = [
-  'id', '사업명', '대분류', '중분류', '세부항목', '정렬순서', '목표건', '목표명',
-];
-
-export const GENERAL_LOG_ITEM_TABLE: KeyedTableConfig = {
-  spreadsheetId: GENERAL_WORK_LOG_SHEET_ID,
-  sheetName: '총괄업무일지_항목',
-  headers: GENERAL_LOG_ITEM_HEADERS,
-  primaryKey: 'id',
-};
-
-export const GENERAL_LOG_DAILY_HEADERS = [
-  '사업명', '날짜', '항목ID', '건', '명', '작성자이메일', '작성자명', '등록일시',
-];
-
-export const GENERAL_LOG_DAILY_TABLE: KeyedTableConfig = {
-  spreadsheetId: GENERAL_WORK_LOG_SHEET_ID,
-  sheetName: '총괄업무일지_일계',
-  headers: GENERAL_LOG_DAILY_HEADERS,
-  primaryKey: ['사업명', '날짜', '항목ID'],
-};
-
-// 업무내용 행과 특이사항을 한 탭에 같이 담는다 — 특이사항은 하루에 한 줄뿐이라 별도 탭을 두기보다
-// 구분 컬럼('업무' | '특이사항')으로만 나눈다.
-export const GENERAL_LOG_CONTENT_HEADERS = [
-  'id', '사업명', '날짜', '구분', '내용', '실적', '비고', '작성자이메일', '작성자명', '등록일시',
-];
-
-export const GENERAL_LOG_CONTENT_TABLE: KeyedTableConfig = {
-  spreadsheetId: GENERAL_WORK_LOG_SHEET_ID,
-  sheetName: '총괄업무일지_내용',
-  headers: GENERAL_LOG_CONTENT_HEADERS,
-  primaryKey: 'id',
 };

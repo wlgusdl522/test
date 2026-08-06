@@ -48,7 +48,6 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: '사업관리',
     items: [
-      { href: '/general-work-log', label: '총괄업무일지', description: '사업별 구분항목·목표 설정 및 일계·월계·누계 실적 기록' },
       { href: '/business', label: '목표설정', description: '세부사업계획서 입력' },
       { href: '/business/daily', label: '일계입력', description: '일일 실적 입력' },
       { href: '/business/monthly', label: '월별현황', description: '작성 현황·월계·누계' },
