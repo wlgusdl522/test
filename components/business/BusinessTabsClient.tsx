@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { inputBase } from '@/lib/ui';
 
 const TABS = [
   { href: '/business', label: '목표설정' },
@@ -23,8 +22,27 @@ export default function BusinessTabsClient({ businesses }: { businesses: { name:
   }
 
   return (
-    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <div className="flex gap-1 border-b border-zinc-200 dark:border-zinc-800">
+    <div className="mb-5">
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {businesses.map((b) => {
+          const isActive = b.name === current;
+          return (
+            <button
+              key={b.name}
+              type="button"
+              onClick={() => onBusinessChange(b.name)}
+              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-brand text-white'
+                  : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
+              }`}
+            >
+              {b.name}
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex flex-wrap items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
         {TABS.map((t) => {
           const isActive = pathname === t.href;
           return (
@@ -49,15 +67,6 @@ export default function BusinessTabsClient({ businesses }: { businesses: { name:
           일지인쇄 ↗
         </a>
       </div>
-      <select
-        value={current}
-        onChange={(e) => onBusinessChange(e.target.value)}
-        className={`${inputBase} w-auto`}
-      >
-        {businesses.map((b) => (
-          <option key={b.name} value={b.name}>{b.name}</option>
-        ))}
-      </select>
     </div>
   );
 }
