@@ -9,7 +9,7 @@ export default async function BusinessLayout({ children }: { children: React.Rea
   const businesses = await getBusinessList();
   return (
     <main className={pageFluid}>
-      <h1 className={h1}>사업관리</h1>
+      <h1 className={h1}>총괄업무일지</h1>
       <BusinessTabsClient businesses={businesses} />
       {children}
     </main>
