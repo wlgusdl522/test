@@ -13,7 +13,7 @@ import { findTeamSupervisorEmail } from '@/lib/approval/teamSupervisor';
 import { getStaffList } from '@/lib/mutate/staff';
 import { getSystemSettings, VEHICLE_LOG_APPROVAL_MODE_ELECTRONIC, VEHICLE_LOG_APPROVAL_MODE_MANUAL } from '@/lib/mutate/settings';
 import { notifyJandiPersonal } from '@/lib/notify/jandi';
-import { ADMIN_EMAILS, requireViewerEmail } from '@/lib/auth-helpers';
+import { isAdminEmail, requireViewerEmail } from '@/lib/auth-helpers';
 
 type DecoratedLog = Record<string, string>;
 const STEPS = ['팀장', '차량관리자'];
@@ -58,7 +58,7 @@ export async function getMyPendingVehicleLogApprovals(): Promise<DecoratedLog[]>
   if (!electronic) return [];
   const viewerEmail = await requireViewerEmail();
   const all = await getVehicleLogList();
-  if (ADMIN_EMAILS.includes(viewerEmail)) return all.filter((r) => r.결재상태 === '결재중');
+  if (await isAdminEmail(viewerEmail)) return all.filter((r) => r.결재상태 === '결재중');
   return all.filter((r) => r.현재결재자이메일 && r.현재결재자이메일.toLowerCase() === viewerEmail);
 }
 
@@ -148,7 +148,7 @@ export async function actOnVehicleLog(id: string, action: '승인' | '반려', c
 
   const staffList = await getStaffList();
   const decorated = await decorate(existing, staffList, true);
-  const isAdmin = ADMIN_EMAILS.includes(viewerEmail);
+  const isAdmin = await isAdminEmail(viewerEmail);
   const me = staffList.find((s) => s['이메일(아이디)'] === viewerEmail);
 
   let applied;

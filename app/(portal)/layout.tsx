@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
-import { ADMIN_EMAILS, getViewerStaffRecord } from '@/lib/auth-helpers';
+import { getViewerStaffRecord, isAdminEmail } from '@/lib/auth-helpers';
 import { getNavLayout } from '@/lib/prefs-actions';
 import Sidebar from '@/components/Sidebar';
 import TopNav from '@/components/TopNav';
@@ -11,9 +11,9 @@ export default async function PortalLayout({ children }: { children: React.React
     redirect('/login');
   }
   const email = session.user.email;
-  const [me, navLayout] = await Promise.all([getViewerStaffRecord(), getNavLayout()]);
+  const [me, navLayout, viewerIsAdmin] = await Promise.all([getViewerStaffRecord(), getNavLayout(), isAdminEmail(email)]);
   const userName = me?.성명 || session.user.name || email;
-  const userSubtitle = ADMIN_EMAILS.includes(email.toLowerCase())
+  const userSubtitle = viewerIsAdmin
     ? '관리자'
     : me
       ? `${me.소속팀} · ${me['직급/직책']}`

@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { ADMIN_EMAILS, requireViewerEmail } from '@/lib/auth-helpers';
+import { isAdminEmail, requireViewerEmail } from '@/lib/auth-helpers';
 import { getBusinessNamesSharedWith, setBusinessShares } from '@/lib/mutate/businessShare';
 import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord, upsertKeyedRecord } from '@/lib/mutate/keyedTable';
 import {
@@ -108,7 +108,7 @@ export async function getWorklogBusinessNames(): Promise<string[]> {
 export async function getViewerWorklogBusinessNames(): Promise<string[]> {
   const email = await requireViewerEmail();
   const all = await getWorklogBusinessNames();
-  if (ADMIN_EMAILS.includes(email)) return all;
+  if (await isAdminEmail(email)) return all;
   const shared = new Set(await getBusinessNamesSharedWith(email));
   return all.filter((name) => shared.has(name));
 }

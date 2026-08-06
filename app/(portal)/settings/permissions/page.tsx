@@ -1,21 +1,59 @@
+import { getAdminList } from '@/lib/auth-helpers';
 import { CONFIGURABLE_PAGES, PAGE_ACCESS_TIERS } from '@/lib/pages-registry';
 import { getActiveStaffList, getPageAccessExceptionMap, getPageAccessRuleMap } from '@/lib/mutate/permissions';
-import { btn, btnSecondary, cardTableWrap, h1, input, inputBase, pageFluid, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
-import { addExceptionAction, removeExceptionAction, setTierAction } from './actions';
+import { btn, btnDanger, btnSecondary, card, cardTableWrap, h1, h2, hint, input, inputBase, pageFluid, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
+import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
+import { addAdminAction, addExceptionAction, removeAdminAction, removeExceptionAction, setTierAction } from './actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export default async function PermissionsSettingsPage() {
-  const [rules, exceptions, staff] = await Promise.all([
+  const [rules, exceptions, staff, admins] = await Promise.all([
     getPageAccessRuleMap(),
     getPageAccessExceptionMap(),
     getActiveStaffList(),
+    getAdminList(),
   ]);
+  const adminEmails = admins.map((a) => a.email);
+  const candidates = staff.filter((s) => !adminEmails.includes(s.email.toLowerCase()));
 
   return (
     <main className={pageFluid}>
       <h1 className={`${h1} mb-5`}>설정 &gt; 권한설정</h1>
+
+      <div className={card}>
+        <h2 className={h2}>관리자</h2>
+        <p className={hint}>관리자는 아래 권한 등급·전결 설정과 무관하게 모든 화면·사업을 볼 수 있습니다.</p>
+        <ul className="mb-3 flex flex-col gap-1.5">
+          {admins.map((a) => (
+            <li key={a.email} className="flex items-center gap-2 text-sm">
+              <span className="flex-1">{a.name || a.email} <span className="text-xs text-zinc-400">{a.email}</span></span>
+              <form action={removeAdminAction}>
+                <input type="hidden" name="email" value={a.email} />
+                <ConfirmSubmitButton
+                  confirmMessage={`${a.name || a.email}님을 관리자에서 제거할까요?`}
+                  className={btnDanger}
+                  title={admins.length <= 1 ? '마지막 남은 관리자는 제거할 수 없습니다' : undefined}
+                >
+                  제거
+                </ConfirmSubmitButton>
+              </form>
+            </li>
+          ))}
+        </ul>
+        {candidates.length > 0 && (
+          <form action={addAdminAction} className="flex gap-2">
+            <select name="email" required className={`${inputBase} w-auto`}>
+              <option value="">직원 선택</option>
+              {candidates.map((s) => (
+                <option key={s.email} value={s.email}>{s.name} ({s.team})</option>
+              ))}
+            </select>
+            <button type="submit" className={btn}>관리자로 추가</button>
+          </form>
+        )}
+      </div>
 
       <div className={cardTableWrap}><table className={tableClean}>
         <thead>

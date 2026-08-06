@@ -1,7 +1,22 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { addPageAccessException, removePageAccessException, setPageAccessRule } from '@/lib/mutate/permissions';
+import { addAdmin, removeAdmin } from '@/lib/auth-helpers';
+import { addPageAccessException, getActiveStaffList, removePageAccessException, setPageAccessRule } from '@/lib/mutate/permissions';
+
+export async function addAdminAction(formData: FormData) {
+  const email = String(formData.get('email') ?? '');
+  const staff = await getActiveStaffList();
+  const name = staff.find((s) => s.email.toLowerCase() === email.toLowerCase())?.name ?? '';
+  await addAdmin(email, name);
+  revalidatePath('/settings/permissions');
+}
+
+export async function removeAdminAction(formData: FormData) {
+  const email = String(formData.get('email') ?? '');
+  await removeAdmin(email);
+  revalidatePath('/settings/permissions');
+}
 
 export async function setTierAction(formData: FormData) {
   const pageId = String(formData.get('pageId') ?? '');

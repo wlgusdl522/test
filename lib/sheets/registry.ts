@@ -62,6 +62,14 @@ export const PAGE_ACCESS_TABLE: KeyedTableConfig = {
   primaryKey: '페이지ID',
 };
 
+// 관리자(모든 권한설정을 무시하고 항상 전체 허용) 지정을 코드가 아니라 설정 화면에서 관리한다.
+export const ADMIN_LIST_TABLE: KeyedTableConfig = {
+  spreadsheetId: STAFF_SHEET_ID,
+  sheetName: '관리자목록',
+  headers: ['이메일', '성명'],
+  primaryKey: '이메일',
+};
+
 export const APPROVAL_JEONGYEOL_TABLE: KeyedTableConfig = {
   spreadsheetId: STAFF_SHEET_ID,
   sheetName: '결재전결설정',
