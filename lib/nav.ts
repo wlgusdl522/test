@@ -41,6 +41,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: '지출관리',
     items: [
       { href: '/expenses', label: '카드사용대장', description: '지출 등록·검수·결재' },
+      { href: '/transit-card', label: '교통카드사용대장', description: '교통카드 사용 등록·조회' },
     ],
   },
   {
@@ -50,6 +51,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: '/settings/business-list', label: '사업목록', description: '사업명·소관팀 목록 관리' },
       { href: '/settings/vehicles', label: '차량목록', description: '보유 차량 목록 관리' },
       { href: '/settings/budget-items', label: '예산과목', description: '지출 예산 과목 관리' },
+      { href: '/settings/transit-cards', label: '교통카드목록', description: '교통카드 등록·초기잔액 관리' },
       { href: '/settings/permissions', label: '권한설정', description: '직원별 권한 설정' },
       { href: '/settings/approval-rules', label: '결재라인 전결기준', description: '전결 기준 설정' },
       { href: '/settings/system', label: '시스템 설정값', description: '시스템 공통 설정값 관리' },
