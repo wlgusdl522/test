@@ -1,8 +1,17 @@
 import { getBusinessList } from '@/lib/mutate/business';
-import { buildWorklogItems, getBusinessPlanTree, getBusinessSettings, planGoal } from '@/lib/mutate/businessPlan';
+import {
+  buildWorklogItems,
+  getBusinessPlanTree,
+  getBusinessSettings,
+  planGoal,
+  type BasisRow,
+  type BusinessSubNode,
+  type PlanItem,
+} from '@/lib/mutate/businessPlan';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import { btn, btnDanger, btnSecondary, card, h2, hint, input, inputBase, label, selectFilter, statCard } from '@/lib/ui';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
+import CopyPlanTableButton from '@/components/business/CopyPlanTableButton';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import {
   addBasisAction,
@@ -26,6 +35,68 @@ const inputSm = `${inputBase} w-full`;
 const th = 'border border-[#c7ccd3] bg-[#eef1f5] px-2 py-2 text-center text-[11.5px] font-bold text-zinc-600 whitespace-nowrap dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300';
 const td = 'border border-[#c7ccd3] px-2.5 py-2.5 align-top text-[12.5px] dark:border-zinc-700';
 const MODE_LABEL: Record<string, string> = { merge: '묶음(1행)', sub: '소분류 분리', mid: '중분류 분리' };
+
+function escHtml(s: string): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br/>');
+}
+
+function basisLineText(b: BasisRow): string {
+  if (b.직접입력여부) return `${b.라벨} ${nf(b.직접건)}건/${nf(b.직접명)}명`;
+  return `${b.라벨} ${nf(b.인원)}명×${nf(b.횟수)}${b.단위}=${nf(b.인원 * b.횟수)}명`;
+}
+
+// 한글(HWP)에 붙여넣었을 때 표 모양이 살아나도록 클래스 대신 인라인 style만 쓴다(외부 CSS는
+// 클립보드로 안 넘어간다) — input/select/textarea 없이 값만 담은, 실제 계획서와 같은 표.
+const CELL = 'border:1px solid #333;padding:6px 8px;font-size:12px;vertical-align:top;font-family:"맑은 고딕","Malgun Gothic",sans-serif;';
+const CELL_C = `${CELL}text-align:center;`;
+const HEAD = `${CELL_C}background:#eef1f5;font-weight:700;`;
+
+function buildPlanTableHtml(
+  business: string,
+  rows: { sub: BusinessSubNode; plans: { plan: PlanItem; goal: { gc: number; gp: number } }[] }[],
+  totalGp: number,
+  totalGc: number,
+  totalBudget: number
+): string {
+  const totalDataRows = rows.reduce((a, r) => a + Math.max(r.plans.length, 1), 0);
+  let body = '';
+  let first = true;
+  rows.forEach(({ sub, plans }) => {
+    if (plans.length === 0) {
+      body += `<tr>${first ? `<td style="${CELL_C}" rowspan="${totalDataRows + 1}">${escHtml(business)}</td>` : ''}` +
+        `<td style="${CELL_C}font-weight:700;">${escHtml(sub.세부사업명)}</td>` +
+        `<td style="${CELL_C}">-</td><td style="${CELL_C}">-</td><td style="${CELL}"></td>` +
+        `<td style="${CELL}">${escHtml(sub.기대효과)}</td></tr>`;
+      first = false;
+      return;
+    }
+    plans.forEach(({ plan, goal }, pi) => {
+      const basisText = plan.basis.map(basisLineText).join('<br/>');
+      body += '<tr>';
+      if (first) {
+        body += `<td style="${CELL_C}" rowspan="${totalDataRows + 1}">${escHtml(business)}</td>`;
+        first = false;
+      }
+      if (pi === 0) body += `<td style="${CELL_C}font-weight:700;" rowspan="${plans.length}">${escHtml(sub.세부사업명)}</td>`;
+      body += `<td style="${CELL_C}">${nf(goal.gp)}명<br/>${nf(goal.gc)}건</td>`;
+      body += `<td style="${CELL}text-align:right;">${nf(plan.예산)}</td>`;
+      body += `<td style="${CELL}"><b>${pi + 1}) ${escHtml(plan.제목)}</b><br/>${escHtml(plan.사업내용)}${basisText ? `<br/>▪ ${basisText}` : ''}</td>`;
+      if (pi === 0) body += `<td style="${CELL}" rowspan="${plans.length}">${escHtml(sub.기대효과)}</td>`;
+      body += '</tr>';
+    });
+  });
+  body += `<tr><td style="${HEAD}" colspan="2">소 계</td><td style="${HEAD}">${nf(totalGp)}명<br/>${nf(totalGc)}건</td>` +
+    `<td style="${HEAD}text-align:right;">${nf(totalBudget)}</td><td style="${HEAD}" colspan="2"></td></tr>`;
+
+  return `<table style="border-collapse:collapse;width:100%;"><thead><tr>` +
+    `<th style="${HEAD}">사업분류</th><th style="${HEAD}">세부사업</th><th style="${HEAD}">목표<br/>(회·건·명)</th>` +
+    `<th style="${HEAD}">예산<br/>(천원)</th><th style="${HEAD}">사 업 내 용</th><th style="${HEAD}">기 대 효 과</th>` +
+    `</tr></thead><tbody>${body}</tbody></table>`;
+}
 
 export default async function BusinessGoalPage({
   searchParams,
@@ -62,6 +133,7 @@ export default async function BusinessGoalPage({
     return { sub, plans };
   });
   const matches = totalGp === settings.총목표;
+  const planTableHtml = buildPlanTableHtml(business, rows, totalGp, totalGc, totalBudget);
 
   return (
     <div>
@@ -121,6 +193,7 @@ export default async function BusinessGoalPage({
       <div className={card}>
         <div className="mb-3 flex items-center justify-between">
           <h2 className={h2}>{business} 세부사업계획(안) <span className="ml-2 text-xs font-normal text-zinc-400">단위 : 천원</span></h2>
+          <CopyPlanTableButton html={planTableHtml} className={btnSecondary} />
         </div>
         <div className="overflow-x-auto rounded-md border border-[#8f8a7d] dark:border-zinc-700">
           <table className="w-full min-w-[1180px] border-collapse text-[12.5px]">
