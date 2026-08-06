@@ -41,6 +41,14 @@ export async function getActiveStaffList(): Promise<ActiveStaff[]> {
     .map((r) => ({ email: r['이메일(아이디)'], name: r['성명'], team: r['소속팀'] }));
 }
 
+// 총괄업무일지 공유 대상은 관리팀 4개 소속 직원만 고르면 되고, 팀별로 묶어서 보여주면 찾기 쉽다.
+export const SHAREABLE_TEAMS = ['복지1팀', '복지2팀', '복지3팀', '총무팀'];
+
+export async function getShareableStaffGroups(): Promise<{ team: string; staff: ActiveStaff[] }[]> {
+  const all = await getActiveStaffList();
+  return SHAREABLE_TEAMS.map((team) => ({ team, staff: all.filter((s) => s.team === team) }));
+}
+
 export async function setPageAccessRule(pageId: string, pageName: string, tier: string): Promise<void> {
   await requireCanManagePermissions();
   if (!PAGE_ACCESS_TIERS.some((t) => t.value === tier)) {
