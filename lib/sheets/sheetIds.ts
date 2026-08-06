@@ -5,6 +5,8 @@ export const CARD_LEDGER_SHEET_ID = '1WBNt9PGWQDjwf0PtwgOOPqiJdqNdMUf1yugQenlMF-
 export const VEHICLE_SHEET_ID = '1JtRFxBzH1Xh7chmyMlqlAv__qYC4INR3y7FMIWGKwpQ'; // "4. 차량관리"
 export const WORKLOG_SHEET_ID = '1iMzG0lBTnjUdnYdGqXzo85PQ4szIfHtyHJxr14VGHnE'; // "5. 총괄업무일지"
 
+export const GENERAL_WORK_LOG_SHEET_ID = '1iMzG0lBTnjUdnYdGqXzo85PQ4szIfHtyHJxr14VGHnE'; // "5. 총괄업무일지"
+
 export const TEAM_LIST_SHEET_NAME = '팀목록';
 export const POSITION_LIST_SHEET_NAME = '직급목록';
 export const APPROVAL_LINE_SHEET_NAME = '결재라인';
