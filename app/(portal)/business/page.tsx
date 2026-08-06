@@ -1,4 +1,4 @@
-import { getViewerBusinessList } from '@/lib/mutate/business';
+import { getBusinessList } from '@/lib/mutate/business';
 import {
   buildWorklogItems,
   getBusinessPlanTree,
@@ -105,11 +105,11 @@ export default async function BusinessGoalPage({
   if (!(await hasPageAccess('business-goal'))) return <PageAccessDenied />;
 
   const { business: businessParam } = await searchParams;
-  const businesses = await getViewerBusinessList();
+  const businesses = await getBusinessList();
   const business = businessParam || businesses[0]?.name || '';
 
   if (!business) {
-    return <p className="text-sm text-zinc-500">담당하시는 사업이 없습니다. 설정 &gt; 직원관리에서 담당사업을 등록해주세요.</p>;
+    return <p className="text-sm text-zinc-500">설정 &gt; 사업목록에서 사업을 먼저 등록해주세요.</p>;
   }
 
   const [settings, tree, worklogItems] = await Promise.all([
