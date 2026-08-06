@@ -23,7 +23,7 @@ export default async function MyPage() {
 
   return (
     <main className={pageFluid}>
-      <h1 className={h1}>마이페이지</h1>
+      <h1 className={`${h1} mb-5`}>마이페이지</h1>
 
       <h2 className={h2}>화면 레이아웃</h2>
       <div className={`${card} flex flex-wrap items-center gap-3`}>

@@ -12,7 +12,7 @@ export default async function BudgetItemsSettingsPage() {
 
   return (
     <main className={pageFluid}>
-      <h1 className={h1}>설정 &gt; 예산과목</h1>
+      <h1 className={`${h1} mb-5`}>설정 &gt; 예산과목</h1>
       <p className={hint}>
         카드사용대장 등록폼의 예산과목 드롭다운에 그대로 반영됩니다. &quot;사업비&quot;는 연계사업명을,
         &quot;공통비&quot;는 소관팀(예: 총무팀)을 함께 적어주세요.

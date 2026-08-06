@@ -20,7 +20,7 @@ export default async function SimpleListsSettingsPage() {
 
   return (
     <main className={pageFluid}>
-      <h1 className={h1}>설정 &gt; 팀 / 직급 / 결재라인</h1>
+      <h1 className={`${h1} mb-5`}>설정 &gt; 팀 / 직급 / 결재라인</h1>
       <div className="grid grid-cols-3 gap-6">
         {lists.map((list) => (
           <section key={list.name}>

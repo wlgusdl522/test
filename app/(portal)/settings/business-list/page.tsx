@@ -13,7 +13,7 @@ export default async function BusinessListSettingsPage() {
 
   return (
     <main className={pageFluid}>
-      <h1 className={h1}>설정 &gt; 사업목록</h1>
+      <h1 className={`${h1} mb-5`}>설정 &gt; 사업목록</h1>
 
       <FormToggle label="사업 등록">
         <form action={addBusinessAction} className="flex gap-2 mb-6">

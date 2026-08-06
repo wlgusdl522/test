@@ -10,7 +10,7 @@ export default async function SystemSettingsPage() {
 
   return (
     <main className={pageFluid}>
-      <h1 className={h1}>설정 &gt; 시스템 설정값</h1>
+      <h1 className={`${h1} mb-5`}>설정 &gt; 시스템 설정값</h1>
       <p className={hint}>기존 Apps Script의 스크립트 속성(PropertiesService) 6개 값을 이관한 화면입니다.</p>
 
       <form action={saveSystemSettingsAction} className="flex flex-col gap-3">

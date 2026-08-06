@@ -21,7 +21,7 @@ export default async function ApprovalRulesSettingsPage() {
 
   return (
     <main className={pageFluid}>
-      <h1 className={h1}>설정 &gt; 결재라인 &gt; 게시판별 전결기준</h1>
+      <h1 className={`${h1} mb-5`}>설정 &gt; 결재라인 &gt; 게시판별 전결기준</h1>
 
       <div className={cardTableWrap}><table className={tableClean}>
         <thead>

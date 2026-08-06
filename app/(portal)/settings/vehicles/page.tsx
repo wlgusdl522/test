@@ -12,7 +12,7 @@ export default async function VehiclesSettingsPage() {
 
   return (
     <main className={pageFluid}>
-      <h1 className={h1}>설정 &gt; 차량관리 &gt; 차량목록</h1>
+      <h1 className={`${h1} mb-5`}>설정 &gt; 차량관리 &gt; 차량목록</h1>
 
       <FormToggle label="차량 등록">
         <form action={addVehicleAction} className="flex gap-2 mb-6">
