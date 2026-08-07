@@ -75,11 +75,3 @@ export async function getMyRecordsSummary() {
     vehicleLog: topN(myVehicleLogs, '운행일자'),
   };
 }
-
-export async function getMyApprovalCount(): Promise<number> {
-  const viewerEmail = await requireViewerEmail();
-  const [reports, logs] = await Promise.all([getItemCheckReportList(), getVehicleLogList()]);
-  const reportCount = reports.filter((r) => r.현재결재자이메일?.toLowerCase() === viewerEmail).length;
-  const logCount = logs.filter((r) => r.현재결재자이메일?.toLowerCase() === viewerEmail).length;
-  return reportCount + logCount;
-}

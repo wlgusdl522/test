@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getMyApprovalCount, getMyRecordsSummary } from '@/lib/mutate/dashboard';
+import { getMyRecordsSummary } from '@/lib/mutate/dashboard';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getVehicleRequestList } from '@/lib/mutate/vehicleRequest';
 import { getMyPendingItemCheckReportApprovals } from '@/lib/mutate/itemCheckReport';
@@ -10,7 +10,12 @@ import { parseAmount } from '@/lib/format';
 import { TEAM_ORDER } from '@/lib/teamOrder';
 import { hasVehicleUseEnded } from '@/lib/vehicleTimeOverlap';
 import { NAV_SECTION_ICON_PATH } from '@/lib/nav';
-import { pageFluid, statCard } from '@/lib/ui';
+import { btn, pageFluid, statCard } from '@/lib/ui';
+import { getDutyWeekdayLogs, getDutySaturdayLogs } from '@/lib/supabase/duty';
+import { todayISO } from '@/lib/dutyDate';
+import { getGreetingMessages, pickGreetingMessage } from '@/lib/supabase/greetingMessages';
+import { getAwayStaff } from '@/lib/supabase/staffStatus';
+import AwayToggle from '@/components/home/AwayToggle';
 import ScheduleSlideshow, { type ScheduleSlide } from '@/components/home/ScheduleSlideshow';
 import ListSlideshow, { type ListSlide } from '@/components/home/ListSlideshow';
 
@@ -37,8 +42,6 @@ const SHORTCUTS = [
   { href: '/expenses', label: '카드사용대장', desc: '지출 등록', tone: 'emerald', icon: NAV_SECTION_ICON_PATH.지출관리 },
   { href: '/vehicles?new=1', label: '차량사용신청', desc: '차량 예약', tone: 'amber', icon: NAV_SECTION_ICON_PATH.차량관리 },
   { href: '/transit-card?new=1', label: '교통카드 사용등록', desc: '교통카드 사용 등록', tone: 'sky', icon: NAV_SECTION_ICON_PATH.차량관리 },
-  { href: '/staff/directory', label: '전직원 주소록', desc: '연락처 찾기', tone: 'violet', icon: NAV_SECTION_ICON_PATH.인사관리 },
-  { href: '/mypage', label: '내 결재함', desc: '결재 대기 확인', tone: 'cyan', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
   {
     href: 'https://web-ten-sigma-h3hmsi041o.vercel.app/documents/dashboard',
     label: '공문결재시스템',
@@ -53,8 +56,6 @@ const TONE_BADGE: Record<string, string> = {
   blue: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400',
   emerald: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400',
   amber: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400',
-  violet: 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400',
-  cyan: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400',
   sky: 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400',
   rose: 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400',
 };
@@ -77,34 +78,84 @@ export default async function HomePage() {
     return d.toISOString().slice(0, 10);
   });
 
-  const [me, summary, approvalCount, allWeekTasks, vehicleRequests, vehicleLogs, pendingReports, pendingLogs] = await Promise.all([
+  const [
+    me,
+    summary,
+    allWeekTasks,
+    vehicleRequests,
+    vehicleLogs,
+    pendingReports,
+    pendingLogs,
+    weekdayDutyLogs,
+    saturdayDutyLogs,
+    greetingMessages,
+    awayStaff,
+  ] = await Promise.all([
     getViewerStaffRecord(),
     getMyRecordsSummary(),
-    getMyApprovalCount(),
     getWeeklyTasks(null, weekStart),
     getVehicleRequestList(),
     getVehicleLogList(),
     getMyPendingItemCheckReportApprovals(),
     getMyPendingVehicleLogApprovals(),
+    getDutyWeekdayLogs(),
+    getDutySaturdayLogs(),
+    getGreetingMessages(),
+    getAwayStaff(),
   ]);
 
   const monthLabel = `${now.getFullYear()}년 ${now.getMonth() + 1}월`;
   const viewerEmail = (me?.['이메일(아이디)'] ?? '').toLowerCase();
   const pendingTasks = summary.pendingTasks;
 
-  const stats = [
-    { label: '내 결재 대기', value: approvalCount, href: '/mypage' },
-    { label: '최근 지출 등록', value: summary.cardLedger.length, href: '/expenses' },
-    { label: '최근 차량신청', value: summary.vehicleRequest.length, href: '/vehicles/requests' },
-  ];
+  const today = todayISO();
+  const currentYearMonth = today.slice(0, 7);
+  const myWeekdayDutyCount = weekdayDutyLogs.filter(
+    (r) => (r.이메일 ?? '').toLowerCase() === viewerEmail && (r.근무일자 ?? '').startsWith(currentYearMonth)
+  ).length;
+  const mySaturdayDutyCount = saturdayDutyLogs.filter(
+    (r) =>
+      ((r.이메일1 ?? '').toLowerCase() === viewerEmail || (r.이메일2 ?? '').toLowerCase() === viewerEmail) &&
+      (r.근무일자 ?? '').startsWith(currentYearMonth)
+  ).length;
+
+  const todayWeekdayDuty = weekdayDutyLogs.find(
+    (r) => r.근무일자 === today && (r.이메일 ?? '').toLowerCase() === viewerEmail
+  );
+  const todaySaturdayDuty = saturdayDutyLogs.find(
+    (r) =>
+      r.근무일자 === today &&
+      ((r.이메일1 ?? '').toLowerCase() === viewerEmail || (r.이메일2 ?? '').toLowerCase() === viewerEmail)
+  );
+  const todayDutyLogHref = todayWeekdayDuty
+    ? `/duty/log/weekday/${todayWeekdayDuty.id}`
+    : todaySaturdayDuty
+      ? `/duty/log/saturday/${todaySaturdayDuty.id}`
+      : null;
+
+  const greetingMessage = pickGreetingMessage(greetingMessages, now);
+  const myAwayStatus = awayStaff.find((a) => a.이메일.toLowerCase() === viewerEmail);
 
   const leaveByDate = new Map<string, { primary: string; secondary?: string }[]>();
+  const leaveByTeamDate = new Map<string, { primary: string; secondary?: string; highlight: true }[]>();
   allWeekTasks.forEach((t) => {
     const tag = parseLeaveTag(t.업무내용);
     if (!tag) return;
     const list = leaveByDate.get(t.날짜) ?? [];
     list.push({ primary: tag.name, secondary: tag.type });
     leaveByDate.set(t.날짜, list);
+
+    const teamKey = `${t.소속팀}|${t.날짜}`;
+    const teamList = leaveByTeamDate.get(teamKey) ?? [];
+    teamList.push({ primary: `${tag.name} · ${tag.type}`, highlight: true });
+    leaveByTeamDate.set(teamKey, teamList);
+  });
+
+  const awayByTeam = new Map<string, { primary: string; secondary?: string; highlight: true }[]>();
+  awayStaff.forEach((a) => {
+    const list = awayByTeam.get(a.소속팀) ?? [];
+    list.push({ primary: `${a.성명} 부재중`, secondary: a.사유, highlight: true });
+    awayByTeam.set(a.소속팀, list);
   });
 
   const dayDateSet = new Set(dayDates);
@@ -163,7 +214,10 @@ export default async function HomePage() {
   const dayColumnLabels = dayDates.map((iso, i) => dayLabel(iso, i));
   const myWeekGridRow = {
     label: me?.성명 || '내 업무',
-    cells: dayDates.map((iso) => myWeekTasks.filter((t) => t.날짜 === iso).map((t) => ({ primary: t.업무내용 }))),
+    cells: dayDates.map((iso) => [
+      ...myWeekTasks.filter((t) => t.날짜 === iso).map((t) => ({ primary: t.업무내용 })),
+      ...(iso === today && myAwayStatus ? [{ primary: `부재중 · ${myAwayStatus.사유}`, highlight: true as const }] : []),
+    ]),
   };
 
   // 전체 팀 취합 — 세로축 팀 × 가로축 요일로 된 캘린더 표. 회의록 후보로 표시한 업무만 보여준다.
@@ -174,11 +228,11 @@ export default async function HomePage() {
   const activeTeams = TEAM_ORDER.filter((t) => t !== '미배정');
   const teamGridRows = activeTeams.map((team) => ({
     label: team,
-    cells: dayDates.map((iso) =>
-      meetingTeamTasks
-        .filter((t) => t.날짜 === iso && t.소속팀 === team)
-        .map((t) => ({ primary: t.업무내용 }))
-    ),
+    cells: dayDates.map((iso) => [
+      ...meetingTeamTasks.filter((t) => t.날짜 === iso && t.소속팀 === team).map((t) => ({ primary: t.업무내용 })),
+      ...(leaveByTeamDate.get(`${team}|${iso}`) ?? []),
+      ...(iso === today ? (awayByTeam.get(team) ?? []) : []),
+    ]),
   }));
 
   const listSlides: ListSlide[] = [
@@ -241,18 +295,23 @@ export default async function HomePage() {
             {me?.성명 ?? ''}
             {me?.['직급/직책'] ? ` ${me['직급/직책']}` : ''}님, 오늘도 <span className="text-brand">수고 많으세요</span>
           </h1>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            처리할 일 {pendingTasks.length}건, 결재 대기 {approvalCount}건이 있어요.
-          </p>
-          <div className="mt-5 grid grid-cols-3 gap-3">
-            {stats.map((s) => (
-              <Link key={s.label} href={s.href} className={statCard}>
-                <p className="text-xs font-medium text-zinc-500">{s.label}</p>
-                <p className="mt-1.5 text-2xl font-bold text-zinc-900 dark:text-zinc-100">{s.value}</p>
-                <p className="mt-0.5 text-xs text-zinc-400">건</p>
-              </Link>
-            ))}
+          {greetingMessage && <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{greetingMessage}</p>}
+
+          <div className="mt-5 flex flex-wrap items-stretch gap-3">
+            <Link href="/duty" className={`${statCard} flex-1`}>
+              <p className="text-xs font-medium text-zinc-500">내 당직일자 · 토요당직</p>
+              <p className="mt-1.5 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                {myWeekdayDutyCount}일 <span className="text-base font-medium text-zinc-400">/</span> {mySaturdayDutyCount}일
+              </p>
+              <p className="mt-0.5 text-xs text-zinc-400">이번 달 기준</p>
+            </Link>
+            <AwayToggle initialAway={!!myAwayStatus} initialReason={myAwayStatus?.사유} />
           </div>
+          {todayDutyLogHref && (
+            <Link href={todayDutyLogHref} className={`${btn} mt-3 w-fit`}>
+              오늘 당직 · 당직일지 작성하기
+            </Link>
+          )}
         </div>
 
         <div className="min-w-0 flex-1 rounded-xl bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.08)] dark:bg-zinc-900">

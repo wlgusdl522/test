@@ -1,8 +1,8 @@
 // "내 업무 입력"에서 요일별 휴가/교육 유형을 고르면 업무내용 끝에 "성명(휴가유형)" 태그가 자동으로 붙는다.
 // 부서별 취합/회의록 휴가요약 등 여러 곳에서 이 태그를 다시 파싱해야 해서 한 곳에 모아둔다.
 // Index.html/Code.js의 동명 LEAVE_TYPES와 반드시 동일하게 맞춰야 한다.
-export const LEAVE_TYPES = ['연가', '공가', '가족돌봄', '특별휴가', '건강검진', '교육(종일)', '0.75', '0.5(오전)', '0.5(오후)', '0.25(오전)', '0.25(오후)'];
-export const FULL_DAY_LEAVE_TYPES = ['연가', '공가', '가족돌봄', '특별휴가', '건강검진', '교육(종일)'];
+export const LEAVE_TYPES = ['연가', '공가', '가족돌봄', '특별휴가', '건강검진', '교육(종일)', '출장', '0.75', '0.5(오전)', '0.5(오후)', '0.25(오전)', '0.25(오후)'];
+export const FULL_DAY_LEAVE_TYPES = ['연가', '공가', '가족돌봄', '특별휴가', '건강검진', '교육(종일)', '출장'];
 
 export function parseLeaveTag(content: string): { name: string; type: string } | null {
   const m = /^(.+)\(([^)]+)\)$/.exec(content || '');
