@@ -30,12 +30,12 @@ function subSpan(rows: Row[], i: number): number {
 
 export default function DailyEntryClient({
   business, date, prevDate, nextDate, actLabel, rows, grandGoal,
-  totalDay, totalMtd, totalYtd, initialContent, initialNote, dow,
+  totalDay, totalMtd, totalYtd, initialContent, initialNote, dow, settingsToggle,
 }: {
   business: string; date: string; prevDate: string; nextDate: string; actLabel: string;
   rows: Row[]; grandGoal: number;
   totalDay: [number, number]; totalMtd: [number, number]; totalYtd: [number, number];
-  initialContent: string; initialNote: string; dow: string;
+  initialContent: string; initialNote: string; dow: string; settingsToggle?: React.ReactNode;
 }) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, { gc: string; gp: string }>>(
@@ -83,6 +83,7 @@ export default function DailyEntryClient({
         <a href={`?business=${encodeURIComponent(business)}&date=${nextDate}`} className={btnSecondary}>다음일 ▶</a>
         <button type="button" onClick={handleSubmit} disabled={isPending} className={btn}>저장</button>
         {status && <span className="text-xs text-zinc-500 dark:text-zinc-400">{status}</span>}
+        <div className="ml-auto">{settingsToggle}</div>
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -1,12 +1,12 @@
 import { buildWorklogItems, getBusinessPlanTree, getBusinessSettings, getWorklogBusinessNames } from '@/lib/mutate/businessPlan';
 import { getAllBusinessShares } from '@/lib/mutate/businessShare';
 import { getShareableStaffGroups, hasPageAccess } from '@/lib/mutate/permissions';
-import { btn, card, h2, hint, inputBase, label } from '@/lib/ui';
+import { btn, card, h2, hint, label } from '@/lib/ui';
 import BusinessPlanEditor from '@/components/business/BusinessPlanEditor';
 import ShareStaffChecklist from '@/components/business/ShareStaffChecklist';
 import FormToggle from '@/components/FormToggle';
 import PageAccessDenied from '@/components/PageAccessDenied';
-import { saveWorklogBusinessSettingsAction } from './actions';
+import { saveBusinessShareAction } from './actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -41,25 +41,13 @@ export default async function BusinessGoalPage({
 
   const settingsToggle = (
     <FormToggle
-      label={`${business} · 사업설정`}
-      buttonLabel="사업설정 수정"
+      label={`${business} · 사업공유 설정`}
+      buttonLabel="사업공유 설정"
       buttonClassName="text-[11px] text-brand hover:underline"
       wrapperClassName=""
     >
-      <form action={saveWorklogBusinessSettingsAction} className="flex flex-col gap-3">
+      <form action={saveBusinessShareAction} className="flex flex-col gap-3">
         <input type="hidden" name="business" value={business} />
-        <label className={label}>
-          총목표(명)
-          <input name="grandGoal" type="number" min="0" defaultValue={settings.총목표} className={inputBase} />
-        </label>
-        <label className={label}>
-          활동내용 라벨
-          <input name="actLabel" defaultValue={settings.활동내용라벨} className={inputBase} />
-        </label>
-        <label className={label}>
-          결재라인 (쉼표로 구분)
-          <input name="approvalLine" defaultValue={settings.결재라인.join(', ')} className={inputBase} />
-        </label>
         <div className={label}>
           공유 대상 (업무입력·월별현황·일지인쇄 접근 허용)
           <ShareStaffChecklist groups={staffGroups} checkedEmails={shared} />

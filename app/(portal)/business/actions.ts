@@ -36,7 +36,16 @@ export async function createWorklogBusinessAction(formData: FormData): Promise<v
   revalidatePath('/business');
 }
 
-export async function saveWorklogBusinessSettingsAction(formData: FormData): Promise<void> {
+// 사업공유(세부사업계획 화면)와 총괄업무일지 설정(업무입력 화면)은 서로 다른 폼이라 액션도
+// 분리한다 — 하나로 합쳐두면 한쪽 폼을 제출할 때 다른 쪽 값이 빈 채로 같이 넘어와 지워진다.
+export async function saveBusinessShareAction(formData: FormData): Promise<void> {
+  const 사업명 = str(formData, 'business');
+  const shareEmails = formData.getAll('shareEmails').map((v) => String(v));
+  await setBusinessShares(사업명, shareEmails, await staffByEmailMap());
+  revalidatePath('/business');
+}
+
+export async function saveWorklogSettingsAction(formData: FormData): Promise<void> {
   const 사업명 = str(formData, 'business');
   const 결재라인 = str(formData, 'approvalLine').split(',').map((s) => s.trim()).filter(Boolean);
   await upsertBusinessSettings(사업명, {
@@ -44,9 +53,9 @@ export async function saveWorklogBusinessSettingsAction(formData: FormData): Pro
     활동내용라벨: str(formData, 'actLabel').trim() || '활동내용',
     결재라인,
   });
-  const shareEmails = formData.getAll('shareEmails').map((v) => String(v));
-  await setBusinessShares(사업명, shareEmails, await staffByEmailMap());
   revalidatePath('/business');
+  revalidatePath('/business/daily');
+  revalidatePath('/business/monthly');
 }
 
 // 세부사업계획 표 전체를 편집 중엔 로컬 state로만 들고 있다가, 이 액션 한 번으로 바뀐 값을

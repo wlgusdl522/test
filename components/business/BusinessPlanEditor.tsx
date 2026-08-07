@@ -14,7 +14,6 @@ import {
 import type { BasisRow, BusinessSubNode, PlanItem } from '@/lib/mutate/businessPlan';
 import { btn, btnDanger, btnSecondary, card, h2, input, inputBase, selectFilter, statCard } from '@/lib/ui';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
-import CopyPlanTableButton from './CopyPlanTableButton';
 
 const nf = (n: number) => (n || 0).toLocaleString('ko-KR');
 const inputSm = `${inputBase} w-full`;
@@ -45,62 +44,6 @@ function planGoal(plan: PlanItem): { gc: number; gp: number } {
 function planItemCount(plan: PlanItem): number {
   if (plan.basis.length === 0) return 0;
   return plan.표기방식 === 'merge' ? 1 : plan.basis.length;
-}
-
-function escHtml(s: string): string {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\n/g, '<br/>');
-}
-function basisLineText(b: BasisRow): string {
-  if (b.직접입력여부) return `${b.라벨} ${nf(b.직접건)}건/${nf(b.직접명)}명`;
-  return `${b.라벨} ${nf(b.인원)}명×${nf(b.횟수)}${b.단위}=${nf(b.인원 * b.횟수)}명`;
-}
-
-// 한글(HWP)에 붙여넣었을 때 표 모양이 살아나도록 클래스 대신 인라인 style만 쓴다(외부 CSS는
-// 클립보드로 안 넘어간다) — input/select/textarea 없이 값만 담은, 실제 계획서와 같은 표.
-const CELL = 'border:1px solid #333;padding:6px 8px;font-size:12px;vertical-align:top;font-family:"맑은 고딕","Malgun Gothic",sans-serif;';
-const CELL_C = `${CELL}text-align:center;`;
-const HEAD = `${CELL_C}background:#eef1f5;font-weight:700;`;
-
-function buildPlanTableHtml(business: string, subs: BusinessSubNode[], totalGp: number, totalGc: number, totalBudget: number): string {
-  const totalDataRows = subs.reduce((a, s) => a + Math.max(s.plans.length, 1), 0);
-  let body = '';
-  let first = true;
-  subs.forEach((sub) => {
-    if (sub.plans.length === 0) {
-      body += `<tr>${first ? `<td style="${CELL_C}" rowspan="${totalDataRows + 1}">${escHtml(business)}</td>` : ''}` +
-        `<td style="${CELL_C}font-weight:700;">${escHtml(sub.세부사업명)}</td>` +
-        `<td style="${CELL_C}">-</td><td style="${CELL_C}">-</td><td style="${CELL}"></td>` +
-        `<td style="${CELL}">${escHtml(sub.기대효과)}</td></tr>`;
-      first = false;
-      return;
-    }
-    sub.plans.forEach((plan, pi) => {
-      const goal = planGoal(plan);
-      const basisText = plan.basis.map(basisLineText).join('<br/>');
-      body += '<tr>';
-      if (first) {
-        body += `<td style="${CELL_C}" rowspan="${totalDataRows + 1}">${escHtml(business)}</td>`;
-        first = false;
-      }
-      if (pi === 0) body += `<td style="${CELL_C}font-weight:700;" rowspan="${sub.plans.length}">${escHtml(sub.세부사업명)}</td>`;
-      body += `<td style="${CELL_C}">${nf(goal.gp)}명<br/>${nf(goal.gc)}건</td>`;
-      body += `<td style="${CELL}text-align:right;">${nf(plan.예산)}</td>`;
-      body += `<td style="${CELL}"><b>${pi + 1}) ${escHtml(plan.제목)}</b><br/>${escHtml(plan.사업내용)}${basisText ? `<br/>▪ ${basisText}` : ''}</td>`;
-      if (pi === 0) body += `<td style="${CELL}" rowspan="${sub.plans.length}">${escHtml(sub.기대효과)}</td>`;
-      body += '</tr>';
-    });
-  });
-  body += `<tr><td style="${HEAD}" colspan="2">소 계</td><td style="${HEAD}">${nf(totalGp)}명<br/>${nf(totalGc)}건</td>` +
-    `<td style="${HEAD}text-align:right;">${nf(totalBudget)}</td><td style="${HEAD}" colspan="2"></td></tr>`;
-
-  return `<table style="border-collapse:collapse;width:100%;"><thead><tr>` +
-    `<th style="${HEAD}">사업분류</th><th style="${HEAD}">세부사업</th><th style="${HEAD}">목표<br/>(회·건·명)</th>` +
-    `<th style="${HEAD}">예산<br/>(천원)</th><th style="${HEAD}">사 업 내 용</th><th style="${HEAD}">기 대 효 과</th>` +
-    `</tr></thead><tbody>${body}</tbody></table>`;
 }
 
 function structureKey(subs: BusinessSubNode[]): string {
@@ -163,7 +106,6 @@ export default function BusinessPlanEditor({
     { gp: 0, gc: 0, budget: 0, items: 0 }
   );
   const matches = totals.gp === grandGoal;
-  const planTableHtml = buildPlanTableHtml(business, subs, totals.gp, totals.gc, totals.budget);
   const totalDataRows = subs.reduce((a, s) => a + Math.max(s.plans.length, 1), 0);
 
   function onSave() {
@@ -210,12 +152,9 @@ export default function BusinessPlanEditor({
 
       <div className={card}>
         <div className="mb-3 flex items-center justify-between">
+          <h2 className={h2}>{business} 세부사업계획(안) <span className="ml-2 text-xs font-normal text-zinc-400">단위 : 천원</span></h2>
           <div className="flex items-center gap-3">
-            <h2 className={h2}>{business} 세부사업계획(안) <span className="ml-2 text-xs font-normal text-zinc-400">단위 : 천원</span></h2>
             {settingsToggle}
-          </div>
-          <div className="flex items-center gap-2">
-            <CopyPlanTableButton html={planTableHtml} className={btnSecondary} />
             <button type="button" onClick={onSave} disabled={pending} className={btn}>
               {pending ? '저장 중...' : saved ? '저장됨 ✓' : '변경사항 저장'}
             </button>

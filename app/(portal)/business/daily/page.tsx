@@ -1,8 +1,11 @@
 import { buildWorklogItems, getBusinessSettings, getViewerWorklogBusinessNames } from '@/lib/mutate/businessPlan';
 import { dayValue, getDailyEntries, getMemo, rangeSum } from '@/lib/mutate/worklogEntry';
 import { hasPageAccess } from '@/lib/mutate/permissions';
-import PageAccessDenied from '@/components/PageAccessDenied';
+import { btn, inputBase, label } from '@/lib/ui';
 import DailyEntryClient from '@/components/business/DailyEntryClient';
+import FormToggle from '@/components/FormToggle';
+import PageAccessDenied from '@/components/PageAccessDenied';
+import { saveWorklogSettingsAction } from '../actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -56,6 +59,32 @@ export default async function BusinessDailyPage({
   const totalMtd = rangeSum(entries, allIds, monthFrom, date);
   const totalYtd = rangeSum(entries, allIds, yearFrom, date);
 
+  const settingsToggle = (
+    <FormToggle
+      label={`${business} · 총괄업무일지 설정`}
+      buttonLabel="총괄업무일지 설정"
+      buttonClassName="text-[11px] text-brand hover:underline"
+      wrapperClassName=""
+    >
+      <form action={saveWorklogSettingsAction} className="flex flex-col gap-3">
+        <input type="hidden" name="business" value={business} />
+        <label className={label}>
+          총목표(명)
+          <input name="grandGoal" type="number" min="0" defaultValue={settings.총목표} className={inputBase} />
+        </label>
+        <label className={label}>
+          활동내용 라벨
+          <input name="actLabel" defaultValue={settings.활동내용라벨} className={inputBase} />
+        </label>
+        <label className={label}>
+          결재라인 (쉼표로 구분)
+          <input name="approvalLine" defaultValue={settings.결재라인.join(', ')} className={inputBase} />
+        </label>
+        <button type="submit" className={`${btn} w-fit`}>저장</button>
+      </form>
+    </FormToggle>
+  );
+
   return (
     <DailyEntryClient
       business={business}
@@ -71,6 +100,7 @@ export default async function BusinessDailyPage({
       totalYtd={totalYtd}
       initialContent={memo?.활동내용 ?? ''}
       initialNote={memo?.특이사항 ?? ''}
+      settingsToggle={settingsToggle}
     />
   );
 }
