@@ -19,7 +19,7 @@ const nf = (n: number) => (n || 0).toLocaleString('ko-KR');
 const inputSm = `${inputBase} w-full`;
 const th = 'border border-[#c7ccd3] bg-[#eef1f5] px-2 py-2 text-center text-[11.5px] font-bold text-zinc-600 whitespace-nowrap dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300';
 const td = 'border border-[#c7ccd3] px-2.5 py-2.5 align-top text-[12.5px] dark:border-zinc-700';
-const MODE_LABEL: Record<string, string> = { merge: '묶음(1행)', sub: '소분류 분리', mid: '중분류 분리' };
+const MODE_LABEL: Record<string, string> = { merge: '중분류만 표기', sub: '중분류·소분류 표기', mid: '산출근거만 표기' };
 
 function lineGoal(x: BasisRow): [number, number] {
   return x.직접입력여부 ? [x.직접건, x.직접명] : [x.횟수, x.인원 * x.횟수];
