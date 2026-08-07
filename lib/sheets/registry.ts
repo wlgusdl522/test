@@ -62,6 +62,14 @@ export const PAGE_ACCESS_TABLE: KeyedTableConfig = {
   primaryKey: '페이지ID',
 };
 
+// 관리자(모든 권한설정을 무시하고 항상 전체 허용) 지정을 코드가 아니라 설정 화면에서 관리한다.
+export const ADMIN_LIST_TABLE: KeyedTableConfig = {
+  spreadsheetId: STAFF_SHEET_ID,
+  sheetName: '관리자목록',
+  headers: ['이메일', '성명'],
+  primaryKey: '이메일',
+};
+
 export const APPROVAL_JEONGYEOL_TABLE: KeyedTableConfig = {
   spreadsheetId: STAFF_SHEET_ID,
   sheetName: '결재전결설정',
@@ -183,7 +191,7 @@ export const VEHICLE_LOG_TABLE: KeyedTableConfig = {
 // 항목ID는 별도 테이블 없이 파생 규칙으로만 존재: merge 모드면 계획항목ID, 아니면
 // `계획항목ID-산출근거ID` — lib/mutate/businessPlan.ts의 buildWorklogItems가 계산한다.
 
-export const BUSINESS_SETTINGS_HEADERS = ['id', '사업명', '총목표', '활동내용라벨', '결재라인JSON'];
+export const BUSINESS_SETTINGS_HEADERS = ['id', '사업명', '결재라인JSON', '정렬순서'];
 
 export const BUSINESS_SETTINGS_TABLE: KeyedTableConfig = {
   spreadsheetId: WORKLOG_SHEET_ID,

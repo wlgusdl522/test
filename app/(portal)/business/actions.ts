@@ -9,6 +9,7 @@ import {
   deleteBasis,
   deleteBusinessSub,
   deletePlanItem,
+  moveWorklogBusiness,
   updateBasis,
   updateBusinessSub,
   updatePlanItem,
@@ -36,17 +37,24 @@ export async function createWorklogBusinessAction(formData: FormData): Promise<v
   revalidatePath('/business');
 }
 
-export async function saveWorklogBusinessSettingsAction(formData: FormData): Promise<void> {
+export async function moveBusinessAction(formData: FormData): Promise<void> {
+  await moveWorklogBusiness(str(formData, 'business'), str(formData, 'direction') === 'down' ? 'down' : 'up');
+  revalidatePath('/business');
+  revalidatePath('/business/daily');
+  revalidatePath('/business/monthly');
+}
+
+// 목표설정(세부사업계획)은 전 직원 공개라 사업공유 설정이 필요 없고, 사업공유는 오직
+// 업무입력·월별현황·일지인쇄(총괄업무일지)의 접근 범위를 정하는 값이라 그 설정 폼 안에 같이 둔다.
+export async function saveWorklogSettingsAction(formData: FormData): Promise<void> {
   const 사업명 = str(formData, 'business');
   const 결재라인 = str(formData, 'approvalLine').split(',').map((s) => s.trim()).filter(Boolean);
-  await upsertBusinessSettings(사업명, {
-    총목표: numOrZero(formData, 'grandGoal'),
-    활동내용라벨: str(formData, 'actLabel').trim() || '활동내용',
-    결재라인,
-  });
   const shareEmails = formData.getAll('shareEmails').map((v) => String(v));
+  await upsertBusinessSettings(사업명, { 결재라인 });
   await setBusinessShares(사업명, shareEmails, await staffByEmailMap());
   revalidatePath('/business');
+  revalidatePath('/business/daily');
+  revalidatePath('/business/monthly');
 }
 
 // 세부사업계획 표 전체를 편집 중엔 로컬 state로만 들고 있다가, 이 액션 한 번으로 바뀐 값을

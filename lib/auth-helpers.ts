@@ -1,17 +1,56 @@
 import { auth } from '@/auth';
+import { addKeyedRecord, deleteKeyedRecord, getKeyedList } from '@/lib/mutate/keyedTable';
+import { getSystemSettings } from '@/lib/mutate/settings';
+import { ADMIN_LIST_TABLE } from '@/lib/sheets/registry';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { normalizeSupabaseRow } from '@/lib/supabase/keyedTable';
-import { getSystemSettings } from '@/lib/mutate/settings';
 
 export const SUPERVISOR_POSITIONS = ['관장', '부장', '과장', '팀장'];
 export const SENIOR_POSITIONS = ['관장', '부장'];
-export const ADMIN_EMAILS = ['kwonzihyun@sdmsenior.or.kr'];
 
 export async function requireViewerEmail(): Promise<string> {
   const session = await auth();
   const email = session?.user?.email;
   if (!email) throw new Error('로그인이 필요합니다.');
   return email.toLowerCase();
+}
+
+// 관리자는 코드가 아니라 설정 > 권한설정 화면(관리자목록 시트)에서 관리한다 — 모든 권한 등급/전결/
+// 사업 공유 제한을 무시하고 항상 전체 허용된다.
+export async function getAdminList(): Promise<{ email: string; name: string }[]> {
+  const rows = await getKeyedList(ADMIN_LIST_TABLE);
+  return rows
+    .map((r) => ({ email: (r.이메일 || '').toLowerCase(), name: r.성명 || '' }))
+    .filter((r) => r.email);
+}
+
+export async function getAdminEmails(): Promise<string[]> {
+  return (await getAdminList()).map((a) => a.email);
+}
+
+export async function isAdminEmail(email: string): Promise<boolean> {
+  const admins = await getAdminEmails();
+  return admins.includes(email.toLowerCase());
+}
+
+export async function addAdmin(email: string, name: string): Promise<void> {
+  const viewerEmail = await requireViewerEmail();
+  if (!(await isAdminEmail(viewerEmail))) throw new Error('관리자만 관리자를 추가할 수 있습니다.');
+  const trimmed = email.trim().toLowerCase();
+  if (!trimmed) throw new Error('이메일을 입력해주세요.');
+  await addKeyedRecord(ADMIN_LIST_TABLE, { 이메일: trimmed, 성명: name });
+}
+
+// 실수로 관리자가 0명이 되어 아무도 다시 관리자를 지정할 수 없게 되는 상황을 막기 위해,
+// 마지막 남은 관리자는 스스로도 제거할 수 없다 — 지우려면 먼저 다른 관리자를 추가해야 한다.
+export async function removeAdmin(email: string): Promise<void> {
+  const viewerEmail = await requireViewerEmail();
+  if (!(await isAdminEmail(viewerEmail))) throw new Error('관리자만 관리자를 제거할 수 있습니다.');
+  const admins = await getAdminEmails();
+  if (admins.length <= 1) {
+    throw new Error('마지막 남은 관리자는 제거할 수 없습니다. 먼저 다른 관리자를 추가해주세요.');
+  }
+  await deleteKeyedRecord(ADMIN_LIST_TABLE, { 이메일: email.trim().toLowerCase() });
 }
 
 // 이메일(아이디) 컬럼명에 괄호가 들어있는데, PostgREST는 필터 파라미터의 컬럼명에 괄호가 있으면
@@ -35,7 +74,7 @@ async function getViewerPosition(email: string): Promise<string> {
 
 export async function requireCanManagePermissions(): Promise<void> {
   const email = await requireViewerEmail();
-  if (ADMIN_EMAILS.includes(email)) return;
+  if (await isAdminEmail(email)) return;
   const position = await getViewerPosition(email);
   if (!SUPERVISOR_POSITIONS.includes(position)) {
     throw new Error('권한설정은 관리자 또는 팀장급 이상만 사용할 수 있습니다.');
@@ -47,7 +86,7 @@ export async function requireCanManagePermissions(): Promise<void> {
 export async function requireCanToggleTask(taskEmail: string, taskTeam: string): Promise<void> {
   const viewerEmail = await requireViewerEmail();
   if (taskEmail.toLowerCase() === viewerEmail) return;
-  if (ADMIN_EMAILS.includes(viewerEmail)) return;
+  if (await isAdminEmail(viewerEmail)) return;
 
   const me = await getViewerStaffRecord();
   const position = me?.['직급/직책'] ?? '';
@@ -63,7 +102,7 @@ export async function requireCanToggleTask(taskEmail: string, taskTeam: string):
 // 켜고 끌 수 있고, 나머지 직원은 체크 여부만 읽기전용으로 본다.
 export async function requireIsAccountingViewer(): Promise<void> {
   const viewerEmail = await requireViewerEmail();
-  if (ADMIN_EMAILS.includes(viewerEmail)) return;
+  if (await isAdminEmail(viewerEmail)) return;
   const { itemCheckAccountingEmail } = await getSystemSettings();
   if (!itemCheckAccountingEmail || itemCheckAccountingEmail.toLowerCase() !== viewerEmail) {
     throw new Error('회계확인은 회계담당자만 처리할 수 있습니다.');
@@ -81,7 +120,7 @@ export async function isAccountingViewer(): Promise<boolean> {
 
 export async function requireIsSupervisorForTeam(team: string): Promise<void> {
   const viewerEmail = await requireViewerEmail();
-  if (ADMIN_EMAILS.includes(viewerEmail)) return;
+  if (await isAdminEmail(viewerEmail)) return;
 
   const me = await getViewerStaffRecord();
   const position = me?.['직급/직책'] ?? '';

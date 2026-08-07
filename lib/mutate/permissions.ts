@@ -2,10 +2,10 @@ import { getKeyedList, deleteKeyedRecord, upsertKeyedRecord } from '@/lib/mutate
 import { getStaffList } from '@/lib/mutate/staff';
 import { PAGE_ACCESS_EXCEPTION_TABLE, PAGE_ACCESS_TABLE } from '@/lib/sheets/registry';
 import {
-  ADMIN_EMAILS,
   SENIOR_POSITIONS,
   SUPERVISOR_POSITIONS,
   getViewerStaffRecord,
+  isAdminEmail,
   requireCanManagePermissions,
   requireViewerEmail,
 } from '@/lib/auth-helpers';
@@ -80,7 +80,7 @@ export async function removePageAccessException(pageId: string, email: string): 
 // 규칙이 아예 없으면(신규 등록 페이지) 기본값은 "전체"(모두 허용).
 export async function hasPageAccess(pageId: string): Promise<boolean> {
   const viewerEmail = await requireViewerEmail();
-  if (ADMIN_EMAILS.includes(viewerEmail)) return true;
+  if (await isAdminEmail(viewerEmail)) return true;
 
   const [rules, exceptions] = await Promise.all([getPageAccessRuleMap(), getPageAccessExceptionMap()]);
   if ((exceptions[pageId] ?? []).includes(viewerEmail)) return true;

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { auth } from '@/auth';
-import { ADMIN_EMAILS } from '@/lib/auth-helpers';
+import { isAdminEmail } from '@/lib/auth-helpers';
 import { getDutyLog, type DutyOrderType } from '@/lib/supabase/duty';
 import { driveThumbUrl } from '@/lib/drive/thumbUrl';
 import { btn, card, h1, input, label, pageFluid, pageSubtitle } from '@/lib/ui';
@@ -49,7 +49,7 @@ export default async function DutyLogPage({ params }: { params: Promise<{ type: 
 
   const session = await auth();
   const viewerEmail = (session?.user?.email ?? '').toLowerCase();
-  const isAdmin = ADMIN_EMAILS.includes(viewerEmail);
+  const isAdmin = await isAdminEmail(viewerEmail);
 
   if (type === 'weekday') {
     const isOwner = isAdmin || (row['이메일'] ?? '').toLowerCase() === viewerEmail;

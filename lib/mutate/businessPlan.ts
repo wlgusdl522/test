@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { ADMIN_EMAILS, requireViewerEmail } from '@/lib/auth-helpers';
+import { isAdminEmail, requireViewerEmail } from '@/lib/auth-helpers';
 import { getBusinessNamesSharedWith, setBusinessShares } from '@/lib/mutate/businessShare';
 import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord, upsertKeyedRecord } from '@/lib/mutate/keyedTable';
 import {
@@ -11,7 +11,9 @@ import {
 
 export const DEFAULT_APPROVAL_LINE = ['담당', '과장', '부장', '관장'];
 
-export type BusinessSettings = { 총목표: number; 활동내용라벨: string; 결재라인: string[] };
+export const ACTIVITY_LABEL = '활동내용';
+
+export type BusinessSettings = { 결재라인: string[] };
 
 export type BasisRow = {
   id: string; 계획항목ID: string; 라벨: string; 직접입력여부: boolean;
@@ -51,13 +53,11 @@ export async function getBusinessSettings(사업명: string): Promise<BusinessSe
     결재라인 = [];
   }
   return {
-    총목표: num(row?.총목표),
-    활동내용라벨: row?.활동내용라벨 || '활동내용',
     결재라인: 결재라인.length ? 결재라인 : DEFAULT_APPROVAL_LINE,
   };
 }
 
-// 설정 > 사업목록에서 사업별 총목표/활동내용라벨/결재라인을 한 번에 보여줄 때 쓴다
+// 설정 > 사업목록에서 사업별 결재라인을 한 번에 보여줄 때 쓴다
 // (사업 수만큼 getBusinessSettings를 반복 호출하면 시트를 그만큼 다시 읽어오게 되어 비효율적).
 export async function getAllBusinessSettings(): Promise<Record<string, BusinessSettings>> {
   const list = await getKeyedList(BUSINESS_SETTINGS_TABLE);
@@ -70,8 +70,6 @@ export async function getAllBusinessSettings(): Promise<Record<string, BusinessS
       결재라인 = [];
     }
     map[row.사업명] = {
-      총목표: num(row.총목표),
-      활동내용라벨: row.활동내용라벨 || '활동내용',
       결재라인: 결재라인.length ? 결재라인 : DEFAULT_APPROVAL_LINE,
     };
   });
@@ -89,10 +87,14 @@ export async function upsertBusinessSettings(
   await upsertKeyedRecord(BUSINESS_SETTINGS_TABLE, { 사업명 }, {
     id: existing?.id || randomUUID(),
     사업명,
-    총목표: String(merged.총목표),
-    활동내용라벨: merged.활동내용라벨,
     결재라인JSON: JSON.stringify(merged.결재라인),
+    정렬순서: existing?.정렬순서 || String(await nextBusinessOrder()),
   });
+}
+
+async function nextBusinessOrder(): Promise<number> {
+  const list = await getKeyedList(BUSINESS_SETTINGS_TABLE);
+  return Math.max(0, ...list.map((r) => num(r.정렬순서))) + 1;
 }
 
 // 총괄업무일지는 설정 > 사업목록(예산과목·담당사업 등 다른 기능도 같이 쓰는 범용 목록)을
@@ -100,7 +102,23 @@ export async function upsertBusinessSettings(
 // 새 사업은 목표설정 화면에서 이름 + 공유 대상을 같이 입력해서 바로 만든다.
 export async function getWorklogBusinessNames(): Promise<string[]> {
   const list = await getKeyedList(BUSINESS_SETTINGS_TABLE);
-  return list.map((r) => r.사업명).filter(Boolean);
+  return [...list]
+    .filter((r) => r.사업명)
+    .sort((a, b) => num(a.정렬순서) - num(b.정렬순서))
+    .map((r) => r.사업명);
+}
+
+// 탭에 표시되는 사업 순서를 앞/뒤로 한 칸 바꾼다 — 정렬순서 값을 이웃 사업과 맞바꾼다.
+export async function moveWorklogBusiness(사업명: string, direction: 'up' | 'down'): Promise<void> {
+  const list = await getKeyedList(BUSINESS_SETTINGS_TABLE);
+  const ordered = [...list].filter((r) => r.사업명).sort((a, b) => num(a.정렬순서) - num(b.정렬순서));
+  const idx = ordered.findIndex((r) => r.사업명 === 사업명);
+  const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (idx < 0 || swapIdx < 0 || swapIdx >= ordered.length) return;
+  const a = ordered[idx];
+  const b = ordered[swapIdx];
+  await updateKeyedRecord(BUSINESS_SETTINGS_TABLE, { 사업명: a.사업명 }, { ...a, 정렬순서: String(num(b.정렬순서)) });
+  await updateKeyedRecord(BUSINESS_SETTINGS_TABLE, { 사업명: b.사업명 }, { ...b, 정렬순서: String(num(a.정렬순서)) });
 }
 
 // 목표설정(계획서)은 전 직원이 같이 보지만, 일계입력/월별현황/일지인쇄는 이 사업을 공유받은
@@ -108,7 +126,7 @@ export async function getWorklogBusinessNames(): Promise<string[]> {
 export async function getViewerWorklogBusinessNames(): Promise<string[]> {
   const email = await requireViewerEmail();
   const all = await getWorklogBusinessNames();
-  if (ADMIN_EMAILS.includes(email)) return all;
+  if (await isAdminEmail(email)) return all;
   const shared = new Set(await getBusinessNamesSharedWith(email));
   return all.filter((name) => shared.has(name));
 }
@@ -122,7 +140,7 @@ export async function createWorklogBusiness(
   if (!trimmed) throw new Error('사업명을 입력해주세요.');
   const existing = await getWorklogBusinessNames();
   if (existing.includes(trimmed)) throw new Error('이미 등록된 사업명입니다.');
-  await upsertBusinessSettings(trimmed, { 총목표: 0, 활동내용라벨: '활동내용', 결재라인: DEFAULT_APPROVAL_LINE });
+  await upsertBusinessSettings(trimmed, { 결재라인: DEFAULT_APPROVAL_LINE });
   await setBusinessShares(trimmed, shareEmails, staffByEmail);
 }
 
@@ -320,6 +338,11 @@ function itemsForPlan(sub: BusinessSubNode, plan: PlanItem): WorklogItem[] {
 export async function buildWorklogItems(사업명: string): Promise<WorklogItem[]> {
   const tree = await getBusinessPlanTree(사업명);
   return tree.flatMap((sub) => sub.plans.flatMap((plan) => itemsForPlan(sub, plan)));
+}
+
+// 총목표는 별도로 입력받지 않고, 세부사업계획에 마지막으로 저장된 산출근거 목표를 그대로 합산한 값이다.
+export function sumWorklogGoal(items: WorklogItem[]): number {
+  return items.reduce((a, i) => a + i.목표명, 0);
 }
 
 // 계획서 화면에서 계획항목 하나의 "목표(건/명)" 합계를 보여주기 위한 헬퍼 —

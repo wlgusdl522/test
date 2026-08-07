@@ -1,12 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { ADMIN_EMAILS, requireViewerEmail } from '@/lib/auth-helpers';
+import { isAdminEmail, requireViewerEmail } from '@/lib/auth-helpers';
 import { getDutyLog, saveDutyWeekdayLog, saveDutySaturdaySignature, type DutyOrderType } from '@/lib/supabase/duty';
 
 async function requireOwnerOrAdmin(type: DutyOrderType, id: string, slot: 1 | 2): Promise<void> {
   const viewerEmail = await requireViewerEmail();
-  if (ADMIN_EMAILS.includes(viewerEmail)) return;
+  if (await isAdminEmail(viewerEmail)) return;
   const row = await getDutyLog(type, id);
   if (!row) throw new Error('배정을 찾을 수 없습니다.');
   const assignedEmail = type === 'weekday' ? row['이메일'] : row[`이메일${slot}`];

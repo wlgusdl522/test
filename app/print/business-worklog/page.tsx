@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { buildWorklogItems, getBusinessSettings, getViewerWorklogBusinessNames, type WorklogItem } from '@/lib/mutate/businessPlan';
 import { type DailyEntry, dayValue, getDailyEntries, getMemo, getWrittenDates, rangeSum } from '@/lib/mutate/worklogEntry';
 import ApprovalBox from '@/components/print/ApprovalBox';
@@ -14,6 +15,15 @@ const pct = (v: number, g: number) => (g > 0 ? (v / g) * 100 : null);
 
 function todayKst(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
+}
+
+function midSpan(rows: { 세부사업명: string; 중분류: string }[], i: number): number {
+  const same = (a: { 세부사업명: string; 중분류: string }, b: { 세부사업명: string; 중분류: string }) =>
+    a.세부사업명 === b.세부사업명 && a.중분류 === b.중분류;
+  if (i > 0 && same(rows[i - 1], rows[i])) return 0;
+  let n = 1;
+  while (rows[i + n] && same(rows[i + n], rows[i])) n++;
+  return n;
 }
 
 export default async function BusinessWorklogPrintPage({
@@ -79,7 +89,6 @@ export default async function BusinessWorklogPrintPage({
           entries={entries}
           memo={memos[idx]}
           approvalLine={settings.결재라인}
-          actLabel={settings.활동내용라벨}
           isLast={idx === days.length - 1}
         />
       ))}
@@ -91,11 +100,11 @@ const lbl = { border: '1px solid #000', background: '#f2f2f2', fontWeight: 700, 
 const cell = { border: '1px solid #000', padding: '3px 4px', textAlign: 'center' as const, fontSize: 10.5 };
 
 function WorklogSheet({
-  business, date, items, entries, memo, approvalLine, actLabel, isLast,
+  business, date, items, entries, memo, approvalLine, isLast,
 }: {
   business: string; date: string; items: WorklogItem[]; entries: DailyEntry[];
   memo: { 활동내용: string; 특이사항: string } | null;
-  approvalLine: string[]; actLabel: string; isLast: boolean;
+  approvalLine: string[]; isLast: boolean;
 }) {
   const D = new Date(`${date}T00:00:00`);
   const monthFrom = `${date.slice(0, 7)}-01`;
@@ -139,12 +148,14 @@ function WorklogSheet({
         </colgroup>
         <thead>
           <tr>
-            <th style={lbl} colSpan={3} rowSpan={2}>구　분</th>
+            <th style={lbl} rowSpan={2}>세부사업</th>
+            <th style={lbl} colSpan={2}>구　분</th>
             <th style={lbl} rowSpan={2}>건</th><th style={lbl} rowSpan={2}>명</th>
             <th style={lbl} colSpan={2}>일계</th><th style={lbl} colSpan={2}>월계</th><th style={lbl} colSpan={2}>누계</th>
             <th style={lbl} colSpan={2}>달성율(%)</th>
           </tr>
           <tr>
+            <th style={lbl}>중분류</th><th style={lbl}>소분류</th>
             <th style={lbl}>건</th><th style={lbl}>명</th><th style={lbl}>건</th><th style={lbl}>명</th>
             <th style={lbl}>건</th><th style={lbl}>명</th><th style={lbl}>건</th><th style={lbl}>명</th>
           </tr>
@@ -152,31 +163,35 @@ function WorklogSheet({
         <tbody>
           {rows.map((r, i) => {
             const span = i > 0 && rows[i - 1].세부사업명 === r.세부사업명 ? 0 : rows.filter((x) => x.세부사업명 === r.세부사업명).length;
+            const mspan = midSpan(rows, i);
+            const isLastOfGroup = i === rows.length - 1 || rows[i + 1].세부사업명 !== r.세부사업명;
+            const groupRows = groups.get(r.세부사업명) ?? [];
+            const sum = (key: 'day' | 'mtd' | 'ytd', idx: 0 | 1) => groupRows.reduce((a, x) => a + x[key][idx], 0);
+            const goalP = groupRows.reduce((a, x) => a + x.목표명, 0);
+            const goalC = groupRows.reduce((a, x) => a + x.목표건, 0);
             return (
-              <tr key={r.id}>
-                {span > 0 && <td style={{ ...lbl, writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: 10 }} rowSpan={span}>{r.세부사업명}</td>}
-                <td style={{ ...cell, textAlign: 'left' }} colSpan={2}>{r.중분류}{r.소분류 && ` · ${r.소분류}`}</td>
-                <td style={cell}>{nf(r.목표건)}</td><td style={cell}>{nf(r.목표명)}</td>
-                <td style={cell}>{nf(r.day[0])}</td><td style={cell}>{nf(r.day[1])}</td>
-                <td style={cell}>{nf(r.mtd[0])}</td><td style={cell}>{nf(r.mtd[1])}</td>
-                <td style={{ ...cell, fontWeight: 700 }}>{nf(r.ytd[0])}</td><td style={{ ...cell, fontWeight: 700 }}>{nf(r.ytd[1])}</td>
-                <td style={cell}>{fpct(pct(r.ytd[0], r.목표건))}</td><td style={cell}>{fpct(pct(r.ytd[1], r.목표명))}</td>
-              </tr>
-            );
-          })}
-          {[...groups.entries()].map(([name, groupRows]) => {
-            const sum = (key: 'day' | 'mtd' | 'ytd', idx: 0 | 1) => groupRows.reduce((a, r) => a + r[key][idx], 0);
-            const goalP = groupRows.reduce((a, r) => a + r.목표명, 0);
-            const goalC = groupRows.reduce((a, r) => a + r.목표건, 0);
-            return (
-              <tr key={`s-${name}`} style={{ background: '#f7f7f7', fontWeight: 700 }}>
-                <td style={cell} colSpan={3}>소　계 · {name}</td>
-                <td style={cell}>{nf(goalC)}</td><td style={cell}>{nf(goalP)}</td>
-                <td style={cell}>{nf(sum('day', 0))}</td><td style={cell}>{nf(sum('day', 1))}</td>
-                <td style={cell}>{nf(sum('mtd', 0))}</td><td style={cell}>{nf(sum('mtd', 1))}</td>
-                <td style={cell}>{nf(sum('ytd', 0))}</td><td style={cell}>{nf(sum('ytd', 1))}</td>
-                <td style={cell}>{fpct(pct(sum('ytd', 0), goalC))}</td><td style={cell}>{fpct(pct(sum('ytd', 1), goalP))}</td>
-              </tr>
+              <Fragment key={r.id}>
+                <tr>
+                  {span > 0 && <td style={{ ...lbl, writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: 10 }} rowSpan={span}>{r.세부사업명}</td>}
+                  {mspan > 0 && <td style={{ ...cell, textAlign: 'left' }} rowSpan={mspan}>{r.중분류}</td>}
+                  <td style={{ ...cell, textAlign: 'left' }}>{r.소분류 || '–'}</td>
+                  <td style={cell}>{nf(r.목표건)}</td><td style={cell}>{nf(r.목표명)}</td>
+                  <td style={cell}>{nf(r.day[0])}</td><td style={cell}>{nf(r.day[1])}</td>
+                  <td style={cell}>{nf(r.mtd[0])}</td><td style={cell}>{nf(r.mtd[1])}</td>
+                  <td style={{ ...cell, fontWeight: 700 }}>{nf(r.ytd[0])}</td><td style={{ ...cell, fontWeight: 700 }}>{nf(r.ytd[1])}</td>
+                  <td style={cell}>{fpct(pct(r.ytd[0], r.목표건))}</td><td style={cell}>{fpct(pct(r.ytd[1], r.목표명))}</td>
+                </tr>
+                {isLastOfGroup && (
+                  <tr style={{ background: '#f7f7f7', fontWeight: 700 }}>
+                    <td style={cell} colSpan={3}>소　계 · {r.세부사업명}</td>
+                    <td style={cell}>{nf(goalC)}</td><td style={cell}>{nf(goalP)}</td>
+                    <td style={cell}>{nf(sum('day', 0))}</td><td style={cell}>{nf(sum('day', 1))}</td>
+                    <td style={cell}>{nf(sum('mtd', 0))}</td><td style={cell}>{nf(sum('mtd', 1))}</td>
+                    <td style={cell}>{nf(sum('ytd', 0))}</td><td style={cell}>{nf(sum('ytd', 1))}</td>
+                    <td style={cell}>{fpct(pct(sum('ytd', 0), goalC))}</td><td style={cell}>{fpct(pct(sum('ytd', 1), goalP))}</td>
+                  </tr>
+                )}
+              </Fragment>
             );
           })}
           <tr style={{ background: '#dedede', fontWeight: 700 }}>
@@ -187,7 +202,7 @@ function WorklogSheet({
             <td style={cell} colSpan={2} />
           </tr>
           <tr>
-            <td style={{ ...lbl, width: '16mm' }} colSpan={3}>{actLabel}</td>
+            <td style={{ ...lbl, width: '16mm' }} colSpan={3}>활동내용</td>
             <td style={{ ...cell, textAlign: 'left', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.활동내용 || ' '}</td>
           </tr>
           <tr>

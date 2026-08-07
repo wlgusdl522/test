@@ -13,7 +13,7 @@ import { findTeamSupervisorEmail } from '@/lib/approval/teamSupervisor';
 import { getStaffList } from '@/lib/mutate/staff';
 import { getSystemSettings } from '@/lib/mutate/settings';
 import { notifyJandiPersonal } from '@/lib/notify/jandi';
-import { ADMIN_EMAILS, requireViewerEmail } from '@/lib/auth-helpers';
+import { isAdminEmail, requireViewerEmail } from '@/lib/auth-helpers';
 import { recomputeCardLedgerStatus } from '@/lib/mutate/cardLedger';
 
 function nowTimestamp(): string {
@@ -62,7 +62,7 @@ export async function getItemCheckReportList(): Promise<DecoratedReport[]> {
 export async function getMyPendingItemCheckReportApprovals(): Promise<DecoratedReport[]> {
   const viewerEmail = await requireViewerEmail();
   const all = await getItemCheckReportList();
-  if (ADMIN_EMAILS.includes(viewerEmail)) {
+  if (await isAdminEmail(viewerEmail)) {
     return all.filter((r) => r.결재상태 === '결재중');
   }
   return all.filter((r) => r.현재결재자이메일 && r.현재결재자이메일.toLowerCase() === viewerEmail);
@@ -160,7 +160,7 @@ export async function actOnItemCheckReport(id: string, action: '승인' | '반�
 
   const staffList = await getStaffList();
   const decorated = await decorate(existing, staffList);
-  const isAdmin = ADMIN_EMAILS.includes(viewerEmail);
+  const isAdmin = await isAdminEmail(viewerEmail);
   const me = staffList.find((s) => s['이메일(아이디)'] === viewerEmail);
 
   let applied;

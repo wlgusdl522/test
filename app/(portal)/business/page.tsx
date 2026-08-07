@@ -1,12 +1,8 @@
-import { buildWorklogItems, getBusinessPlanTree, getBusinessSettings, getWorklogBusinessNames } from '@/lib/mutate/businessPlan';
-import { getAllBusinessShares } from '@/lib/mutate/businessShare';
-import { getShareableStaffGroups, hasPageAccess } from '@/lib/mutate/permissions';
-import { btn, card, h2, hint, inputBase, label } from '@/lib/ui';
+import { buildWorklogItems, getBusinessPlanTree, getWorklogBusinessNames } from '@/lib/mutate/businessPlan';
+import { hasPageAccess } from '@/lib/mutate/permissions';
+import { card, h2, hint } from '@/lib/ui';
 import BusinessPlanEditor from '@/components/business/BusinessPlanEditor';
-import ShareStaffChecklist from '@/components/business/ShareStaffChecklist';
-import FormToggle from '@/components/FormToggle';
 import PageAccessDenied from '@/components/PageAccessDenied';
-import { saveWorklogBusinessSettingsAction } from './actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,53 +26,17 @@ export default async function BusinessGoalPage({
     return <p className="text-sm text-zinc-500">등록된 사업이 없습니다. 위 &ldquo;새 사업 만들기&rdquo;로 만들어주세요.</p>;
   }
 
-  const [settings, tree, worklogItems, staffGroups, sharesMap] = await Promise.all([
-    getBusinessSettings(business),
+  const [tree, worklogItems] = await Promise.all([
     getBusinessPlanTree(business),
     buildWorklogItems(business),
-    getShareableStaffGroups(),
-    getAllBusinessShares(),
   ]);
-  const shared = sharesMap[business] ?? [];
-
-  const settingsToggle = (
-    <FormToggle
-      label={`${business} · 사업설정`}
-      buttonLabel="사업설정 수정"
-      buttonClassName="text-[11px] text-brand hover:underline"
-      wrapperClassName=""
-    >
-      <form action={saveWorklogBusinessSettingsAction} className="flex flex-col gap-3">
-        <input type="hidden" name="business" value={business} />
-        <label className={label}>
-          총목표(명)
-          <input name="grandGoal" type="number" min="0" defaultValue={settings.총목표} className={inputBase} />
-        </label>
-        <label className={label}>
-          활동내용 라벨
-          <input name="actLabel" defaultValue={settings.활동내용라벨} className={inputBase} />
-        </label>
-        <label className={label}>
-          결재라인 (쉼표로 구분)
-          <input name="approvalLine" defaultValue={settings.결재라인.join(', ')} className={inputBase} />
-        </label>
-        <div className={label}>
-          공유 대상 (업무입력·월별현황·일지인쇄 접근 허용)
-          <ShareStaffChecklist groups={staffGroups} checkedEmails={shared} />
-        </div>
-        <button type="submit" className={`${btn} w-fit`}>저장</button>
-      </form>
-    </FormToggle>
-  );
 
   return (
     <div>
       <BusinessPlanEditor
         key={business}
         business={business}
-        grandGoal={settings.총목표}
         initialSubs={tree}
-        settingsToggle={settingsToggle}
       />
 
       <div className={card}>

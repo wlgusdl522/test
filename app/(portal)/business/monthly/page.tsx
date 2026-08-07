@@ -1,4 +1,5 @@
-import { buildWorklogItems, getBusinessSettings, getViewerWorklogBusinessNames } from '@/lib/mutate/businessPlan';
+import { Fragment } from 'react';
+import { buildWorklogItems, getViewerWorklogBusinessNames, sumWorklogGoal } from '@/lib/mutate/businessPlan';
 import { getDailyEntries, getWrittenDates, rangeSum } from '@/lib/mutate/worklogEntry';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
@@ -23,6 +24,15 @@ function PctBadge({ value, goal }: { value: number; goal: number }) {
   return <span className={`${badgeBase} ${tone}`}>{fpct(p)}%</span>;
 }
 
+function midSpan(rows: { 세부사업명: string; 중분류: string }[], i: number): number {
+  const same = (a: { 세부사업명: string; 중분류: string }, b: { 세부사업명: string; 중분류: string }) =>
+    a.세부사업명 === b.세부사업명 && a.중분류 === b.중분류;
+  if (i > 0 && same(rows[i - 1], rows[i])) return 0;
+  let n = 1;
+  while (rows[i + n] && same(rows[i + n], rows[i])) n++;
+  return n;
+}
+
 export default async function BusinessMonthlyPage({
   searchParams,
 }: {
@@ -39,12 +49,12 @@ export default async function BusinessMonthlyPage({
   const ym = ymParam || todayKst().slice(0, 7);
   const [y, m] = ym.split('-').map(Number);
 
-  const [settings, items, entries, writtenDates] = await Promise.all([
-    getBusinessSettings(business),
+  const [items, entries, writtenDates] = await Promise.all([
     buildWorklogItems(business),
     getDailyEntries(business),
     getWrittenDates(business),
   ]);
+  const grandGoal = sumWorklogGoal(items);
 
   const firstDow = new Date(y, m - 1, 1).getDay();
   const lastDate = new Date(y, m, 0).getDate();
@@ -133,7 +143,8 @@ export default async function BusinessMonthlyPage({
           <table className={table}>
             <thead>
               <tr>
-                <th className={th}>세부사업</th><th className={th}>구분</th>
+                <th className={th}>세부사업</th>
+                <th className={th}>중분류</th><th className={th}>소분류</th>
                 <th className={th}>연간목표(명)</th>
                 <th className={th}>{m}월 월계(건)</th><th className={th}>{m}월 월계(명)</th>
                 <th className={th}>누계(건)</th><th className={th}>누계(명)</th>
@@ -143,38 +154,42 @@ export default async function BusinessMonthlyPage({
             <tbody>
               {rows.map((r, i) => {
                 const span = i > 0 && rows[i - 1].세부사업명 === r.세부사업명 ? 0 : rows.filter((x) => x.세부사업명 === r.세부사업명).length;
+                const mspan = midSpan(rows, i);
+                const isLastOfGroup = i === rows.length - 1 || rows[i + 1].세부사업명 !== r.세부사업명;
+                const groupRows = groups.get(r.세부사업명) ?? [];
+                const mP = groupRows.reduce((a, x) => a + x.mSum[1], 0);
+                const mC = groupRows.reduce((a, x) => a + x.mSum[0], 0);
+                const yP = groupRows.reduce((a, x) => a + x.ySum[1], 0);
+                const yC = groupRows.reduce((a, x) => a + x.ySum[0], 0);
+                const goalP = groupRows.reduce((a, x) => a + x.목표명, 0);
                 return (
-                  <tr key={r.id}>
-                    {span > 0 && <td className={`${td} font-medium`} rowSpan={span}>{r.세부사업명}</td>}
-                    <td className={`${td} text-left`}>{r.중분류}{r.소분류 && <span className="text-zinc-400"> · {r.소분류}</span>}</td>
-                    <td className={`${td} text-zinc-400`}>{nf(r.목표명)}</td>
-                    <td className={td}>{nf(r.mSum[0])}</td><td className={td}>{nf(r.mSum[1])}</td>
-                    <td className={`${td} font-semibold`}>{nf(r.ySum[0])}</td><td className={`${td} font-semibold`}>{nf(r.ySum[1])}</td>
-                    <td className={td}><PctBadge value={r.ySum[1] || r.ySum[0]} goal={r.목표명 || r.목표건} /></td>
-                  </tr>
-                );
-              })}
-              {[...groups.entries()].map(([name, groupRows]) => {
-                const mP = groupRows.reduce((a, r) => a + r.mSum[1], 0);
-                const mC = groupRows.reduce((a, r) => a + r.mSum[0], 0);
-                const yP = groupRows.reduce((a, r) => a + r.ySum[1], 0);
-                const yC = groupRows.reduce((a, r) => a + r.ySum[0], 0);
-                const goalP = groupRows.reduce((a, r) => a + r.목표명, 0);
-                return (
-                  <tr key={`sub-${name}`} className="bg-[#eef1f5] font-semibold dark:bg-zinc-800">
-                    <td className={td} colSpan={2}>소계 · {name}</td>
-                    <td className={td}>{nf(goalP)}</td>
-                    <td className={td}>{nf(mC)}</td><td className={td}>{nf(mP)}</td>
-                    <td className={td}>{nf(yC)}</td><td className={td}>{nf(yP)}</td>
-                    <td className={td}><PctBadge value={yP} goal={goalP} /></td>
-                  </tr>
+                  <Fragment key={r.id}>
+                    <tr>
+                      {span > 0 && <td className={`${td} font-medium`} rowSpan={span}>{r.세부사업명}</td>}
+                      {mspan > 0 && <td className={`${td} text-left align-middle`} rowSpan={mspan}>{r.중분류}</td>}
+                      <td className={`${td} text-left`}>{r.소분류 || '–'}</td>
+                      <td className={`${td} text-zinc-400`}>{nf(r.목표명)}</td>
+                      <td className={td}>{nf(r.mSum[0])}</td><td className={td}>{nf(r.mSum[1])}</td>
+                      <td className={`${td} font-semibold`}>{nf(r.ySum[0])}</td><td className={`${td} font-semibold`}>{nf(r.ySum[1])}</td>
+                      <td className={td}><PctBadge value={r.ySum[1] || r.ySum[0]} goal={r.목표명 || r.목표건} /></td>
+                    </tr>
+                    {isLastOfGroup && (
+                      <tr className="bg-[#eef1f5] font-semibold dark:bg-zinc-800">
+                        <td className={td} colSpan={3}>소계 · {r.세부사업명}</td>
+                        <td className={td}>{nf(goalP)}</td>
+                        <td className={td}>{nf(mC)}</td><td className={td}>{nf(mP)}</td>
+                        <td className={td}>{nf(yC)}</td><td className={td}>{nf(yP)}</td>
+                        <td className={td}><PctBadge value={yP} goal={goalP} /></td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
               <tr className="bg-brand-dark font-semibold text-white">
-                <td className={`${td} !text-white`} colSpan={3}>총 계</td>
+                <td className={`${td} !text-white`} colSpan={4}>총 계</td>
                 <td className={`${td} !text-white`}>{nf(totalM[0])}</td><td className={`${td} !text-white`}>{nf(totalM[1])}</td>
                 <td className={`${td} !text-white`}>{nf(totalY[0])}</td><td className={`${td} !text-white`}>{nf(totalY[1])}</td>
-                <td className={`${td} !text-white`}>{fpct(pct(totalY[1], settings.총목표))}%</td>
+                <td className={`${td} !text-white`}>{fpct(pct(totalY[1], grandGoal))}%</td>
               </tr>
             </tbody>
           </table>
