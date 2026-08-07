@@ -28,6 +28,14 @@ function subSpan(rows: Row[], i: number): number {
   return n;
 }
 
+function midSpan(rows: Row[], i: number): number {
+  const same = (a: Row, b: Row) => a.세부사업명 === b.세부사업명 && a.중분류 === b.중분류;
+  if (i > 0 && same(rows[i - 1], rows[i])) return 0;
+  let n = 1;
+  while (rows[i + n] && same(rows[i + n], rows[i])) n++;
+  return n;
+}
+
 export default function DailyEntryClient({
   business, date, prevDate, nextDate, rows, grandGoal,
   totalDay, totalMtd, totalYtd, initialContent, initialNote, dow, settingsToggle,
@@ -109,13 +117,15 @@ export default function DailyEntryClient({
         <table className={table}>
           <thead>
             <tr>
-              <th className={th} rowSpan={2}>세부사업</th><th className={th} rowSpan={2}>구분</th>
+              <th className={th} rowSpan={2}>세부사업</th>
+              <th className={th} colSpan={2}>구분</th>
               <th className={th} colSpan={2}>목표</th>
               <th className={th} colSpan={2} style={{ background: '#e4eef0' }}>일계(입력)</th>
               <th className={th} colSpan={2}>월계</th><th className={th} colSpan={2}>누계</th>
               <th className={th} rowSpan={2}>달성율</th>
             </tr>
             <tr>
+              <th className={th}>중분류</th><th className={th}>소분류</th>
               <th className={th}>건</th><th className={th}>명</th>
               <th className={th} style={{ background: '#e4eef0' }}>건</th><th className={th} style={{ background: '#e4eef0' }}>명</th>
               <th className={th}>건</th><th className={th}>명</th><th className={th}>건</th><th className={th}>명</th>
@@ -124,10 +134,12 @@ export default function DailyEntryClient({
           <tbody>
             {rows.map((r, i) => {
               const span = subSpan(rows, i);
+              const mspan = midSpan(rows, i);
               return (
                 <tr key={r.id}>
                   {span > 0 && <td className={`${td} font-medium`} rowSpan={span}>{r.세부사업명}</td>}
-                  <td className={`${td} text-left`}>{r.중분류}{r.소분류 && <span className="text-zinc-400"> · {r.소분류}</span>}</td>
+                  {mspan > 0 && <td className={`${td} text-left align-middle`} rowSpan={mspan}>{r.중분류}</td>}
+                  <td className={`${td} text-left`}>{r.소분류 || '–'}</td>
                   <td className={`${td} text-zinc-400`}>{nf(r.목표건)}</td>
                   <td className={`${td} text-zinc-400`}>{nf(r.목표명)}</td>
                   <td className={td}>
@@ -157,7 +169,7 @@ export default function DailyEntryClient({
               const gGoalP = groupRows.reduce((a, r) => a + r.목표명, 0);
               return (
                 <tr key={`sub-${name}`} className="bg-[#eef1f5] font-semibold dark:bg-zinc-800">
-                  <td className={td} colSpan={2}>소계 · {name}</td>
+                  <td className={td} colSpan={3}>소계 · {name}</td>
                   <td className={td}>{nf(groupRows.reduce((a, r) => a + r.목표건, 0))}</td>
                   <td className={td}>{nf(gGoalP)}</td>
                   <td className={td}>{nf(sum('day', 0))}</td><td className={td}>{nf(sum('day', 1))}</td>
@@ -168,7 +180,7 @@ export default function DailyEntryClient({
               );
             })}
             <tr className="bg-brand-dark font-semibold text-white">
-              <td className={`${td} !text-white`} colSpan={4}>총 계</td>
+              <td className={`${td} !text-white`} colSpan={5}>총 계</td>
               <td className={`${td} !text-white`}>{nf(totalDay[0])}</td><td className={`${td} !text-white`}>{nf(totalDay[1])}</td>
               <td className={`${td} !text-white`}>{nf(totalMtd[0])}</td><td className={`${td} !text-white`}>{nf(totalMtd[1])}</td>
               <td className={`${td} !text-white`}>{nf(totalYtd[0])}</td><td className={`${td} !text-white`}>{nf(totalYtd[1])}</td>

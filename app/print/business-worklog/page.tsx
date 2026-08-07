@@ -16,6 +16,15 @@ function todayKst(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 }
 
+function midSpan(rows: { 세부사업명: string; 중분류: string }[], i: number): number {
+  const same = (a: { 세부사업명: string; 중분류: string }, b: { 세부사업명: string; 중분류: string }) =>
+    a.세부사업명 === b.세부사업명 && a.중분류 === b.중분류;
+  if (i > 0 && same(rows[i - 1], rows[i])) return 0;
+  let n = 1;
+  while (rows[i + n] && same(rows[i + n], rows[i])) n++;
+  return n;
+}
+
 export default async function BusinessWorklogPrintPage({
   searchParams,
 }: {
@@ -138,12 +147,14 @@ function WorklogSheet({
         </colgroup>
         <thead>
           <tr>
-            <th style={lbl} colSpan={3} rowSpan={2}>구　분</th>
+            <th style={lbl} rowSpan={2}>세부사업</th>
+            <th style={lbl} colSpan={2}>구　분</th>
             <th style={lbl} rowSpan={2}>건</th><th style={lbl} rowSpan={2}>명</th>
             <th style={lbl} colSpan={2}>일계</th><th style={lbl} colSpan={2}>월계</th><th style={lbl} colSpan={2}>누계</th>
             <th style={lbl} colSpan={2}>달성율(%)</th>
           </tr>
           <tr>
+            <th style={lbl}>중분류</th><th style={lbl}>소분류</th>
             <th style={lbl}>건</th><th style={lbl}>명</th><th style={lbl}>건</th><th style={lbl}>명</th>
             <th style={lbl}>건</th><th style={lbl}>명</th><th style={lbl}>건</th><th style={lbl}>명</th>
           </tr>
@@ -151,10 +162,12 @@ function WorklogSheet({
         <tbody>
           {rows.map((r, i) => {
             const span = i > 0 && rows[i - 1].세부사업명 === r.세부사업명 ? 0 : rows.filter((x) => x.세부사업명 === r.세부사업명).length;
+            const mspan = midSpan(rows, i);
             return (
               <tr key={r.id}>
                 {span > 0 && <td style={{ ...lbl, writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: 10 }} rowSpan={span}>{r.세부사업명}</td>}
-                <td style={{ ...cell, textAlign: 'left' }} colSpan={2}>{r.중분류}{r.소분류 && ` · ${r.소분류}`}</td>
+                {mspan > 0 && <td style={{ ...cell, textAlign: 'left' }} rowSpan={mspan}>{r.중분류}</td>}
+                <td style={{ ...cell, textAlign: 'left' }}>{r.소분류 || '–'}</td>
                 <td style={cell}>{nf(r.목표건)}</td><td style={cell}>{nf(r.목표명)}</td>
                 <td style={cell}>{nf(r.day[0])}</td><td style={cell}>{nf(r.day[1])}</td>
                 <td style={cell}>{nf(r.mtd[0])}</td><td style={cell}>{nf(r.mtd[1])}</td>
