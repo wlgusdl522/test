@@ -11,7 +11,9 @@ import {
 
 export const DEFAULT_APPROVAL_LINE = ['담당', '과장', '부장', '관장'];
 
-export type BusinessSettings = { 총목표: number; 활동내용라벨: string; 결재라인: string[] };
+export const ACTIVITY_LABEL = '활동내용';
+
+export type BusinessSettings = { 결재라인: string[] };
 
 export type BasisRow = {
   id: string; 계획항목ID: string; 라벨: string; 직접입력여부: boolean;
@@ -51,13 +53,11 @@ export async function getBusinessSettings(사업명: string): Promise<BusinessSe
     결재라인 = [];
   }
   return {
-    총목표: num(row?.총목표),
-    활동내용라벨: row?.활동내용라벨 || '활동내용',
     결재라인: 결재라인.length ? 결재라인 : DEFAULT_APPROVAL_LINE,
   };
 }
 
-// 설정 > 사업목록에서 사업별 총목표/활동내용라벨/결재라인을 한 번에 보여줄 때 쓴다
+// 설정 > 사업목록에서 사업별 결재라인을 한 번에 보여줄 때 쓴다
 // (사업 수만큼 getBusinessSettings를 반복 호출하면 시트를 그만큼 다시 읽어오게 되어 비효율적).
 export async function getAllBusinessSettings(): Promise<Record<string, BusinessSettings>> {
   const list = await getKeyedList(BUSINESS_SETTINGS_TABLE);
@@ -70,8 +70,6 @@ export async function getAllBusinessSettings(): Promise<Record<string, BusinessS
       결재라인 = [];
     }
     map[row.사업명] = {
-      총목표: num(row.총목표),
-      활동내용라벨: row.활동내용라벨 || '활동내용',
       결재라인: 결재라인.length ? 결재라인 : DEFAULT_APPROVAL_LINE,
     };
   });
@@ -89,8 +87,6 @@ export async function upsertBusinessSettings(
   await upsertKeyedRecord(BUSINESS_SETTINGS_TABLE, { 사업명 }, {
     id: existing?.id || randomUUID(),
     사업명,
-    총목표: String(merged.총목표),
-    활동내용라벨: merged.활동내용라벨,
     결재라인JSON: JSON.stringify(merged.결재라인),
     정렬순서: existing?.정렬순서 || String(await nextBusinessOrder()),
   });
@@ -144,7 +140,7 @@ export async function createWorklogBusiness(
   if (!trimmed) throw new Error('사업명을 입력해주세요.');
   const existing = await getWorklogBusinessNames();
   if (existing.includes(trimmed)) throw new Error('이미 등록된 사업명입니다.');
-  await upsertBusinessSettings(trimmed, { 총목표: 0, 활동내용라벨: '활동내용', 결재라인: DEFAULT_APPROVAL_LINE });
+  await upsertBusinessSettings(trimmed, { 결재라인: DEFAULT_APPROVAL_LINE });
   await setBusinessShares(trimmed, shareEmails, staffByEmail);
 }
 
@@ -342,6 +338,11 @@ function itemsForPlan(sub: BusinessSubNode, plan: PlanItem): WorklogItem[] {
 export async function buildWorklogItems(사업명: string): Promise<WorklogItem[]> {
   const tree = await getBusinessPlanTree(사업명);
   return tree.flatMap((sub) => sub.plans.flatMap((plan) => itemsForPlan(sub, plan)));
+}
+
+// 총목표는 별도로 입력받지 않고, 세부사업계획에 마지막으로 저장된 산출근거 목표를 그대로 합산한 값이다.
+export function sumWorklogGoal(items: WorklogItem[]): number {
+  return items.reduce((a, i) => a + i.목표명, 0);
 }
 
 // 계획서 화면에서 계획항목 하나의 "목표(건/명)" 합계를 보여주기 위한 헬퍼 —

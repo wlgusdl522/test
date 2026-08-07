@@ -79,7 +79,6 @@ export default async function BusinessWorklogPrintPage({
           entries={entries}
           memo={memos[idx]}
           approvalLine={settings.결재라인}
-          actLabel={settings.활동내용라벨}
           isLast={idx === days.length - 1}
         />
       ))}
@@ -91,11 +90,11 @@ const lbl = { border: '1px solid #000', background: '#f2f2f2', fontWeight: 700, 
 const cell = { border: '1px solid #000', padding: '3px 4px', textAlign: 'center' as const, fontSize: 10.5 };
 
 function WorklogSheet({
-  business, date, items, entries, memo, approvalLine, actLabel, isLast,
+  business, date, items, entries, memo, approvalLine, isLast,
 }: {
   business: string; date: string; items: WorklogItem[]; entries: DailyEntry[];
   memo: { 활동내용: string; 특이사항: string } | null;
-  approvalLine: string[]; actLabel: string; isLast: boolean;
+  approvalLine: string[]; isLast: boolean;
 }) {
   const D = new Date(`${date}T00:00:00`);
   const monthFrom = `${date.slice(0, 7)}-01`;
@@ -187,7 +186,7 @@ function WorklogSheet({
             <td style={cell} colSpan={2} />
           </tr>
           <tr>
-            <td style={{ ...lbl, width: '16mm' }} colSpan={3}>{actLabel}</td>
+            <td style={{ ...lbl, width: '16mm' }} colSpan={3}>활동내용</td>
             <td style={{ ...cell, textAlign: 'left', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.활동내용 || ' '}</td>
           </tr>
           <tr>

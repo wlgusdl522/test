@@ -1,4 +1,4 @@
-import { buildWorklogItems, getBusinessSettings, getViewerWorklogBusinessNames } from '@/lib/mutate/businessPlan';
+import { buildWorklogItems, getViewerWorklogBusinessNames, sumWorklogGoal } from '@/lib/mutate/businessPlan';
 import { getDailyEntries, getWrittenDates, rangeSum } from '@/lib/mutate/worklogEntry';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
@@ -39,12 +39,12 @@ export default async function BusinessMonthlyPage({
   const ym = ymParam || todayKst().slice(0, 7);
   const [y, m] = ym.split('-').map(Number);
 
-  const [settings, items, entries, writtenDates] = await Promise.all([
-    getBusinessSettings(business),
+  const [items, entries, writtenDates] = await Promise.all([
     buildWorklogItems(business),
     getDailyEntries(business),
     getWrittenDates(business),
   ]);
+  const grandGoal = sumWorklogGoal(items);
 
   const firstDow = new Date(y, m - 1, 1).getDay();
   const lastDate = new Date(y, m, 0).getDate();
@@ -174,7 +174,7 @@ export default async function BusinessMonthlyPage({
                 <td className={`${td} !text-white`} colSpan={3}>총 계</td>
                 <td className={`${td} !text-white`}>{nf(totalM[0])}</td><td className={`${td} !text-white`}>{nf(totalM[1])}</td>
                 <td className={`${td} !text-white`}>{nf(totalY[0])}</td><td className={`${td} !text-white`}>{nf(totalY[1])}</td>
-                <td className={`${td} !text-white`}>{fpct(pct(totalY[1], settings.총목표))}%</td>
+                <td className={`${td} !text-white`}>{fpct(pct(totalY[1], grandGoal))}%</td>
               </tr>
             </tbody>
           </table>

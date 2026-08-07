@@ -1,4 +1,4 @@
-import { buildWorklogItems, getBusinessSettings, getViewerWorklogBusinessNames } from '@/lib/mutate/businessPlan';
+import { buildWorklogItems, getBusinessSettings, getViewerWorklogBusinessNames, sumWorklogGoal } from '@/lib/mutate/businessPlan';
 import { getAllBusinessShares } from '@/lib/mutate/businessShare';
 import { dayValue, getDailyEntries, getMemo, rangeSum } from '@/lib/mutate/worklogEntry';
 import { getShareableStaffGroups, hasPageAccess } from '@/lib/mutate/permissions';
@@ -47,6 +47,7 @@ export default async function BusinessDailyPage({
     getAllBusinessShares(),
   ]);
   const shared = sharesMap[business] ?? [];
+  const grandGoal = sumWorklogGoal(items);
 
   const monthFrom = `${date.slice(0, 7)}-01`;
   const yearFrom = `${date.slice(0, 4)}-01-01`;
@@ -74,14 +75,6 @@ export default async function BusinessDailyPage({
       <form action={saveWorklogSettingsAction} className="flex flex-col gap-3">
         <input type="hidden" name="business" value={business} />
         <label className={label}>
-          총목표(명)
-          <input name="grandGoal" type="number" min="0" defaultValue={settings.총목표} className={inputBase} />
-        </label>
-        <label className={label}>
-          활동내용 라벨
-          <input name="actLabel" defaultValue={settings.활동내용라벨} className={inputBase} />
-        </label>
-        <label className={label}>
           결재라인 (쉼표로 구분)
           <input name="approvalLine" defaultValue={settings.결재라인.join(', ')} className={inputBase} />
         </label>
@@ -101,9 +94,8 @@ export default async function BusinessDailyPage({
       prevDate={addDays(date, -1)}
       nextDate={addDays(date, 1)}
       dow={DOW[new Date(`${date}T00:00:00`).getDay()]}
-      actLabel={settings.활동내용라벨}
       rows={rows}
-      grandGoal={settings.총목표}
+      grandGoal={grandGoal}
       totalDay={totalDay}
       totalMtd={totalMtd}
       totalYtd={totalYtd}

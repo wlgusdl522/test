@@ -1,4 +1,4 @@
-import { buildWorklogItems, getBusinessPlanTree, getBusinessSettings, getWorklogBusinessNames } from '@/lib/mutate/businessPlan';
+import { buildWorklogItems, getBusinessPlanTree, getWorklogBusinessNames } from '@/lib/mutate/businessPlan';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import { card, h2, hint } from '@/lib/ui';
 import BusinessPlanEditor from '@/components/business/BusinessPlanEditor';
@@ -26,8 +26,7 @@ export default async function BusinessGoalPage({
     return <p className="text-sm text-zinc-500">등록된 사업이 없습니다. 위 &ldquo;새 사업 만들기&rdquo;로 만들어주세요.</p>;
   }
 
-  const [settings, tree, worklogItems] = await Promise.all([
-    getBusinessSettings(business),
+  const [tree, worklogItems] = await Promise.all([
     getBusinessPlanTree(business),
     buildWorklogItems(business),
   ]);
@@ -37,7 +36,6 @@ export default async function BusinessGoalPage({
       <BusinessPlanEditor
         key={business}
         business={business}
-        grandGoal={settings.총목표}
         initialSubs={tree}
       />
 

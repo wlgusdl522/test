@@ -29,10 +29,10 @@ function subSpan(rows: Row[], i: number): number {
 }
 
 export default function DailyEntryClient({
-  business, date, prevDate, nextDate, actLabel, rows, grandGoal,
+  business, date, prevDate, nextDate, rows, grandGoal,
   totalDay, totalMtd, totalYtd, initialContent, initialNote, dow, settingsToggle,
 }: {
-  business: string; date: string; prevDate: string; nextDate: string; actLabel: string;
+  business: string; date: string; prevDate: string; nextDate: string;
   rows: Row[]; grandGoal: number;
   totalDay: [number, number]; totalMtd: [number, number]; totalYtd: [number, number];
   initialContent: string; initialNote: string; dow: string; settingsToggle?: React.ReactNode;
@@ -180,7 +180,7 @@ export default function DailyEntryClient({
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <div className="mb-1.5 text-xs font-semibold">{actLabel}</div>
+          <div className="mb-1.5 text-xs font-semibold">활동내용</div>
           <textarea
             value={content} onChange={(e) => setContent(e.target.value)}
             placeholder="* 항목명 - N명(성명 또는 내용)"

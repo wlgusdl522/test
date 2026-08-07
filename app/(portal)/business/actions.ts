@@ -50,11 +50,7 @@ export async function saveWorklogSettingsAction(formData: FormData): Promise<voi
   const 사업명 = str(formData, 'business');
   const 결재라인 = str(formData, 'approvalLine').split(',').map((s) => s.trim()).filter(Boolean);
   const shareEmails = formData.getAll('shareEmails').map((v) => String(v));
-  await upsertBusinessSettings(사업명, {
-    총목표: numOrZero(formData, 'grandGoal'),
-    활동내용라벨: str(formData, 'actLabel').trim() || '활동내용',
-    결재라인,
-  });
+  await upsertBusinessSettings(사업명, { 결재라인 });
   await setBusinessShares(사업명, shareEmails, await staffByEmailMap());
   revalidatePath('/business');
   revalidatePath('/business/daily');

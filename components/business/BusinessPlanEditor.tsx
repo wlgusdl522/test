@@ -52,12 +52,10 @@ function structureKey(subs: BusinessSubNode[]): string {
 
 export default function BusinessPlanEditor({
   business,
-  grandGoal,
   initialSubs,
   settingsToggle,
 }: {
   business: string;
-  grandGoal: number;
   initialSubs: BusinessSubNode[];
   settingsToggle?: React.ReactNode;
 }) {
@@ -105,7 +103,6 @@ export default function BusinessPlanEditor({
     },
     { gp: 0, gc: 0, budget: 0, items: 0 }
   );
-  const matches = totals.gp === grandGoal;
   const totalDataRows = subs.reduce((a, s) => a + Math.max(s.plans.length, 1), 0);
 
   function onSave() {
@@ -121,9 +118,9 @@ export default function BusinessPlanEditor({
 
   return (
     <div>
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div className={statCard}>
-          <div className="text-[10.5px] font-semibold tracking-wide text-zinc-400">계획 목표 합계</div>
+          <div className="text-[10.5px] font-semibold tracking-wide text-zinc-400">총목표(계획 목표 합계)</div>
           <div className="mt-1 text-xl font-bold text-zinc-800 dark:text-zinc-100">
             {nf(totals.gp)}<span className="ml-1 text-xs font-normal text-zinc-400">명</span>
           </div>
@@ -136,17 +133,10 @@ export default function BusinessPlanEditor({
           </div>
         </div>
         <div className={statCard}>
-          <div className="text-[10.5px] font-semibold tracking-wide text-zinc-400">총목표</div>
+          <div className="text-[10.5px] font-semibold tracking-wide text-zinc-400">업무일지 항목</div>
           <div className="mt-1 text-xl font-bold text-zinc-800 dark:text-zinc-100">
-            {nf(grandGoal)}<span className="ml-1 text-xs font-normal text-zinc-400">명</span>
+            {nf(totals.items)}<span className="ml-1 text-xs font-normal text-zinc-400">개</span>
           </div>
-        </div>
-        <div className={statCard}>
-          <div className="text-[10.5px] font-semibold tracking-wide text-zinc-400">검증</div>
-          <div className={`mt-1 text-sm font-bold ${matches ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#b51c31] dark:text-red-400'}`}>
-            {matches ? '✓ 목표 합계 일치' : `△ ${nf(Math.abs(totals.gp - grandGoal))}명 차이`}
-          </div>
-          <div className="text-[11px] text-zinc-400">업무일지 항목 {totals.items}개 생성</div>
         </div>
       </div>
 
