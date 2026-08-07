@@ -1,10 +1,12 @@
 import { buildWorklogItems, getBusinessSettings, getViewerWorklogBusinessNames } from '@/lib/mutate/businessPlan';
+import { getAllBusinessShares } from '@/lib/mutate/businessShare';
 import { dayValue, getDailyEntries, getMemo, rangeSum } from '@/lib/mutate/worklogEntry';
-import { hasPageAccess } from '@/lib/mutate/permissions';
+import { getShareableStaffGroups, hasPageAccess } from '@/lib/mutate/permissions';
 import { btn, inputBase, label } from '@/lib/ui';
 import DailyEntryClient from '@/components/business/DailyEntryClient';
 import FormToggle from '@/components/FormToggle';
 import PageAccessDenied from '@/components/PageAccessDenied';
+import ShareStaffChecklist from '@/components/business/ShareStaffChecklist';
 import { saveWorklogSettingsAction } from '../actions';
 
 export const runtime = 'nodejs';
@@ -36,12 +38,15 @@ export default async function BusinessDailyPage({
   }
   const date = dateParam || todayKst();
 
-  const [settings, items, entries, memo] = await Promise.all([
+  const [settings, items, entries, memo, staffGroups, sharesMap] = await Promise.all([
     getBusinessSettings(business),
     buildWorklogItems(business),
     getDailyEntries(business),
     getMemo(business, date),
+    getShareableStaffGroups(),
+    getAllBusinessShares(),
   ]);
+  const shared = sharesMap[business] ?? [];
 
   const monthFrom = `${date.slice(0, 7)}-01`;
   const yearFrom = `${date.slice(0, 4)}-01-01`;
@@ -80,6 +85,10 @@ export default async function BusinessDailyPage({
           결재라인 (쉼표로 구분)
           <input name="approvalLine" defaultValue={settings.결재라인.join(', ')} className={inputBase} />
         </label>
+        <div className={label}>
+          공유 대상 (업무입력·월별현황·일지인쇄 접근 허용)
+          <ShareStaffChecklist groups={staffGroups} checkedEmails={shared} />
+        </div>
         <button type="submit" className={`${btn} w-fit`}>저장</button>
       </form>
     </FormToggle>

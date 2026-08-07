@@ -59,7 +59,7 @@ export default function BusinessPlanEditor({
   business: string;
   grandGoal: number;
   initialSubs: BusinessSubNode[];
-  settingsToggle: React.ReactNode;
+  settingsToggle?: React.ReactNode;
 }) {
   const [subs, setSubs] = useState<BusinessSubNode[]>(initialSubs);
   const [pending, startTransition] = useTransition();

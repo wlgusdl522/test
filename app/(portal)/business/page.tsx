@@ -1,12 +1,8 @@
 import { buildWorklogItems, getBusinessPlanTree, getBusinessSettings, getWorklogBusinessNames } from '@/lib/mutate/businessPlan';
-import { getAllBusinessShares } from '@/lib/mutate/businessShare';
-import { getShareableStaffGroups, hasPageAccess } from '@/lib/mutate/permissions';
-import { btn, card, h2, hint, label } from '@/lib/ui';
+import { hasPageAccess } from '@/lib/mutate/permissions';
+import { card, h2, hint } from '@/lib/ui';
 import BusinessPlanEditor from '@/components/business/BusinessPlanEditor';
-import ShareStaffChecklist from '@/components/business/ShareStaffChecklist';
-import FormToggle from '@/components/FormToggle';
 import PageAccessDenied from '@/components/PageAccessDenied';
-import { saveBusinessShareAction } from './actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,32 +26,11 @@ export default async function BusinessGoalPage({
     return <p className="text-sm text-zinc-500">등록된 사업이 없습니다. 위 &ldquo;새 사업 만들기&rdquo;로 만들어주세요.</p>;
   }
 
-  const [settings, tree, worklogItems, staffGroups, sharesMap] = await Promise.all([
+  const [settings, tree, worklogItems] = await Promise.all([
     getBusinessSettings(business),
     getBusinessPlanTree(business),
     buildWorklogItems(business),
-    getShareableStaffGroups(),
-    getAllBusinessShares(),
   ]);
-  const shared = sharesMap[business] ?? [];
-
-  const settingsToggle = (
-    <FormToggle
-      label={`${business} · 사업공유 설정`}
-      buttonLabel="사업공유 설정"
-      buttonClassName="text-[11px] text-brand hover:underline"
-      wrapperClassName=""
-    >
-      <form action={saveBusinessShareAction} className="flex flex-col gap-3">
-        <input type="hidden" name="business" value={business} />
-        <div className={label}>
-          공유 대상 (업무입력·월별현황·일지인쇄 접근 허용)
-          <ShareStaffChecklist groups={staffGroups} checkedEmails={shared} />
-        </div>
-        <button type="submit" className={`${btn} w-fit`}>저장</button>
-      </form>
-    </FormToggle>
-  );
 
   return (
     <div>
@@ -64,7 +39,6 @@ export default async function BusinessGoalPage({
         business={business}
         grandGoal={settings.총목표}
         initialSubs={tree}
-        settingsToggle={settingsToggle}
       />
 
       <div className={card}>

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { moveBusinessAction } from '@/app/(portal)/business/actions';
+import { inputBase } from '@/lib/ui';
 
 const TABS = [
   { href: '/business/daily', label: '업무입력' },
@@ -14,6 +15,7 @@ export default function BusinessTabsClient({ businesses }: { businesses: string[
   const searchParams = useSearchParams();
   const router = useRouter();
   const current = searchParams.get('business') || businesses[0] || '';
+  const currentIndex = businesses.indexOf(current);
 
   function onBusinessChange(name: string) {
     const sp = new URLSearchParams(searchParams);
@@ -23,39 +25,30 @@ export default function BusinessTabsClient({ businesses }: { businesses: string[
 
   return (
     <div className="mb-5">
-      <div className="mb-3 flex flex-wrap items-center gap-1.5">
-        {businesses.map((name, i) => {
-          const isActive = name === current;
-          return (
-            <div key={name} className="flex items-center">
-              {isActive && i > 0 && (
-                <form action={moveBusinessAction}>
-                  <input type="hidden" name="business" value={name} />
-                  <input type="hidden" name="direction" value="up" />
-                  <button type="submit" className="px-0.5 text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200" title="앞으로 이동">◀</button>
-                </form>
-              )}
-              <button
-                type="button"
-                onClick={() => onBusinessChange(name)}
-                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-brand text-white'
-                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
-                }`}
-              >
-                {name}
-              </button>
-              {isActive && i < businesses.length - 1 && (
-                <form action={moveBusinessAction}>
-                  <input type="hidden" name="business" value={name} />
-                  <input type="hidden" name="direction" value="down" />
-                  <button type="submit" className="px-0.5 text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200" title="뒤로 이동">▶</button>
-                </form>
-              )}
-            </div>
-          );
-        })}
+      <div className="mb-3 flex items-center gap-1.5">
+        <select
+          value={current}
+          onChange={(e) => onBusinessChange(e.target.value)}
+          className={`${inputBase} min-w-[220px]`}
+        >
+          {businesses.map((name) => (
+            <option key={name} value={name}>{name}</option>
+          ))}
+        </select>
+        {currentIndex > 0 && (
+          <form action={moveBusinessAction}>
+            <input type="hidden" name="business" value={current} />
+            <input type="hidden" name="direction" value="up" />
+            <button type="submit" className="px-1 text-sm text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200" title="순서 앞으로">◀</button>
+          </form>
+        )}
+        {currentIndex >= 0 && currentIndex < businesses.length - 1 && (
+          <form action={moveBusinessAction}>
+            <input type="hidden" name="business" value={current} />
+            <input type="hidden" name="direction" value="down" />
+            <button type="submit" className="px-1 text-sm text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200" title="순서 뒤로">▶</button>
+          </form>
+        )}
       </div>
       {pathname !== '/business' && (
         <div className="flex flex-wrap items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">

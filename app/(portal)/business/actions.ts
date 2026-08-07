@@ -44,23 +44,18 @@ export async function moveBusinessAction(formData: FormData): Promise<void> {
   revalidatePath('/business/monthly');
 }
 
-// 사업공유(세부사업계획 화면)와 총괄업무일지 설정(업무입력 화면)은 서로 다른 폼이라 액션도
-// 분리한다 — 하나로 합쳐두면 한쪽 폼을 제출할 때 다른 쪽 값이 빈 채로 같이 넘어와 지워진다.
-export async function saveBusinessShareAction(formData: FormData): Promise<void> {
-  const 사업명 = str(formData, 'business');
-  const shareEmails = formData.getAll('shareEmails').map((v) => String(v));
-  await setBusinessShares(사업명, shareEmails, await staffByEmailMap());
-  revalidatePath('/business');
-}
-
+// 목표설정(세부사업계획)은 전 직원 공개라 사업공유 설정이 필요 없고, 사업공유는 오직
+// 업무입력·월별현황·일지인쇄(총괄업무일지)의 접근 범위를 정하는 값이라 그 설정 폼 안에 같이 둔다.
 export async function saveWorklogSettingsAction(formData: FormData): Promise<void> {
   const 사업명 = str(formData, 'business');
   const 결재라인 = str(formData, 'approvalLine').split(',').map((s) => s.trim()).filter(Boolean);
+  const shareEmails = formData.getAll('shareEmails').map((v) => String(v));
   await upsertBusinessSettings(사업명, {
     총목표: numOrZero(formData, 'grandGoal'),
     활동내용라벨: str(formData, 'actLabel').trim() || '활동내용',
     결재라인,
   });
+  await setBusinessShares(사업명, shareEmails, await staffByEmailMap());
   revalidatePath('/business');
   revalidatePath('/business/daily');
   revalidatePath('/business/monthly');
