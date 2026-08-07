@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { buildWorklogItems, getViewerWorklogBusinessNames, sumWorklogGoal } from '@/lib/mutate/businessPlan';
 import { getDailyEntries, getWrittenDates, rangeSum } from '@/lib/mutate/worklogEntry';
 import { hasPageAccess } from '@/lib/mutate/permissions';
@@ -154,32 +155,34 @@ export default async function BusinessMonthlyPage({
               {rows.map((r, i) => {
                 const span = i > 0 && rows[i - 1].세부사업명 === r.세부사업명 ? 0 : rows.filter((x) => x.세부사업명 === r.세부사업명).length;
                 const mspan = midSpan(rows, i);
+                const isLastOfGroup = i === rows.length - 1 || rows[i + 1].세부사업명 !== r.세부사업명;
+                const groupRows = groups.get(r.세부사업명) ?? [];
+                const mP = groupRows.reduce((a, x) => a + x.mSum[1], 0);
+                const mC = groupRows.reduce((a, x) => a + x.mSum[0], 0);
+                const yP = groupRows.reduce((a, x) => a + x.ySum[1], 0);
+                const yC = groupRows.reduce((a, x) => a + x.ySum[0], 0);
+                const goalP = groupRows.reduce((a, x) => a + x.목표명, 0);
                 return (
-                  <tr key={r.id}>
-                    {span > 0 && <td className={`${td} font-medium`} rowSpan={span}>{r.세부사업명}</td>}
-                    {mspan > 0 && <td className={`${td} text-left align-middle`} rowSpan={mspan}>{r.중분류}</td>}
-                    <td className={`${td} text-left`}>{r.소분류 || '–'}</td>
-                    <td className={`${td} text-zinc-400`}>{nf(r.목표명)}</td>
-                    <td className={td}>{nf(r.mSum[0])}</td><td className={td}>{nf(r.mSum[1])}</td>
-                    <td className={`${td} font-semibold`}>{nf(r.ySum[0])}</td><td className={`${td} font-semibold`}>{nf(r.ySum[1])}</td>
-                    <td className={td}><PctBadge value={r.ySum[1] || r.ySum[0]} goal={r.목표명 || r.목표건} /></td>
-                  </tr>
-                );
-              })}
-              {[...groups.entries()].map(([name, groupRows]) => {
-                const mP = groupRows.reduce((a, r) => a + r.mSum[1], 0);
-                const mC = groupRows.reduce((a, r) => a + r.mSum[0], 0);
-                const yP = groupRows.reduce((a, r) => a + r.ySum[1], 0);
-                const yC = groupRows.reduce((a, r) => a + r.ySum[0], 0);
-                const goalP = groupRows.reduce((a, r) => a + r.목표명, 0);
-                return (
-                  <tr key={`sub-${name}`} className="bg-[#eef1f5] font-semibold dark:bg-zinc-800">
-                    <td className={td} colSpan={3}>소계 · {name}</td>
-                    <td className={td}>{nf(goalP)}</td>
-                    <td className={td}>{nf(mC)}</td><td className={td}>{nf(mP)}</td>
-                    <td className={td}>{nf(yC)}</td><td className={td}>{nf(yP)}</td>
-                    <td className={td}><PctBadge value={yP} goal={goalP} /></td>
-                  </tr>
+                  <Fragment key={r.id}>
+                    <tr>
+                      {span > 0 && <td className={`${td} font-medium`} rowSpan={span}>{r.세부사업명}</td>}
+                      {mspan > 0 && <td className={`${td} text-left align-middle`} rowSpan={mspan}>{r.중분류}</td>}
+                      <td className={`${td} text-left`}>{r.소분류 || '–'}</td>
+                      <td className={`${td} text-zinc-400`}>{nf(r.목표명)}</td>
+                      <td className={td}>{nf(r.mSum[0])}</td><td className={td}>{nf(r.mSum[1])}</td>
+                      <td className={`${td} font-semibold`}>{nf(r.ySum[0])}</td><td className={`${td} font-semibold`}>{nf(r.ySum[1])}</td>
+                      <td className={td}><PctBadge value={r.ySum[1] || r.ySum[0]} goal={r.목표명 || r.목표건} /></td>
+                    </tr>
+                    {isLastOfGroup && (
+                      <tr className="bg-[#eef1f5] font-semibold dark:bg-zinc-800">
+                        <td className={td} colSpan={3}>소계 · {r.세부사업명}</td>
+                        <td className={td}>{nf(goalP)}</td>
+                        <td className={td}>{nf(mC)}</td><td className={td}>{nf(mP)}</td>
+                        <td className={td}>{nf(yC)}</td><td className={td}>{nf(yP)}</td>
+                        <td className={td}><PctBadge value={yP} goal={goalP} /></td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
               <tr className="bg-brand-dark font-semibold text-white">

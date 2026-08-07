@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { Fragment, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { badgeBase, badgeTone, btn, btnSecondary, table, td, th, tableWrap } from '@/lib/ui';
 import { submitDailyEntriesAction } from '@/app/(portal)/business/daily/actions';
@@ -135,48 +135,50 @@ export default function DailyEntryClient({
             {rows.map((r, i) => {
               const span = subSpan(rows, i);
               const mspan = midSpan(rows, i);
+              const isLastOfGroup = i === rows.length - 1 || rows[i + 1].세부사업명 !== r.세부사업명;
+              const groupRows = groups.get(r.세부사업명) ?? [];
+              const sum = (key: 'day' | 'mtd' | 'ytd', idx: 0 | 1) => groupRows.reduce((a, x) => a + x[key][idx], 0);
+              const gGoalP = groupRows.reduce((a, x) => a + x.목표명, 0);
               return (
-                <tr key={r.id}>
-                  {span > 0 && <td className={`${td} font-medium`} rowSpan={span}>{r.세부사업명}</td>}
-                  {mspan > 0 && <td className={`${td} text-left align-middle`} rowSpan={mspan}>{r.중분류}</td>}
-                  <td className={`${td} text-left`}>{r.소분류 || '–'}</td>
-                  <td className={`${td} text-zinc-400`}>{nf(r.목표건)}</td>
-                  <td className={`${td} text-zinc-400`}>{nf(r.목표명)}</td>
-                  <td className={td}>
-                    <input
-                      type="number" min="0" placeholder="0"
-                      value={values[r.id]?.gc ?? ''}
-                      onChange={(e) => setVal(r.id, 'gc', e.target.value)}
-                      className="w-16 rounded border border-transparent bg-[#fcfbf8] px-1 py-1 text-center font-mono focus:border-brand focus:outline-none dark:bg-zinc-950"
-                    />
-                  </td>
-                  <td className={td}>
-                    <input
-                      type="number" min="0" placeholder="0"
-                      value={values[r.id]?.gp ?? ''}
-                      onChange={(e) => setVal(r.id, 'gp', e.target.value)}
-                      className="w-16 rounded border border-transparent bg-[#fcfbf8] px-1 py-1 text-center font-mono focus:border-brand focus:outline-none dark:bg-zinc-950"
-                    />
-                  </td>
-                  <td className={td}>{nf(r.mtd[0])}</td><td className={td}>{nf(r.mtd[1])}</td>
-                  <td className={`${td} font-semibold`}>{nf(r.ytd[0])}</td><td className={`${td} font-semibold`}>{nf(r.ytd[1])}</td>
-                  <td className={td}><PctCell value={r.ytd[1] || r.ytd[0]} goal={r.목표명 || r.목표건} /></td>
-                </tr>
-              );
-            })}
-            {[...groups.entries()].map(([name, groupRows]) => {
-              const sum = (key: 'day' | 'mtd' | 'ytd', idx: 0 | 1) => groupRows.reduce((a, r) => a + r[key][idx], 0);
-              const gGoalP = groupRows.reduce((a, r) => a + r.목표명, 0);
-              return (
-                <tr key={`sub-${name}`} className="bg-[#eef1f5] font-semibold dark:bg-zinc-800">
-                  <td className={td} colSpan={3}>소계 · {name}</td>
-                  <td className={td}>{nf(groupRows.reduce((a, r) => a + r.목표건, 0))}</td>
-                  <td className={td}>{nf(gGoalP)}</td>
-                  <td className={td}>{nf(sum('day', 0))}</td><td className={td}>{nf(sum('day', 1))}</td>
-                  <td className={td}>{nf(sum('mtd', 0))}</td><td className={td}>{nf(sum('mtd', 1))}</td>
-                  <td className={td}>{nf(sum('ytd', 0))}</td><td className={td}>{nf(sum('ytd', 1))}</td>
-                  <td className={td}><PctCell value={sum('ytd', 1)} goal={gGoalP} /></td>
-                </tr>
+                <Fragment key={r.id}>
+                  <tr>
+                    {span > 0 && <td className={`${td} font-medium`} rowSpan={span}>{r.세부사업명}</td>}
+                    {mspan > 0 && <td className={`${td} text-left align-middle`} rowSpan={mspan}>{r.중분류}</td>}
+                    <td className={`${td} text-left`}>{r.소분류 || '–'}</td>
+                    <td className={`${td} text-zinc-400`}>{nf(r.목표건)}</td>
+                    <td className={`${td} text-zinc-400`}>{nf(r.목표명)}</td>
+                    <td className={td}>
+                      <input
+                        type="number" min="0" placeholder="0"
+                        value={values[r.id]?.gc ?? ''}
+                        onChange={(e) => setVal(r.id, 'gc', e.target.value)}
+                        className="w-16 rounded border border-transparent bg-[#fcfbf8] px-1 py-1 text-center font-mono focus:border-brand focus:outline-none dark:bg-zinc-950"
+                      />
+                    </td>
+                    <td className={td}>
+                      <input
+                        type="number" min="0" placeholder="0"
+                        value={values[r.id]?.gp ?? ''}
+                        onChange={(e) => setVal(r.id, 'gp', e.target.value)}
+                        className="w-16 rounded border border-transparent bg-[#fcfbf8] px-1 py-1 text-center font-mono focus:border-brand focus:outline-none dark:bg-zinc-950"
+                      />
+                    </td>
+                    <td className={td}>{nf(r.mtd[0])}</td><td className={td}>{nf(r.mtd[1])}</td>
+                    <td className={`${td} font-semibold`}>{nf(r.ytd[0])}</td><td className={`${td} font-semibold`}>{nf(r.ytd[1])}</td>
+                    <td className={td}><PctCell value={r.ytd[1] || r.ytd[0]} goal={r.목표명 || r.목표건} /></td>
+                  </tr>
+                  {isLastOfGroup && (
+                    <tr className="bg-[#eef1f5] font-semibold dark:bg-zinc-800">
+                      <td className={td} colSpan={3}>소계 · {r.세부사업명}</td>
+                      <td className={td}>{nf(groupRows.reduce((a, x) => a + x.목표건, 0))}</td>
+                      <td className={td}>{nf(gGoalP)}</td>
+                      <td className={td}>{nf(sum('day', 0))}</td><td className={td}>{nf(sum('day', 1))}</td>
+                      <td className={td}>{nf(sum('mtd', 0))}</td><td className={td}>{nf(sum('mtd', 1))}</td>
+                      <td className={td}>{nf(sum('ytd', 0))}</td><td className={td}>{nf(sum('ytd', 1))}</td>
+                      <td className={td}><PctCell value={sum('ytd', 1)} goal={gGoalP} /></td>
+                    </tr>
+                  )}
+                </Fragment>
               );
             })}
             <tr className="bg-brand-dark font-semibold text-white">

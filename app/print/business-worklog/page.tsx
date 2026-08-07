@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { buildWorklogItems, getBusinessSettings, getViewerWorklogBusinessNames, type WorklogItem } from '@/lib/mutate/businessPlan';
 import { type DailyEntry, dayValue, getDailyEntries, getMemo, getWrittenDates, rangeSum } from '@/lib/mutate/worklogEntry';
 import ApprovalBox from '@/components/print/ApprovalBox';
@@ -163,32 +164,34 @@ function WorklogSheet({
           {rows.map((r, i) => {
             const span = i > 0 && rows[i - 1].세부사업명 === r.세부사업명 ? 0 : rows.filter((x) => x.세부사업명 === r.세부사업명).length;
             const mspan = midSpan(rows, i);
+            const isLastOfGroup = i === rows.length - 1 || rows[i + 1].세부사업명 !== r.세부사업명;
+            const groupRows = groups.get(r.세부사업명) ?? [];
+            const sum = (key: 'day' | 'mtd' | 'ytd', idx: 0 | 1) => groupRows.reduce((a, x) => a + x[key][idx], 0);
+            const goalP = groupRows.reduce((a, x) => a + x.목표명, 0);
+            const goalC = groupRows.reduce((a, x) => a + x.목표건, 0);
             return (
-              <tr key={r.id}>
-                {span > 0 && <td style={{ ...lbl, writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: 10 }} rowSpan={span}>{r.세부사업명}</td>}
-                {mspan > 0 && <td style={{ ...cell, textAlign: 'left' }} rowSpan={mspan}>{r.중분류}</td>}
-                <td style={{ ...cell, textAlign: 'left' }}>{r.소분류 || '–'}</td>
-                <td style={cell}>{nf(r.목표건)}</td><td style={cell}>{nf(r.목표명)}</td>
-                <td style={cell}>{nf(r.day[0])}</td><td style={cell}>{nf(r.day[1])}</td>
-                <td style={cell}>{nf(r.mtd[0])}</td><td style={cell}>{nf(r.mtd[1])}</td>
-                <td style={{ ...cell, fontWeight: 700 }}>{nf(r.ytd[0])}</td><td style={{ ...cell, fontWeight: 700 }}>{nf(r.ytd[1])}</td>
-                <td style={cell}>{fpct(pct(r.ytd[0], r.목표건))}</td><td style={cell}>{fpct(pct(r.ytd[1], r.목표명))}</td>
-              </tr>
-            );
-          })}
-          {[...groups.entries()].map(([name, groupRows]) => {
-            const sum = (key: 'day' | 'mtd' | 'ytd', idx: 0 | 1) => groupRows.reduce((a, r) => a + r[key][idx], 0);
-            const goalP = groupRows.reduce((a, r) => a + r.목표명, 0);
-            const goalC = groupRows.reduce((a, r) => a + r.목표건, 0);
-            return (
-              <tr key={`s-${name}`} style={{ background: '#f7f7f7', fontWeight: 700 }}>
-                <td style={cell} colSpan={3}>소　계 · {name}</td>
-                <td style={cell}>{nf(goalC)}</td><td style={cell}>{nf(goalP)}</td>
-                <td style={cell}>{nf(sum('day', 0))}</td><td style={cell}>{nf(sum('day', 1))}</td>
-                <td style={cell}>{nf(sum('mtd', 0))}</td><td style={cell}>{nf(sum('mtd', 1))}</td>
-                <td style={cell}>{nf(sum('ytd', 0))}</td><td style={cell}>{nf(sum('ytd', 1))}</td>
-                <td style={cell}>{fpct(pct(sum('ytd', 0), goalC))}</td><td style={cell}>{fpct(pct(sum('ytd', 1), goalP))}</td>
-              </tr>
+              <Fragment key={r.id}>
+                <tr>
+                  {span > 0 && <td style={{ ...lbl, writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: 10 }} rowSpan={span}>{r.세부사업명}</td>}
+                  {mspan > 0 && <td style={{ ...cell, textAlign: 'left' }} rowSpan={mspan}>{r.중분류}</td>}
+                  <td style={{ ...cell, textAlign: 'left' }}>{r.소분류 || '–'}</td>
+                  <td style={cell}>{nf(r.목표건)}</td><td style={cell}>{nf(r.목표명)}</td>
+                  <td style={cell}>{nf(r.day[0])}</td><td style={cell}>{nf(r.day[1])}</td>
+                  <td style={cell}>{nf(r.mtd[0])}</td><td style={cell}>{nf(r.mtd[1])}</td>
+                  <td style={{ ...cell, fontWeight: 700 }}>{nf(r.ytd[0])}</td><td style={{ ...cell, fontWeight: 700 }}>{nf(r.ytd[1])}</td>
+                  <td style={cell}>{fpct(pct(r.ytd[0], r.목표건))}</td><td style={cell}>{fpct(pct(r.ytd[1], r.목표명))}</td>
+                </tr>
+                {isLastOfGroup && (
+                  <tr style={{ background: '#f7f7f7', fontWeight: 700 }}>
+                    <td style={cell} colSpan={3}>소　계 · {r.세부사업명}</td>
+                    <td style={cell}>{nf(goalC)}</td><td style={cell}>{nf(goalP)}</td>
+                    <td style={cell}>{nf(sum('day', 0))}</td><td style={cell}>{nf(sum('day', 1))}</td>
+                    <td style={cell}>{nf(sum('mtd', 0))}</td><td style={cell}>{nf(sum('mtd', 1))}</td>
+                    <td style={cell}>{nf(sum('ytd', 0))}</td><td style={cell}>{nf(sum('ytd', 1))}</td>
+                    <td style={cell}>{fpct(pct(sum('ytd', 0), goalC))}</td><td style={cell}>{fpct(pct(sum('ytd', 1), goalP))}</td>
+                  </tr>
+                )}
+              </Fragment>
             );
           })}
           <tr style={{ background: '#dedede', fontWeight: 700 }}>
