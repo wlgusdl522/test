@@ -6,6 +6,7 @@ import { btn, btnSecondary, card, input, label } from '@/lib/ui';
 import Modal from '@/components/Modal';
 import SignaturePad from '@/components/duty/SignaturePad';
 import DutyCalendar, { type DutyDay } from '@/components/duty/DutyCalendar';
+import StaffPicker from '@/components/duty/StaffPicker';
 import DutyWeeklyLogTable, { formatDutyDayLabel } from '@/components/duty/DutyWeeklyLogTable';
 import { swapDutyAssignmentAction } from '@/app/(portal)/duty/actions';
 import { saveDutySaturdaySignatureAction, saveDutyWeekdayLogAction } from '@/app/(portal)/duty/log/[type]/[id]/actions';
@@ -287,17 +288,10 @@ export default function DutyClient({
               </label>
             )}
             <input type="hidden" name="slot" value={swapSlot} />
-            <label className={label}>
-              새 담당자
-              <select name="staff" required className={input}>
-                <option value="">직원 선택</option>
-                {staff.map((s) => (
-                  <option key={s['이메일(아이디)']} value={`${s['이메일(아이디)']}::${s.성명}::${s.소속팀}`}>
-                    {s.성명} ({s.소속팀})
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div>
+              <p className={label}>새 담당자</p>
+              <StaffPicker staff={staff} name="staff" required />
+            </div>
             <button type="submit" disabled={isPending} className={`${btn} w-fit`}>
               {isPending ? '처리 중...' : '교체 확정'}
             </button>
