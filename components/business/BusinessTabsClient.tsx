@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { moveBusinessAction } from '@/app/(portal)/business/actions';
 
 const TABS = [
   { href: '/business/daily', label: '업무입력' },
@@ -22,22 +23,37 @@ export default function BusinessTabsClient({ businesses }: { businesses: string[
 
   return (
     <div className="mb-5">
-      <div className="mb-3 flex flex-wrap gap-1.5">
-        {businesses.map((name) => {
+      <div className="mb-3 flex flex-wrap items-center gap-1.5">
+        {businesses.map((name, i) => {
           const isActive = name === current;
           return (
-            <button
-              key={name}
-              type="button"
-              onClick={() => onBusinessChange(name)}
-              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-brand text-white'
-                  : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
-              }`}
-            >
-              {name}
-            </button>
+            <div key={name} className="flex items-center">
+              {isActive && i > 0 && (
+                <form action={moveBusinessAction}>
+                  <input type="hidden" name="business" value={name} />
+                  <input type="hidden" name="direction" value="up" />
+                  <button type="submit" className="px-0.5 text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200" title="앞으로 이동">◀</button>
+                </form>
+              )}
+              <button
+                type="button"
+                onClick={() => onBusinessChange(name)}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-brand text-white'
+                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
+                }`}
+              >
+                {name}
+              </button>
+              {isActive && i < businesses.length - 1 && (
+                <form action={moveBusinessAction}>
+                  <input type="hidden" name="business" value={name} />
+                  <input type="hidden" name="direction" value="down" />
+                  <button type="submit" className="px-0.5 text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200" title="뒤로 이동">▶</button>
+                </form>
+              )}
+            </div>
           );
         })}
       </div>

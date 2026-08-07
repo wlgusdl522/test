@@ -9,6 +9,7 @@ import {
   deleteBasis,
   deleteBusinessSub,
   deletePlanItem,
+  moveWorklogBusiness,
   updateBasis,
   updateBusinessSub,
   updatePlanItem,
@@ -34,6 +35,13 @@ export async function createWorklogBusinessAction(formData: FormData): Promise<v
   const shareEmails = formData.getAll('shareEmails').map((v) => String(v));
   await createWorklogBusiness(str(formData, 'name'), shareEmails, await staffByEmailMap());
   revalidatePath('/business');
+}
+
+export async function moveBusinessAction(formData: FormData): Promise<void> {
+  await moveWorklogBusiness(str(formData, 'business'), str(formData, 'direction') === 'down' ? 'down' : 'up');
+  revalidatePath('/business');
+  revalidatePath('/business/daily');
+  revalidatePath('/business/monthly');
 }
 
 // 사업공유(세부사업계획 화면)와 총괄업무일지 설정(업무입력 화면)은 서로 다른 폼이라 액션도

@@ -191,7 +191,7 @@ export const VEHICLE_LOG_TABLE: KeyedTableConfig = {
 // 항목ID는 별도 테이블 없이 파생 규칙으로만 존재: merge 모드면 계획항목ID, 아니면
 // `계획항목ID-산출근거ID` — lib/mutate/businessPlan.ts의 buildWorklogItems가 계산한다.
 
-export const BUSINESS_SETTINGS_HEADERS = ['id', '사업명', '총목표', '활동내용라벨', '결재라인JSON'];
+export const BUSINESS_SETTINGS_HEADERS = ['id', '사업명', '총목표', '활동내용라벨', '결재라인JSON', '정렬순서'];
 
 export const BUSINESS_SETTINGS_TABLE: KeyedTableConfig = {
   spreadsheetId: WORKLOG_SHEET_ID,

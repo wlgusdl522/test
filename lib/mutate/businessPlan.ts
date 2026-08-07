@@ -92,7 +92,13 @@ export async function upsertBusinessSettings(
     총목표: String(merged.총목표),
     활동내용라벨: merged.활동내용라벨,
     결재라인JSON: JSON.stringify(merged.결재라인),
+    정렬순서: existing?.정렬순서 || String(await nextBusinessOrder()),
   });
+}
+
+async function nextBusinessOrder(): Promise<number> {
+  const list = await getKeyedList(BUSINESS_SETTINGS_TABLE);
+  return Math.max(0, ...list.map((r) => num(r.정렬순서))) + 1;
 }
 
 // 총괄업무일지는 설정 > 사업목록(예산과목·담당사업 등 다른 기능도 같이 쓰는 범용 목록)을
@@ -100,7 +106,23 @@ export async function upsertBusinessSettings(
 // 새 사업은 목표설정 화면에서 이름 + 공유 대상을 같이 입력해서 바로 만든다.
 export async function getWorklogBusinessNames(): Promise<string[]> {
   const list = await getKeyedList(BUSINESS_SETTINGS_TABLE);
-  return list.map((r) => r.사업명).filter(Boolean);
+  return [...list]
+    .filter((r) => r.사업명)
+    .sort((a, b) => num(a.정렬순서) - num(b.정렬순서))
+    .map((r) => r.사업명);
+}
+
+// 탭에 표시되는 사업 순서를 앞/뒤로 한 칸 바꾼다 — 정렬순서 값을 이웃 사업과 맞바꾼다.
+export async function moveWorklogBusiness(사업명: string, direction: 'up' | 'down'): Promise<void> {
+  const list = await getKeyedList(BUSINESS_SETTINGS_TABLE);
+  const ordered = [...list].filter((r) => r.사업명).sort((a, b) => num(a.정렬순서) - num(b.정렬순서));
+  const idx = ordered.findIndex((r) => r.사업명 === 사업명);
+  const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (idx < 0 || swapIdx < 0 || swapIdx >= ordered.length) return;
+  const a = ordered[idx];
+  const b = ordered[swapIdx];
+  await updateKeyedRecord(BUSINESS_SETTINGS_TABLE, { 사업명: a.사업명 }, { ...a, 정렬순서: String(num(b.정렬순서)) });
+  await updateKeyedRecord(BUSINESS_SETTINGS_TABLE, { 사업명: b.사업명 }, { ...b, 정렬순서: String(num(a.정렬순서)) });
 }
 
 // 목표설정(계획서)은 전 직원이 같이 보지만, 일계입력/월별현황/일지인쇄는 이 사업을 공유받은
