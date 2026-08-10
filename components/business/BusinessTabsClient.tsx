@@ -50,6 +50,17 @@ export default function BusinessTabsClient({ businesses }: { businesses: string[
           </form>
         )}
       </div>
+      {pathname === '/business' && (
+        <div className="mb-3 flex flex-wrap items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
+          <a
+            href="/print/business-plan"
+            target="_blank"
+            className="-mb-px rounded-t-md border border-transparent px-3.5 py-2 text-sm text-zinc-500 transition-colors hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+          >
+            전체 계획서 보기·복사 ↗
+          </a>
+        </div>
+      )}
       {pathname !== '/business' && (
         <div className="flex flex-wrap items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
           {TABS.map((t) => {
