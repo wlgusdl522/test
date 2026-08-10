@@ -13,6 +13,8 @@ export async function saveSystemSettingsAction(formData: FormData) {
     vehicleManagerEmail: String(formData.get('vehicleManagerEmail') ?? ''),
     cardLedgerWarnDays: Number(formData.get('cardLedgerWarnDays') ?? 5),
     cardLedgerDangerDays: Number(formData.get('cardLedgerDangerDays') ?? 10),
+    certificateApproverEmail: String(formData.get('certificateApproverEmail') ?? ''),
+    certificateClerkEmail: String(formData.get('certificateClerkEmail') ?? ''),
   });
   revalidatePath('/settings/system');
 }

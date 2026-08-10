@@ -49,6 +49,14 @@ export default async function SystemSettingsPage() {
           카드사용대장 경과일 위험 기준(일)
           <input type="number" name="cardLedgerDangerDays" defaultValue={settings.cardLedgerDangerDays} className={input} />
         </label>
+        <label className={label}>
+          증명서 발급 최종승인자 이메일
+          <input name="certificateApproverEmail" defaultValue={settings.certificateApproverEmail} className={input} />
+        </label>
+        <label className={label}>
+          증명서 발급 담당(서무) 이메일
+          <input name="certificateClerkEmail" defaultValue={settings.certificateClerkEmail} className={input} />
+        </label>
         <div>
           <button type="submit" className={btn}>저장</button>
         </div>

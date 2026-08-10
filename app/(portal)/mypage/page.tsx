@@ -1,22 +1,25 @@
 import { getMyRecordsSummary } from '@/lib/mutate/dashboard';
 import { getMyPendingItemCheckReportApprovals } from '@/lib/mutate/itemCheckReport';
 import { getMyPendingVehicleLogApprovals } from '@/lib/mutate/vehicleLog';
+import { getMyPendingCertificateApprovals } from '@/lib/supabase/certificate';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { getNavLayout, setNavLayoutAction } from '@/lib/prefs-actions';
 import { btn, btnDanger, btnSecondary, card, cardTableWrap, h1, h2, input, inputBase, label, pageFluid, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
 import { actOnItemCheckReportAction } from '@/app/(portal)/expenses/reports/actions';
 import { parseAmount } from '@/lib/format';
 import { actOnVehicleLogAction } from '@/app/(portal)/vehicles/logs/actions';
+import { actOnCertificateAction } from '@/app/(portal)/staff/certificates/actions';
 import { saveMyJandiWebhookAction, saveMyStampAction } from './actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export default async function MyPage() {
-  const [summary, pendingReports, pendingLogs, me, navLayout] = await Promise.all([
+  const [summary, pendingReports, pendingLogs, pendingCertificates, me, navLayout] = await Promise.all([
     getMyRecordsSummary(),
     getMyPendingItemCheckReportApprovals(),
     getMyPendingVehicleLogApprovals(),
+    getMyPendingCertificateApprovals(),
     getViewerStaffRecord(),
     getNavLayout(),
   ]);
@@ -80,7 +83,7 @@ export default async function MyPage() {
         {summary.pendingTasks.length === 0 && <li className="text-sm text-zinc-400">처리할 일이 없습니다.</li>}
       </ul>
 
-      {(pendingReports.length > 0 || pendingLogs.length > 0) && (
+      {(pendingReports.length > 0 || pendingLogs.length > 0 || pendingCertificates.length > 0) && (
         <>
           <h2 className={h2}>내 결재함</h2>
           <div className={cardTableWrap}><table className={tableClean}>
@@ -120,6 +123,26 @@ export default async function MyPage() {
                       <button type="submit" className={btn}>승인</button>
                     </form>
                     <form action={actOnVehicleLogAction} className="flex items-center gap-1">
+                      <input type="hidden" name="id" value={r.id} />
+                      <input type="hidden" name="action" value="반려" />
+                      <input name="comment" placeholder="반려 사유" className={`${inputBase} w-24 text-xs`} />
+                      <button type="submit" className={btnDanger}>반려</button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+              {pendingCertificates.map((r) => (
+                <tr key={`cert-${r.id}`} className={trHoverClean}>
+                  <td className={tdClean}>증명서 발급</td>
+                  <td className={tdClean}>{r.종류} · {r.대상자성명}</td>
+                  <td className={tdClean}>{r.현재결재단계}</td>
+                  <td className={`${tdClean} flex items-center gap-1.5`}>
+                    <form action={actOnCertificateAction}>
+                      <input type="hidden" name="id" value={r.id} />
+                      <input type="hidden" name="action" value="승인" />
+                      <button type="submit" className={btn}>승인</button>
+                    </form>
+                    <form action={actOnCertificateAction} className="flex items-center gap-1">
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="action" value="반려" />
                       <input name="comment" placeholder="반려 사유" className={`${inputBase} w-24 text-xs`} />

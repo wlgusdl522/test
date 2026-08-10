@@ -118,6 +118,26 @@ export async function isAccountingViewer(): Promise<boolean> {
   }
 }
 
+// 증명서 발급대장은 관리자/회계담당자(회계는 물품검수조서와 같은 설정값 재사용)/서무담당자만 볼 수 있다.
+export async function requireCanViewCertificateLog(): Promise<void> {
+  const viewerEmail = await requireViewerEmail();
+  if (await isAdminEmail(viewerEmail)) return;
+  const { itemCheckAccountingEmail, certificateClerkEmail } = await getSystemSettings();
+  const allowed = [itemCheckAccountingEmail, certificateClerkEmail].map((e) => e.toLowerCase());
+  if (!allowed.includes(viewerEmail)) {
+    throw new Error('증명서 발급대장은 관리자, 회계담당자, 서무담당자만 볼 수 있습니다.');
+  }
+}
+
+export async function canViewCertificateLog(): Promise<boolean> {
+  try {
+    await requireCanViewCertificateLog();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function requireIsSupervisorForTeam(team: string): Promise<void> {
   const viewerEmail = await requireViewerEmail();
   if (await isAdminEmail(viewerEmail)) return;

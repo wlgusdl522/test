@@ -23,6 +23,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: '/staff', label: '직원관리', description: '직원 정보 등록·수정·조회' },
       { href: '/staff/history', label: '계정이력', description: '계정 신규/인계 처리 이력' },
       { href: '/staff/directory', label: '전직원 주소록', description: '팀·직급별 연락처 확인' },
+      { href: '/staff/certificates', label: '증명서 발급', description: '재직·경력증명서 및 상장 발급 관리' },
     ],
   },
   {
