@@ -10,8 +10,9 @@ import { parseAmount } from '@/lib/format';
 import { TEAM_ORDER } from '@/lib/teamOrder';
 import { hasVehicleUseEnded } from '@/lib/vehicleTimeOverlap';
 import { NAV_SECTION_ICON_PATH } from '@/lib/nav';
-import { btn, pageFluid, statCard } from '@/lib/ui';
+import { btn, pageFluid } from '@/lib/ui';
 import { getDutyWeekdayLogs, getDutySaturdayLogs } from '@/lib/supabase/duty';
+import { formatDutyDayLabel } from '@/components/duty/DutyWeeklyLogTable';
 import { todayISO } from '@/lib/dutyDate';
 import { getGreetingMessages, pickGreetingMessage } from '@/lib/supabase/greetingMessages';
 import { getAwayStaff } from '@/lib/supabase/staffStatus';
@@ -110,14 +111,20 @@ export default async function HomePage() {
 
   const today = todayISO();
   const currentYearMonth = today.slice(0, 7);
-  const myWeekdayDutyCount = weekdayDutyLogs.filter(
-    (r) => (r.이메일 ?? '').toLowerCase() === viewerEmail && (r.근무일자 ?? '').startsWith(currentYearMonth)
-  ).length;
-  const mySaturdayDutyCount = saturdayDutyLogs.filter(
-    (r) =>
-      ((r.이메일1 ?? '').toLowerCase() === viewerEmail || (r.이메일2 ?? '').toLowerCase() === viewerEmail) &&
-      (r.근무일자 ?? '').startsWith(currentYearMonth)
-  ).length;
+  const myWeekdayDutyDates = weekdayDutyLogs
+    .filter((r) => (r.이메일 ?? '').toLowerCase() === viewerEmail && (r.근무일자 ?? '').startsWith(currentYearMonth))
+    .map((r) => r.근무일자)
+    .sort()
+    .map((d) => formatDutyDayLabel(d));
+  const mySaturdayDutyDates = saturdayDutyLogs
+    .filter(
+      (r) =>
+        ((r.이메일1 ?? '').toLowerCase() === viewerEmail || (r.이메일2 ?? '').toLowerCase() === viewerEmail) &&
+        (r.근무일자 ?? '').startsWith(currentYearMonth)
+    )
+    .map((r) => r.근무일자)
+    .sort()
+    .map((d) => formatDutyDayLabel(d));
 
   const todayWeekdayDuty = weekdayDutyLogs.find(
     (r) => r.근무일자 === today && (r.이메일 ?? '').toLowerCase() === viewerEmail
@@ -133,7 +140,7 @@ export default async function HomePage() {
       ? `/duty/log/saturday/${todaySaturdayDuty.id}`
       : null;
 
-  const greetingMessage = pickGreetingMessage(greetingMessages, now);
+  const greetingMessage = pickGreetingMessage(greetingMessages, now) || '오늘도 수고 많으세요';
   const myAwayStatus = awayStaff.find((a) => a.이메일.toLowerCase() === viewerEmail);
 
   const leaveByDate = new Map<string, { primary: string; secondary?: string }[]>();
@@ -156,6 +163,10 @@ export default async function HomePage() {
     const list = awayByTeam.get(a.소속팀) ?? [];
     list.push({ primary: `${a.성명} 부재중`, secondary: a.사유, highlight: true });
     awayByTeam.set(a.소속팀, list);
+
+    const todayList = leaveByDate.get(today) ?? [];
+    todayList.push({ primary: a.성명, secondary: '외근' });
+    leaveByDate.set(today, todayList);
   });
 
   const dayDateSet = new Set(dayDates);
@@ -174,8 +185,8 @@ export default async function HomePage() {
       days: dayDates.map((iso, i) => ({ iso, label: dayLabel(iso, i), items: vehicleByDate.get(iso) ?? [] })),
     },
     {
-      title: '복지관 일정 (휴가 현황)',
-      emptyText: '이번 주 등록된 휴가가 없습니다.',
+      title: '금주 휴가·출장·외근현황',
+      emptyText: '이번 주 등록된 휴가·출장·외근이 없습니다.',
       days: dayDates.map((iso, i) => ({ iso, label: dayLabel(iso, i), items: leaveByDate.get(iso) ?? [] })),
     },
   ];
@@ -293,25 +304,36 @@ export default async function HomePage() {
           <p className="mb-2 text-xs font-semibold text-brand">서대문노인종합복지관 업무포털 · {monthLabel}</p>
           <h1 className="text-2xl font-bold leading-snug text-zinc-900 dark:text-zinc-100">
             {me?.성명 ?? ''}
-            {me?.['직급/직책'] ? ` ${me['직급/직책']}` : ''}님, 오늘도 <span className="text-brand">수고 많으세요</span>
+            {me?.['직급/직책'] ? ` ${me['직급/직책']}` : ''}님, <span className="text-brand">{greetingMessage}</span>
           </h1>
-          {greetingMessage && <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{greetingMessage}</p>}
 
-          <div className="mt-5 flex flex-wrap items-stretch gap-3">
-            <Link href="/duty" className={`${statCard} flex-1`}>
-              <p className="text-xs font-medium text-zinc-500">내 당직일자 · 토요당직</p>
-              <p className="mt-1.5 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-                {myWeekdayDutyCount}일 <span className="text-base font-medium text-zinc-400">/</span> {mySaturdayDutyCount}일
+          <div className="mt-5 rounded-xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.06)] dark:border-zinc-800 dark:bg-zinc-900">
+            <Link href="/duty" className="block">
+              <p className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />내 당직일자 (이번 달)
               </p>
-              <p className="mt-0.5 text-xs text-zinc-400">이번 달 기준</p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                {myWeekdayDutyDates.length > 0 ? myWeekdayDutyDates.join(', ') : '없음'}
+              </p>
+              <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />토요당직 (이번 달)
+              </p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                {mySaturdayDutyDates.length > 0 ? mySaturdayDutyDates.join(', ') : '없음'}
+              </p>
             </Link>
-            <AwayToggle initialAway={!!myAwayStatus} initialReason={myAwayStatus?.사유} />
+            {todayDutyLogHref && (
+              <Link href={todayDutyLogHref} className={`${btn} mt-3 w-fit`}>
+                오늘 당직 · 당직일지 작성하기
+              </Link>
+            )}
+            <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+              <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />부재중 표시
+              </p>
+              <AwayToggle initialAway={!!myAwayStatus} initialReason={myAwayStatus?.사유} />
+            </div>
           </div>
-          {todayDutyLogHref && (
-            <Link href={todayDutyLogHref} className={`${btn} mt-3 w-fit`}>
-              오늘 당직 · 당직일지 작성하기
-            </Link>
-          )}
         </div>
 
         <div className="min-w-0 flex-1 rounded-xl bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.08)] dark:bg-zinc-900">
