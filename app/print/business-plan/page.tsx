@@ -80,12 +80,16 @@ export default async function BusinessPlanPrintPage() {
                   <tr key={r.plan.id}>
                     {ri === 0 && <td style={cellC} rowSpan={totalRows}>{bi + 1}. {business}</td>}
                     {r.pi === 0 && <td style={{ ...cellC, fontWeight: 700 }} rowSpan={r.sub.plans.length}>{r.sub.세부사업명}</td>}
-                    <td style={cellC}>{nf(r.goal.gp)}명</td>
-                    <td style={{ ...cell, textAlign: 'right' }}>{nf(r.plan.예산)}</td>
+                    <td style={{ ...cell, textAlign: 'right' }}>{nf(r.goal.gp)}</td>
+                    {r.pi === 0 && (
+                      <td style={{ ...cell, textAlign: 'right' }} rowSpan={r.sub.plans.length}>
+                        {nf(r.sub.plans.reduce((a, p) => a + p.예산, 0))}
+                      </td>
+                    )}
                     <td style={cell}>
                       <b>{r.pi + 1}) {r.plan.제목}</b><br />
-                      {r.plan.사업내용}
-                      {r.plan.basis.length > 0 && <><br />▪ {r.plan.basis.map(basisLineText).join(' / ')}</>}
+                      - 내용 : {r.plan.사업내용}
+                      {r.plan.basis.length > 0 && <><br />- 인원 : {r.plan.basis.map(basisLineText).join(' / ')}</>}
                     </td>
                     {r.pi === 0 && <td style={cell} rowSpan={r.sub.plans.length}>{r.sub.기대효과}</td>}
                   </tr>
