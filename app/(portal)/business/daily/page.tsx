@@ -60,14 +60,9 @@ export default async function BusinessDailyPage({
     ytd: rangeSum(entries, [i.id], yearFrom, date),
   }));
 
-  const allIds = items.map((i) => i.id);
-  const totalDay = rangeSum(entries, allIds, date, date);
-  const totalMtd = rangeSum(entries, allIds, monthFrom, date);
-  const totalYtd = rangeSum(entries, allIds, yearFrom, date);
-
   const settingsToggle = (
     <FormToggle
-      label={`${business} · 총괄업무일지 설정`}
+      label={`${settings.정렬순서}. ${business} · 총괄업무일지 설정`}
       buttonLabel="총괄업무일지 설정"
       buttonClassName="text-[11px] text-brand hover:underline"
       wrapperClassName=""
@@ -96,9 +91,6 @@ export default async function BusinessDailyPage({
       dow={DOW[new Date(`${date}T00:00:00`).getDay()]}
       rows={rows}
       grandGoal={grandGoal}
-      totalDay={totalDay}
-      totalMtd={totalMtd}
-      totalYtd={totalYtd}
       initialContent={memo?.활동내용 ?? ''}
       initialNote={memo?.특이사항 ?? ''}
       settingsToggle={settingsToggle}

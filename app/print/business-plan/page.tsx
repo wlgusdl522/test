@@ -37,12 +37,10 @@ export default async function BusinessPlanPrintPage() {
       sub.plans.map((plan, pi) => ({ sub, plan, pi, goal: planGoal(sub, plan) }))
     );
     const gp = rows.reduce((a, r) => a + r.goal.gp, 0);
-    const gc = rows.reduce((a, r) => a + r.goal.gc, 0);
     const budget = rows.reduce((a, r) => a + r.plan.예산, 0);
-    return { business, totalRows, rows, gp, gc, budget };
+    return { business, totalRows, rows, gp, budget };
   });
   const grandGp = blocks.reduce((a, b) => a + b.gp, 0);
-  const grandGc = blocks.reduce((a, b) => a + b.gc, 0);
   const grandBudget = blocks.reduce((a, b) => a + b.budget, 0);
 
   return (
@@ -69,32 +67,36 @@ export default async function BusinessPlanPrintPage() {
             <tr>
               <th style={lbl}>사업분류</th>
               <th style={lbl}>세부사업</th>
-              <th style={lbl}>목표<br />(회·건·명)</th>
+              <th style={lbl}>목표<br />(명)</th>
               <th style={lbl}>예산<br />(천원)</th>
               <th style={lbl}>사 업 내 용</th>
               <th style={lbl}>기 대 효 과</th>
             </tr>
           </thead>
           <tbody>
-            {blocks.map(({ business, totalRows, rows, gp, gc, budget }) => (
+            {blocks.map(({ business, totalRows, rows, gp, budget }, bi) => (
               <Fragment key={business}>
                 {rows.map((r, ri) => (
                   <tr key={r.plan.id}>
-                    {ri === 0 && <td style={cellC} rowSpan={totalRows}>{business}</td>}
+                    {ri === 0 && <td style={cellC} rowSpan={totalRows}>{bi + 1}. {business}</td>}
                     {r.pi === 0 && <td style={{ ...cellC, fontWeight: 700 }} rowSpan={r.sub.plans.length}>{r.sub.세부사업명}</td>}
-                    <td style={cellC}>{nf(r.goal.gp)}명<br />{nf(r.goal.gc)}건</td>
-                    <td style={{ ...cell, textAlign: 'right' }}>{nf(r.plan.예산)}</td>
+                    <td style={{ ...cell, textAlign: 'right' }}>{nf(r.goal.gp)}</td>
+                    {r.pi === 0 && (
+                      <td style={{ ...cell, textAlign: 'right' }} rowSpan={r.sub.plans.length}>
+                        {nf(r.sub.plans.reduce((a, p) => a + p.예산, 0))}
+                      </td>
+                    )}
                     <td style={cell}>
                       <b>{r.pi + 1}) {r.plan.제목}</b><br />
-                      {r.plan.사업내용}
-                      {r.plan.basis.length > 0 && <><br />▪ {r.plan.basis.map(basisLineText).join(' / ')}</>}
+                      - 내용 : {r.plan.사업내용}
+                      {r.plan.basis.length > 0 && <><br />- 인원 : {r.plan.basis.map(basisLineText).join(' / ')}</>}
                     </td>
                     {r.pi === 0 && <td style={cell} rowSpan={r.sub.plans.length}>{r.sub.기대효과}</td>}
                   </tr>
                 ))}
                 <tr style={{ background: '#f7f7f7', fontWeight: 700 }}>
-                  <td style={cellC} colSpan={2}>소 계 · {business}</td>
-                  <td style={cellC}>{nf(gp)}명<br />{nf(gc)}건</td>
+                  <td style={cellC} colSpan={2}>소 계 · {bi + 1}. {business}</td>
+                  <td style={cellC}>{nf(gp)}명</td>
                   <td style={{ ...cell, textAlign: 'right' }}>{nf(budget)}</td>
                   <td style={cell} colSpan={2} />
                 </tr>
@@ -102,7 +104,7 @@ export default async function BusinessPlanPrintPage() {
             ))}
             <tr style={{ background: '#dedede', fontWeight: 700 }}>
               <td style={cellC} colSpan={2}>총 계</td>
-              <td style={cellC}>{nf(grandGp)}명<br />{nf(grandGc)}건</td>
+              <td style={cellC}>{nf(grandGp)}명</td>
               <td style={{ ...cell, textAlign: 'right' }}>{nf(grandBudget)}</td>
               <td style={cell} colSpan={2} />
             </tr>

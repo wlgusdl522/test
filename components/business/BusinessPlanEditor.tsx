@@ -52,10 +52,12 @@ function structureKey(subs: BusinessSubNode[]): string {
 
 export default function BusinessPlanEditor({
   business,
+  businessNumber,
   initialSubs,
   settingsToggle,
 }: {
   business: string;
+  businessNumber: number;
   initialSubs: BusinessSubNode[];
   settingsToggle?: React.ReactNode;
 }) {
@@ -95,13 +97,12 @@ export default function BusinessPlanEditor({
       s.plans.forEach((p) => {
         const g = planGoal(p);
         acc.gp += g.gp;
-        acc.gc += g.gc;
         acc.budget += p.예산;
         acc.items += planItemCount(p);
       });
       return acc;
     },
-    { gp: 0, gc: 0, budget: 0, items: 0 }
+    { gp: 0, budget: 0, items: 0 }
   );
   const totalDataRows = subs.reduce((a, s) => a + Math.max(s.plans.length, 1), 0);
 
@@ -124,7 +125,6 @@ export default function BusinessPlanEditor({
           <div className="mt-1 text-xl font-bold text-zinc-800 dark:text-zinc-100">
             {nf(totals.gp)}<span className="ml-1 text-xs font-normal text-zinc-400">명</span>
           </div>
-          <div className="text-[11px] text-zinc-400">{nf(totals.gc)}건</div>
         </div>
         <div className={statCard}>
           <div className="text-[10.5px] font-semibold tracking-wide text-zinc-400">예산 소계</div>
@@ -142,7 +142,7 @@ export default function BusinessPlanEditor({
 
       <div className={card}>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className={h2}>{business} 세부사업계획(안) <span className="ml-2 text-xs font-normal text-zinc-400">단위 : 천원</span></h2>
+          <h2 className={h2}>{businessNumber}. {business} 세부사업계획(안) <span className="ml-2 text-xs font-normal text-zinc-400">단위 : 천원</span></h2>
           <div className="flex items-center gap-3">
             {settingsToggle}
             <button type="button" onClick={onSave} disabled={pending} className={btn}>
@@ -180,7 +180,7 @@ export default function BusinessPlanEditor({
                     <tr key={sub.id}>
                       {isFirst && (
                         <td className={`${td} bg-[#f1efe8] text-center font-bold dark:bg-zinc-800`} rowSpan={totalDataRows + 1}>
-                          <div className="mx-auto [text-orientation:upright] [writing-mode:vertical-rl] tracking-wide">{business}</div>
+                          <div className="mx-auto [text-orientation:upright] [writing-mode:vertical-rl] tracking-wide">{businessNumber}. {business}</div>
                         </td>
                       )}
                       <td className={`${td} bg-[#f7f5ef] text-center font-bold dark:bg-zinc-800/60`}>
@@ -218,7 +218,7 @@ export default function BusinessPlanEditor({
                     <tr key={plan.id}>
                       {isFirst && (
                         <td className={`${td} bg-[#f1efe8] text-center font-bold dark:bg-zinc-800`} rowSpan={totalDataRows + 1}>
-                          <div className="mx-auto [text-orientation:upright] [writing-mode:vertical-rl] tracking-wide">{business}</div>
+                          <div className="mx-auto [text-orientation:upright] [writing-mode:vertical-rl] tracking-wide">{businessNumber}. {business}</div>
                         </td>
                       )}
                       {pi === 0 && (
@@ -398,7 +398,7 @@ export default function BusinessPlanEditor({
               })}
               <tr className="bg-[#eef1f5] font-bold dark:bg-zinc-800">
                 <td className={td} colSpan={2}>소 계</td>
-                <td className={`${td} text-right`}>{nf(totals.gp)}명<div className="text-[11px] font-normal text-zinc-400">{nf(totals.gc)}건</div></td>
+                <td className={`${td} text-right`}>{nf(totals.gp)}명</td>
                 <td className={`${td} text-right`}>{nf(totals.budget)}</td>
                 <td className={td} colSpan={2}></td>
               </tr>

@@ -38,11 +38,10 @@ function midSpan(rows: Row[], i: number): number {
 
 export default function DailyEntryClient({
   business, date, prevDate, nextDate, rows, grandGoal,
-  totalDay, totalMtd, totalYtd, initialContent, initialNote, dow, settingsToggle,
+  initialContent, initialNote, dow, settingsToggle,
 }: {
   business: string; date: string; prevDate: string; nextDate: string;
   rows: Row[]; grandGoal: number;
-  totalDay: [number, number]; totalMtd: [number, number]; totalYtd: [number, number];
   initialContent: string; initialNote: string; dow: string; settingsToggle?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -54,14 +53,44 @@ export default function DailyEntryClient({
   const [status, setStatus] = useState('');
   const [isPending, startTransition] = useTransition();
 
+  // 저장 전 미리보기: 방금 입력한 값과 기존 저장값의 차이만큼 월계/누계에 즉시 더해서 보여준다
+  // (월계·누계는 오늘 날짜의 기존 저장값을 이미 포함하고 있으므로, 그 값을 새로 입력한 값으로 갈아치우는 셈).
+  const previewRows = useMemo(() => {
+    return rows.map((r) => {
+      const gc = Number(values[r.id]?.gc) || 0;
+      const gp = Number(values[r.id]?.gp) || 0;
+      const dGc = gc - r.day[0];
+      const dGp = gp - r.day[1];
+      return {
+        ...r,
+        day: [gc, gp] as [number, number],
+        mtd: [r.mtd[0] + dGc, r.mtd[1] + dGp] as [number, number],
+        ytd: [r.ytd[0] + dGc, r.ytd[1] + dGp] as [number, number],
+      };
+    });
+  }, [rows, values]);
+
   const groups = useMemo(() => {
     const map = new Map<string, Row[]>();
-    rows.forEach((r) => {
+    previewRows.forEach((r) => {
       if (!map.has(r.세부사업명)) map.set(r.세부사업명, []);
       map.get(r.세부사업명)!.push(r);
     });
     return map;
-  }, [rows]);
+  }, [previewRows]);
+
+  const previewTotalDay = useMemo(
+    () => previewRows.reduce((a, r) => [a[0] + r.day[0], a[1] + r.day[1]] as [number, number], [0, 0] as [number, number]),
+    [previewRows]
+  );
+  const previewTotalMtd = useMemo(
+    () => previewRows.reduce((a, r) => [a[0] + r.mtd[0], a[1] + r.mtd[1]] as [number, number], [0, 0] as [number, number]),
+    [previewRows]
+  );
+  const previewTotalYtd = useMemo(
+    () => previewRows.reduce((a, r) => [a[0] + r.ytd[0], a[1] + r.ytd[1]] as [number, number], [0, 0] as [number, number]),
+    [previewRows]
+  );
 
   function setVal(id: string, field: 'gc' | 'gp', v: string) {
     setValues((prev) => ({ ...prev, [id]: { ...prev[id], [field]: v } }));
@@ -97,19 +126,19 @@ export default function DailyEntryClient({
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
           <div className="text-[10.5px] font-semibold uppercase tracking-wide text-zinc-400">당일 일계</div>
-          <div className="font-mono text-lg font-bold">{nf(totalDay[0])}건 / {nf(totalDay[1])}명</div>
+          <div className="font-mono text-lg font-bold">{nf(previewTotalDay[0])}건 / {nf(previewTotalDay[1])}명</div>
         </div>
         <div className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
           <div className="text-[10.5px] font-semibold uppercase tracking-wide text-zinc-400">{Number(date.slice(5, 7))}월 월계</div>
-          <div className="font-mono text-lg font-bold">{nf(totalMtd[0])}건 / {nf(totalMtd[1])}명</div>
+          <div className="font-mono text-lg font-bold">{nf(previewTotalMtd[0])}건 / {nf(previewTotalMtd[1])}명</div>
         </div>
         <div className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
           <div className="text-[10.5px] font-semibold uppercase tracking-wide text-zinc-400">연 누계</div>
-          <div className="font-mono text-lg font-bold text-brand">{nf(totalYtd[0])}건 / {nf(totalYtd[1])}명</div>
+          <div className="font-mono text-lg font-bold text-brand">{nf(previewTotalYtd[0])}건 / {nf(previewTotalYtd[1])}명</div>
         </div>
         <div className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
           <div className="text-[10.5px] font-semibold uppercase tracking-wide text-zinc-400">총계 달성율</div>
-          <div className="font-mono text-lg font-bold text-brand"><PctCell value={totalYtd[1]} goal={grandGoal} /></div>
+          <div className="font-mono text-lg font-bold text-brand"><PctCell value={previewTotalYtd[1]} goal={grandGoal} /></div>
         </div>
       </div>
 
@@ -132,10 +161,10 @@ export default function DailyEntryClient({
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, i) => {
-              const span = subSpan(rows, i);
-              const mspan = midSpan(rows, i);
-              const isLastOfGroup = i === rows.length - 1 || rows[i + 1].세부사업명 !== r.세부사업명;
+            {previewRows.map((r, i) => {
+              const span = subSpan(previewRows, i);
+              const mspan = midSpan(previewRows, i);
+              const isLastOfGroup = i === previewRows.length - 1 || previewRows[i + 1].세부사업명 !== r.세부사업명;
               const groupRows = groups.get(r.세부사업명) ?? [];
               const sum = (key: 'day' | 'mtd' | 'ytd', idx: 0 | 1) => groupRows.reduce((a, x) => a + x[key][idx], 0);
               const gGoalP = groupRows.reduce((a, x) => a + x.목표명, 0);
@@ -183,10 +212,10 @@ export default function DailyEntryClient({
             })}
             <tr className="bg-brand-dark font-semibold text-white">
               <td className={`${td} !text-white`} colSpan={5}>총 계</td>
-              <td className={`${td} !text-white`}>{nf(totalDay[0])}</td><td className={`${td} !text-white`}>{nf(totalDay[1])}</td>
-              <td className={`${td} !text-white`}>{nf(totalMtd[0])}</td><td className={`${td} !text-white`}>{nf(totalMtd[1])}</td>
-              <td className={`${td} !text-white`}>{nf(totalYtd[0])}</td><td className={`${td} !text-white`}>{nf(totalYtd[1])}</td>
-              <td className={`${td} !text-white`}>{fpct(pct(totalYtd[1], grandGoal))}%</td>
+              <td className={`${td} !text-white`}>{nf(previewTotalDay[0])}</td><td className={`${td} !text-white`}>{nf(previewTotalDay[1])}</td>
+              <td className={`${td} !text-white`}>{nf(previewTotalMtd[0])}</td><td className={`${td} !text-white`}>{nf(previewTotalMtd[1])}</td>
+              <td className={`${td} !text-white`}>{nf(previewTotalYtd[0])}</td><td className={`${td} !text-white`}>{nf(previewTotalYtd[1])}</td>
+              <td className={`${td} !text-white`}>{fpct(pct(previewTotalYtd[1], grandGoal))}%</td>
             </tr>
           </tbody>
         </table>
