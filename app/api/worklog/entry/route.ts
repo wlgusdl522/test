@@ -7,7 +7,7 @@ export const runtime = 'nodejs';
 // 무료급식포털(Apps Script) 등 외부 시스템이 총괄업무일지 일일실적을 자동으로 채워 넣기 위한 연동 엔드포인트.
 // 항목ID는 내부적으로 생성되는 UUID라 외부에서 알 수 없으므로, 사람이 읽을 수 있는
 // 세부사업명 + 라벨(중분류 또는 소분류)로 요청받아 서버에서 buildWorklogItems로 항목ID를 찾아 매칭한다.
-const 사업명 = '14. 무료급식사업';
+const 사업명 = '무료급식사업';
 const WRITER_EMAIL = 'free-meal-portal@sdmsenior.or.kr';
 const WRITER_NAME = '무료급식포털(자동연동)';
 
