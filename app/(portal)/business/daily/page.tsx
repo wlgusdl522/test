@@ -62,7 +62,7 @@ export default async function BusinessDailyPage({
 
   const settingsToggle = (
     <FormToggle
-      label={`${business} · 총괄업무일지 설정`}
+      label={`${settings.정렬순서}. ${business} · 총괄업무일지 설정`}
       buttonLabel="총괄업무일지 설정"
       buttonClassName="text-[11px] text-brand hover:underline"
       wrapperClassName=""

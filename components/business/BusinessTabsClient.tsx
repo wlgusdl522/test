@@ -31,8 +31,8 @@ export default function BusinessTabsClient({ businesses }: { businesses: string[
           onChange={(e) => onBusinessChange(e.target.value)}
           className={`${inputBase} min-w-[220px]`}
         >
-          {businesses.map((name) => (
-            <option key={name} value={name}>{name}</option>
+          {businesses.map((name, i) => (
+            <option key={name} value={name}>{i + 1}. {name}</option>
           ))}
         </select>
         {currentIndex > 0 && (

@@ -13,7 +13,7 @@ export const DEFAULT_APPROVAL_LINE = ['담당', '과장', '부장', '관장'];
 
 export const ACTIVITY_LABEL = '활동내용';
 
-export type BusinessSettings = { 결재라인: string[] };
+export type BusinessSettings = { 결재라인: string[]; 정렬순서: number };
 
 export type BasisRow = {
   id: string; 계획항목ID: string; 라벨: string; 직접입력여부: boolean;
@@ -54,6 +54,7 @@ export async function getBusinessSettings(사업명: string): Promise<BusinessSe
   }
   return {
     결재라인: 결재라인.length ? 결재라인 : DEFAULT_APPROVAL_LINE,
+    정렬순서: num(row?.정렬순서),
   };
 }
 
@@ -71,6 +72,7 @@ export async function getAllBusinessSettings(): Promise<Record<string, BusinessS
     }
     map[row.사업명] = {
       결재라인: 결재라인.length ? 결재라인 : DEFAULT_APPROVAL_LINE,
+      정렬순서: num(row.정렬순서),
     };
   });
   return map;

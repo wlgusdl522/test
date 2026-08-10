@@ -84,6 +84,7 @@ export default async function BusinessWorklogPrintPage({
         <WorklogSheet
           key={date}
           business={business}
+          businessNumber={settings.정렬순서}
           date={date}
           items={items}
           entries={entries}
@@ -100,9 +101,9 @@ const lbl = { border: '1px solid #000', background: '#f2f2f2', fontWeight: 700, 
 const cell = { border: '1px solid #000', padding: '3px 4px', textAlign: 'center' as const, fontSize: 10.5 };
 
 function WorklogSheet({
-  business, date, items, entries, memo, approvalLine, isLast,
+  business, businessNumber, date, items, entries, memo, approvalLine, isLast,
 }: {
-  business: string; date: string; items: WorklogItem[]; entries: DailyEntry[];
+  business: string; businessNumber: number; date: string; items: WorklogItem[]; entries: DailyEntry[];
   memo: { 활동내용: string; 특이사항: string } | null;
   approvalLine: string[]; isLast: boolean;
 }) {
@@ -132,7 +133,7 @@ function WorklogSheet({
       style={{ width: '190mm', margin: '0 auto 18px', color: '#000', ...(isLast ? {} : { pageBreakAfter: 'always' }) }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
-        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: 4, paddingTop: 6 }}>{business}　총괄업무일지</div>
+        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: 4, paddingTop: 6 }}>{businessNumber}. {business}　총괄업무일지</div>
         <ApprovalBox data={{ visibleLine: approvalLine, delegatedLastCell: false }} />
       </div>
       <div style={{ fontSize: 12, marginBottom: 6 }}>{D.getFullYear()}년 {D.getMonth() + 1}월 {D.getDate()}일 ({DOW[D.getDay()]})</div>

@@ -36,6 +36,7 @@ export default async function BusinessGoalPage({
       <BusinessPlanEditor
         key={business}
         business={business}
+        businessNumber={businesses.indexOf(business) + 1}
         initialSubs={tree}
       />
 
