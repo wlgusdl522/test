@@ -91,6 +91,7 @@ export default function DailyEntryClient({
     () => previewRows.reduce((a, r) => [a[0] + r.ytd[0], a[1] + r.ytd[1]] as [number, number], [0, 0] as [number, number]),
     [previewRows]
   );
+  const totalGoalC = useMemo(() => rows.reduce((a, r) => a + r.목표건, 0), [rows]);
 
   function setVal(id: string, field: 'gc' | 'gp', v: string) {
     setValues((prev) => ({ ...prev, [id]: { ...prev[id], [field]: v } }));
@@ -211,7 +212,8 @@ export default function DailyEntryClient({
               );
             })}
             <tr className="bg-brand-dark font-semibold text-white">
-              <td className={`${td} !text-white`} colSpan={5}>총 계</td>
+              <td className={`${td} !text-white`} colSpan={3}>총 계</td>
+              <td className={`${td} !text-white`}>{nf(totalGoalC)}</td><td className={`${td} !text-white`}>{nf(grandGoal)}</td>
               <td className={`${td} !text-white`}>{nf(previewTotalDay[0])}</td><td className={`${td} !text-white`}>{nf(previewTotalDay[1])}</td>
               <td className={`${td} !text-white`}>{nf(previewTotalMtd[0])}</td><td className={`${td} !text-white`}>{nf(previewTotalMtd[1])}</td>
               <td className={`${td} !text-white`}>{nf(previewTotalYtd[0])}</td><td className={`${td} !text-white`}>{nf(previewTotalYtd[1])}</td>

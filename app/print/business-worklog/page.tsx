@@ -134,7 +134,7 @@ function WorklogSheet({
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
         <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: 4, paddingTop: 6 }}>{businessNumber}. {business}　총괄업무일지</div>
-        <ApprovalBox data={{ visibleLine: approvalLine, delegatedLastCell: false }} />
+        <ApprovalBox data={{ visibleLine: approvalLine, delegatedLastCell: false }} scale={0.55} />
       </div>
       <div style={{ fontSize: 12, marginBottom: 6 }}>{D.getFullYear()}년 {D.getMonth() + 1}월 {D.getDate()}일 ({DOW[D.getDay()]})</div>
 
@@ -149,14 +149,12 @@ function WorklogSheet({
         </colgroup>
         <thead>
           <tr>
-            <th style={lbl} rowSpan={2}>세부사업</th>
-            <th style={lbl} colSpan={2}>구　분</th>
+            <th style={lbl} rowSpan={2} colSpan={3}>구　분</th>
             <th style={lbl} rowSpan={2}>건</th><th style={lbl} rowSpan={2}>명</th>
             <th style={lbl} colSpan={2}>일계</th><th style={lbl} colSpan={2}>월계</th><th style={lbl} colSpan={2}>누계</th>
             <th style={lbl} colSpan={2}>달성율(%)</th>
           </tr>
           <tr>
-            <th style={lbl}>중분류</th><th style={lbl}>소분류</th>
             <th style={lbl}>건</th><th style={lbl}>명</th><th style={lbl}>건</th><th style={lbl}>명</th>
             <th style={lbl}>건</th><th style={lbl}>명</th><th style={lbl}>건</th><th style={lbl}>명</th>
           </tr>
