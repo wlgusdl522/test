@@ -6,7 +6,8 @@ import { btn, btnSecondary, inputBase, label as labelClass, table, td, th, table
 import { bulkImportDailyEntriesAction } from '@/app/(portal)/business/daily/actions';
 
 type Item = { id: string; 세부사업명: string; 중분류: string; 소분류: string };
-type Orientation = 'itemsAsRows' | 'itemsAsCols';
+type Orientation = 'itemsAsRows' | 'itemsAsCols' | 'repeatingBlock';
+type Entry = { 항목ID: string; 세부사업명: string; 라벨: string; 날짜: string; 건: number; 명: number };
 
 function todayYm(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date()).slice(0, 7);
@@ -42,8 +43,8 @@ function colName(i: number): string {
   return s;
 }
 
-const PREVIEW_ROWS = 60;
-const PREVIEW_COLS = 40;
+const PREVIEW_ROWS = 80;
+const PREVIEW_COLS = 20;
 
 export default function ExcelImportPanel({ business, items }: { business: string; items: Item[] }) {
   const [grid, setGrid] = useState<unknown[][] | null>(null);
@@ -51,10 +52,22 @@ export default function ExcelImportPanel({ business, items }: { business: string
   const [sheetIndex, setSheetIndex] = useState(0);
   const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null);
   const [ym, setYm] = useState(todayYm());
-  const [orientation, setOrientation] = useState<Orientation>('itemsAsRows');
+  const [orientation, setOrientation] = useState<Orientation>('repeatingBlock');
+
+  // itemsAsRows/itemsAsCols 모드: 고정된 한 축이 날짜, 나머지 축이 항목
   const [dateAxisIndex, setDateAxisIndex] = useState('');
   const [fieldMap, setFieldMap] = useState<Record<string, { gc: string; gp: string }>>({});
-  const [preview, setPreview] = useState<{ 항목ID: string; 세부사업명: string; 라벨: string; 날짜: string; 건: number; 명: number }[] | null>(null);
+
+  // repeatingBlock 모드: 하루치 표 전체가 블록 단위로 아래로 반복되는 구조
+  const [blockStartRow, setBlockStartRow] = useState('');
+  const [blockHeight, setBlockHeight] = useState('');
+  const [dateOffset, setDateOffset] = useState('0');
+  const [dateCol, setDateCol] = useState('0');
+  const [gcCol, setGcCol] = useState('');
+  const [gpCol, setGpCol] = useState('');
+  const [rowOffsetMap, setRowOffsetMap] = useState<Record<string, string>>({});
+
+  const [preview, setPreview] = useState<Entry[] | null>(null);
   const [status, setStatus] = useState('');
   const [pending, setPending] = useState(false);
 
@@ -93,45 +106,94 @@ export default function ExcelImportPanel({ business, items }: { business: string
     return grid.slice(0, PREVIEW_ROWS).map((row) => row.slice(0, PREVIEW_COLS));
   }, [grid]);
 
-  function computePreview() {
+  // 날짜 열에서 날짜처럼 보이는 셀이 몇 번째 행마다 나타나는지 찾아서 블록 시작/높이를 자동으로 채운다.
+  function autoDetectBlock() {
     if (!grid) return;
-    const axisIdx = Number(dateAxisIndex);
-    if (!Number.isFinite(axisIdx) || axisIdx < 0) {
-      setStatus('날짜가 있는 행/열 번호를 입력해주세요.');
+    const col = Number(dateCol) || 0;
+    const hits: number[] = [];
+    grid.forEach((row, i) => { if (parseDateCell(row[col], ym)) hits.push(i); });
+    if (hits.length < 2) {
+      setStatus('날짜 열에서 반복 패턴을 찾지 못했습니다. 날짜 열 번호를 확인해주세요.');
       return;
     }
-    // dateAxis: itemsAsRows면 dateAxisIndex는 "행 번호"(가로로 날짜가 나열), itemsAsCols면 "열 번호"
-    const dateOf = (i: number): string | null => {
-      const cell = orientation === 'itemsAsRows' ? grid[axisIdx]?.[i] : grid[i]?.[axisIdx];
-      return parseDateCell(cell, ym);
-    };
-    const maxAxis = orientation === 'itemsAsRows'
-      ? Math.max(...grid.map((r) => r.length))
-      : grid.length;
+    const gaps = hits.slice(1).map((h, i) => h - hits[i]);
+    const gap = gaps.sort((a, b) =>
+      gaps.filter((g) => g === a).length - gaps.filter((g) => g === b).length
+    ).pop()!;
+    setBlockStartRow(String(hits[0]));
+    setBlockHeight(String(gap));
+    setDateOffset('0');
+    setStatus(`${hits.length}개 날짜 블록 감지, 블록 높이 ${gap}행. 이제 각 항목의 블록 내 행 번호를 채워주세요.`);
+  }
 
-    const dates: { i: number; date: string }[] = [];
-    for (let i = 0; i < maxAxis; i++) {
-      const d = dateOf(i);
-      if (d) dates.push({ i, date: d });
+  function computePreview() {
+    if (!grid) return;
+    const result: Entry[] = [];
+
+    if (orientation === 'repeatingBlock') {
+      const start = Number(blockStartRow);
+      const height = Number(blockHeight);
+      const dOff = Number(dateOffset) || 0;
+      const dCol = Number(dateCol) || 0;
+      const gc = gcCol === '' ? null : Number(gcCol);
+      const gp = gpCol === '' ? null : Number(gpCol);
+      if (!Number.isFinite(start) || !Number.isFinite(height) || height <= 0) {
+        setStatus('블록 시작 행/블록 높이를 입력해주세요 (자동 감지 버튼을 써도 됩니다).');
+        return;
+      }
+      const blockCount = Math.floor((grid.length - start) / height) + 1;
+      const blocks: { base: number; date: string }[] = [];
+      for (let b = 0; b < blockCount; b++) {
+        const base = start + b * height;
+        const date = parseDateCell(grid[base + dOff]?.[dCol], ym);
+        if (date) blocks.push({ base, date });
+      }
+      items.forEach((it) => {
+        const offStr = rowOffsetMap[it.id];
+        if (offStr === undefined || offStr === '') return;
+        const off = Number(offStr);
+        blocks.forEach(({ base, date }) => {
+          const row = grid[base + off];
+          const 건 = gc === null ? 0 : num(row?.[gc]);
+          const 명 = gp === null ? 0 : num(row?.[gp]);
+          if (건 || 명) result.push({ 항목ID: it.id, 세부사업명: it.세부사업명, 라벨: it.소분류 || it.중분류, 날짜: date, 건, 명 });
+        });
+      });
+      setStatus(`${blocks.length}개 날짜 블록, ${result.length}건 인식됨 — 확인 후 가져오기를 눌러주세요.`);
+    } else {
+      const axisIdx = Number(dateAxisIndex);
+      if (!Number.isFinite(axisIdx) || axisIdx < 0) {
+        setStatus('날짜가 있는 행/열 번호를 입력해주세요.');
+        return;
+      }
+      const dateOf = (i: number): string | null => {
+        const cell = orientation === 'itemsAsRows' ? grid[axisIdx]?.[i] : grid[i]?.[axisIdx];
+        return parseDateCell(cell, ym);
+      };
+      const maxAxis = orientation === 'itemsAsRows' ? Math.max(...grid.map((r) => r.length)) : grid.length;
+      const dates: { i: number; date: string }[] = [];
+      for (let i = 0; i < maxAxis; i++) {
+        const d = dateOf(i);
+        if (d) dates.push({ i, date: d });
+      }
+      items.forEach((it) => {
+        const map = fieldMap[it.id];
+        if (!map || (!map.gc && !map.gp)) return;
+        const gcIdx = map.gc === '' ? null : Number(map.gc);
+        const gpIdx = map.gp === '' ? null : Number(map.gp);
+        dates.forEach(({ i, date }) => {
+          const gcCell = gcIdx === null ? '' : (orientation === 'itemsAsRows' ? grid[gcIdx]?.[i] : grid[i]?.[gcIdx]);
+          const gpCell = gpIdx === null ? '' : (orientation === 'itemsAsRows' ? grid[gpIdx]?.[i] : grid[i]?.[gpIdx]);
+          const 건 = num(gcCell);
+          const 명 = num(gpCell);
+          if (건 || 명) result.push({ 항목ID: it.id, 세부사업명: it.세부사업명, 라벨: it.소분류 || it.중분류, 날짜: date, 건, 명 });
+        });
+      });
+      setStatus(`${dates.length}개 날짜, ${result.length}건 인식됨 — 확인 후 가져오기를 눌러주세요.`);
     }
 
-    const result: { 항목ID: string; 세부사업명: string; 라벨: string; 날짜: string; 건: number; 명: number }[] = [];
-    items.forEach((it) => {
-      const map = fieldMap[it.id];
-      if (!map || (!map.gc && !map.gp)) return;
-      const gcIdx = map.gc === '' ? null : Number(map.gc);
-      const gpIdx = map.gp === '' ? null : Number(map.gp);
-      dates.forEach(({ i, date }) => {
-        const gcCell = gcIdx === null ? '' : (orientation === 'itemsAsRows' ? grid[gcIdx]?.[i] : grid[i]?.[gcIdx]);
-        const gpCell = gpIdx === null ? '' : (orientation === 'itemsAsRows' ? grid[gpIdx]?.[i] : grid[i]?.[gpIdx]);
-        const 건 = num(gcCell);
-        const 명 = num(gpCell);
-        if (건 || 명) result.push({ 항목ID: it.id, 세부사업명: it.세부사업명, 라벨: it.소분류 || it.중분류, 날짜: date, 건, 명 });
-      });
-    });
     result.sort((a, b) => (a.날짜 < b.날짜 ? -1 : a.날짜 > b.날짜 ? 1 : 0));
     setPreview(result);
-    setStatus(`${dates.length}개 날짜, ${result.length}건 인식됨 — 확인 후 가져오기를 눌러주세요.`);
   }
 
   async function onImport() {
@@ -155,7 +217,7 @@ export default function ExcelImportPanel({ business, items }: { business: string
   return (
     <div className="flex flex-col gap-4">
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
-        각자 다른 형식의 엑셀 파일을 그대로 쓸 수 있도록, 파일에서 어느 행/열이 날짜인지·어느 행/열이 각 항목의 건/명인지 직접 지정해서 가져옵니다.
+        각자 다른 형식의 엑셀 파일을 그대로 쓸 수 있도록, 파일에서 날짜와 각 항목의 건/명이 어디에 있는지 직접 지정해서 가져옵니다.
       </p>
 
       <label className={labelClass}>
@@ -175,14 +237,14 @@ export default function ExcelImportPanel({ business, items }: { business: string
       {previewGrid && (
         <>
           <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-            파일 미리보기 (앞 {PREVIEW_ROWS}행 × {PREVIEW_COLS}열) — 아래 표에서 행 번호(왼쪽)·열 문자(위)를 보고 매핑값을 채우세요.
+            파일 미리보기 (앞 {PREVIEW_ROWS}행 × {PREVIEW_COLS}열, 스크롤 가능) — 왼쪽 행 번호·위쪽 열 문자를 보고 아래 매핑값을 채우세요.
           </div>
           <div className={`${tableWrap} max-h-[280px] overflow-auto`}>
             <table className={table}>
               <thead>
                 <tr>
                   <th className={th}></th>
-                  {previewGrid[0]?.map((_, ci) => <th key={ci} className={th}>{colName(ci)}</th>)}
+                  {previewGrid[0]?.map((_, ci) => <th key={ci} className={th}>{ci} ({colName(ci)})</th>)}
                 </tr>
               </thead>
               <tbody>
@@ -200,52 +262,120 @@ export default function ExcelImportPanel({ business, items }: { business: string
             </table>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <label className={labelClass}>
-              날짜 없는 열엔 기준 연월 (YYYY-MM)
-              <input className={inputBase} value={ym} onChange={(e) => setYm(e.target.value)} placeholder="2026-08" />
-            </label>
-            <label className={labelClass}>
-              날짜 방향
-              <select className={inputBase} value={orientation} onChange={(e) => setOrientation(e.target.value as Orientation)}>
-                <option value="itemsAsRows">날짜가 가로로(각 열이 하루) — 항목은 행</option>
-                <option value="itemsAsCols">날짜가 세로로(각 행이 하루) — 항목은 열</option>
-              </select>
-            </label>
-            <label className={labelClass}>
-              날짜가 있는 {orientation === 'itemsAsRows' ? '행' : '열'} 번호
-              <input className={inputBase} value={dateAxisIndex} onChange={(e) => setDateAxisIndex(e.target.value)} placeholder="예: 1" />
-            </label>
-          </div>
+          <label className={labelClass}>
+            파일 구조
+            <select className={inputBase} value={orientation} onChange={(e) => setOrientation(e.target.value as Orientation)}>
+              <option value="repeatingBlock">하루치 표 전체가 블록 단위로 아래로 반복됨 (예: 총괄업무일지 원본 양식)</option>
+              <option value="itemsAsRows">날짜가 가로로 한 줄에 나열(각 열이 하루) — 항목은 행</option>
+              <option value="itemsAsCols">날짜가 세로로 한 줄에 나열(각 행이 하루) — 항목은 열</option>
+            </select>
+          </label>
 
-          <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-            각 항목의 건/명이 있는 {orientation === 'itemsAsRows' ? '행' : '열'} 번호 (비워두면 건너뜀)
-          </div>
-          <div className={`${tableWrap} max-h-[280px] overflow-auto`}>
-            <table className={table}>
-              <thead>
-                <tr>
-                  <th className={th}>세부사업</th><th className={th}>항목</th>
-                  <th className={th}>건 {orientation === 'itemsAsRows' ? '행' : '열'}</th>
-                  <th className={th}>명 {orientation === 'itemsAsRows' ? '행' : '열'}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((it) => (
-                  <tr key={it.id}>
-                    <td className={td}>{it.세부사업명}</td>
-                    <td className={`${td} text-left`}>{it.중분류}{it.소분류 && ` · ${it.소분류}`}</td>
-                    <td className={td}>
-                      <input className={`${inputBase} w-16 text-center`} value={fieldMap[it.id]?.gc ?? ''} onChange={(e) => setField(it.id, 'gc', e.target.value)} />
-                    </td>
-                    <td className={td}>
-                      <input className={`${inputBase} w-16 text-center`} value={fieldMap[it.id]?.gp ?? ''} onChange={(e) => setField(it.id, 'gp', e.target.value)} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {orientation === 'repeatingBlock' ? (
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <label className={labelClass}>
+                  날짜 없는 칸(일자만 있을 때) 기준 연월
+                  <input className={inputBase} value={ym} onChange={(e) => setYm(e.target.value)} placeholder="2026-08" />
+                </label>
+                <label className={labelClass}>
+                  날짜가 있는 열 번호
+                  <input className={inputBase} value={dateCol} onChange={(e) => setDateCol(e.target.value)} placeholder="예: 0" />
+                </label>
+                <label className={labelClass}>
+                  블록 시작 행
+                  <input className={inputBase} value={blockStartRow} onChange={(e) => setBlockStartRow(e.target.value)} placeholder="예: 3" />
+                </label>
+                <label className={labelClass}>
+                  블록 높이(행 수)
+                  <input className={inputBase} value={blockHeight} onChange={(e) => setBlockHeight(e.target.value)} placeholder="예: 39" />
+                </label>
+                <label className={labelClass}>
+                  블록 내 날짜 상대 행
+                  <input className={inputBase} value={dateOffset} onChange={(e) => setDateOffset(e.target.value)} placeholder="예: 0" />
+                </label>
+                <label className={labelClass}>
+                  일계 건 열 번호
+                  <input className={inputBase} value={gcCol} onChange={(e) => setGcCol(e.target.value)} placeholder="예: 6" />
+                </label>
+                <label className={labelClass}>
+                  일계 명 열 번호
+                  <input className={inputBase} value={gpCol} onChange={(e) => setGpCol(e.target.value)} placeholder="예: 7" />
+                </label>
+                <div className="flex items-end">
+                  <button type="button" onClick={autoDetectBlock} className={btnSecondary}>날짜 열로 블록 자동 감지</button>
+                </div>
+              </div>
+
+              <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                각 항목이 블록 안에서 몇 번째 상대 행에 있는지 (비워두면 건너뜀)
+              </div>
+              <div className={`${tableWrap} max-h-[280px] overflow-auto`}>
+                <table className={table}>
+                  <thead>
+                    <tr><th className={th}>세부사업</th><th className={th}>항목</th><th className={th}>블록 내 상대 행</th></tr>
+                  </thead>
+                  <tbody>
+                    {items.map((it) => (
+                      <tr key={it.id}>
+                        <td className={td}>{it.세부사업명}</td>
+                        <td className={`${td} text-left`}>{it.중분류}{it.소분류 && ` · ${it.소분류}`}</td>
+                        <td className={td}>
+                          <input
+                            className={`${inputBase} w-16 text-center`}
+                            value={rowOffsetMap[it.id] ?? ''}
+                            onChange={(e) => setRowOffsetMap((prev) => ({ ...prev, [it.id]: e.target.value }))}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <label className={labelClass}>
+                  날짜 없는 열엔 기준 연월 (YYYY-MM)
+                  <input className={inputBase} value={ym} onChange={(e) => setYm(e.target.value)} placeholder="2026-08" />
+                </label>
+                <label className={labelClass}>
+                  날짜가 있는 {orientation === 'itemsAsRows' ? '행' : '열'} 번호
+                  <input className={inputBase} value={dateAxisIndex} onChange={(e) => setDateAxisIndex(e.target.value)} placeholder="예: 1" />
+                </label>
+              </div>
+
+              <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                각 항목의 건/명이 있는 {orientation === 'itemsAsRows' ? '행' : '열'} 번호 (비워두면 건너뜀)
+              </div>
+              <div className={`${tableWrap} max-h-[280px] overflow-auto`}>
+                <table className={table}>
+                  <thead>
+                    <tr>
+                      <th className={th}>세부사업</th><th className={th}>항목</th>
+                      <th className={th}>건 {orientation === 'itemsAsRows' ? '행' : '열'}</th>
+                      <th className={th}>명 {orientation === 'itemsAsRows' ? '행' : '열'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((it) => (
+                      <tr key={it.id}>
+                        <td className={td}>{it.세부사업명}</td>
+                        <td className={`${td} text-left`}>{it.중분류}{it.소분류 && ` · ${it.소분류}`}</td>
+                        <td className={td}>
+                          <input className={`${inputBase} w-16 text-center`} value={fieldMap[it.id]?.gc ?? ''} onChange={(e) => setField(it.id, 'gc', e.target.value)} />
+                        </td>
+                        <td className={td}>
+                          <input className={`${inputBase} w-16 text-center`} value={fieldMap[it.id]?.gp ?? ''} onChange={(e) => setField(it.id, 'gp', e.target.value)} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
 
           <div className="flex items-center gap-3">
             <button type="button" onClick={computePreview} className={btnSecondary}>미리보기 계산</button>
