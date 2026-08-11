@@ -145,12 +145,12 @@ function WorklogSheet({
 
       <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
         <colgroup>
-          <col style={{ width: '18mm' }} /><col style={{ width: '27mm' }} /><col style={{ width: '31mm' }} />
-          <col style={{ width: '13mm' }} /><col style={{ width: '13mm' }} />
-          <col style={{ width: '13mm' }} /><col style={{ width: '13mm' }} />
-          <col style={{ width: '13mm' }} /><col style={{ width: '13mm' }} />
-          <col style={{ width: '13mm' }} /><col style={{ width: '13mm' }} />
-          <col style={{ width: '13mm' }} /><col style={{ width: '13mm' }} />
+          <col style={{ width: '15mm' }} /><col style={{ width: '21mm' }} /><col style={{ width: '26mm' }} />
+          <col style={{ width: '12mm' }} /><col style={{ width: '12mm' }} />
+          <col style={{ width: '12mm' }} /><col style={{ width: '12mm' }} />
+          <col style={{ width: '12mm' }} /><col style={{ width: '12mm' }} />
+          <col style={{ width: '12mm' }} /><col style={{ width: '12mm' }} />
+          <col style={{ width: '12mm' }} /><col style={{ width: '12mm' }} />
         </colgroup>
         <thead>
           <tr>
