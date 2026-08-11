@@ -6,5 +6,5 @@ export default async function PrintLayout({ children }: { children: React.ReactN
   if (!session?.user?.email) {
     redirect('/login');
   }
-  return <div style={{ padding: 24 }}>{children}</div>;
+  return <div className="p-6 print:p-0">{children}</div>;
 }
