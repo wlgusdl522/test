@@ -195,7 +195,11 @@ export default function ExcelImportPanel({ business, items }: { business: string
           if (건 || 명) result.push({ 항목ID: it.id, 세부사업명: it.세부사업명, 라벨: it.소분류 || it.중분류, 날짜: date, 건, 명 });
         });
       });
-      setStatus(`${blocks.length}개 날짜 블록, ${result.length}건 인식됨 — 확인 후 가져오기를 눌러주세요.`);
+      setStatus(
+        result.length > 0
+          ? `${blocks.length}개 날짜 블록, ${result.length}건 인식됨 — 확인 후 가져오기를 눌러주세요.`
+          : `${blocks.length}개 날짜 블록은 찾았지만 인식된 건수가 0건입니다. 열/행 번호나 항목 매핑을 다시 확인해주세요.`
+      );
     } else {
       const axisIdx = Number(dateAxisIndex);
       if (!Number.isFinite(axisIdx) || axisIdx < 0) {
@@ -225,7 +229,11 @@ export default function ExcelImportPanel({ business, items }: { business: string
           if (건 || 명) result.push({ 항목ID: it.id, 세부사업명: it.세부사업명, 라벨: it.소분류 || it.중분류, 날짜: date, 건, 명 });
         });
       });
-      setStatus(`${dates.length}개 날짜, ${result.length}건 인식됨 — 확인 후 가져오기를 눌러주세요.`);
+      setStatus(
+        result.length > 0
+          ? `${dates.length}개 날짜, ${result.length}건 인식됨 — 확인 후 가져오기를 눌러주세요.`
+          : `${dates.length}개 날짜는 찾았지만 인식된 건수가 0건입니다. 행/열 번호나 항목 매핑을 다시 확인해주세요.`
+      );
     }
 
     result.sort((a, b) => (a.날짜 < b.날짜 ? -1 : a.날짜 > b.날짜 ? 1 : 0));
