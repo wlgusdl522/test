@@ -61,7 +61,7 @@ export default async function BusinessWorklogPrintPage({
   const memos = await Promise.all(days.map((d) => getMemo(business, d)));
 
   return (
-    <div className="p-6">
+    <div className="p-6 print:p-0">
       <div className={`${card} print:hidden flex flex-wrap items-center gap-4`}>
         <form method="get" className="flex flex-wrap items-center gap-2">
           <input type="hidden" name="business" value={business} />
@@ -84,7 +84,6 @@ export default async function BusinessWorklogPrintPage({
         <WorklogSheet
           key={date}
           business={business}
-          businessNumber={settings.정렬순서}
           date={date}
           items={items}
           entries={entries}
@@ -101,9 +100,9 @@ const lbl = { border: '1px solid #000', background: '#f2f2f2', fontWeight: 700, 
 const cell = { border: '1px solid #000', padding: '3px 4px', textAlign: 'center' as const, fontSize: 10.5 };
 
 function WorklogSheet({
-  business, businessNumber, date, items, entries, memo, approvalLine, isLast,
+  business, date, items, entries, memo, approvalLine, isLast,
 }: {
-  business: string; businessNumber: number; date: string; items: WorklogItem[]; entries: DailyEntry[];
+  business: string; date: string; items: WorklogItem[]; entries: DailyEntry[];
   memo: { 활동내용: string; 특이사항: string } | null;
   approvalLine: string[]; isLast: boolean;
 }) {
@@ -130,10 +129,10 @@ function WorklogSheet({
   return (
     <div
       className="bg-white p-6 dark:bg-zinc-900 print:p-0"
-      style={{ width: '190mm', margin: '0 auto 18px', color: '#000', ...(isLast ? {} : { pageBreakAfter: 'always' }) }}
+      style={{ width: '186mm', margin: '0 auto 18px', color: '#000', ...(isLast ? {} : { pageBreakAfter: 'always' }) }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
-        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: 4, paddingTop: 6 }}>{businessNumber}. {business}　총괄업무일지</div>
+        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: 4, paddingTop: 6 }}>{business}　총괄업무일지</div>
         <ApprovalBox data={{ visibleLine: approvalLine, delegatedLastCell: false }} scale={0.55} />
       </div>
       <div style={{ fontSize: 12, marginBottom: 6 }}>{D.getFullYear()}년 {D.getMonth() + 1}월 {D.getDate()}일 ({DOW[D.getDay()]})</div>
@@ -172,8 +171,12 @@ function WorklogSheet({
               <Fragment key={r.id}>
                 <tr>
                   {span > 0 && <td style={{ ...lbl, writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: 10 }} rowSpan={span}>{r.세부사업명}</td>}
-                  {mspan > 0 && <td style={{ ...cell, textAlign: 'left' }} rowSpan={mspan}>{r.중분류}</td>}
-                  <td style={{ ...cell, textAlign: 'left' }}>{r.소분류 || '–'}</td>
+                  {mspan > 0 && (
+                    r.소분류
+                      ? <td style={{ ...cell, textAlign: 'left' }} rowSpan={mspan}>{r.중분류}</td>
+                      : <td style={{ ...cell, textAlign: 'left' }} rowSpan={mspan} colSpan={2}>{r.중분류}</td>
+                  )}
+                  {r.소분류 && <td style={{ ...cell, textAlign: 'left' }}>{r.소분류}</td>}
                   <td style={cell}>{nf(r.목표건)}</td><td style={cell}>{nf(r.목표명)}</td>
                   <td style={cell}>{nf(r.day[0])}</td><td style={cell}>{nf(r.day[1])}</td>
                   <td style={cell}>{nf(r.mtd[0])}</td><td style={cell}>{nf(r.mtd[1])}</td>
@@ -210,7 +213,7 @@ function WorklogSheet({
           </tr>
         </tbody>
       </table>
-      <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, letterSpacing: 6, marginTop: 8 }}>서대문노인종합복지관</div>
+      <div style={{ textAlign: 'right', fontSize: 11, fontWeight: 700, letterSpacing: 6, marginTop: 8 }}>서대문노인종합복지관</div>
     </div>
   );
 }
