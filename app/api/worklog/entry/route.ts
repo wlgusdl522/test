@@ -28,6 +28,13 @@ export async function GET(req: NextRequest) {
       headers: { 'x-api-key': '(발급된 키)', 'content-type': 'application/json' },
       body: { 세부사업명: items[0]?.세부사업명, 라벨: items[0]?.소분류 || items[0]?.중분류, 날짜: '2026-08-10', 건: 1, 명: 120 },
     },
+    활동내용_특이사항: {
+      설명: '건/명 실적과 별개로, 사업명+날짜 단위 텍스트는 /api/worklog/memo로 따로 보낸다.',
+      url: '/api/worklog/memo',
+      method: 'POST',
+      headers: { 'x-api-key': '(발급된 키)', 'content-type': 'application/json' },
+      body: { 날짜: '2026-08-10', 활동내용: '...', 특이사항: '...' },
+    },
   });
 }
 
