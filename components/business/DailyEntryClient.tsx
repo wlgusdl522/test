@@ -199,7 +199,7 @@ export default function DailyEntryClient({
                   </tr>
                   {isLastOfGroup && (
                     <tr className="bg-[#eef1f5] font-semibold dark:bg-zinc-800">
-                      <td className={td} colSpan={3}>소계 · {r.세부사업명}</td>
+                      <td className={td} colSpan={3}>소계</td>
                       <td className={td}>{nf(groupRows.reduce((a, x) => a + x.목표건, 0))}</td>
                       <td className={td}>{nf(gGoalP)}</td>
                       <td className={td}>{nf(sum('day', 0))}</td><td className={td}>{nf(sum('day', 1))}</td>

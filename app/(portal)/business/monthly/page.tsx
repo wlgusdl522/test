@@ -175,7 +175,7 @@ export default async function BusinessMonthlyPage({
                     </tr>
                     {isLastOfGroup && (
                       <tr className="bg-[#eef1f5] font-semibold dark:bg-zinc-800">
-                        <td className={td} colSpan={3}>소계 · {r.세부사업명}</td>
+                        <td className={td} colSpan={3}>소계</td>
                         <td className={td}>{nf(goalP)}</td>
                         <td className={td}>{nf(mC)}</td><td className={td}>{nf(mP)}</td>
                         <td className={td}>{nf(yC)}</td><td className={td}>{nf(yP)}</td>

@@ -191,7 +191,7 @@ function WorklogSheet({
                 </tr>
                 {isLastOfGroup && (
                   <tr style={{ background: '#f7f7f7', fontWeight: 700 }}>
-                    <td style={cell} colSpan={3}>소　계 · {r.세부사업명}</td>
+                    <td style={cell} colSpan={3}>소　계</td>
                     <td style={cell}>{nf(goalC)}</td><td style={cell}>{nf(goalP)}</td>
                     <td style={cell}>{nf(sum('day', 0))}</td><td style={cell}>{nf(sum('day', 1))}</td>
                     <td style={cell}>{nf(sum('mtd', 0))}</td><td style={cell}>{nf(sum('mtd', 1))}</td>
