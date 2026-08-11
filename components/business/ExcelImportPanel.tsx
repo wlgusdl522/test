@@ -126,6 +126,42 @@ export default function ExcelImportPanel({ business, items }: { business: string
     setStatus(`${hits.length}개 날짜 블록 감지, 블록 높이 ${gap}행. 이제 각 항목의 블록 내 행 번호를 채워주세요.`);
   }
 
+  // 블록 하나(첫 블록)의 라벨 칸(숫자 칸 이전 열들)을 훑어서, 시스템에 저장된 항목명(소분류
+  // 우선, 없으면 중분류)과 글자가 똑같은 행을 찾아 자동으로 행 번호를 채운다. 병합 셀 때문에
+  // 한 행에서 라벨이 여러 열에 걸쳐 있을 수 있어 가장 오른쪽(가장 구체적인) 비어있지 않은
+  // 값을 그 행의 라벨로 본다.
+  function autoMatchLabels() {
+    if (!grid) return;
+    const start = Number(blockStartRow);
+    const height = Number(blockHeight);
+    if (!Number.isFinite(start) || !Number.isFinite(height) || height <= 0) {
+      setStatus('먼저 블록 시작 행/블록 높이를 지정해주세요 (자동 감지 버튼을 먼저 눌러도 됩니다).');
+      return;
+    }
+    const labelColEnd = gcCol !== '' ? Number(gcCol) : 6;
+    const norm = (s: string) => s.replace(/[\r\n]/g, ' ').replace(/\s+/g, '').trim();
+
+    const next = { ...rowOffsetMap };
+    let matched = 0;
+    for (let r = 0; r < height; r++) {
+      const row = grid[start + r] ?? [];
+      let label = '';
+      for (let c = 0; c < labelColEnd; c++) {
+        const v = String(row[c] ?? '').trim();
+        if (v) label = v;
+      }
+      if (!label) continue;
+      const nLabel = norm(label);
+      const found = items.find((it) => norm(it.소분류 || it.중분류) === nLabel);
+      if (found && next[found.id] === undefined) {
+        next[found.id] = String(r);
+        matched++;
+      }
+    }
+    setRowOffsetMap(next);
+    setStatus(`라벨이 똑같은 항목 ${matched}개의 행 번호를 자동으로 채웠습니다. 나머지는 이름이 달라서 직접 확인해야 해요.`);
+  }
+
   function computePreview() {
     if (!grid) return;
     const result: Entry[] = [];
@@ -302,13 +338,14 @@ export default function ExcelImportPanel({ business, items }: { business: string
                   일계 명 열 번호
                   <input className={inputBase} value={gpCol} onChange={(e) => setGpCol(e.target.value)} placeholder="예: 7" />
                 </label>
-                <div className="flex items-end">
-                  <button type="button" onClick={autoDetectBlock} className={btnSecondary}>날짜 열로 블록 자동 감지</button>
+                <div className="flex items-end gap-2">
+                  <button type="button" onClick={autoDetectBlock} className={btnSecondary}>블록 자동 감지</button>
+                  <button type="button" onClick={autoMatchLabels} className={btnSecondary}>라벨로 항목 자동 매칭</button>
                 </div>
               </div>
 
               <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-                각 항목이 블록 안에서 몇 번째 상대 행에 있는지 (비워두면 건너뜀)
+                각 항목이 블록 안에서 몇 번째 상대 행에 있는지 (비워두면 건너뜀) — 위 &ldquo;라벨로 항목 자동 매칭&rdquo;을 먼저 눌러보고, 안 채워진 것만 직접 입력하세요.
               </div>
               <div className={`${tableWrap} max-h-[280px] overflow-auto`}>
                 <table className={table}>
