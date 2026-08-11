@@ -125,11 +125,17 @@ function WorklogSheet({
   const totalDay = rangeSum(entries, allIds, date, date);
   const totalMtd = rangeSum(entries, allIds, monthFrom, date);
   const totalYtd = rangeSum(entries, allIds, yearFrom, date);
+  const totalGoalC = items.reduce((a, i) => a + i.목표건, 0);
+  const totalGoalP = items.reduce((a, i) => a + i.목표명, 0);
 
   return (
     <div
       className="bg-white p-6 dark:bg-zinc-900 print:p-0"
-      style={{ width: '186mm', margin: '0 auto 18px', color: '#000', ...(isLast ? {} : { pageBreakAfter: 'always' }) }}
+      style={{
+        width: '186mm', margin: '0 auto 18px', color: '#000',
+        fontFamily: '"서울남산체", "Noto Sans KR", "Malgun Gothic", sans-serif',
+        ...(isLast ? {} : { pageBreakAfter: 'always' }),
+      }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
         <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: 4, paddingTop: 6 }}>{business}　총괄업무일지</div>
@@ -139,7 +145,7 @@ function WorklogSheet({
 
       <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
         <colgroup>
-          <col style={{ width: '11mm' }} /><col style={{ width: '34mm' }} /><col style={{ width: '31mm' }} />
+          <col style={{ width: '18mm' }} /><col style={{ width: '27mm' }} /><col style={{ width: '31mm' }} />
           <col style={{ width: '13mm' }} /><col style={{ width: '13mm' }} />
           <col style={{ width: '13mm' }} /><col style={{ width: '13mm' }} />
           <col style={{ width: '13mm' }} /><col style={{ width: '13mm' }} />
@@ -170,7 +176,7 @@ function WorklogSheet({
             return (
               <Fragment key={r.id}>
                 <tr>
-                  {span > 0 && <td style={{ ...lbl, writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: 10 }} rowSpan={span}>{r.세부사업명}</td>}
+                  {span > 0 && <td style={lbl} rowSpan={span}>{r.세부사업명}</td>}
                   {mspan > 0 && (
                     r.소분류
                       ? <td style={{ ...cell, textAlign: 'left' }} rowSpan={mspan}>{r.중분류}</td>
@@ -197,11 +203,20 @@ function WorklogSheet({
             );
           })}
           <tr style={{ background: '#dedede', fontWeight: 700 }}>
-            <td style={cell} colSpan={5}>총　계</td>
+            <td style={cell} colSpan={3}>계</td>
+            <td style={cell}>{nf(totalGoalC)}</td><td style={cell}>{nf(totalGoalP)}</td>
             <td style={cell}>{nf(totalDay[0])}</td><td style={cell}>{nf(totalDay[1])}</td>
             <td style={cell}>{nf(totalMtd[0])}</td><td style={cell}>{nf(totalMtd[1])}</td>
             <td style={cell}>{nf(totalYtd[0])}</td><td style={cell}>{nf(totalYtd[1])}</td>
-            <td style={cell} colSpan={2} />
+            <td style={cell}>{fpct(pct(totalYtd[0], totalGoalC))}</td><td style={cell}>{fpct(pct(totalYtd[1], totalGoalP))}</td>
+          </tr>
+          <tr style={{ background: '#fdf3d0', fontWeight: 700 }}>
+            <td style={cell} colSpan={3}>총　계</td>
+            <td style={cell} colSpan={2}>{nf(totalGoalP)}</td>
+            <td style={cell} colSpan={2}>{nf(totalDay[1])}</td>
+            <td style={cell} colSpan={2}>{nf(totalMtd[1])}</td>
+            <td style={cell} colSpan={2}>{nf(totalYtd[1])}</td>
+            <td style={cell} colSpan={2}>{fpct(pct(totalYtd[1], totalGoalP))}%</td>
           </tr>
           <tr>
             <td style={{ ...lbl, width: '16mm' }} colSpan={3}>활동내용</td>
