@@ -6,6 +6,7 @@ import {
   updateRecord,
   updateRecords,
   upsertRecord,
+  upsertRecords,
   type KeyedTableConfig,
 } from '@/lib/sheets/keyedTable';
 import { getAllFromSupabase, mirrorKeyedTableToSupabase } from '@/lib/supabase/keyedTable';
@@ -64,6 +65,14 @@ export async function upsertKeyedRecord(
   record: Record<string, string>
 ): Promise<Record<string, string>[]> {
   await upsertRecord(config, keyValues, record);
+  return afterSheetWrite(config);
+}
+
+export async function upsertKeyedRecords(
+  config: KeyedTableConfig,
+  items: { keyValues: Record<string, string>; record: Record<string, string> }[]
+): Promise<Record<string, string>[]> {
+  await upsertRecords(config, items);
   return afterSheetWrite(config);
 }
 

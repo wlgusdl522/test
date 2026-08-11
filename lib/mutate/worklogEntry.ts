@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord, upsertKeyedRecord } from '@/lib/mutate/keyedTable';
+import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord, upsertKeyedRecord, upsertKeyedRecords } from '@/lib/mutate/keyedTable';
 import { WORKLOG_DAILY_TABLE, WORKLOG_MEMO_TABLE } from '@/lib/sheets/registry';
 
 export type DailyEntry = { 항목ID: string; 날짜: string; 건: number; 명: number };
@@ -39,6 +39,37 @@ export async function setDailyEntry(
     작성자이메일: writerEmail, 작성자명: writerName,
     등록일시: new Date().toISOString().slice(0, 19).replace('T', ' '),
   });
+}
+
+// 엑셀 가져오기용 — 건마다 setDailyEntry를 반복하면 매번 시트를 다시 읽어서 수백 건 단위
+// 대량 가져오기 시 시간이 오래 걸리고 API 호출 한도에 걸릴 수 있다. 기존 값과 같은 항목은
+// 걸러내고, 나머지만 upsertKeyedRecords로 한 번에 반영한다(0/0인 항목은 아예 건너뛴다 —
+// 가져오기는 기존 값을 지우는 용도가 아니라 채워 넣는 용도이기 때문).
+export async function bulkSetDailyEntries(
+  사업명: string,
+  entries: { 항목ID: string; 날짜: string; 건: number; 명: number }[],
+  writerEmail: string,
+  writerName: string
+): Promise<number> {
+  const existing = await getKeyedList(WORKLOG_DAILY_TABLE);
+  const existingByKey = new Map(existing.map((r) => [`${r.항목ID}::${r.날짜}`, r]));
+  const 등록일시 = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+  const items = entries
+    .filter((e) => e.건 || e.명)
+    .map((e) => {
+      const found = existingByKey.get(`${e.항목ID}::${e.날짜}`);
+      return {
+        keyValues: { 항목ID: e.항목ID, 날짜: e.날짜 },
+        record: {
+          id: found?.id || randomUUID(),
+          사업명, 항목ID: e.항목ID, 날짜: e.날짜, 건: String(e.건), 명: String(e.명),
+          작성자이메일: writerEmail, 작성자명: writerName, 등록일시,
+        },
+      };
+    });
+  await upsertKeyedRecords(WORKLOG_DAILY_TABLE, items);
+  return items.length;
 }
 
 export function dayValue(entries: DailyEntry[], itemId: string, date: string): [number, number] {

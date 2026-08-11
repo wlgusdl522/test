@@ -4,6 +4,7 @@ import { dayValue, getDailyEntries, getMemo, rangeSum } from '@/lib/mutate/workl
 import { getShareableStaffGroups, hasPageAccess } from '@/lib/mutate/permissions';
 import { btn, inputBase, label } from '@/lib/ui';
 import DailyEntryClient from '@/components/business/DailyEntryClient';
+import ExcelImportPanel from '@/components/business/ExcelImportPanel';
 import FormToggle from '@/components/FormToggle';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import ShareStaffChecklist from '@/components/business/ShareStaffChecklist';
@@ -60,6 +61,17 @@ export default async function BusinessDailyPage({
     ytd: rangeSum(entries, [i.id], yearFrom, date),
   }));
 
+  const importToggle = (
+    <FormToggle
+      label={`${settings.정렬순서}. ${business} · 엑셀로 일계 가져오기`}
+      buttonLabel="엑셀로 가져오기"
+      buttonClassName="text-[11px] text-brand hover:underline"
+      wrapperClassName=""
+    >
+      <ExcelImportPanel business={business} items={items} />
+    </FormToggle>
+  );
+
   const settingsToggle = (
     <FormToggle
       label={`${settings.정렬순서}. ${business} · 총괄업무일지 설정`}
@@ -93,7 +105,12 @@ export default async function BusinessDailyPage({
       grandGoal={grandGoal}
       initialContent={memo?.활동내용 ?? ''}
       initialNote={memo?.특이사항 ?? ''}
-      settingsToggle={settingsToggle}
+      settingsToggle={
+        <div className="flex items-center gap-3">
+          {importToggle}
+          {settingsToggle}
+        </div>
+      }
     />
   );
 }

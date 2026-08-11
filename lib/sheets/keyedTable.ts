@@ -141,6 +141,46 @@ export async function upsertRecord(
   }
 }
 
+// 엑셀 가져오기처럼 한 번에 수백 건을 넣거나 갱신할 때 쓴다 — upsertRecord를 건마다 반복하면
+// 매번 시트 전체를 다시 읽어서 대량 처리 시 API 호출 한도에 걸릴 수 있다. 여기서는 대상 행
+// 인덱스를 한 번에 구해서, 기존 행 갱신은 batchUpdate 하나로, 신규 행 추가는 append 하나로 처리한다.
+export async function upsertRecords(
+  config: KeyedTableConfig,
+  items: { keyValues: Record<string, string>; record: Record<string, string> }[]
+): Promise<void> {
+  if (items.length === 0) return;
+  const rows = await getRawRows(config);
+  const updateData: { range: string; values: string[][] }[] = [];
+  const toAppend: Record<string, string>[] = [];
+  items.forEach(({ keyValues, record }) => {
+    const idx = findRowIndex(config, rows, keyValues);
+    if (idx === -1) {
+      toAppend.push(record);
+    } else {
+      const rowNumber = DATA_START_ROW + idx;
+      updateData.push({
+        range: `${config.sheetName}!A${rowNumber}:${colLetter(config.headers.length)}${rowNumber}`,
+        values: [recordToRow(config, record)],
+      });
+    }
+  });
+  if (updateData.length > 0) {
+    await getSheetsClient().spreadsheets.values.batchUpdate({
+      spreadsheetId: config.spreadsheetId,
+      requestBody: { valueInputOption: 'RAW', data: updateData },
+    });
+  }
+  if (toAppend.length > 0) {
+    await getSheetsClient().spreadsheets.values.append({
+      spreadsheetId: config.spreadsheetId,
+      range: `${config.sheetName}!A${DATA_START_ROW}`,
+      valueInputOption: 'RAW',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: { values: toAppend.map((r) => recordToRow(config, r)) },
+    });
+  }
+}
+
 export async function deleteRecord(config: KeyedTableConfig, keyValues: Record<string, string>): Promise<void> {
   return deleteRecords(config, [keyValues]);
 }
