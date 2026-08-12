@@ -239,7 +239,7 @@ function WorklogSheet({
           </tr>
         </tbody>
       </table>
-      <div style={{ textAlign: 'right', fontSize: 11, fontWeight: 700, letterSpacing: 6, marginTop: 8 }}>서대문노인종합복지관</div>
+      <div style={{ textAlign: 'right', fontSize: 11, fontWeight: 700, marginTop: 8 }}>서대문노인종합복지관</div>
     </div>
   );
 }
