@@ -897,11 +897,22 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   if (searchParams.get('check') === '1') {
+    const byBusiness = new Map<string, number>();
+    allSubs.forEach((s) => byBusiness.set(s.사업명, (byBusiness.get(s.사업명) || 0) + 1));
+    const itemsBySubId = new Map<string, number>();
+    allItems.forEach((i) => itemsBySubId.set(i.세부사업ID, (itemsBySubId.get(i.세부사업ID) || 0) + 1));
+    const itemsByBusiness = new Map<string, number>();
+    allSubs.forEach((s) => {
+      itemsByBusiness.set(s.사업명, (itemsByBusiness.get(s.사업명) || 0) + (itemsBySubId.get(s.id) || 0));
+    });
     return NextResponse.json({
       mode: 'check-only',
-      existingSubs: mySubs.length,
-      existingItems: allItems.filter((i) => mySubs.some((s) => s.id === i.세부사업ID)).length,
-      subsByBusiness: SEED.map((b) => ({ 사업명: b.사업명, count: allSubs.filter((s) => s.사업명 === b.사업명).length })),
+      totalSubsInSheet: allSubs.length,
+      totalItemsInSheet: allItems.length,
+      totalBasisInSheet: allBasis.length,
+      allBusinesses: [...byBusiness.entries()].map(([name, subCount]) => ({
+        사업명: name, subs: subCount, items: itemsByBusiness.get(name) || 0, isNewSeed: bizNames.has(name),
+      })),
     });
   }
 
