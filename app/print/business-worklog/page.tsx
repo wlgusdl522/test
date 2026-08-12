@@ -148,9 +148,9 @@ function WorklogSheet({
         ...(isLast ? {} : { pageBreakAfter: 'always' }),
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
-        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: 4, paddingTop: 6 }}>{business}　총괄업무일지</div>
-        <ApprovalBox data={{ visibleLine: approvalLine, delegatedLastCell: false }} scale={0.55} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
+        <div style={{ flex: 1, textAlign: 'center', fontSize: 20, fontWeight: 700, letterSpacing: 4 }}>{business}　총괄업무일지</div>
+        <ApprovalBox data={{ visibleLine: approvalLine, delegatedLastCell: false }} scale={0.7} />
       </div>
       <div style={{ fontSize: 12, marginBottom: 6 }}>{D.getFullYear()}년 {D.getMonth() + 1}월 {D.getDate()}일 ({DOW[D.getDay()]})</div>
 
@@ -190,10 +190,10 @@ function WorklogSheet({
                   {span > 0 && <td style={lbl} rowSpan={span}>{r.세부사업명}</td>}
                   {mspan > 0 && (
                     r.소분류
-                      ? <td style={{ ...cell, textAlign: 'left' }} rowSpan={mspan}>{r.중분류}</td>
-                      : <td style={{ ...cell, textAlign: 'left' }} rowSpan={mspan} colSpan={2}>{r.중분류}</td>
+                      ? <td style={cell} rowSpan={mspan}>{r.중분류}</td>
+                      : <td style={cell} rowSpan={mspan} colSpan={2}>{r.중분류}</td>
                   )}
-                  {r.소분류 && <td style={{ ...cell, textAlign: 'left' }}>{r.소분류}</td>}
+                  {r.소분류 && <td style={cell}>{r.소분류}</td>}
                   <td style={cell}>{nf(r.목표건)}</td><td style={cell}>{nf(r.목표명)}</td>
                   <td style={cell}>{nf(r.day[0])}</td><td style={cell}>{nf(r.day[1])}</td>
                   <td style={cell}>{nf(r.mtd[0])}</td><td style={cell}>{nf(r.mtd[1])}</td>
@@ -230,12 +230,12 @@ function WorklogSheet({
             <td style={cell} colSpan={2}>{fpct(pct(totalYtd[1], totalGoalP))}%</td>
           </tr>
           <tr>
-            <td style={lbl} colSpan={3}>활동내용</td>
-            <td style={{ ...cell, textAlign: 'left', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.활동내용 || ' '}</td>
+            <td style={{ ...lbl, height: '18mm', verticalAlign: 'top' }} colSpan={3}>활동내용</td>
+            <td style={{ ...cell, height: '18mm', textAlign: 'left', verticalAlign: 'top', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.활동내용 || ' '}</td>
           </tr>
           <tr>
-            <td style={lbl} colSpan={3}>특이사항</td>
-            <td style={{ ...cell, textAlign: 'left', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.특이사항 || ' '}</td>
+            <td style={{ ...lbl, height: '10mm', verticalAlign: 'top' }} colSpan={3}>특이사항</td>
+            <td style={{ ...cell, height: '10mm', textAlign: 'left', verticalAlign: 'top', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.특이사항 || ' '}</td>
           </tr>
         </tbody>
       </table>
