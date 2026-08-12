@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { requireViewerEmail, isAdminEmail } from '@/lib/auth-helpers';
 import { createWorklogBusiness, getWorklogBusinessNames } from '@/lib/mutate/businessPlan';
-import { upsertKeyedRecords } from '@/lib/mutate/keyedTable';
+import { deleteKeyedRecords, getKeyedList, upsertKeyedRecords } from '@/lib/mutate/keyedTable';
 import { BUSINESS_PLAN_BASIS_TABLE, BUSINESS_PLAN_ITEM_TABLE, BUSINESS_SUB_TABLE } from '@/lib/sheets/registry';
 
 export const runtime = 'nodejs';
@@ -807,11 +807,40 @@ function goalFromBasis(b: Basis): [number, number] {
   return [횟수, 인원 * 횟수];
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const email = await requireViewerEmail();
   if (!(await isAdminEmail(email))) {
     return NextResponse.json({ error: '관리자만 실행할 수 있습니다.' }, { status: 403 });
   }
+
+  const bizNames = new Set(SEED.map((b) => b.사업명));
+  const [allSubs, allItems, allBasis] = await Promise.all([
+    getKeyedList(BUSINESS_SUB_TABLE),
+    getKeyedList(BUSINESS_PLAN_ITEM_TABLE),
+    getKeyedList(BUSINESS_PLAN_BASIS_TABLE),
+  ]);
+  const mySubs = allSubs.filter((s) => bizNames.has(s.사업명));
+
+  const { searchParams } = new URL(request.url);
+  if (searchParams.get('check') === '1') {
+    return NextResponse.json({
+      mode: 'check-only',
+      existingSubs: mySubs.length,
+      existingItems: allItems.filter((i) => mySubs.some((s) => s.id === i.세부사업ID)).length,
+      subsByBusiness: SEED.map((b) => ({ 사업명: b.사업명, count: allSubs.filter((s) => s.사업명 === b.사업명).length })),
+    });
+  }
+
+  // 이 라우트가 두 번 이상 호출돼도 세부사업/계획항목/산출근거가 중복되지 않도록,
+  // SEED에 있는 사업명에 속한 기존 세부사업(및 하위 계획항목/산출근거)을 먼저 전부 지우고 다시 채운다.
+  const staleSubIds = new Set(mySubs.map((s) => s.id));
+  const staleItems = allItems.filter((i) => staleSubIds.has(i.세부사업ID));
+  const staleItemIds = new Set(staleItems.map((i) => i.id));
+  const staleBasis = allBasis.filter((b) => staleItemIds.has(b.계획항목ID));
+
+  if (staleBasis.length) await deleteKeyedRecords(BUSINESS_PLAN_BASIS_TABLE, staleBasis.map((b) => ({ id: b.id })));
+  if (staleItems.length) await deleteKeyedRecords(BUSINESS_PLAN_ITEM_TABLE, staleItems.map((i) => ({ id: i.id })));
+  if (mySubs.length) await deleteKeyedRecords(BUSINESS_SUB_TABLE, mySubs.map((s) => ({ id: s.id })));
 
   const existing = new Set(await getWorklogBusinessNames());
   const created: string[] = [];
