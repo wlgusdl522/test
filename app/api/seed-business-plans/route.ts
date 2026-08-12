@@ -2,8 +2,67 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { requireViewerEmail, isAdminEmail } from '@/lib/auth-helpers';
 import { createWorklogBusiness, getWorklogBusinessNames } from '@/lib/mutate/businessPlan';
-import { deleteKeyedRecords, getKeyedList, upsertKeyedRecords } from '@/lib/mutate/keyedTable';
+import { getSheetsClient } from '@/lib/sheets/client';
+import { type KeyedTableConfig } from '@/lib/sheets/keyedTable';
+import { mirrorKeyedTableToSupabase } from '@/lib/supabase/keyedTable';
 import { BUSINESS_PLAN_BASIS_TABLE, BUSINESS_PLAN_ITEM_TABLE, BUSINESS_SUB_TABLE } from '@/lib/sheets/registry';
+
+function colLetter(n: number): string {
+  let s = '';
+  let num = n;
+  while (num > 0) {
+    const rem = (num - 1) % 26;
+    s = String.fromCharCode(65 + rem) + s;
+    num = Math.floor((num - 1) / 26);
+  }
+  return s;
+}
+
+// 시트 원본을 딱 한 번만 읽고, keep(유지할 기존 행) + fresh(새로 넣을 행)를 한 번의
+// values.update로 통째로 다시 쓴다 - deleteRecords처럼 행 단위 batchUpdate를 수백~수천 건
+// 만드는 대신, 읽기 1번 + 쓰기 1번(+ 남는 꼬리 행 clear)으로 끝내 서버리스 시간초과를 피한다.
+async function replaceRows(
+  config: KeyedTableConfig,
+  keepFilter: (r: Record<string, string>) => boolean,
+  fresh: Record<string, string>[]
+): Promise<{ kept: number; fresh: number; total: number }> {
+  const client = getSheetsClient();
+  const lastCol = colLetter(config.headers.length);
+  const res = await client.spreadsheets.values.get({
+    spreadsheetId: config.spreadsheetId,
+    range: `${config.sheetName}!A3:${lastCol}`,
+  });
+  const rawRows = (res.data.values ?? []) as string[][];
+  const existing = rawRows
+    .filter((row) => row[0])
+    .map((row) => {
+      const rec: Record<string, string> = {};
+      config.headers.forEach((h, i) => { rec[h] = (row[i] ?? '').toString(); });
+      return rec;
+    });
+  const kept = existing.filter(keepFilter);
+  const combined = [...kept, ...fresh];
+  const combinedRows = combined.map((rec) => config.headers.map((h) => rec[h] ?? ''));
+
+  if (combinedRows.length > 0) {
+    await client.spreadsheets.values.update({
+      spreadsheetId: config.spreadsheetId,
+      range: `${config.sheetName}!A3:${lastCol}${2 + combinedRows.length}`,
+      valueInputOption: 'RAW',
+      requestBody: { values: combinedRows },
+    });
+  }
+  const oldEndRow = 2 + rawRows.length;
+  const newEndRow = 2 + combinedRows.length;
+  if (oldEndRow > newEndRow) {
+    await client.spreadsheets.values.clear({
+      spreadsheetId: config.spreadsheetId,
+      range: `${config.sheetName}!A${newEndRow + 1}:${lastCol}${oldEndRow}`,
+    });
+  }
+  await mirrorKeyedTableToSupabase({ tableName: config.sheetName, primaryKey: config.primaryKey }, combined);
+  return { kept: kept.length, fresh: fresh.length, total: combined.length };
+}
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -807,6 +866,21 @@ function goalFromBasis(b: Basis): [number, number] {
   return [횟수, 인원 * 횟수];
 }
 
+async function readAllRaw(config: KeyedTableConfig): Promise<Record<string, string>[]> {
+  const client = getSheetsClient();
+  const res = await client.spreadsheets.values.get({
+    spreadsheetId: config.spreadsheetId,
+    range: `${config.sheetName}!A3:${colLetter(config.headers.length)}`,
+  });
+  return ((res.data.values ?? []) as string[][])
+    .filter((row) => row[0])
+    .map((row) => {
+      const rec: Record<string, string> = {};
+      config.headers.forEach((h, i) => { rec[h] = (row[i] ?? '').toString(); });
+      return rec;
+    });
+}
+
 export async function GET(request: Request) {
   const email = await requireViewerEmail();
   if (!(await isAdminEmail(email))) {
@@ -815,9 +889,9 @@ export async function GET(request: Request) {
 
   const bizNames = new Set(SEED.map((b) => b.사업명));
   const [allSubs, allItems, allBasis] = await Promise.all([
-    getKeyedList(BUSINESS_SUB_TABLE),
-    getKeyedList(BUSINESS_PLAN_ITEM_TABLE),
-    getKeyedList(BUSINESS_PLAN_BASIS_TABLE),
+    readAllRaw(BUSINESS_SUB_TABLE),
+    readAllRaw(BUSINESS_PLAN_ITEM_TABLE),
+    readAllRaw(BUSINESS_PLAN_BASIS_TABLE),
   ]);
   const mySubs = allSubs.filter((s) => bizNames.has(s.사업명));
 
@@ -832,15 +906,11 @@ export async function GET(request: Request) {
   }
 
   // 이 라우트가 두 번 이상 호출돼도 세부사업/계획항목/산출근거가 중복되지 않도록,
-  // SEED에 있는 사업명에 속한 기존 세부사업(및 하위 계획항목/산출근거)을 먼저 전부 지우고 다시 채운다.
+  // SEED에 있는 사업명에 속한 기존 행은 걸러내고 나머지(다른 사업들)는 그대로 유지한 채
+  // 한 번의 시트 재작성으로 교체한다.
   const staleSubIds = new Set(mySubs.map((s) => s.id));
   const staleItems = allItems.filter((i) => staleSubIds.has(i.세부사업ID));
   const staleItemIds = new Set(staleItems.map((i) => i.id));
-  const staleBasis = allBasis.filter((b) => staleItemIds.has(b.계획항목ID));
-
-  if (staleBasis.length) await deleteKeyedRecords(BUSINESS_PLAN_BASIS_TABLE, staleBasis.map((b) => ({ id: b.id })));
-  if (staleItems.length) await deleteKeyedRecords(BUSINESS_PLAN_ITEM_TABLE, staleItems.map((i) => ({ id: i.id })));
-  if (mySubs.length) await deleteKeyedRecords(BUSINESS_SUB_TABLE, mySubs.map((s) => ({ id: s.id })));
 
   const existing = new Set(await getWorklogBusinessNames());
   const created: string[] = [];
@@ -851,9 +921,9 @@ export async function GET(request: Request) {
     }
   }
 
-  const subRecords: { keyValues: Record<string, string>; record: Record<string, string> }[] = [];
-  const itemRecords: { keyValues: Record<string, string>; record: Record<string, string> }[] = [];
-  const basisRecords: { keyValues: Record<string, string>; record: Record<string, string> }[] = [];
+  const subRecords: Record<string, string>[] = [];
+  const itemRecords: Record<string, string>[] = [];
+  const basisRecords: Record<string, string>[] = [];
 
   let subCount = 0;
   let itemCount = 0;
@@ -863,11 +933,8 @@ export async function GET(request: Request) {
     biz.subs.forEach((sub, subIdx) => {
       const subId = randomUUID();
       subRecords.push({
-        keyValues: { id: subId },
-        record: {
-          id: subId, 사업명: biz.사업명, 세부사업명: sub.세부사업명,
-          기대효과: sub.기대효과 || '', 정렬순서: String(subIdx + 1),
-        },
+        id: subId, 사업명: biz.사업명, 세부사업명: sub.세부사업명,
+        기대효과: sub.기대효과 || '', 정렬순서: String(subIdx + 1),
       });
       subCount++;
 
@@ -877,11 +944,8 @@ export async function GET(request: Request) {
         // 총괄업무일지에는 항목당 목표 하나(건=최댓값, 명=합계)로만 집계되게 한다.
         // (세부 계산줄까지 매일 따로 실적 입력하게 만들면 현실적으로 관리가 안 됨)
         itemRecords.push({
-          keyValues: { id: itemId },
-          record: {
-            id: itemId, 세부사업ID: subId, 제목: item.제목, 표기방식: 'merge',
-            예산: '0', 사업내용: item.사업내용 || '', 정렬순서: String(itemIdx + 1),
-          },
+          id: itemId, 세부사업ID: subId, 제목: item.제목, 표기방식: 'merge',
+          예산: '0', 사업내용: item.사업내용 || '', 정렬순서: String(itemIdx + 1),
         });
         itemCount++;
 
@@ -889,14 +953,11 @@ export async function GET(request: Request) {
           const [건, 명] = goalFromBasis(b);
           const basisId = randomUUID();
           basisRecords.push({
-            keyValues: { id: basisId },
-            record: {
-              id: basisId, 계획항목ID: itemId, 라벨: b.라벨 || '',
-              직접입력여부: b.direct ? 'Y' : 'N',
-              인원: String(b.인원 || 0), 횟수: String(b.횟수 || 0),
-              단위: '회', 직접건: String(건), 직접명: String(명),
-              정렬순서: String(basisIdx + 1),
-            },
+            id: basisId, 계획항목ID: itemId, 라벨: b.라벨 || '',
+            직접입력여부: b.direct ? 'Y' : 'N',
+            인원: String(b.인원 || 0), 횟수: String(b.횟수 || 0),
+            단위: '회', 직접건: String(건), 직접명: String(명),
+            정렬순서: String(basisIdx + 1),
           });
           basisCount++;
         });
@@ -904,12 +965,13 @@ export async function GET(request: Request) {
     });
   }
 
-  await upsertKeyedRecords(BUSINESS_SUB_TABLE, subRecords);
-  await upsertKeyedRecords(BUSINESS_PLAN_ITEM_TABLE, itemRecords);
-  await upsertKeyedRecords(BUSINESS_PLAN_BASIS_TABLE, basisRecords);
+  const subResult = await replaceRows(BUSINESS_SUB_TABLE, (r) => !bizNames.has(r.사업명), subRecords);
+  const itemResult = await replaceRows(BUSINESS_PLAN_ITEM_TABLE, (r) => !staleSubIds.has(r.세부사업ID), itemRecords);
+  const basisResult = await replaceRows(BUSINESS_PLAN_BASIS_TABLE, (r) => !staleItemIds.has(r.계획항목ID), basisRecords);
 
   return NextResponse.json({
     createdBusinesses: created,
     counts: { businesses: SEED.length, subs: subCount, items: itemCount, basis: basisCount },
+    sheetTotals: { subs: subResult.total, items: itemResult.total, basis: basisResult.total },
   });
 }
