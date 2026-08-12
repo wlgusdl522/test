@@ -35,10 +35,10 @@ function PctBadge({ value, goal }: { value: number; goal: number }) {
 // 중간까지만 입력돼 있으면 마지막 입력일을 보여준다 — 실적 0과 미입력을 구분하기 위함.
 function EntryStatusBadge({ lastDate, effectiveEnd }: { lastDate: string | null; effectiveEnd: string }) {
   if (lastDate === null) {
-    return <span className={`${badgeBase} ${badgeTone.red} ml-2`}>미입력</span>;
+    return <span className={`${badgeBase} ${badgeTone.red} mt-1 block w-fit`}>미입력</span>;
   }
   if (lastDate < effectiveEnd) {
-    return <span className={`${badgeBase} ${badgeTone.amber} ml-2`}>{md(lastDate)}까지 입력</span>;
+    return <span className={`${badgeBase} ${badgeTone.amber} mt-1 block w-fit`}>{md(lastDate)}까지 입력</span>;
   }
   return null;
 }
@@ -93,7 +93,7 @@ export default async function BusinessSummaryBoardPage({
           <table className={table}>
             <thead>
               <tr>
-                <th className={th} rowSpan={2}>사업</th>
+                <th className={`${th} w-32`} rowSpan={2}>사업</th>
                 <th className={th} colSpan={2}>연간목표</th>
                 <th className={th} colSpan={2}>기간실적</th>
                 <th className={th} colSpan={2}>달성율</th>
@@ -107,7 +107,7 @@ export default async function BusinessSummaryBoardPage({
             <tbody>
               {perBusiness.map((b) => (
                 <tr key={b.business}>
-                  <td className={`${td} text-left font-medium`}>
+                  <td className={`${td} text-left font-medium max-w-[9rem] break-words`}>
                     {b.business}
                     <EntryStatusBadge lastDate={b.lastDate} effectiveEnd={effectiveEnd} />
                   </td>
