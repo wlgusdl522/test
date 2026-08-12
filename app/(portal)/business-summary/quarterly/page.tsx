@@ -14,11 +14,34 @@ function todayKst(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 }
 
+function monthEndDay(ym: string): string {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y, m, 0);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function md(dateStr: string): string {
+  const [, m, d] = dateStr.split('-');
+  return `${Number(m)}/${Number(d)}`;
+}
+
 function PctBadge({ value, goal }: { value: number; goal: number }) {
   const p = pct(value, goal);
   if (p === null) return <span className="text-xs text-zinc-400">–</span>;
   const tone = p >= 100 ? badgeTone.green : p >= 50 ? badgeTone.amber : badgeTone.gray;
   return <span className={`${badgeBase} ${tone}`}>{fpct(p)}%</span>;
+}
+
+// 조회 종료일(또는 오늘 중 이른 날)까지 일일실적이 한 건도 없으면 "미입력",
+// 중간까지만 입력돼 있으면 마지막 입력일을 보여준다 — 실적 0과 미입력을 구분하기 위함.
+function EntryStatusBadge({ lastDate, effectiveEnd }: { lastDate: string | null; effectiveEnd: string }) {
+  if (lastDate === null) {
+    return <span className={`${badgeBase} ${badgeTone.red} ml-2`}>미입력</span>;
+  }
+  if (lastDate < effectiveEnd) {
+    return <span className={`${badgeBase} ${badgeTone.amber} ml-2`}>{md(lastDate)}까지 입력</span>;
+  }
+  return null;
 }
 
 export default async function BusinessSummaryQuarterlyPage({
@@ -28,13 +51,19 @@ export default async function BusinessSummaryQuarterlyPage({
 }) {
   const { from: fromParam, to: toParam } = await searchParams;
   const today = todayKst();
-  const from = fromParam || `${today.slice(0, 7)}-01`;
-  const to = toParam || today;
+  const from = fromParam || today.slice(0, 7);
+  const to = toParam || today.slice(0, 7);
+  const fromDate = `${from}-01`;
+  const toDate = monthEndDay(to);
+  const effectiveEnd = toDate < today ? toDate : today;
 
   const businesses = await getWorklogBusinessNames();
   const perBusiness = await Promise.all(
     businesses.map(async (business) => {
       const [items, entries] = await Promise.all([buildWorklogItems(business), getDailyEntries(business)]);
+      const ids = new Set(items.map((i) => i.id));
+      const inRange = entries.filter((e) => ids.has(e.항목ID) && e.날짜 >= fromDate && e.날짜 <= effectiveEnd);
+      const lastDate = inRange.length ? inRange.reduce((a, e) => (e.날짜 > a ? e.날짜 : a), inRange[0].날짜) : null;
       const groups = new Map<string, typeof items>();
       items.forEach((i) => {
         if (!groups.has(i.세부사업명)) groups.set(i.세부사업명, []);
@@ -43,13 +72,13 @@ export default async function BusinessSummaryQuarterlyPage({
       const groupRows = [...groups.entries()].map(([세부사업명, groupItems]) => ({
         세부사업명,
         rows: groupItems.map((i) => {
-          const [실적건, 실적명] = rangeSum(entries, [i.id], from, to);
+          const [실적건, 실적명] = rangeSum(entries, [i.id], fromDate, toDate);
           return { label: i.소분류 ? `${i.중분류} · ${i.소분류}` : i.중분류, 목표건: i.목표건, 목표명: i.목표명, 실적건, 실적명 };
         }),
       }));
       return {
         business,
-        groupRows,
+        groupRows, lastDate,
         goalC: items.reduce((a, i) => a + i.목표건, 0),
         goalP: items.reduce((a, i) => a + i.목표명, 0),
         actC: groupRows.reduce((a, g) => a + g.rows.reduce((a2, r) => a2 + r.실적건, 0), 0),
@@ -67,9 +96,9 @@ export default async function BusinessSummaryQuarterlyPage({
     <>
       <form method="get" className="mb-4 flex flex-wrap items-center gap-3">
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">기간</label>
-        <input type="date" name="from" defaultValue={from} className={`${inputBase} w-auto`} />
+        <input type="month" name="from" defaultValue={from} className={`${inputBase} w-auto`} />
         <span className="text-zinc-400">~</span>
-        <input type="date" name="to" defaultValue={to} className={`${inputBase} w-auto`} />
+        <input type="month" name="to" defaultValue={to} className={`${inputBase} w-auto`} />
         <button type="submit" className={btnSecondary}>조회</button>
       </form>
 
@@ -99,7 +128,10 @@ export default async function BusinessSummaryQuarterlyPage({
                   <Fragment key={b.business}>
                     {totalRows === 0 ? (
                       <tr>
-                        <td className={`${td} font-medium`}>{b.business}</td>
+                        <td className={`${td} font-medium`}>
+                          {b.business}
+                          <EntryStatusBadge lastDate={b.lastDate} effectiveEnd={effectiveEnd} />
+                        </td>
                         <td className={`${td} text-left text-zinc-400`} colSpan={8}>등록된 계획 없음</td>
                       </tr>
                     ) : (
@@ -111,7 +143,10 @@ export default async function BusinessSummaryQuarterlyPage({
                             return (
                               <tr key={`${g.세부사업명}-${i}`}>
                                 {showBusiness && (
-                                  <td className={`${td} font-medium`} rowSpan={totalRows}>{b.business}</td>
+                                  <td className={`${td} font-medium`} rowSpan={totalRows}>
+                                    {b.business}
+                                    <EntryStatusBadge lastDate={b.lastDate} effectiveEnd={effectiveEnd} />
+                                  </td>
                                 )}
                                 {i === 0 && (
                                   <td className={`${td} text-left`} rowSpan={g.rows.length}>{g.세부사업명}</td>

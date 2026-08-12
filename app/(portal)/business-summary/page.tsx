@@ -13,11 +13,34 @@ function todayKst(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 }
 
+function monthEndDay(ym: string): string {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y, m, 0);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function md(dateStr: string): string {
+  const [, m, d] = dateStr.split('-');
+  return `${Number(m)}/${Number(d)}`;
+}
+
 function PctBadge({ value, goal }: { value: number; goal: number }) {
   const p = pct(value, goal);
   if (p === null) return <span className="text-xs text-zinc-400">–</span>;
   const tone = p >= 100 ? badgeTone.green : p >= 50 ? badgeTone.amber : badgeTone.gray;
   return <span className={`${badgeBase} ${tone}`}>{fpct(p)}%</span>;
+}
+
+// 조회 종료일(또는 오늘 중 이른 날)까지 일일실적이 한 건도 없으면 "미입력",
+// 중간까지만 입력돼 있으면 마지막 입력일을 보여준다 — 실적 0과 미입력을 구분하기 위함.
+function EntryStatusBadge({ lastDate, effectiveEnd }: { lastDate: string | null; effectiveEnd: string }) {
+  if (lastDate === null) {
+    return <span className={`${badgeBase} ${badgeTone.red} ml-2`}>미입력</span>;
+  }
+  if (lastDate < effectiveEnd) {
+    return <span className={`${badgeBase} ${badgeTone.amber} ml-2`}>{md(lastDate)}까지 입력</span>;
+  }
+  return null;
 }
 
 export default async function BusinessSummaryBoardPage({
@@ -27,20 +50,25 @@ export default async function BusinessSummaryBoardPage({
 }) {
   const { from: fromParam, to: toParam } = await searchParams;
   const today = todayKst();
-  const from = fromParam || `${today.slice(0, 7)}-01`;
-  const to = toParam || today;
+  const from = fromParam || today.slice(0, 7);
+  const to = toParam || today.slice(0, 7);
+  const fromDate = `${from}-01`;
+  const toDate = monthEndDay(to);
+  const effectiveEnd = toDate < today ? toDate : today;
 
   const businesses = await getWorklogBusinessNames();
   const perBusiness = await Promise.all(
     businesses.map(async (business) => {
       const [items, entries] = await Promise.all([buildWorklogItems(business), getDailyEntries(business)]);
-      const ids = items.map((i) => i.id);
-      const [actC, actP] = rangeSum(entries, ids, from, to);
+      const ids = new Set(items.map((i) => i.id));
+      const [actC, actP] = rangeSum(entries, [...ids], fromDate, toDate);
+      const inRange = entries.filter((e) => ids.has(e.항목ID) && e.날짜 >= fromDate && e.날짜 <= effectiveEnd);
+      const lastDate = inRange.length ? inRange.reduce((a, e) => (e.날짜 > a ? e.날짜 : a), inRange[0].날짜) : null;
       return {
         business,
         goalC: items.reduce((a, i) => a + i.목표건, 0),
         goalP: items.reduce((a, i) => a + i.목표명, 0),
-        actC, actP,
+        actC, actP, lastDate,
       };
     })
   );
@@ -54,9 +82,9 @@ export default async function BusinessSummaryBoardPage({
     <>
       <form method="get" className="mb-4 flex flex-wrap items-center gap-3">
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">기간</label>
-        <input type="date" name="from" defaultValue={from} className={`${inputBase} w-auto`} />
+        <input type="month" name="from" defaultValue={from} className={`${inputBase} w-auto`} />
         <span className="text-zinc-400">~</span>
-        <input type="date" name="to" defaultValue={to} className={`${inputBase} w-auto`} />
+        <input type="month" name="to" defaultValue={to} className={`${inputBase} w-auto`} />
         <button type="submit" className={btnSecondary}>조회</button>
       </form>
 
@@ -79,7 +107,10 @@ export default async function BusinessSummaryBoardPage({
             <tbody>
               {perBusiness.map((b) => (
                 <tr key={b.business}>
-                  <td className={`${td} text-left font-medium`}>{b.business}</td>
+                  <td className={`${td} text-left font-medium`}>
+                    {b.business}
+                    <EntryStatusBadge lastDate={b.lastDate} effectiveEnd={effectiveEnd} />
+                  </td>
                   <td className={`${td} text-zinc-400`}>{nf(b.goalC)}</td>
                   <td className={`${td} text-zinc-400`}>{nf(b.goalP)}</td>
                   <td className={td}>{nf(b.actC)}</td><td className={td}>{nf(b.actP)}</td>
