@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import localFont from 'next/font/local';
 import { buildWorklogItems, getBusinessSettings, getViewerWorklogBusinessNames, type WorklogItem } from '@/lib/mutate/businessPlan';
 import { type DailyEntry, dayValue, getDailyEntries, getMemo, getWrittenDates, rangeSum } from '@/lib/mutate/worklogEntry';
 import ApprovalBox from '@/components/print/ApprovalBox';
@@ -7,6 +8,17 @@ import { btn, card, inputBase } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// 원본 총괄업무일지 서식과 동일한 서울남산체를 인쇄물에 웹폰트로 심는다
+// (설치 여부와 무관하게 항상 동일하게 보이도록 - 실제 폰트가 없으면 지원 대상 아님).
+const seoulNamsan = localFont({
+  src: [
+    { path: './fonts/SeoulNamsanM.woff2', weight: '500', style: 'normal' },
+    { path: './fonts/SeoulNamsanB.woff2', weight: '700', style: 'normal' },
+  ],
+  display: 'swap',
+  preload: false,
+});
 
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 const nf = (n: number) => (n || 0).toLocaleString('ko-KR');
@@ -130,10 +142,9 @@ function WorklogSheet({
 
   return (
     <div
-      className="bg-white p-6 dark:bg-zinc-900 print:p-0"
+      className={`${seoulNamsan.className} bg-white p-6 dark:bg-zinc-900 print:p-0`}
       style={{
         width: '178mm', margin: '0 auto 18px', color: '#000',
-        fontFamily: '"서울남산체", "Noto Sans KR", "Malgun Gothic", sans-serif',
         ...(isLast ? {} : { pageBreakAfter: 'always' }),
       }}
     >
