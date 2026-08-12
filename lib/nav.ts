@@ -52,6 +52,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/business', label: '세부사업계획', description: '세부사업계획서 입력' },
       { href: '/business/daily', label: '총괄업무일지', description: '업무입력 · 월별현황 · 일지인쇄' },
+      { href: '/business/summary', label: '전체사업 실적집계', description: '전체 사업 목표 대비 기간 실적 한눈에 보기' },
     ],
   },
   {

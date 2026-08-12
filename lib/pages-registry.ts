@@ -9,6 +9,7 @@ export const CONFIGURABLE_PAGES = [
   { id: 'business-goal', label: '사업관리 - 세부사업계획' },
   { id: 'business-daily', label: '사업관리 - 총괄업무일지(업무입력)' },
   { id: 'business-monthly', label: '사업관리 - 총괄업무일지(월별현황)' },
+  { id: 'business-summary', label: '사업관리 - 전체사업 실적집계' },
 ];
 
 export const PRINTABLE_PAGES = [
