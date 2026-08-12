@@ -1,6 +1,6 @@
 import { getSystemSettings, VEHICLE_LOG_APPROVAL_MODE_ELECTRONIC, VEHICLE_LOG_APPROVAL_MODE_MANUAL } from '@/lib/mutate/settings';
 import { btn, h1, hint, input, label, pageFluid } from '@/lib/ui';
-import { saveSystemSettingsAction } from './actions';
+import { saveCertificateSealAction, saveSystemSettingsAction } from './actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -59,6 +59,20 @@ export default async function SystemSettingsPage() {
         </label>
         <div>
           <button type="submit" className={btn}>저장</button>
+        </div>
+      </form>
+
+      <h2 className="mt-8 mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">증명서 발급 기관 직인</h2>
+      <p className={hint}>증명서 PDF에 찍히는 기관 직인 이미지입니다. 배경이 투명한 PNG를 권장합니다.</p>
+      <form action={saveCertificateSealAction} encType="multipart/form-data" className="flex flex-col gap-2">
+        {settings.certificateSealImageUrl && (
+          <p className="text-xs text-zinc-500">
+            현재 등록됨 — <a href={settings.certificateSealImageUrl} target="_blank" rel="noreferrer" className="text-brand hover:underline">이미지 보기</a>
+          </p>
+        )}
+        <input type="file" name="seal" accept="image/*" className={input} />
+        <div>
+          <button type="submit" className={btn}>직인 이미지 등록</button>
         </div>
       </form>
     </main>

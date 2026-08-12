@@ -4,6 +4,8 @@ export const WEEKLY_PLAN_SHEET_ID = '1gD3c4k-VLz_9yaOYidtsZ354tms4bfKfyZCbgVQNm4
 export const CARD_LEDGER_SHEET_ID = '1WBNt9PGWQDjwf0PtwgOOPqiJdqNdMUf1yugQenlMF-s'; // "3. 카드사용대장"
 export const VEHICLE_SHEET_ID = '1JtRFxBzH1Xh7chmyMlqlAv__qYC4INR3y7FMIWGKwpQ'; // "4. 차량관리"
 export const WORKLOG_SHEET_ID = '1iMzG0lBTnjUdnYdGqXzo85PQ4szIfHtyHJxr14VGHnE'; // "5. 총괄업무일지"
+export const CERTIFICATE_LEDGER_SHEET_ID = '1asT0KYMbL0Mw28YtQjrwFWW8ViD19TDY1bV2E_1ypio'; // "6. 증명서·상장 발급대장" — 승인 확정된 건만 append(감사/위변조 확인용, 앱이 다시 읽지는 않음)
+export const DUTY_LEDGER_SHEET_ID = '1HqSw3KinUz3s7z9L7c9HOPDKlF3VMOAuYwEAJsxI_W0'; // "7. 당직근무대장" — 근무일지 작성(서명) 완료된 건만 append(감사/위변조 확인용, 앱이 다시 읽지는 않음)
 
 export const TEAM_LIST_SHEET_NAME = '팀목록';
 export const POSITION_LIST_SHEET_NAME = '직급목록';

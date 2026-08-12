@@ -16,6 +16,8 @@ function getAuth() {
     scopes: [
       'https://www.googleapis.com/auth/spreadsheets',
       'https://www.googleapis.com/auth/drive',
+      // 증명서 발행 메일 발송용 — 도메인 위임 설정에 이 스코프가 추가되어야 실제로 동작한다.
+      'https://www.googleapis.com/auth/gmail.send',
     ],
   });
 }
@@ -30,6 +32,12 @@ let drive: ReturnType<typeof google.drive> | null = null;
 export function getDriveClient() {
   if (!drive) drive = google.drive({ version: 'v3', auth: getAuth() });
   return drive;
+}
+
+let gmail: ReturnType<typeof google.gmail> | null = null;
+export function getGmailClient() {
+  if (!gmail) gmail = google.gmail({ version: 'v1', auth: getAuth() });
+  return gmail;
 }
 
 // 탭 이름 -> gid(시트 내부 숫자 ID) 매핑. 스프레드시트 구조는 거의 안 바뀌므로 프로세스 생존 기간 동안 캐싱한다.
@@ -51,4 +59,19 @@ export async function getSheetGid(spreadsheetId: string, sheetName: string): Pro
   const found = gidCache.get(cacheKey);
   if (found === undefined) throw new Error(`시트 탭을 찾을 수 없습니다: ${sheetName}`);
   return found;
+}
+
+// 탭이 하나뿐인 스프레드시트(대장류)에서 그 탭 이름을 알아낸다 — Drive에서 생성한 파일은
+// 탭 이름이 "Sheet1" 등으로 자동 지정되므로 하드코딩하지 않고 항상 조회한다.
+const firstSheetTitleCache = new Map<string, string>();
+
+export async function getFirstSheetTitle(spreadsheetId: string): Promise<string> {
+  const cached = firstSheetTitleCache.get(spreadsheetId);
+  if (cached !== undefined) return cached;
+
+  const res = await getSheetsClient().spreadsheets.get({ spreadsheetId });
+  const title = res.data.sheets?.[0]?.properties?.title;
+  if (!title) throw new Error(`스프레드시트에 탭이 없습니다: ${spreadsheetId}`);
+  firstSheetTitleCache.set(spreadsheetId, title);
+  return title;
 }

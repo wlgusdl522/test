@@ -5,7 +5,9 @@ import { getStaffList } from '@/lib/mutate/staff';
 import { uploadImageDataUrl, deleteDriveFileFromUrl } from '@/lib/drive/upload';
 import { DUTY_SIGNATURE_FOLDER_ID } from '@/lib/sheets/sheetIds';
 import { addDays, todayISO } from '@/lib/dutyDate';
-import { parseSwapChain } from '@/lib/dutySwapChain';
+import { parseSwapChain, resolveOriginalAndChanged } from '@/lib/dutySwapChain';
+import { appendLedgerRow, countLedgerDataRows } from '@/lib/sheets/ledger';
+import { DUTY_LEDGER_SHEET_ID } from '@/lib/sheets/sheetIds';
 
 // 당직근무는 이 기능만 예외로 Supabase가 원본이다(다른 기능은 전부 Google Sheets가 원본, Supabase는 캐시).
 // 그래서 lib/supabase/keyedTable.ts(시트→Supabase 미러 전제)를 쓰지 않고, 이 파일에서 직접 select/insert/update/delete한다.
@@ -381,6 +383,35 @@ export async function reapplyDutyExclusions(): Promise<ReapplyExclusionsResult> 
 
 // ── 근무일지 작성(체크리스트/서명) ────────────────────────────────────
 
+// 당직근무대장(구글시트)에 append할 "근무일지 내용" 한 칸 요약 — 화면 CHECK_FIELDS/TEXT_FIELDS와 동일한 항목.
+const WEEKDAY_LOG_CONTENT_FIELDS: { key: string; label: string }[] = [
+  { key: '실별소등확인', label: '실별소등확인' },
+  { key: '사유', label: '실별소등 사유' },
+  { key: '창문닫기', label: '창문닫기' },
+  { key: '사유2', label: '창문닫기 사유' },
+  { key: '출입문잠금', label: '출입문잠금' },
+  { key: '사유3', label: '출입문잠금 사유' },
+  { key: '전화민원내용', label: '전화/민원내용' },
+  { key: '내방객및내방이유', label: '내방객및내방이유' },
+  { key: '응급및비상시특이사항', label: '응급및비상시특이사항' },
+  { key: '퇴근전특근자성명', label: '퇴근전특근자성명' },
+  { key: '최종인계자', label: '최종인계자' },
+];
+
+function buildWeekdayLogContent(row: Record<string, string>): string {
+  return WEEKDAY_LOG_CONTENT_FIELDS.map(({ key, label }) => `${label}: ${row[key] || '-'}`).join(' / ');
+}
+
+// 대장 append 실패로 서명 자체가 실패 처리되면 안 되므로(원본은 Supabase, 대장은 감사용 사본) 에러를 삼키고 로그만 남긴다.
+async function appendDutyLedgerRow(날짜: string, 기존당직자: string, 변경당직자: string, 내용: string): Promise<void> {
+  try {
+    const 순서 = (await countLedgerDataRows(DUTY_LEDGER_SHEET_ID)) + 1;
+    await appendLedgerRow(DUTY_LEDGER_SHEET_ID, [순서, 날짜, 기존당직자, 변경당직자, 내용]);
+  } catch (error) {
+    console.error('[당직근무대장 append 실패]', error);
+  }
+}
+
 export async function saveDutyWeekdayLog(
   id: string,
   fields: Record<string, string>,
@@ -394,6 +425,14 @@ export async function saveDutyWeekdayLog(
   }
   const { error } = await table(LOG_TABLE.weekday).update(patch).eq('id', id);
   if (error) throw new Error(`근무일지 저장 실패: ${error.message}`);
+
+  if (signatureDataUrl) {
+    const finalRow = await getDutyLog('weekday', id);
+    if (finalRow) {
+      const { original, changed } = resolveOriginalAndChanged(finalRow['원배정성명'] || '', finalRow['이름'] || '');
+      await appendDutyLedgerRow(finalRow['근무일자'] || '', original, changed, buildWeekdayLogContent(finalRow));
+    }
+  }
 }
 
 export async function saveDutySaturdaySignature(id: string, slot: 1 | 2, signatureDataUrl: string): Promise<void> {
@@ -406,4 +445,10 @@ export async function saveDutySaturdaySignature(id: string, slot: 1 | 2, signatu
     .update({ [signCol]: url })
     .eq('id', id);
   if (error) throw new Error(`서명 저장 실패: ${error.message}`);
+
+  const { original, changed } = resolveOriginalAndChanged(
+    existing[`원배정성명${slot}`] || '',
+    existing[`이름${slot}`] || ''
+  );
+  await appendDutyLedgerRow(existing['근무일자'] || '', original, changed, '');
 }

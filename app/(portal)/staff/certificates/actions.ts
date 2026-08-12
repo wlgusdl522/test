@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireCanViewCertificateLog } from '@/lib/auth-helpers';
-import { addAward, addCertificate, actOnCertificate, CERTIFICATE_TYPES } from '@/lib/supabase/certificate';
+import { addAward, addCertificate, actOnCertificate, issueCertificate, CERTIFICATE_TYPES } from '@/lib/supabase/certificate';
 
 function fieldsFromForm(formData: FormData, keys: string[]): Record<string, string> {
   const record: Record<string, string> = {};
@@ -15,7 +15,7 @@ export async function addCertificateAction(formData: FormData): Promise<void> {
   const staffValue = String(formData.get('staff') ?? '');
   const [, staffName, staffTeam] = staffValue.split('::');
 
-  const record = fieldsFromForm(formData, ['종류', '대상자직위', '근무기간', '용도', '비고']);
+  const record = fieldsFromForm(formData, ['종류', '대상자직위', '대상자이메일', '근무기간', '용도', '비고']);
   record['대상자성명'] = (String(formData.get('대상자성명') ?? '').trim() || staffName || '').trim();
   record['대상자소속'] = (String(formData.get('대상자소속') ?? '').trim() || staffTeam || '').trim();
   if (!CERTIFICATE_TYPES.includes(record['종류'] as (typeof CERTIFICATE_TYPES)[number])) {
@@ -28,7 +28,7 @@ export async function addCertificateAction(formData: FormData): Promise<void> {
 
 export async function addAwardAction(formData: FormData): Promise<void> {
   await requireCanViewCertificateLog();
-  const record = fieldsFromForm(formData, ['대상자성명', '대상자소속', '용도', '발급일', '비고']);
+  const record = fieldsFromForm(formData, ['대상자성명', '대상자소속', '대상자이메일', '용도', '발급일', '비고']);
   await addAward(record);
   revalidatePath('/staff/certificates');
 }
@@ -40,4 +40,13 @@ export async function actOnCertificateAction(formData: FormData): Promise<void> 
   await actOnCertificate(id, action, comment);
   revalidatePath('/staff/certificates');
   revalidatePath('/mypage');
+}
+
+export async function issueCertificateAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  const result = await issueCertificate(id);
+  if (result.warnings.length > 0) {
+    console.warn(`[증명서 발행 경고] id=${id}`, result.warnings);
+  }
+  revalidatePath('/staff/certificates');
 }

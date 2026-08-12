@@ -36,3 +36,24 @@ export async function deleteDriveFileFromUrl(url: string): Promise<void> {
     // 이미 지워졌거나 접근 불가 - 무시 (원본 Code.js의 deleteItemCheckPhotoFile_와 동일한 관용구)
   }
 }
+
+// 업로드해둔 이미지를 다시 data URI로 읽어온다 — PDF에 직인처럼 임베드할 때, 공개된 "view" URL은
+// react-pdf가 직접 못 읽으므로 서비스계정으로 원본 바이트를 받아와 base64로 바꿔서 넘긴다.
+export async function getDriveImageAsDataUrl(url: string): Promise<string | null> {
+  const match = String(url).match(/[-\w]{25,}/);
+  if (!match) return null;
+  try {
+    const drive = getDriveClient();
+    const meta = await drive.files.get({ fileId: match[0], fields: 'mimeType', supportsAllDrives: true });
+    const mimeType = meta.data.mimeType || 'image/png';
+    const res = await drive.files.get(
+      { fileId: match[0], alt: 'media', supportsAllDrives: true },
+      { responseType: 'arraybuffer' }
+    );
+    const buffer = Buffer.from(res.data as ArrayBuffer);
+    return `data:${mimeType};base64,${buffer.toString('base64')}`;
+  } catch (error) {
+    console.error('[Drive 이미지 다운로드 실패]', error);
+    return null;
+  }
+}

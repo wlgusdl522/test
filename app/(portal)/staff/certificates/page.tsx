@@ -5,6 +5,7 @@ import { getStaffList } from '@/lib/mutate/staff';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import FormToggle from '@/components/FormToggle';
 import StaffPicker from '@/components/duty/StaffPicker';
+import CertificateFormSplit from '@/components/certificates/CertificateFormSplit';
 import {
   badgeBase,
   badgeTone,
@@ -20,7 +21,7 @@ import {
   thClean,
   trHoverClean,
 } from '@/lib/ui';
-import { addAwardAction, addCertificateAction } from './actions';
+import { addAwardAction, addCertificateAction, issueCertificateAction } from './actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -53,49 +54,6 @@ export default async function CertificatesPage() {
           <p className={pageSubtitle}>총 {records.length}건</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <FormToggle label="증명서 신청 등록" buttonLabel="+ 증명서 신청 등록">
-            <form action={addCertificateAction} className="flex flex-col gap-3">
-              <div>
-                <p className={label}>희망이음 미등록자(옛 퇴사자·강사)면 직원 선택, 아니면 아래 칸에 직접 입력</p>
-                <StaffPicker staff={staff} name="staff" />
-              </div>
-              <label className={label}>
-                대상자성명 (직접입력, 미선택 시 필수)
-                <input name="대상자성명" className={input} />
-              </label>
-              <label className={label}>
-                대상자소속 (직접입력)
-                <input name="대상자소속" className={input} />
-              </label>
-              <label className={label}>
-                대상자직위
-                <input name="대상자직위" className={input} />
-              </label>
-              <label className={label}>
-                종류
-                <select name="종류" className={input} required defaultValue="">
-                  <option value="" disabled>선택</option>
-                  {CERTIFICATE_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              </label>
-              <label className={label}>
-                근무기간 (재직/경력증명서용)
-                <input name="근무기간" placeholder="예: 2021-07-06 ~ 현재" className={input} />
-              </label>
-              <label className={label}>
-                용도
-                <input name="용도" placeholder="예: 기관제출용" className={input} />
-              </label>
-              <label className={label}>
-                비고
-                <input name="비고" className={input} />
-              </label>
-              <button type="submit" className={`${btn} w-fit`}>신청 등록</button>
-            </form>
-          </FormToggle>
-
           <FormToggle label="상장 등록" buttonLabel="+ 상장 등록">
             <form action={addAwardAction} className="flex flex-col gap-3">
               <label className={label}>
@@ -105,6 +63,10 @@ export default async function CertificatesPage() {
               <label className={label}>
                 대상자소속
                 <input name="대상자소속" className={input} />
+              </label>
+              <label className={label}>
+                대상자이메일
+                <input type="email" name="대상자이메일" className={input} />
               </label>
               <label className={label}>
                 사업명 / 수여사유
@@ -123,6 +85,12 @@ export default async function CertificatesPage() {
           </FormToggle>
         </div>
       </div>
+
+      <CertificateFormSplit
+        action={addCertificateAction}
+        staffPicker={<StaffPicker staff={staff} name="staff" />}
+        types={CERTIFICATE_TYPES}
+      />
 
       <div className={cardTableWrap}>
         <table className={tableClean}>
@@ -149,12 +117,25 @@ export default async function CertificatesPage() {
                 <td className={tdClean}>{r.용도}</td>
                 <td className={tdClean}>
                   <span className={`${badgeBase} ${badgeTone[STATUS_TONE[r.결재상태] ?? 'gray']}`}>{r.결재상태}</span>
+                  {r.결재상태 === '결재중' && r.현재결재단계 && (
+                    <span className="ml-1.5 text-xs text-zinc-400">{r.현재결재단계} 대기</span>
+                  )}
+                  {r.결재상태 === '승인' && r.발행일시 && <span className="ml-1.5 text-xs text-emerald-600">발행완료</span>}
                 </td>
                 <td className={tdClean}>{r.발급일}</td>
                 <td className={tdClean}>{r.등록일시}</td>
-                <td className={tdClean}>
-                  {r.결재상태 === '승인' && r.구분 === '증명서' && (
+                <td className={`${tdClean} flex items-center gap-2`}>
+                  {r.결재상태 === '승인' && r.구분 === '증명서' && r.발행일시 && (
                     <Link href={`/print/certificate?id=${r.id}`} className="text-brand hover:underline">인쇄</Link>
+                  )}
+                  {r.문서URL && (
+                    <a href={r.문서URL} target="_blank" rel="noreferrer" className="text-brand hover:underline">PDF</a>
+                  )}
+                  {r.결재상태 === '승인' && r.구분 === '증명서' && !r.발행일시 && (
+                    <form action={issueCertificateAction}>
+                      <input type="hidden" name="id" value={r.id} />
+                      <button type="submit" className={btn}>발행</button>
+                    </form>
                   )}
                 </td>
               </tr>

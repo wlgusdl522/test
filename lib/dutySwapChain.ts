@@ -16,3 +16,10 @@ export function formatSwapChain(pastNamesJson: string, currentName: string): str
   const past = parseSwapChain(pastNamesJson);
   return [...past, currentName].join('→');
 }
+
+// 당직근무대장(구글시트) 컬럼용 — 교체가 없었으면 기존=현재 담당자만, 있었으면 기존=최초 배정자.
+export function resolveOriginalAndChanged(pastNamesJson: string, currentName: string): { original: string; changed: string } {
+  const past = parseSwapChain(pastNamesJson);
+  if (past.length === 0) return { original: currentName, changed: '' };
+  return { original: past[0], changed: currentName };
+}

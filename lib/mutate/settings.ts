@@ -14,6 +14,7 @@ const KEYS = {
   CARD_LEDGER_DANGER_DAYS: 'CARD_LEDGER_DANGER_DAYS',
   CERTIFICATE_APPROVER_EMAIL: 'CERTIFICATE_APPROVER_EMAIL',
   CERTIFICATE_CLERK_EMAIL: 'CERTIFICATE_CLERK_EMAIL',
+  CERTIFICATE_SEAL_IMAGE_URL: 'CERTIFICATE_SEAL_IMAGE_URL',
 } as const;
 
 export type SystemSettings = {
@@ -27,6 +28,7 @@ export type SystemSettings = {
   cardLedgerDangerDays: number;
   certificateApproverEmail: string;
   certificateClerkEmail: string;
+  certificateSealImageUrl: string;
 };
 
 export async function getSystemSettings(): Promise<SystemSettings> {
@@ -41,6 +43,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     dangerDays,
     certificateApprover,
     certificateClerk,
+    certificateSealImageUrl,
   ] = await Promise.all([
     getSetting(KEYS.ITEM_CHECK_REPORT_THRESHOLD),
     getSetting(KEYS.ITEM_CHECK_ASSET_MANAGER_EMAIL),
@@ -52,6 +55,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     getSetting(KEYS.CARD_LEDGER_DANGER_DAYS),
     getSetting(KEYS.CERTIFICATE_APPROVER_EMAIL),
     getSetting(KEYS.CERTIFICATE_CLERK_EMAIL),
+    getSetting(KEYS.CERTIFICATE_SEAL_IMAGE_URL),
   ]);
   return {
     itemCheckReportThreshold: Number(threshold) || 0,
@@ -64,6 +68,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     cardLedgerDangerDays: Number(dangerDays) || 10,
     certificateApproverEmail: certificateApprover,
     certificateClerkEmail: certificateClerk,
+    certificateSealImageUrl,
   };
 }
 
@@ -83,4 +88,9 @@ export async function setSystemSettings(settings: SystemSettings): Promise<void>
     setSetting(KEYS.CERTIFICATE_APPROVER_EMAIL, settings.certificateApproverEmail.trim()),
     setSetting(KEYS.CERTIFICATE_CLERK_EMAIL, settings.certificateClerkEmail.trim()),
   ]);
+}
+
+// 기관 직인 이미지는 파일 업로드라 위 텍스트 설정 폼과 별도 액션으로 저장한다(saveCertificateSealAction).
+export async function setCertificateSealImageUrl(url: string): Promise<void> {
+  await setSetting(KEYS.CERTIFICATE_SEAL_IMAGE_URL, url);
 }
