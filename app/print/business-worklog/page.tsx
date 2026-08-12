@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import localFont from 'next/font/local';
 import { buildWorklogItems, getBusinessSettings, getViewerWorklogBusinessNames, type WorklogItem } from '@/lib/mutate/businessPlan';
 import { type DailyEntry, dayValue, getDailyEntries, getMemo, getWrittenDates, rangeSum } from '@/lib/mutate/worklogEntry';
 import ApprovalBox from '@/components/print/ApprovalBox';
@@ -7,6 +8,17 @@ import { btn, card, inputBase } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// 원본 총괄업무일지 서식과 동일한 서울남산체를 인쇄물에 웹폰트로 심는다
+// (설치 여부와 무관하게 항상 동일하게 보이도록 - 실제 폰트가 없으면 지원 대상 아님).
+const seoulNamsan = localFont({
+  src: [
+    { path: './fonts/SeoulNamsanM.woff2', weight: '500', style: 'normal' },
+    { path: './fonts/SeoulNamsanB.woff2', weight: '700', style: 'normal' },
+  ],
+  display: 'swap',
+  preload: false,
+});
 
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 const nf = (n: number) => (n || 0).toLocaleString('ko-KR');
@@ -61,7 +73,7 @@ export default async function BusinessWorklogPrintPage({
   const memos = await Promise.all(days.map((d) => getMemo(business, d)));
 
   return (
-    <div className="p-6">
+    <div className="p-6 print:p-0">
       <div className={`${card} print:hidden flex flex-wrap items-center gap-4`}>
         <form method="get" className="flex flex-wrap items-center gap-2">
           <input type="hidden" name="business" value={business} />
@@ -84,7 +96,6 @@ export default async function BusinessWorklogPrintPage({
         <WorklogSheet
           key={date}
           business={business}
-          businessNumber={settings.정렬순서}
           date={date}
           items={items}
           entries={entries}
@@ -97,13 +108,13 @@ export default async function BusinessWorklogPrintPage({
   );
 }
 
-const lbl = { border: '1px solid #000', background: '#f2f2f2', fontWeight: 700, textAlign: 'center' as const, padding: '3px 4px', fontSize: 10.5 };
-const cell = { border: '1px solid #000', padding: '3px 4px', textAlign: 'center' as const, fontSize: 10.5 };
+const lbl = { border: '1px solid #000', background: '#f2f2f2', fontWeight: 700, textAlign: 'center' as const, padding: '5px 4px', fontSize: 10.5, wordBreak: 'keep-all' as const };
+const cell = { border: '1px solid #000', padding: '5px 4px', textAlign: 'center' as const, fontSize: 10.5, wordBreak: 'keep-all' as const };
 
 function WorklogSheet({
-  business, businessNumber, date, items, entries, memo, approvalLine, isLast,
+  business, date, items, entries, memo, approvalLine, isLast,
 }: {
-  business: string; businessNumber: number; date: string; items: WorklogItem[]; entries: DailyEntry[];
+  business: string; date: string; items: WorklogItem[]; entries: DailyEntry[];
   memo: { 활동내용: string; 특이사항: string } | null;
   approvalLine: string[]; isLast: boolean;
 }) {
@@ -126,37 +137,40 @@ function WorklogSheet({
   const totalDay = rangeSum(entries, allIds, date, date);
   const totalMtd = rangeSum(entries, allIds, monthFrom, date);
   const totalYtd = rangeSum(entries, allIds, yearFrom, date);
+  const totalGoalC = items.reduce((a, i) => a + i.목표건, 0);
+  const totalGoalP = items.reduce((a, i) => a + i.목표명, 0);
 
   return (
     <div
-      className="bg-white p-6 dark:bg-zinc-900 print:p-0"
-      style={{ width: '190mm', margin: '0 auto 18px', color: '#000', ...(isLast ? {} : { pageBreakAfter: 'always' }) }}
+      className={`${seoulNamsan.className} bg-white p-6 dark:bg-zinc-900 print:p-0`}
+      style={{
+        width: '178mm', margin: '0 auto 18px', color: '#000',
+        ...(isLast ? {} : { pageBreakAfter: 'always' }),
+      }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
-        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: 4, paddingTop: 6 }}>{businessNumber}. {business}　총괄업무일지</div>
-        <ApprovalBox data={{ visibleLine: approvalLine, delegatedLastCell: false }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
+        <div style={{ flex: 1, textAlign: 'center', fontSize: 20, fontWeight: 700, letterSpacing: 4 }}>{business}　총괄업무일지</div>
+        <ApprovalBox data={{ visibleLine: approvalLine, delegatedLastCell: false }} scale={0.7} />
       </div>
       <div style={{ fontSize: 12, marginBottom: 6 }}>{D.getFullYear()}년 {D.getMonth() + 1}월 {D.getDate()}일 ({DOW[D.getDay()]})</div>
 
       <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
         <colgroup>
-          <col style={{ width: '11mm' }} /><col style={{ width: '34mm' }} /><col style={{ width: '31mm' }} />
-          <col style={{ width: '13mm' }} /><col style={{ width: '13mm' }} />
-          <col style={{ width: '13mm' }} /><col style={{ width: '13mm' }} />
-          <col style={{ width: '13mm' }} /><col style={{ width: '13mm' }} />
-          <col style={{ width: '13mm' }} /><col style={{ width: '13mm' }} />
-          <col style={{ width: '13mm' }} /><col style={{ width: '13mm' }} />
+          <col style={{ width: '15mm' }} /><col style={{ width: '22mm' }} /><col style={{ width: '27mm' }} />
+          <col style={{ width: '11mm' }} /><col style={{ width: '11mm' }} />
+          <col style={{ width: '11mm' }} /><col style={{ width: '11mm' }} />
+          <col style={{ width: '11mm' }} /><col style={{ width: '11mm' }} />
+          <col style={{ width: '11mm' }} /><col style={{ width: '11mm' }} />
+          <col style={{ width: '11mm' }} /><col style={{ width: '11mm' }} />
         </colgroup>
         <thead>
           <tr>
-            <th style={lbl} rowSpan={2}>세부사업</th>
-            <th style={lbl} colSpan={2}>구　분</th>
+            <th style={lbl} rowSpan={2} colSpan={3}>구　분</th>
             <th style={lbl} rowSpan={2}>건</th><th style={lbl} rowSpan={2}>명</th>
             <th style={lbl} colSpan={2}>일계</th><th style={lbl} colSpan={2}>월계</th><th style={lbl} colSpan={2}>누계</th>
             <th style={lbl} colSpan={2}>달성율(%)</th>
           </tr>
           <tr>
-            <th style={lbl}>중분류</th><th style={lbl}>소분류</th>
             <th style={lbl}>건</th><th style={lbl}>명</th><th style={lbl}>건</th><th style={lbl}>명</th>
             <th style={lbl}>건</th><th style={lbl}>명</th><th style={lbl}>건</th><th style={lbl}>명</th>
           </tr>
@@ -173,9 +187,13 @@ function WorklogSheet({
             return (
               <Fragment key={r.id}>
                 <tr>
-                  {span > 0 && <td style={{ ...lbl, writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: 10 }} rowSpan={span}>{r.세부사업명}</td>}
-                  {mspan > 0 && <td style={{ ...cell, textAlign: 'left' }} rowSpan={mspan}>{r.중분류}</td>}
-                  <td style={{ ...cell, textAlign: 'left' }}>{r.소분류 || '–'}</td>
+                  {span > 0 && <td style={lbl} rowSpan={span}>{r.세부사업명}</td>}
+                  {mspan > 0 && (
+                    r.소분류
+                      ? <td style={cell} rowSpan={mspan}>{r.중분류}</td>
+                      : <td style={cell} rowSpan={mspan} colSpan={2}>{r.중분류}</td>
+                  )}
+                  {r.소분류 && <td style={cell}>{r.소분류}</td>}
                   <td style={cell}>{nf(r.목표건)}</td><td style={cell}>{nf(r.목표명)}</td>
                   <td style={cell}>{nf(r.day[0])}</td><td style={cell}>{nf(r.day[1])}</td>
                   <td style={cell}>{nf(r.mtd[0])}</td><td style={cell}>{nf(r.mtd[1])}</td>
@@ -184,7 +202,7 @@ function WorklogSheet({
                 </tr>
                 {isLastOfGroup && (
                   <tr style={{ background: '#f7f7f7', fontWeight: 700 }}>
-                    <td style={cell} colSpan={3}>소　계 · {r.세부사업명}</td>
+                    <td style={cell} colSpan={3}>소　계</td>
                     <td style={cell}>{nf(goalC)}</td><td style={cell}>{nf(goalP)}</td>
                     <td style={cell}>{nf(sum('day', 0))}</td><td style={cell}>{nf(sum('day', 1))}</td>
                     <td style={cell}>{nf(sum('mtd', 0))}</td><td style={cell}>{nf(sum('mtd', 1))}</td>
@@ -196,23 +214,32 @@ function WorklogSheet({
             );
           })}
           <tr style={{ background: '#dedede', fontWeight: 700 }}>
-            <td style={cell} colSpan={5}>총　계</td>
+            <td style={cell} colSpan={3}>계</td>
+            <td style={cell}>{nf(totalGoalC)}</td><td style={cell}>{nf(totalGoalP)}</td>
             <td style={cell}>{nf(totalDay[0])}</td><td style={cell}>{nf(totalDay[1])}</td>
             <td style={cell}>{nf(totalMtd[0])}</td><td style={cell}>{nf(totalMtd[1])}</td>
             <td style={cell}>{nf(totalYtd[0])}</td><td style={cell}>{nf(totalYtd[1])}</td>
-            <td style={cell} colSpan={2} />
+            <td style={cell}>{fpct(pct(totalYtd[0], totalGoalC))}</td><td style={cell}>{fpct(pct(totalYtd[1], totalGoalP))}</td>
+          </tr>
+          <tr style={{ background: '#fdf3d0', fontWeight: 700 }}>
+            <td style={cell} colSpan={3}>총　계</td>
+            <td style={cell} colSpan={2}>{nf(totalGoalP)}</td>
+            <td style={cell} colSpan={2}>{nf(totalDay[1])}</td>
+            <td style={cell} colSpan={2}>{nf(totalMtd[1])}</td>
+            <td style={cell} colSpan={2}>{nf(totalYtd[1])}</td>
+            <td style={cell} colSpan={2}>{fpct(pct(totalYtd[1], totalGoalP))}%</td>
           </tr>
           <tr>
-            <td style={{ ...lbl, width: '16mm' }} colSpan={3}>활동내용</td>
-            <td style={{ ...cell, textAlign: 'left', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.활동내용 || ' '}</td>
+            <td style={{ ...lbl, height: '19mm' }} colSpan={3}>활동내용</td>
+            <td style={{ ...cell, height: '19mm', textAlign: 'left', verticalAlign: 'top', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.활동내용 || ' '}</td>
           </tr>
           <tr>
-            <td style={{ ...lbl, width: '16mm' }} colSpan={3}>특이사항</td>
-            <td style={{ ...cell, textAlign: 'left', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.특이사항 || ' '}</td>
+            <td style={{ ...lbl, height: '11mm' }} colSpan={3}>특이사항</td>
+            <td style={{ ...cell, height: '11mm', textAlign: 'left', verticalAlign: 'top', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.특이사항 || ' '}</td>
           </tr>
         </tbody>
       </table>
-      <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, letterSpacing: 6, marginTop: 8 }}>서대문노인종합복지관</div>
+      <div style={{ textAlign: 'right', fontSize: 11, fontWeight: 700, marginTop: 8 }}>서대문노인종합복지관</div>
     </div>
   );
 }
