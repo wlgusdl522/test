@@ -132,7 +132,7 @@ function WorklogSheet({
     <div
       className="bg-white p-6 dark:bg-zinc-900 print:p-0"
       style={{
-        width: '186mm', margin: '0 auto 18px', color: '#000',
+        width: '178mm', margin: '0 auto 18px', color: '#000',
         fontFamily: '"서울남산체", "Noto Sans KR", "Malgun Gothic", sans-serif',
         ...(isLast ? {} : { pageBreakAfter: 'always' }),
       }}
@@ -145,12 +145,12 @@ function WorklogSheet({
 
       <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
         <colgroup>
-          <col style={{ width: '15mm' }} /><col style={{ width: '21mm' }} /><col style={{ width: '26mm' }} />
-          <col style={{ width: '12mm' }} /><col style={{ width: '12mm' }} />
-          <col style={{ width: '12mm' }} /><col style={{ width: '12mm' }} />
-          <col style={{ width: '12mm' }} /><col style={{ width: '12mm' }} />
-          <col style={{ width: '12mm' }} /><col style={{ width: '12mm' }} />
-          <col style={{ width: '12mm' }} /><col style={{ width: '12mm' }} />
+          <col style={{ width: '15mm' }} /><col style={{ width: '22mm' }} /><col style={{ width: '27mm' }} />
+          <col style={{ width: '11mm' }} /><col style={{ width: '11mm' }} />
+          <col style={{ width: '11mm' }} /><col style={{ width: '11mm' }} />
+          <col style={{ width: '11mm' }} /><col style={{ width: '11mm' }} />
+          <col style={{ width: '11mm' }} /><col style={{ width: '11mm' }} />
+          <col style={{ width: '11mm' }} /><col style={{ width: '11mm' }} />
         </colgroup>
         <thead>
           <tr>
@@ -219,11 +219,11 @@ function WorklogSheet({
             <td style={cell} colSpan={2}>{fpct(pct(totalYtd[1], totalGoalP))}%</td>
           </tr>
           <tr>
-            <td style={{ ...lbl, width: '16mm' }} colSpan={3}>활동내용</td>
+            <td style={lbl} colSpan={3}>활동내용</td>
             <td style={{ ...cell, textAlign: 'left', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.활동내용 || ' '}</td>
           </tr>
           <tr>
-            <td style={{ ...lbl, width: '16mm' }} colSpan={3}>특이사항</td>
+            <td style={lbl} colSpan={3}>특이사항</td>
             <td style={{ ...cell, textAlign: 'left', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.특이사항 || ' '}</td>
           </tr>
         </tbody>
