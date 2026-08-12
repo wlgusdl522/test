@@ -108,8 +108,8 @@ export default async function BusinessWorklogPrintPage({
   );
 }
 
-const lbl = { border: '1px solid #000', background: '#f2f2f2', fontWeight: 700, textAlign: 'center' as const, padding: '3px 4px', fontSize: 10.5 };
-const cell = { border: '1px solid #000', padding: '3px 4px', textAlign: 'center' as const, fontSize: 10.5 };
+const lbl = { border: '1px solid #000', background: '#f2f2f2', fontWeight: 700, textAlign: 'center' as const, padding: '5px 4px', fontSize: 10.5, wordBreak: 'keep-all' as const };
+const cell = { border: '1px solid #000', padding: '5px 4px', textAlign: 'center' as const, fontSize: 10.5, wordBreak: 'keep-all' as const };
 
 function WorklogSheet({
   business, date, items, entries, memo, approvalLine, isLast,
@@ -230,12 +230,12 @@ function WorklogSheet({
             <td style={cell} colSpan={2}>{fpct(pct(totalYtd[1], totalGoalP))}%</td>
           </tr>
           <tr>
-            <td style={{ ...lbl, height: '18mm' }} colSpan={3}>활동내용</td>
-            <td style={{ ...cell, height: '18mm', textAlign: 'left', verticalAlign: 'top', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.활동내용 || ' '}</td>
+            <td style={{ ...lbl, height: '19mm' }} colSpan={3}>활동내용</td>
+            <td style={{ ...cell, height: '19mm', textAlign: 'left', verticalAlign: 'top', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.활동내용 || ' '}</td>
           </tr>
           <tr>
-            <td style={{ ...lbl, height: '10mm' }} colSpan={3}>특이사항</td>
-            <td style={{ ...cell, height: '10mm', textAlign: 'left', verticalAlign: 'top', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.특이사항 || ' '}</td>
+            <td style={{ ...lbl, height: '11mm' }} colSpan={3}>특이사항</td>
+            <td style={{ ...cell, height: '11mm', textAlign: 'left', verticalAlign: 'top', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.특이사항 || ' '}</td>
           </tr>
         </tbody>
       </table>
