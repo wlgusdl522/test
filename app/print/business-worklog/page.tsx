@@ -230,11 +230,11 @@ function WorklogSheet({
             <td style={cell} colSpan={2}>{fpct(pct(totalYtd[1], totalGoalP))}%</td>
           </tr>
           <tr>
-            <td style={{ ...lbl, height: '18mm', verticalAlign: 'top' }} colSpan={3}>활동내용</td>
+            <td style={{ ...lbl, height: '18mm' }} colSpan={3}>활동내용</td>
             <td style={{ ...cell, height: '18mm', textAlign: 'left', verticalAlign: 'top', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.활동내용 || ' '}</td>
           </tr>
           <tr>
-            <td style={{ ...lbl, height: '10mm', verticalAlign: 'top' }} colSpan={3}>특이사항</td>
+            <td style={{ ...lbl, height: '10mm' }} colSpan={3}>특이사항</td>
             <td style={{ ...cell, height: '10mm', textAlign: 'left', verticalAlign: 'top', whiteSpace: 'pre-wrap', lineHeight: 1.5 }} colSpan={10}>{memo?.특이사항 || ' '}</td>
           </tr>
         </tbody>
