@@ -3,7 +3,7 @@ import { buildWorklogItems, getWorklogBusinessNames } from '@/lib/mutate/busines
 import { getDailyEntries, rangeSum } from '@/lib/mutate/worklogEntry';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
-import { badgeBase, badgeTone, btnSecondary, card, inputBase, table, td, th, tableWrap } from '@/lib/ui';
+import { badgeBase, badgeTone, btnSecondary, card, h1, inputBase, pageFluid, table, td, th, tableWrap } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -71,7 +71,9 @@ export default async function BusinessSummaryPage({
   const grandActP = perBusiness.reduce((a, b) => a + b.actP, 0);
 
   return (
-    <div>
+    <main className={pageFluid}>
+      <h1 className={`${h1} mb-5`}>사업관리 &gt; 전체사업 실적집계</h1>
+
       <form method="get" className="mb-4 flex flex-wrap items-center gap-3">
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">기간</label>
         <input type="date" name="from" defaultValue={from} className={`${inputBase} w-auto`} />
@@ -140,6 +142,6 @@ export default async function BusinessSummaryPage({
           </table>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
