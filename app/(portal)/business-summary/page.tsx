@@ -36,7 +36,7 @@ function PctBadge({ value, goal }: { value: number; goal: number }) {
   return <span className={`${badgeBase} ${tone}`}>{fpct(p)}%</span>;
 }
 
-// 조회 종료일(또는 오늘 중 이른 날)까지 일일실적이 한 건도 없으면 "미입력",
+// 조회월(또는 오늘 중 이른 날)까지 일일실적이 한 건도 없으면 "미입력",
 // 중간까지만 입력돼 있으면 마지막 입력일을 보여준다 — 실적 0과 미입력을 구분하기 위함.
 function EntryStatusBadge({ lastDate, effectiveEnd }: { lastDate: string | null; effectiveEnd: string }) {
   if (lastDate === null) {
@@ -51,24 +51,25 @@ function EntryStatusBadge({ lastDate, effectiveEnd }: { lastDate: string | null;
 export default async function BusinessSummaryBoardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; to?: string }>;
+  searchParams: Promise<{ ym?: string }>;
 }) {
   if (!(await hasPageAccess('business-summary'))) return <PageAccessDenied />;
 
-  const { from: fromParam, to: toParam } = await searchParams;
+  const { ym: ymParam } = await searchParams;
   const today = todayKst();
-  const from = fromParam || today.slice(0, 7);
-  const to = toParam || today.slice(0, 7);
-  const fromDate = `${from}-01`;
-  const toDate = monthEndDay(to);
-  const effectiveEnd = toDate < today ? toDate : today;
+  const ym = ymParam || today.slice(0, 7);
+  const year = ym.slice(0, 4);
+  const yearStart = `${year}-01-01`;
+  const monthStart = `${ym}-01`;
+  const cumEnd = monthEndDay(ym);
+  const effectiveEnd = cumEnd < today ? cumEnd : today;
 
   const businesses = await getWorklogBusinessNames();
   const perBusiness = await Promise.all(
     businesses.map(async (business) => {
       const [items, entries] = await Promise.all([buildWorklogItems(business), getDailyEntries(business)]);
       const ids = new Set(items.map((i) => i.id));
-      const inRange = entries.filter((e) => ids.has(e.항목ID) && e.날짜 >= fromDate && e.날짜 <= effectiveEnd);
+      const inRange = entries.filter((e) => ids.has(e.항목ID) && e.날짜 >= monthStart && e.날짜 <= effectiveEnd);
       const lastDate = inRange.length ? inRange.reduce((a, e) => (e.날짜 > a ? e.날짜 : a), inRange[0].날짜) : null;
 
       const groups = new Map<string, typeof items>();
@@ -78,12 +79,15 @@ export default async function BusinessSummaryBoardPage({
       });
       const subRows = [...groups.entries()].map(([세부사업명, groupItems]) => {
         const subIds = groupItems.map((i) => i.id);
-        const [실적건, 실적명] = rangeSum(entries, subIds, fromDate, toDate);
+        const [cumC, cumP] = rangeSum(entries, subIds, yearStart, cumEnd);
+        const [curC, curP] = rangeSum(entries, subIds, monthStart, cumEnd);
         return {
           세부사업명,
           목표건: groupItems.reduce((a, i) => a + i.목표건, 0),
           목표명: groupItems.reduce((a, i) => a + i.목표명, 0),
-          실적건, 실적명,
+          전월누계건: cumC - curC, 전월누계명: cumP - curP,
+          금월실적건: curC, 금월실적명: curP,
+          누계건: cumC, 누계명: cumP,
         };
       });
       return {
@@ -91,24 +95,30 @@ export default async function BusinessSummaryBoardPage({
         subRows, lastDate,
         goalC: subRows.reduce((a, r) => a + r.목표건, 0),
         goalP: subRows.reduce((a, r) => a + r.목표명, 0),
-        actC: subRows.reduce((a, r) => a + r.실적건, 0),
-        actP: subRows.reduce((a, r) => a + r.실적명, 0),
+        prevC: subRows.reduce((a, r) => a + r.전월누계건, 0),
+        prevP: subRows.reduce((a, r) => a + r.전월누계명, 0),
+        curC: subRows.reduce((a, r) => a + r.금월실적건, 0),
+        curP: subRows.reduce((a, r) => a + r.금월실적명, 0),
+        cumC: subRows.reduce((a, r) => a + r.누계건, 0),
+        cumP: subRows.reduce((a, r) => a + r.누계명, 0),
       };
     })
   );
 
   const grandGoalC = perBusiness.reduce((a, b) => a + b.goalC, 0);
   const grandGoalP = perBusiness.reduce((a, b) => a + b.goalP, 0);
-  const grandActC = perBusiness.reduce((a, b) => a + b.actC, 0);
-  const grandActP = perBusiness.reduce((a, b) => a + b.actP, 0);
+  const grandPrevC = perBusiness.reduce((a, b) => a + b.prevC, 0);
+  const grandPrevP = perBusiness.reduce((a, b) => a + b.prevP, 0);
+  const grandCurC = perBusiness.reduce((a, b) => a + b.curC, 0);
+  const grandCurP = perBusiness.reduce((a, b) => a + b.curP, 0);
+  const grandCumC = perBusiness.reduce((a, b) => a + b.cumC, 0);
+  const grandCumP = perBusiness.reduce((a, b) => a + b.cumP, 0);
 
   return (
     <>
       <form method="get" className="mb-4 flex flex-wrap items-center gap-3">
-        <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">기간</label>
-        <input type="month" name="from" defaultValue={from} className={`${inputBase} w-auto`} />
-        <span className="text-zinc-400">~</span>
-        <input type="month" name="to" defaultValue={to} className={`${inputBase} w-auto`} />
+        <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">조회월</label>
+        <input type="month" name="ym" defaultValue={ym} className={`${inputBase} w-auto`} />
         <button type="submit" className={btnSecondary}>조회</button>
       </form>
 
@@ -120,10 +130,14 @@ export default async function BusinessSummaryBoardPage({
                 <th className={`${th} whitespace-nowrap`} rowSpan={2}>사업</th>
                 <th className={`${th} whitespace-nowrap`} rowSpan={2}>세부사업</th>
                 <th className={`${th} text-right`} colSpan={2}>연간목표</th>
-                <th className={`${th} text-right`} colSpan={2}>기간실적</th>
+                <th className={`${th} text-right`} colSpan={2}>전월누계</th>
+                <th className={`${th} text-right`} colSpan={2}>금월실적</th>
+                <th className={`${th} text-right`} colSpan={2}>누계</th>
                 <th className={`${th} text-center`} colSpan={2}>달성율</th>
               </tr>
               <tr>
+                <th className={`${th} text-right`}>건</th><th className={`${th} text-right`}>명</th>
+                <th className={`${th} text-right`}>건</th><th className={`${th} text-right`}>명</th>
                 <th className={`${th} text-right`}>건</th><th className={`${th} text-right`}>명</th>
                 <th className={`${th} text-right`}>건</th><th className={`${th} text-right`}>명</th>
                 <th className={`${th} text-center`}>건</th><th className={`${th} text-center`}>명</th>
@@ -138,7 +152,7 @@ export default async function BusinessSummaryBoardPage({
                         {b.business}
                         <EntryStatusBadge lastDate={b.lastDate} effectiveEnd={effectiveEnd} />
                       </td>
-                      <td className={`${td} text-left text-zinc-400`} colSpan={7}>등록된 계획 없음</td>
+                      <td className={`${td} text-left text-zinc-400`} colSpan={11}>등록된 계획 없음</td>
                     </tr>
                   ) : (
                     b.subRows.map((r, i) => (
@@ -152,27 +166,34 @@ export default async function BusinessSummaryBoardPage({
                         <td className={`${td} whitespace-nowrap`}>{r.세부사업명}</td>
                         <td className={`${numCell} text-zinc-400`}>{nf(r.목표건)}</td>
                         <td className={`${numCell} text-zinc-400`}>{nf(r.목표명)}</td>
-                        <td className={numCell}>{nf(r.실적건)}</td><td className={numCell}>{nf(r.실적명)}</td>
-                        <td className={`${td} text-center`}><PctBadge value={r.실적건} goal={r.목표건} /></td>
-                        <td className={`${td} text-center`}><PctBadge value={r.실적명} goal={r.목표명} /></td>
+                        <td className={`${numCell} text-zinc-400`}>{nf(r.전월누계건)}</td>
+                        <td className={`${numCell} text-zinc-400`}>{nf(r.전월누계명)}</td>
+                        <td className={numCell}>{nf(r.금월실적건)}</td><td className={numCell}>{nf(r.금월실적명)}</td>
+                        <td className={`${numCell} font-semibold`}>{nf(r.누계건)}</td><td className={`${numCell} font-semibold`}>{nf(r.누계명)}</td>
+                        <td className={`${td} text-center`}><PctBadge value={r.누계건} goal={r.목표건} /></td>
+                        <td className={`${td} text-center`}><PctBadge value={r.누계명} goal={r.목표명} /></td>
                       </tr>
                     ))
                   )}
                   <tr className="bg-[#eef1f5] font-semibold dark:bg-zinc-800">
                     <td className={`${td} text-left whitespace-nowrap`} colSpan={2}>소계 · {b.business}</td>
                     <td className={numCell}>{nf(b.goalC)}</td><td className={numCell}>{nf(b.goalP)}</td>
-                    <td className={numCell}>{nf(b.actC)}</td><td className={numCell}>{nf(b.actP)}</td>
-                    <td className={`${td} text-center`}><PctBadge value={b.actC} goal={b.goalC} /></td>
-                    <td className={`${td} text-center`}><PctBadge value={b.actP} goal={b.goalP} /></td>
+                    <td className={numCell}>{nf(b.prevC)}</td><td className={numCell}>{nf(b.prevP)}</td>
+                    <td className={numCell}>{nf(b.curC)}</td><td className={numCell}>{nf(b.curP)}</td>
+                    <td className={numCell}>{nf(b.cumC)}</td><td className={numCell}>{nf(b.cumP)}</td>
+                    <td className={`${td} text-center`}><PctBadge value={b.cumC} goal={b.goalC} /></td>
+                    <td className={`${td} text-center`}><PctBadge value={b.cumP} goal={b.goalP} /></td>
                   </tr>
                 </Fragment>
               ))}
               <tr className="bg-brand-dark font-semibold text-white">
                 <td className={`${td} !text-white text-left whitespace-nowrap`} colSpan={2}>총 계</td>
                 <td className={`${numCell} !text-white`}>{nf(grandGoalC)}</td><td className={`${numCell} !text-white`}>{nf(grandGoalP)}</td>
-                <td className={`${numCell} !text-white`}>{nf(grandActC)}</td><td className={`${numCell} !text-white`}>{nf(grandActP)}</td>
-                <td className={`${td} !text-white text-center`}>{fpct(pct(grandActC, grandGoalC))}%</td>
-                <td className={`${td} !text-white text-center`}>{fpct(pct(grandActP, grandGoalP))}%</td>
+                <td className={`${numCell} !text-white`}>{nf(grandPrevC)}</td><td className={`${numCell} !text-white`}>{nf(grandPrevP)}</td>
+                <td className={`${numCell} !text-white`}>{nf(grandCurC)}</td><td className={`${numCell} !text-white`}>{nf(grandCurP)}</td>
+                <td className={`${numCell} !text-white`}>{nf(grandCumC)}</td><td className={`${numCell} !text-white`}>{nf(grandCumP)}</td>
+                <td className={`${td} !text-white text-center`}>{fpct(pct(grandCumC, grandGoalC))}%</td>
+                <td className={`${td} !text-white text-center`}>{fpct(pct(grandCumP, grandGoalP))}%</td>
               </tr>
             </tbody>
           </table>
