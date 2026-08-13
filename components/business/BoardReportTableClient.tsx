@@ -17,12 +17,14 @@ export default function BoardReportTableClient({
   columnLabel,
   initialRows,
   examples,
+  contentTemplate,
 }: {
   구분: BoardReportType;
   ym: string;
   columnLabel: string;
   initialRows: BoardPlanEntry[];
-  examples: { 사업명: string; 실시월일: string; 내용: string; 성과: string };
+  examples: { 사업명: string; 실시월일: string; 성과: string };
+  contentTemplate: string;
 }) {
   const router = useRouter();
   const counterRef = useRef(0);
@@ -38,7 +40,7 @@ export default function BoardReportTableClient({
 
   function addRow() {
     counterRef.current += 1;
-    setRows((prev) => [...prev, { key: `new-${counterRef.current}`, 사업명: '', 실시월일: '', 내용: '', 성과: '' }]);
+    setRows((prev) => [...prev, { key: `new-${counterRef.current}`, 사업명: '', 실시월일: '', 내용: contentTemplate, 성과: '' }]);
   }
 
   function removeRow(key: string) {
@@ -97,7 +99,7 @@ export default function BoardReportTableClient({
                 <td className={`${td} align-top`}>
                   <textarea
                     value={r.내용} onChange={(e) => update(r.key, '내용', e.target.value)}
-                    placeholder={examples.내용} rows={3} className={cellInput}
+                    rows={3} className={cellInput}
                   />
                 </td>
                 <td className={`${td} align-top`}>

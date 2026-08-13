@@ -3,21 +3,25 @@ import { setReportPeriodAction } from '@/app/(portal)/business-summary/boardPlan
 import BoardReportTableClient from './BoardReportTableClient';
 import { btnSecondary, card, inputBase } from '@/lib/ui';
 
-// 행 추가 시 무슨 내용을 어떻게 채우면 되는지 감이 오도록, 실제로 참고했던 이사회 자료 예시를
-// 옅은 예시 텍스트(placeholder)로 넣어둔다 — 값이 아니라 안내용이라 저장되지는 않는다.
-const EXAMPLES: Record<BoardReportType, { 사업명: string; 실시월일: string; 내용: string; 성과: string }> = {
+// 사업명/실시월일/성과는 옅은 예시 텍스트(placeholder)로 감만 잡게 하고, 내용은 실제로 참고했던
+// 이사회 자료의 항목 제목(장소/대상/예산 등)만 미리 채워 넣는다 — placeholder는 뭘 입력하든
+// 통째로 사라지지만, 이건 실제 값이라 필요 없는 줄만 지우거나 새 줄을 더 추가하면 된다.
+const EXAMPLES: Record<BoardReportType, { 사업명: string; 실시월일: string; 성과: string }> = {
   사업보고: {
     사업명: '예: 효도 나들이',
     실시월일: '예: 5/7(목)',
-    내용: '예:\n- 장소 : 온양민속박물관, 현충사\n- 참여인원 : 복지관 이용 어르신 293명\n- 내용 : 민속박물관 및 현충사 관람, 점심식사 등\n- 집행예산 : 14,000,000원',
     성과: '예: 참여자의 소속감을 높이고 정서적 지지를 통해 삶의 질 향상을 도모',
   },
   사업계획: {
     사업명: '예: 역사모금데이',
     실시월일: '예: 6/4(목) ~ 6/30(화)',
-    내용: '예:\n- 장소 : 온라인(네이버해피빈)\n- 대상 : 국가유공자 및 유족 어르신 50명\n- 내용 : 네이버해피빈 모금 및 생필품 지원\n- 목표 모금액 : 9,000,000원',
     성과: '예: 지역사회 내 국가유공자에 대한 관심 증진 및 나눔참여문화 확산',
   },
+};
+
+const CONTENT_TEMPLATES: Record<BoardReportType, string> = {
+  사업보고: '- 장소 : \n- 참여인원 : \n- 내용 : \n- 집행예산 : ',
+  사업계획: '- 장소 : \n- 대상 : \n- 내용 : \n- 목표 금액 : ',
 };
 
 export default async function BoardReportSection({
@@ -50,7 +54,10 @@ export default async function BoardReportSection({
           <button type="submit" className={btnSecondary}>기간 저장</button>
         </form>
       </div>
-      <BoardReportTableClient 구분={구분} ym={ym} columnLabel={columnLabel} initialRows={entries} examples={EXAMPLES[구분]} />
+      <BoardReportTableClient
+        구분={구분} ym={ym} columnLabel={columnLabel} initialRows={entries}
+        examples={EXAMPLES[구분]} contentTemplate={CONTENT_TEMPLATES[구분]}
+      />
     </div>
   );
 }
