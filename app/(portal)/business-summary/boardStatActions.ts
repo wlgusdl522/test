@@ -32,6 +32,7 @@ export async function deleteBoardStatItemAction(formData: FormData): Promise<voi
 }
 
 export async function submitBoardStatValuesAction(
+  시설: string,
   년월: string,
   entries: { 항목ID: string; 값: number }[]
 ): Promise<void> {
@@ -39,7 +40,7 @@ export async function submitBoardStatValuesAction(
   const me = await getViewerStaffRecord();
   const name = me?.성명 ?? '';
   for (const e of entries) {
-    await setModuleValue(e.항목ID, 년월, e.값, viewerEmail, name);
+    await setModuleValue(e.항목ID, 시설, 년월, e.값, viewerEmail, name);
   }
   revalidateAll();
 }

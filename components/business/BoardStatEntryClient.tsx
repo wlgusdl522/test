@@ -9,7 +9,7 @@ type Row = { id: string; 항목명: string; 전월누계: number; 금월실적: 
 
 const nf = (n: number) => (n || 0).toLocaleString('ko-KR');
 
-export default function BoardStatEntryClient({ ym, rows }: { ym: string; rows: Row[] }) {
+export default function BoardStatEntryClient({ 시설, ym, rows }: { 시설: string; ym: string; rows: Row[] }) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, string>>(
     Object.fromEntries(rows.map((r) => [r.id, r.금월실적 ? String(r.금월실적) : '']))
@@ -26,7 +26,7 @@ export default function BoardStatEntryClient({ ym, rows }: { ym: string; rows: R
     startTransition(async () => {
       try {
         const entries = rows.map((r) => ({ 항목ID: r.id, 값: Number(values[r.id]) || 0 }));
-        await submitBoardStatValuesAction(ym, entries);
+        await submitBoardStatValuesAction(시설, ym, entries);
         setStatus('저장했습니다');
         router.refresh();
       } catch (err) {

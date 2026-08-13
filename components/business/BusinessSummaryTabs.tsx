@@ -4,6 +4,7 @@ import BusinessSummaryTabsClient from './BusinessSummaryTabsClient';
 const TABS = [
   { href: '/business-summary', label: '이사회자료', pageId: 'business-summary' },
   { href: '/business-summary/quarterly', label: '분기실적보고', pageId: 'business-summary' },
+  { href: '/business-summary/plan', label: '사업계획', pageId: 'business-board-plan' },
   { href: '/business-summary/accounting', label: '회계', pageId: 'business-accounting' },
   { href: '/business-summary/volunteers', label: '자원봉사자', pageId: 'business-volunteers' },
   { href: '/business-summary/donations', label: '후원', pageId: 'business-donations' },

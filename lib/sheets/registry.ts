@@ -268,11 +268,24 @@ export const BOARD_STAT_ITEM_TABLE: KeyedTableConfig = {
   primaryKey: 'id',
 };
 
-export const BOARD_STAT_VALUE_HEADERS = ['id', '항목ID', '년월', '값', '작성자이메일', '작성자명', '등록일시'];
+// 시설: 회계는 복지관/요양센터/데이케어센터가 서로 다른 값을 가지므로 항목ID+년월에 더해
+// 시설까지 키로 잡는다. 자원봉사자/후원처럼 시설 구분이 없는 모듈은 '전체' 고정값을 쓴다.
+export const BOARD_STAT_VALUE_HEADERS = ['id', '항목ID', '시설', '년월', '값', '작성자이메일', '작성자명', '등록일시'];
 
 export const BOARD_STAT_VALUE_TABLE: KeyedTableConfig = {
   spreadsheetId: WORKLOG_SHEET_ID,
   sheetName: '이사회월별값',
   headers: BOARD_STAT_VALUE_HEADERS,
-  primaryKey: ['항목ID', '년월'],
+  primaryKey: ['항목ID', '시설', '년월'],
+};
+
+// 이사회자료 "사업계획" 서술형 카드(사업보고/사업계획 스타일) — 사업량 표와 별개로,
+// 다음 이사회까지 진행할 사업 이름/기간/내용/기대효과를 직접 작성해 넣는 목록.
+export const BOARD_PLAN_HEADERS = ['id', '사업명', '실시월일', '내용', '기대효과', '정렬순서'];
+
+export const BOARD_PLAN_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '이사회사업계획',
+  headers: BOARD_PLAN_HEADERS,
+  primaryKey: 'id',
 };
