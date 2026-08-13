@@ -80,14 +80,17 @@ export async function GET() {
     return NextResponse.json({ error: '관리자만 실행할 수 있습니다.' }, { status: 403 });
   }
 
+  const meta = await getSheetsClient().spreadsheets.get({ spreadsheetId: BOARD_STAT_VALUE_TABLE.spreadsheetId });
+  const actualTitles = (meta.data.sheets ?? []).map((s) => s.properties?.title);
+
   try {
     const plan = await ensureSheet(BOARD_PLAN_TABLE.spreadsheetId, BOARD_PLAN_TABLE.sheetName, BOARD_PLAN_HEADERS);
     const migration = await migrateFacilityColumn();
-    return NextResponse.json({ 이사회사업계획: plan, 이사회월별값_시설컬럼: migration });
+    return NextResponse.json({ 이사회사업계획: plan, 이사회월별값_시설컬럼: migration, 실제탭목록: actualTitles });
   } catch (err) {
     console.error('[setup-board-plan-sheets]', err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined },
+      { error: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined, 실제탭목록: actualTitles },
       { status: 500 }
     );
   }
