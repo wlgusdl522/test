@@ -25,6 +25,8 @@ function md(dateStr: string): string {
   return `${Number(m)}/${Number(d)}`;
 }
 
+const numCell = `${td} text-right tabular-nums`;
+
 function PctBadge({ value, goal }: { value: number; goal: number }) {
   const p = pct(value, goal);
   if (p === null) return <span className="text-xs text-zinc-400">–</span>;
@@ -107,17 +109,17 @@ export default async function BusinessSummaryQuarterlyPage({
           <table className={table}>
             <thead>
               <tr>
-                <th className={`${th} w-32`} rowSpan={2}>사업</th>
-                <th className={th} rowSpan={2}>세부사업</th>
-                <th className={th} rowSpan={2}>계획항목</th>
-                <th className={th} colSpan={2}>연간목표</th>
-                <th className={th} colSpan={2}>기간실적</th>
-                <th className={th} colSpan={2}>달성율</th>
+                <th className={`${th} whitespace-nowrap`} rowSpan={2}>사업</th>
+                <th className={`${th} whitespace-nowrap`} rowSpan={2}>세부사업</th>
+                <th className={`${th} whitespace-nowrap`} rowSpan={2}>계획항목</th>
+                <th className={`${th} text-right`} colSpan={2}>연간목표</th>
+                <th className={`${th} text-right`} colSpan={2}>기간실적</th>
+                <th className={`${th} text-center`} colSpan={2}>달성율</th>
               </tr>
               <tr>
-                <th className={th}>건</th><th className={th}>명</th>
-                <th className={th}>건</th><th className={th}>명</th>
-                <th className={th}>건</th><th className={th}>명</th>
+                <th className={`${th} text-right`}>건</th><th className={`${th} text-right`}>명</th>
+                <th className={`${th} text-right`}>건</th><th className={`${th} text-right`}>명</th>
+                <th className={`${th} text-center`}>건</th><th className={`${th} text-center`}>명</th>
               </tr>
             </thead>
             <tbody>
@@ -127,8 +129,8 @@ export default async function BusinessSummaryQuarterlyPage({
                 return (
                   <Fragment key={b.business}>
                     {totalRows === 0 ? (
-                      <tr>
-                        <td className={`${td} font-medium max-w-[9rem] break-words`}>
+                      <tr className="even:bg-[#f8f9fb] dark:even:bg-zinc-800/30">
+                        <td className={`${td} whitespace-nowrap font-medium`}>
                           {b.business}
                           <EntryStatusBadge lastDate={b.lastDate} effectiveEnd={effectiveEnd} />
                         </td>
@@ -141,22 +143,22 @@ export default async function BusinessSummaryQuarterlyPage({
                             const showBusiness = !businessRowRendered;
                             if (showBusiness) businessRowRendered = true;
                             return (
-                              <tr key={`${g.세부사업명}-${i}`}>
+                              <tr key={`${g.세부사업명}-${i}`} className="even:bg-[#f8f9fb] dark:even:bg-zinc-800/30">
                                 {showBusiness && (
-                                  <td className={`${td} font-medium max-w-[9rem] break-words`} rowSpan={totalRows}>
+                                  <td className={`${td} whitespace-nowrap font-medium align-top`} rowSpan={totalRows}>
                                     {b.business}
                                     <EntryStatusBadge lastDate={b.lastDate} effectiveEnd={effectiveEnd} />
                                   </td>
                                 )}
                                 {i === 0 && (
-                                  <td className={`${td} text-left`} rowSpan={g.rows.length}>{g.세부사업명}</td>
+                                  <td className={`${td} whitespace-nowrap align-top`} rowSpan={g.rows.length}>{g.세부사업명}</td>
                                 )}
                                 <td className={`${td} text-left`}>{r.label}</td>
-                                <td className={`${td} text-zinc-400`}>{nf(r.목표건)}</td>
-                                <td className={`${td} text-zinc-400`}>{nf(r.목표명)}</td>
-                                <td className={td}>{nf(r.실적건)}</td><td className={td}>{nf(r.실적명)}</td>
-                                <td className={td}><PctBadge value={r.실적건} goal={r.목표건} /></td>
-                                <td className={td}><PctBadge value={r.실적명} goal={r.목표명} /></td>
+                                <td className={`${numCell} text-zinc-400`}>{nf(r.목표건)}</td>
+                                <td className={`${numCell} text-zinc-400`}>{nf(r.목표명)}</td>
+                                <td className={numCell}>{nf(r.실적건)}</td><td className={numCell}>{nf(r.실적명)}</td>
+                                <td className={`${td} text-center`}><PctBadge value={r.실적건} goal={r.목표건} /></td>
+                                <td className={`${td} text-center`}><PctBadge value={r.실적명} goal={r.목표명} /></td>
                               </tr>
                             );
                           })}
@@ -164,21 +166,21 @@ export default async function BusinessSummaryQuarterlyPage({
                       ))
                     )}
                     <tr className="bg-[#eef1f5] font-semibold dark:bg-zinc-800">
-                      <td className={`${td} text-left`} colSpan={3}>소계 · {b.business}</td>
-                      <td className={td}>{nf(b.goalC)}</td><td className={td}>{nf(b.goalP)}</td>
-                      <td className={td}>{nf(b.actC)}</td><td className={td}>{nf(b.actP)}</td>
-                      <td className={td}><PctBadge value={b.actC} goal={b.goalC} /></td>
-                      <td className={td}><PctBadge value={b.actP} goal={b.goalP} /></td>
+                      <td className={`${td} text-left whitespace-nowrap`} colSpan={3}>소계 · {b.business}</td>
+                      <td className={numCell}>{nf(b.goalC)}</td><td className={numCell}>{nf(b.goalP)}</td>
+                      <td className={numCell}>{nf(b.actC)}</td><td className={numCell}>{nf(b.actP)}</td>
+                      <td className={`${td} text-center`}><PctBadge value={b.actC} goal={b.goalC} /></td>
+                      <td className={`${td} text-center`}><PctBadge value={b.actP} goal={b.goalP} /></td>
                     </tr>
                   </Fragment>
                 );
               })}
               <tr className="bg-brand-dark font-semibold text-white">
-                <td className={`${td} !text-white text-left`} colSpan={3}>총 계</td>
-                <td className={`${td} !text-white`}>{nf(grandGoalC)}</td><td className={`${td} !text-white`}>{nf(grandGoalP)}</td>
-                <td className={`${td} !text-white`}>{nf(grandActC)}</td><td className={`${td} !text-white`}>{nf(grandActP)}</td>
-                <td className={`${td} !text-white`}>{fpct(pct(grandActC, grandGoalC))}%</td>
-                <td className={`${td} !text-white`}>{fpct(pct(grandActP, grandGoalP))}%</td>
+                <td className={`${td} !text-white text-left whitespace-nowrap`} colSpan={3}>총 계</td>
+                <td className={`${numCell} !text-white`}>{nf(grandGoalC)}</td><td className={`${numCell} !text-white`}>{nf(grandGoalP)}</td>
+                <td className={`${numCell} !text-white`}>{nf(grandActC)}</td><td className={`${numCell} !text-white`}>{nf(grandActP)}</td>
+                <td className={`${td} !text-white text-center`}>{fpct(pct(grandActC, grandGoalC))}%</td>
+                <td className={`${td} !text-white text-center`}>{fpct(pct(grandActP, grandGoalP))}%</td>
               </tr>
             </tbody>
           </table>
