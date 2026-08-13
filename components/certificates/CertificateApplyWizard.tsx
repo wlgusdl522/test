@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { btn, btnOutline, input, label } from '@/lib/ui';
+import { btn, input, label } from '@/lib/ui';
 import StaffPicker from '@/components/duty/StaffPicker';
 
 const ORG_NAME = '서대문노인종합복지관';
@@ -16,11 +16,27 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function ButtonGroup({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="inline-flex flex-wrap items-center gap-1 rounded-full bg-zinc-100 p-1 dark:bg-zinc-900">
+      {children}
+    </div>
+  );
+}
+
 function CategoryButton({
   active, onClick, children,
 }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} className={active ? btn : btnOutline}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
+        active
+          ? 'bg-white text-brand shadow-sm dark:bg-zinc-800'
+          : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+      }`}
+    >
       {children}
     </button>
   );
@@ -35,63 +51,56 @@ function DocPreview({
   onChange: (key: keyof typeof fields, value: string) => void;
   showSoso: 'fixed' | 'editable';
 }) {
-  const lbl = 'border border-[#333] bg-[#f2f2f2] font-semibold text-center whitespace-nowrap px-2.5';
-  const cell = 'border border-[#333] px-1 py-1';
-  const cellInput = 'w-full bg-transparent px-1.5 py-1 outline-none focus:bg-amber-50';
+  const row = 'flex items-center gap-4 border-b border-zinc-100 py-3.5 last:border-b-0 dark:border-zinc-800';
+  const rowLabel = 'w-20 shrink-0 text-[11px] font-semibold uppercase tracking-[0.15em] text-zinc-400';
+  const rowValue =
+    'flex-1 bg-transparent text-[15px] font-medium text-zinc-800 outline-none placeholder:font-normal placeholder:text-zinc-300 focus:text-brand dark:text-zinc-100';
 
   return (
-    <div style={{ fontSize: 13.5, color: '#000' }} className="mx-auto w-full bg-white">
-      <h2 className="my-8 text-center text-2xl" style={{ letterSpacing: 12 }}>{title}</h2>
+    <div>
+      <p className="text-center text-[11px] tracking-[0.3em] text-zinc-300">CERTIFICATE</p>
+      <h2 className="mt-2 text-center text-[26px] font-bold tracking-[0.5em] text-zinc-900 dark:text-zinc-50" style={{ textIndent: '0.5em' }}>
+        {title}
+      </h2>
+      <div className="mx-auto mt-4 h-px w-14 bg-zinc-300 dark:bg-zinc-700" />
 
-      <table className="w-full" style={{ borderCollapse: 'collapse' }}>
-        <tbody>
-          <tr>
-            <td className={`${lbl} w-28`}>성&nbsp;&nbsp;&nbsp;&nbsp;명</td>
-            <td className={cell}>
-              <input className={cellInput} value={fields.성명} onChange={(e) => onChange('성명', e.target.value)} />
-            </td>
-          </tr>
-          <tr>
-            <td className={lbl}>소&nbsp;&nbsp;&nbsp;&nbsp;속</td>
-            <td className={cell}>
-              {showSoso === 'fixed' ? (
-                <span className="block px-1.5 py-1 text-zinc-700">{fields.소속}</span>
-              ) : (
-                <input className={cellInput} value={fields.소속} onChange={(e) => onChange('소속', e.target.value)} />
-              )}
-            </td>
-          </tr>
-          {showSoso === 'editable' && (
-            <tr>
-              <td className={lbl}>직&nbsp;&nbsp;&nbsp;&nbsp;위</td>
-              <td className={cell}>
-                <input className={cellInput} value={fields.직위} onChange={(e) => onChange('직위', e.target.value)} />
-              </td>
-            </tr>
+      <div className="mt-10">
+        <div className={row}>
+          <span className={rowLabel}>성명</span>
+          <input className={rowValue} placeholder="이름을 입력하세요" value={fields.성명} onChange={(e) => onChange('성명', e.target.value)} />
+        </div>
+        <div className={row}>
+          <span className={rowLabel}>소속</span>
+          {showSoso === 'fixed' ? (
+            <span className="flex-1 text-[15px] font-medium text-zinc-600 dark:text-zinc-300">{fields.소속}</span>
+          ) : (
+            <input className={rowValue} value={fields.소속} onChange={(e) => onChange('소속', e.target.value)} />
           )}
-          {showSoso === 'editable' && (
-            <tr>
-              <td className={lbl}>생년월일</td>
-              <td className={cell}>
-                <input type="date" className={cellInput} value={fields.생년월일} onChange={(e) => onChange('생년월일', e.target.value)} />
-              </td>
-            </tr>
-          )}
-          <tr>
-            <td className={lbl}>용&nbsp;&nbsp;&nbsp;&nbsp;도</td>
-            <td className={cell}>
-              <input className={cellInput} value={fields.용도} onChange={(e) => onChange('용도', e.target.value)} />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        </div>
+        {showSoso === 'editable' && (
+          <div className={row}>
+            <span className={rowLabel}>직위</span>
+            <input className={rowValue} value={fields.직위} onChange={(e) => onChange('직위', e.target.value)} />
+          </div>
+        )}
+        {showSoso === 'editable' && (
+          <div className={row}>
+            <span className={rowLabel}>생년월일</span>
+            <input type="date" className={rowValue} value={fields.생년월일} onChange={(e) => onChange('생년월일', e.target.value)} />
+          </div>
+        )}
+        <div className={row}>
+          <span className={rowLabel}>용도</span>
+          <input className={rowValue} placeholder="제출처 등" value={fields.용도} onChange={(e) => onChange('용도', e.target.value)} />
+        </div>
+      </div>
 
-      <p className="mt-8 text-center text-[15px] text-zinc-500">
+      <p className="mt-12 text-center text-[14.5px] leading-relaxed text-zinc-500 dark:text-zinc-400">
         위 내용을 증명합니다.
       </p>
 
       {/* 결재란 없음 — 결재는 신청 후 별도 결재함에서 진행되고, 실제 발급 PDF에도 결재란은 나오지 않는다. */}
-      <div className="mt-16 rounded-md border border-dashed border-zinc-300 py-6 text-center text-xs text-zinc-400">
+      <div className="mt-14 rounded-lg bg-zinc-50 py-5 text-center text-[11px] text-zinc-400 dark:bg-zinc-800/60">
         발급일 · 직인 · QR코드는 관장 최종승인 후 발행 시 자동으로 채워집니다.
       </div>
     </div>
@@ -153,22 +162,28 @@ export default function CertificateApplyWizard({
 
   return (
     <div className="mb-6">
-      <div className="mb-3 flex flex-wrap gap-2">
-        <CategoryButton active={top === 'staff'} onClick={() => selectTop('staff')}>복지관·생활지원사 직원</CategoryButton>
-        <CategoryButton active={top === 'instructor'} onClick={() => selectTop('instructor')}>강사</CategoryButton>
-        <CategoryButton active={top === 'award'} onClick={() => selectTop('award')}>상장</CategoryButton>
+      <div className="mb-3">
+        <ButtonGroup>
+          <CategoryButton active={top === 'staff'} onClick={() => selectTop('staff')}>복지관·생활지원사 직원</CategoryButton>
+          <CategoryButton active={top === 'instructor'} onClick={() => selectTop('instructor')}>강사</CategoryButton>
+          <CategoryButton active={top === 'award'} onClick={() => selectTop('award')}>상장</CategoryButton>
+        </ButtonGroup>
       </div>
 
       {top === 'staff' && (
-        <div className="mb-3 flex flex-wrap gap-2">
-          <CategoryButton active={staffStatus === 'active'} onClick={() => { setStaffStatus('active'); setResignedType(null); }}>현재 재직중</CategoryButton>
-          <CategoryButton active={staffStatus === 'resigned'} onClick={() => setStaffStatus('resigned')}>퇴사</CategoryButton>
+        <div className="mb-3">
+          <ButtonGroup>
+            <CategoryButton active={staffStatus === 'active'} onClick={() => { setStaffStatus('active'); setResignedType(null); }}>현재 재직중</CategoryButton>
+            <CategoryButton active={staffStatus === 'resigned'} onClick={() => setStaffStatus('resigned')}>퇴사</CategoryButton>
+          </ButtonGroup>
         </div>
       )}
       {top === 'staff' && staffStatus === 'resigned' && (
-        <div className="mb-3 flex flex-wrap gap-2">
-          <CategoryButton active={resignedType === 'registered'} onClick={() => setResignedType('registered')}>희망이음 등록</CategoryButton>
-          <CategoryButton active={resignedType === 'unregistered'} onClick={() => setResignedType('unregistered')}>희망이음 미등록</CategoryButton>
+        <div className="mb-3">
+          <ButtonGroup>
+            <CategoryButton active={resignedType === 'registered'} onClick={() => setResignedType('registered')}>희망이음 등록</CategoryButton>
+            <CategoryButton active={resignedType === 'unregistered'} onClick={() => setResignedType('unregistered')}>희망이음 미등록</CategoryButton>
+          </ButtonGroup>
         </div>
       )}
 
@@ -250,8 +265,12 @@ export default function CertificateApplyWizard({
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="mx-auto max-w-[520px] rounded-xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              <DocPreview title={resolved.title} fields={fields} onChange={setField} showSoso={resolved.showSoso} />
+            <div className="mx-auto max-w-[560px] rounded-2xl bg-zinc-100 p-6 dark:bg-black/20 sm:p-10">
+              <div className="rounded-sm border border-zinc-200 bg-white p-3 shadow-[0_10px_40px_rgba(15,23,42,0.08)] dark:border-zinc-700 dark:bg-zinc-900">
+                <div className="border border-zinc-100 p-8 dark:border-zinc-800">
+                  <DocPreview title={resolved.title} fields={fields} onChange={setField} showSoso={resolved.showSoso} />
+                </div>
+              </div>
             </div>
           </div>
         </form>
