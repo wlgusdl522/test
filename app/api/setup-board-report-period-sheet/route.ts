@@ -26,9 +26,10 @@ export async function GET() {
       spreadsheetId,
       requestBody: { requests: [{ addSheet: { properties: { title: sheetName } } }] },
     });
+    const endCol = String.fromCharCode(65 + BOARD_REPORT_PERIOD_TABLE.headers.length - 1);
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: `${sheetName}!A2:B2`,
+      range: `${sheetName}!A2:${endCol}2`,
       valueInputOption: 'RAW',
       requestBody: { values: [BOARD_REPORT_PERIOD_TABLE.headers] },
     });

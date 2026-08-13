@@ -13,12 +13,16 @@ const cellInput =
 
 export default function BoardReportTableClient({
   구분,
+  ym,
   columnLabel,
   initialRows,
+  examples,
 }: {
   구분: BoardReportType;
+  ym: string;
   columnLabel: string;
   initialRows: BoardPlanEntry[];
+  examples: { 사업명: string; 실시월일: string; 내용: string; 성과: string };
 }) {
   const router = useRouter();
   const counterRef = useRef(0);
@@ -48,7 +52,7 @@ export default function BoardReportTableClient({
         const payload = rows
           .filter((r) => r.사업명.trim() || r.실시월일.trim() || r.내용.trim() || r.성과.trim())
           .map((r) => ({ id: r.id, 사업명: r.사업명, 실시월일: r.실시월일, 내용: r.내용, 성과: r.성과 }));
-        await saveBoardReportSectionAction(구분, payload);
+        await saveBoardReportSectionAction(구분, ym, payload);
         setStatus('저장했습니다');
         router.refresh();
       } catch (err) {
@@ -79,16 +83,28 @@ export default function BoardReportTableClient({
             {rows.map((r) => (
               <tr key={r.key}>
                 <td className={`${td} align-top`}>
-                  <input value={r.사업명} onChange={(e) => update(r.key, '사업명', e.target.value)} className={cellInput} />
+                  <input
+                    value={r.사업명} onChange={(e) => update(r.key, '사업명', e.target.value)}
+                    placeholder={examples.사업명} className={cellInput}
+                  />
                 </td>
                 <td className={`${td} align-top`}>
-                  <input value={r.실시월일} onChange={(e) => update(r.key, '실시월일', e.target.value)} className={cellInput} />
+                  <input
+                    value={r.실시월일} onChange={(e) => update(r.key, '실시월일', e.target.value)}
+                    placeholder={examples.실시월일} className={cellInput}
+                  />
                 </td>
                 <td className={`${td} align-top`}>
-                  <textarea value={r.내용} onChange={(e) => update(r.key, '내용', e.target.value)} rows={3} className={cellInput} />
+                  <textarea
+                    value={r.내용} onChange={(e) => update(r.key, '내용', e.target.value)}
+                    placeholder={examples.내용} rows={3} className={cellInput}
+                  />
                 </td>
                 <td className={`${td} align-top`}>
-                  <textarea value={r.성과} onChange={(e) => update(r.key, '성과', e.target.value)} rows={3} className={cellInput} />
+                  <textarea
+                    value={r.성과} onChange={(e) => update(r.key, '성과', e.target.value)}
+                    placeholder={examples.성과} rows={3} className={cellInput}
+                  />
                 </td>
                 <td className={`${td} align-top text-center`}>
                   <button type="button" onClick={() => removeRow(r.key)} className={btnDanger}>삭제</button>

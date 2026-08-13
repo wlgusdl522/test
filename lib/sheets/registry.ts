@@ -283,7 +283,8 @@ export const BOARD_STAT_VALUE_TABLE: KeyedTableConfig = {
 // 지난 기간의 사업보고와 다음 기간의 사업계획을 직접 작성해 넣는 목록. 구분 컬럼을 맨 뒤에
 // 추가한 이유: 기존에 이미 쌓여있던 데이터(전부 사업계획이던 시절)의 앞쪽 컬럼 위치가
 // 그대로 유지되어야 해서다 — 중간에 끼워 넣으면 기존 행의 값이 한 칸씩 밀려 읽힌다.
-export const BOARD_PLAN_HEADERS = ['id', '사업명', '실시월일', '내용', '기대효과', '정렬순서', '구분'];
+// 년월도 구분과 같은 이유로 맨 뒤에 추가 — 월조회가 생기기 전 데이터는 조회 시점의 월로 간주한다.
+export const BOARD_PLAN_HEADERS = ['id', '사업명', '실시월일', '내용', '기대효과', '정렬순서', '구분', '년월'];
 
 export const BOARD_PLAN_TABLE: KeyedTableConfig = {
   spreadsheetId: WORKLOG_SHEET_ID,
@@ -292,12 +293,12 @@ export const BOARD_PLAN_TABLE: KeyedTableConfig = {
   primaryKey: 'id',
 };
 
-// 업무보고 표 위에 표시하는 기간 문구(예: "2026. 6. 4. ~ 2026. 8. 5.") — 관리자가 직접 입력.
-export const BOARD_REPORT_PERIOD_HEADERS = ['구분', '기간텍스트'];
+// 업무보고 표 위에 표시하는 기간 문구(예: "2026. 6. 4. ~ 2026. 8. 5.") — 조회월별로 관리자가 직접 입력.
+export const BOARD_REPORT_PERIOD_HEADERS = ['구분', '년월', '기간텍스트'];
 
 export const BOARD_REPORT_PERIOD_TABLE: KeyedTableConfig = {
   spreadsheetId: WORKLOG_SHEET_ID,
   sheetName: '이사회기간설정',
   headers: BOARD_REPORT_PERIOD_HEADERS,
-  primaryKey: '구분',
+  primaryKey: ['구분', '년월'],
 };
