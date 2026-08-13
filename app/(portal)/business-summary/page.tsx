@@ -3,6 +3,7 @@ import { buildWorklogItems, getWorklogBusinessNames } from '@/lib/mutate/busines
 import { getDailyEntries, rangeSum } from '@/lib/mutate/worklogEntry';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
+import BoardSubTabs from '@/components/business/BoardSubTabs';
 import { badgeBase, badgeTone, btnSecondary, card, inputBase, table, td, th, tableWrap } from '@/lib/ui';
 
 export const runtime = 'nodejs';
@@ -116,6 +117,7 @@ export default async function BusinessSummaryBoardPage({
 
   return (
     <>
+      <BoardSubTabs />
       <form method="get" className="mb-4 flex flex-wrap items-center gap-3">
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">조회월</label>
         <input type="month" name="ym" defaultValue={ym} className={`${inputBase} w-auto`} />

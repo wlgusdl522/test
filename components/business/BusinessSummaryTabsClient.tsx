@@ -3,13 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export default function BusinessSummaryTabsClient({ tabs }: { tabs: { href: string; label: string }[] }) {
+export default function BusinessSummaryTabsClient({ tabs }: { tabs: { href: string; label: string; match: string[] }[] }) {
   const pathname = usePathname();
 
   return (
     <div className="flex gap-1 mb-5 border-b border-zinc-200 dark:border-zinc-800">
       {tabs.map((t) => {
-        const isActive = pathname === t.href;
+        const isActive = t.match.includes(pathname ?? '');
         return (
           <Link
             key={t.href}

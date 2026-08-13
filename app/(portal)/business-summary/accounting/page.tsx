@@ -1,5 +1,6 @@
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
+import BoardSubTabs from '@/components/business/BoardSubTabs';
 import BoardStatModuleView from '@/components/business/BoardStatModuleView';
 
 export const runtime = 'nodejs';
@@ -13,5 +14,10 @@ export default async function BusinessSummaryAccountingPage({
   if (!(await hasPageAccess('business-accounting'))) return <PageAccessDenied />;
 
   const { ym, facility } = await searchParams;
-  return <BoardStatModuleView 모듈="회계" basePath="/business-summary/accounting" ymParam={ym} facilityParam={facility} />;
+  return (
+    <>
+      <BoardSubTabs />
+      <BoardStatModuleView 모듈="회계" basePath="/business-summary/accounting" ymParam={ym} facilityParam={facility} />
+    </>
+  );
 }
