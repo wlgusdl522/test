@@ -256,3 +256,23 @@ export const BUSINESS_SHARE_TABLE: KeyedTableConfig = {
   headers: BUSINESS_SHARE_HEADERS,
   primaryKey: ['사업명', '이메일'],
 };
+
+// 이사회자료 중 사업량 외 항목(회계/자원봉사자/후원) — 모듈별로 항목(틀)만 먼저 두고
+// 담당자가 월별 값을 직접 입력하게 한다. 전월누계/누계는 저장된 월별 값에서 매번 계산한다.
+export const BOARD_STAT_ITEM_HEADERS = ['id', '모듈', '항목명', '정렬순서'];
+
+export const BOARD_STAT_ITEM_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '이사회항목',
+  headers: BOARD_STAT_ITEM_HEADERS,
+  primaryKey: 'id',
+};
+
+export const BOARD_STAT_VALUE_HEADERS = ['id', '항목ID', '년월', '값', '작성자이메일', '작성자명', '등록일시'];
+
+export const BOARD_STAT_VALUE_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '이사회월별값',
+  headers: BOARD_STAT_VALUE_HEADERS,
+  primaryKey: ['항목ID', '년월'],
+};
