@@ -205,6 +205,19 @@ export async function actOnCertificate(id: string, action: '승인' | '반려', 
   return decorate({ ...existing, ...patch }, staffList);
 }
 
+// 신청자는 인적사항(성명/생년월일/주소)까지만 적고, 소속·직위·기간·담당업무 등 재직사항은
+// "발급 처리" 탭에서 서무/회계·관리자가 실제 인사기록을 확인해 채운 뒤 승인한다.
+export async function updateCertificateFields(id: string, fields: Record<string, string>): Promise<void> {
+  await requireCanViewCertificateLog();
+  const patch: Record<string, string> = {};
+  for (const [k, v] of Object.entries(fields)) {
+    if (v) patch[k] = v;
+  }
+  if (Object.keys(patch).length === 0) return;
+  const { error } = await table().update(patch).eq('id', id);
+  if (error) throw new Error(`증명서 정보 수정 실패: ${error.message}`);
+}
+
 // 관장 최종승인 후 서무/회계가 누르는 "발행" — 문서번호 채번 + 발급일 확정 + 대장(시트) 기록.
 // PDF 생성/직인 스탬프/Drive 저장/수령인 메일 발송은 아래 issueCertificate()에서 이어서 처리한다.
 async function markCertificateIssued(id: string): Promise<Record<string, string>> {
