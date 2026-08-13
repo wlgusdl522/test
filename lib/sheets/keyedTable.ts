@@ -36,10 +36,14 @@ function rowToRecord(config: KeyedTableConfig, row: unknown[]): Record<string, s
   return rec;
 }
 
+// 끝 셀에 행 번호를 안 주고(예: "A3:G") 시작 셀에만 행 번호를 주면 컬럼이 다를 때
+// Sheets API가 "Unable to parse range"로 거부한다 — 같은 컬럼일 때만(A5:A) 허용되는 표기라서.
+// Supabase 미러가 항상 값을 채워주던 테이블들은 이 경로를 탈 일이 없어 지금까지 안 걸렸을 뿐,
+// 이 함수는 Supabase에 아직 없는(또는 비어있는) 새 테이블에서 실제로 호출된다.
 async function getRawRows(config: KeyedTableConfig): Promise<string[][]> {
   const res = await getSheetsClient().spreadsheets.values.get({
     spreadsheetId: config.spreadsheetId,
-    range: `${config.sheetName}!A${DATA_START_ROW}:${colLetter(config.headers.length)}`,
+    range: `${config.sheetName}!A${DATA_START_ROW}:${colLetter(config.headers.length)}100000`,
   });
   return (res.data.values ?? []) as string[][];
 }

@@ -57,7 +57,7 @@ async function migrateFacilityColumn(): Promise<{ header: string; rows: number }
   const sheets = getSheetsClient();
   const { spreadsheetId, sheetName } = BOARD_STAT_VALUE_TABLE;
   const lastColOld = colLetter(7);
-  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A3:${lastColOld}` });
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A3:${lastColOld}100000` });
   const oldRows = (res.data.values ?? []) as string[][];
 
   const lastColNew = colLetter(BOARD_STAT_VALUE_HEADERS.length);
