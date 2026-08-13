@@ -20,8 +20,8 @@ import { buildCertificateEmail, sendMail } from '@/lib/mail/certificateMail';
 export const CERTIFICATE_TYPES = ['재직증명서', '경력증명서', '원천징수영수증', '기타'] as const;
 
 const HEADERS = [
-  'id', '문서번호', '구분', '종류', '대상자성명', '대상자소속', '대상자직위', '대상자이메일',
-  '근무기간', '용도', '등록자이메일', '등록자명', '등록일시',
+  'id', '문서번호', '구분', '종류', '신청유형', '대상자성명', '대상자소속', '대상자직위', '대상자이메일',
+  '생년월일', '수령방법', '근무기간', '신청일', '용도', '등록자이메일', '등록자명', '등록일시',
   '결재상태', '결재이력JSON', '발급일', '발행일시', '문서URL', '비고',
 ];
 
@@ -125,6 +125,7 @@ export async function addCertificate(payload: Record<string, string>): Promise<D
     if (h === 'id') { record[h] = randomUUID(); continue; }
     if (h === '구분') { record[h] = '증명서'; continue; }
     if (h === '문서번호') { record[h] = ''; continue; }
+    if (h === '신청일') { record[h] = payload['신청일'] || todayISO(); continue; }
     if (h === '등록자이메일') { record[h] = viewerEmail; continue; }
     if (h === '등록자명') { record[h] = me?.['성명'] ?? viewerEmail; continue; }
     if (h === '등록일시') { record[h] = nowTimestamp(); continue; }
@@ -152,7 +153,7 @@ export async function addAward(payload: Record<string, string>): Promise<Decorat
     if (h === 'id') { record[h] = randomUUID(); continue; }
     if (h === '문서번호') { record[h] = docNumber; continue; }
     if (h === '구분') { record[h] = '상장'; continue; }
-    if (h === '종류') { record[h] = ''; continue; }
+    if (h === '신청유형') { record[h] = '상장'; continue; }
     if (h === '등록자이메일') { record[h] = viewerEmail; continue; }
     if (h === '등록자명') { record[h] = me?.['성명'] ?? viewerEmail; continue; }
     if (h === '등록일시') { record[h] = nowTimestamp(); continue; }

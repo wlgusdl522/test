@@ -12,12 +12,10 @@ function fieldsFromForm(formData: FormData, keys: string[]): Record<string, stri
 
 export async function addCertificateAction(formData: FormData): Promise<void> {
   await requireCanViewCertificateLog();
-  const staffValue = String(formData.get('staff') ?? '');
-  const [, staffName, staffTeam] = staffValue.split('::');
-
-  const record = fieldsFromForm(formData, ['종류', '대상자직위', '대상자이메일', '근무기간', '용도', '비고']);
-  record['대상자성명'] = (String(formData.get('대상자성명') ?? '').trim() || staffName || '').trim();
-  record['대상자소속'] = (String(formData.get('대상자소속') ?? '').trim() || staffTeam || '').trim();
+  const record = fieldsFromForm(formData, [
+    '종류', '신청유형', '대상자성명', '대상자소속', '대상자직위', '대상자이메일',
+    '생년월일', '수령방법', '신청일', '용도', '비고',
+  ]);
   if (!CERTIFICATE_TYPES.includes(record['종류'] as (typeof CERTIFICATE_TYPES)[number])) {
     throw new Error('증명서 종류를 선택해주세요.');
   }

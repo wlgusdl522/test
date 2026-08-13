@@ -2,6 +2,8 @@ import type { CSSProperties } from 'react';
 import { headers } from 'next/headers';
 import QRCode from 'qrcode';
 import { getAllCertificates } from '@/lib/supabase/certificate';
+import { getDriveImageAsDataUrl } from '@/lib/drive/upload';
+import { getSystemSettings } from '@/lib/mutate/settings';
 import PrintButton from '@/components/print/PrintButton';
 import { card, inputBase } from '@/lib/ui';
 
@@ -69,30 +71,15 @@ export default async function CertificatePrintPage({
 async function CertificateDoc({ record: r, origin }: { record: Record<string, string>; origin: string }) {
   const verifyUrl = `${origin}/verify/certificate/${r.id}`;
   const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 120, margin: 1 });
+  const { certificateSealImageUrl } = await getSystemSettings();
+  const sealDataUrl = certificateSealImageUrl ? await getDriveImageAsDataUrl(certificateSealImageUrl) : null;
 
   const lbl: CSSProperties = { border: '1px solid #333', background: '#f2f2f2', fontWeight: 600, textAlign: 'center', whiteSpace: 'nowrap', padding: '10px' };
   const cell: CSSProperties = { border: '1px solid #333', padding: '10px' };
 
   return (
     <div style={{ fontSize: 13.5, color: '#000', width: '186mm', margin: '0 auto' }} className="bg-white p-6 print:p-0">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-        <div style={{ fontSize: 12 }}>제 {r.문서번호}호</div>
-        <table style={{ borderCollapse: 'collapse' }}>
-          <tbody>
-            <tr>
-              <td style={{ ...lbl, width: 30, padding: '4px 0' }} rowSpan={2}>결<br />재</td>
-              {['담당', '과장', '부장', '관장'].map((role) => (
-                <td key={role} style={{ ...lbl, width: 60, padding: '4px 0' }}>{role}</td>
-              ))}
-            </tr>
-            <tr>
-              {['담당', '과장', '부장', '관장'].map((role) => (
-                <td key={role} style={{ ...cell, height: 40 }} />
-              ))}
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <div style={{ fontSize: 12 }}>제 {r.문서번호}호</div>
 
       <h2 style={{ textAlign: 'center', fontSize: 26, letterSpacing: 14, margin: '24px 0 32px' }}>{r.종류}</h2>
 
@@ -110,18 +97,36 @@ async function CertificateDoc({ record: r, origin }: { record: Record<string, st
         {VERIFY_PHRASE[r.종류] ?? '위 내용을 확인합니다.'}
       </p>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 40 }}>
-        <div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qrDataUrl} alt="발급 확인 QR코드" width={90} height={90} />
-          <p style={{ fontSize: 10, color: '#666', marginTop: 4 }}>QR로 진위 확인</p>
+      <div
+        style={{
+          marginTop: 56,
+          display: 'flex',
+          alignItems: 'center',
+          border: '1px solid #ddd',
+          borderRadius: 8,
+          background: '#fafafa',
+          padding: 16,
+          position: 'relative',
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={qrDataUrl} alt="발급 확인 QR코드" width={70} height={70} />
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <p style={{ fontSize: 11 }}>{formatPrintDate(r.발급일)}</p>
+          <p style={{ marginTop: 10, fontWeight: 700 }}>사회복지법인 새문안교회사회복지재단</p>
+          <p style={{ marginTop: 4, fontSize: 18, fontWeight: 700 }}>서대문노인종합복지관장</p>
         </div>
-        <div style={{ textAlign: 'center', flex: 1 }}>
-          <p>{formatPrintDate(r.발급일)}</p>
-          <p style={{ marginTop: 16, fontWeight: 700 }}>사회복지법인 새문안교회사회복지재단</p>
-          <p style={{ marginTop: 6, fontSize: 18, fontWeight: 700 }}>서대문노인종합복지관장</p>
-        </div>
-        <div style={{ width: 90 }} />
+        <div style={{ width: 70 }} />
+        {sealDataUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={sealDataUrl}
+            alt=""
+            width={54}
+            height={54}
+            style={{ position: 'absolute', top: 12, right: 96, opacity: 0.85 }}
+          />
+        )}
       </div>
     </div>
   );

@@ -9,10 +9,12 @@ export default function StaffPicker({
   staff,
   name,
   required,
+  onSelect,
 }: {
   staff: Row[];
   name: string;
   required?: boolean;
+  onSelect?: (staff: Row) => void;
 }) {
   const [team, setTeam] = useState('');
   const [q, setQ] = useState('');
@@ -59,7 +61,7 @@ export default function StaffPicker({
               return (
                 <tr
                   key={email}
-                  onClick={() => setSelected(value)}
+                  onClick={() => { setSelected(value); onSelect?.(s); }}
                   className={`cursor-pointer border-t border-zinc-100 dark:border-zinc-800 ${
                     isSelected ? 'bg-brand-tint' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
                   }`}
@@ -70,7 +72,7 @@ export default function StaffPicker({
                       name={name}
                       value={value}
                       checked={isSelected}
-                      onChange={() => setSelected(value)}
+                      onChange={() => { setSelected(value); onSelect?.(s); }}
                       required={required}
                     />
                   </td>

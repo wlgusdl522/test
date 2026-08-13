@@ -1,13 +1,11 @@
 import path from 'path';
 import QRCode from 'qrcode';
 import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from '@react-pdf/renderer';
-import { parseApprovalHistory } from '@/lib/approval/engine';
 import { getDriveImageAsDataUrl } from '@/lib/drive/upload';
 import { getSystemSettings } from '@/lib/mutate/settings';
 
-// 결재 그리드에 표시되는 단계 라벨(실제 STEPS와 1:1 대응) — lib/supabase/certificate.ts의 STEPS와 나란히 유지해야 한다.
-const APPROVAL_STEPS = ['서무/회계', '총무과 과장', '부장', '관장'] as const;
-const APPROVAL_LABELS: Record<string, string> = { '서무/회계': '서무', '총무과 과장': '과장', 부장: '부장', 관장: '관장' };
+// 실제 발급되는 최종 문서에는 결재란이 나오지 않는다 — 결재는 신청~승인 단계에서 이미 끝난 상태이고,
+// 이 PDF는 관장 최종승인 후 "발행" 시점에만 생성되는 완결된 결과물이다.
 
 const VERIFY_PHRASE: Record<string, string> = {
   재직증명서: '위와 같이 재직하고 있음을 증명합니다.',
@@ -25,29 +23,31 @@ function ensureFont() {
 
 const styles = StyleSheet.create({
   page: { padding: 40, fontFamily: 'NotoSansKR', fontSize: 11, color: '#000' },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
-  docNumber: { fontSize: 10 },
-  approvalTable: { flexDirection: 'row', border: '1px solid #333' },
-  approvalLabelCol: { width: 24, borderRight: '1px solid #333', alignItems: 'center', justifyContent: 'center', padding: 4 },
-  approvalCol: { width: 64, borderRight: '1px solid #333' },
-  approvalColLast: { width: 64 },
-  approvalHead: { textAlign: 'center', fontWeight: 700, backgroundColor: '#f2f2f2', borderBottom: '1px solid #333', padding: 4, fontSize: 9 },
-  approvalBody: { height: 34, textAlign: 'center', justifyContent: 'center', fontSize: 9, padding: 2 },
-  title: { textAlign: 'center', fontSize: 24, letterSpacing: 8, marginTop: 24, marginBottom: 32 },
+  docNumber: { fontSize: 10, marginBottom: 16 },
+  title: { textAlign: 'center', fontSize: 24, letterSpacing: 8, marginTop: 16, marginBottom: 32 },
   infoTable: { border: '1px solid #333' },
   infoRow: { flexDirection: 'row', borderBottom: '1px solid #333' },
   infoRowLast: { flexDirection: 'row' },
   infoLabel: { width: 110, backgroundColor: '#f2f2f2', fontWeight: 700, textAlign: 'center', justifyContent: 'center', padding: 8, borderRight: '1px solid #333' },
   infoValue: { flex: 1, padding: 8, justifyContent: 'center' },
   verifyPhrase: { textAlign: 'center', marginTop: 32, fontSize: 13 },
-  footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 40 },
-  qrBlock: { width: 90 },
-  qrCaption: { fontSize: 8, color: '#666', marginTop: 4 },
-  orgBlock: { flex: 1, alignItems: 'center', position: 'relative' },
+  footerBox: {
+    marginTop: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    border: '1px solid #ddd',
+    borderRadius: 8,
+    backgroundColor: '#fafafa',
+    padding: 16,
+    position: 'relative',
+  },
+  qrImage: { width: 70, height: 70 },
+  footerText: { flex: 1, textAlign: 'center' },
   orgDate: { fontSize: 11 },
-  orgName: { marginTop: 14, fontWeight: 700 },
-  orgHeadTitle: { marginTop: 6, fontSize: 16, fontWeight: 700 },
-  sealImage: { position: 'absolute', top: 30, left: '50%', width: 56, height: 56, marginLeft: 60, opacity: 0.9 },
+  orgName: { marginTop: 10, fontWeight: 700 },
+  orgHeadTitle: { marginTop: 4, fontSize: 15, fontWeight: 700 },
+  qrSpacer: { width: 70 },
+  sealImage: { position: 'absolute', width: 54, height: 54, opacity: 0.85, top: 12, right: 96 },
 });
 
 function formatPrintDate(iso: string): string {
@@ -62,28 +62,10 @@ export async function renderCertificatePdf(record: Record<string, string>, verif
   const { certificateSealImageUrl } = await getSystemSettings();
   const sealDataUrl = certificateSealImageUrl ? await getDriveImageAsDataUrl(certificateSealImageUrl) : null;
 
-  const history = parseApprovalHistory(record['결재이력JSON']);
-  const approverNameByStep = new Map(history.filter((h) => h.액션 === '승인').map((h) => [h.단계, h.승인자명]));
-
   const doc = (
     <Document>
       <Page size="A4" style={styles.page}>
-        <View style={styles.headerRow}>
-          <Text style={styles.docNumber}>제 {record['문서번호']}호</Text>
-          <View style={styles.approvalTable}>
-            <View style={styles.approvalLabelCol}>
-              <Text style={{ fontSize: 9, fontWeight: 700 }}>결재</Text>
-            </View>
-            {APPROVAL_STEPS.map((step, i) => (
-              <View key={step} style={i === APPROVAL_STEPS.length - 1 ? styles.approvalColLast : styles.approvalCol}>
-                <Text style={styles.approvalHead}>{APPROVAL_LABELS[step]}</Text>
-                <View style={styles.approvalBody}>
-                  <Text>{approverNameByStep.get(step) ?? ''}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
+        <Text style={styles.docNumber}>제 {record['문서번호']}호</Text>
 
         <Text style={styles.title}>{record['종류']}</Text>
 
@@ -112,18 +94,15 @@ export async function renderCertificatePdf(record: Record<string, string>, verif
 
         <Text style={styles.verifyPhrase}>{VERIFY_PHRASE[record['종류']] ?? '위 내용을 확인합니다.'}</Text>
 
-        <View style={styles.footerRow}>
-          <View style={styles.qrBlock}>
-            <Image src={qrDataUrl} style={{ width: 90, height: 90 }} />
-            <Text style={styles.qrCaption}>QR로 진위 확인</Text>
-          </View>
-          <View style={styles.orgBlock}>
-            {sealDataUrl && <Image src={sealDataUrl} style={styles.sealImage} />}
+        <View style={styles.footerBox}>
+          <Image src={qrDataUrl} style={styles.qrImage} />
+          <View style={styles.footerText}>
             <Text style={styles.orgDate}>{formatPrintDate(record['발급일'])}</Text>
             <Text style={styles.orgName}>사회복지법인 새문안교회사회복지재단</Text>
             <Text style={styles.orgHeadTitle}>서대문노인종합복지관장</Text>
           </View>
-          <View style={styles.qrBlock} />
+          <View style={styles.qrSpacer} />
+          {sealDataUrl && <Image src={sealDataUrl} style={styles.sealImage} />}
         </View>
       </Page>
     </Document>
