@@ -31,23 +31,23 @@ const styles = StyleSheet.create({
   infoLabel: { width: 110, backgroundColor: '#f2f2f2', fontWeight: 700, textAlign: 'center', justifyContent: 'center', padding: 8, borderRight: '1px solid #333' },
   infoValue: { flex: 1, padding: 8, justifyContent: 'center' },
   verifyPhrase: { textAlign: 'center', marginTop: 32, fontSize: 13 },
-  footerBox: {
-    marginTop: 56,
+  closingBlock: { marginTop: 48, alignItems: 'center' },
+  closingDate: { fontSize: 11 },
+  closingOrgName: { marginTop: 12, fontWeight: 700, fontSize: 13 },
+  closingTitleRow: { marginTop: 8, position: 'relative' },
+  closingTitle: { fontSize: 18, fontWeight: 700 },
+  sealImage: { position: 'absolute', width: 58, height: 58, opacity: 0.85, top: -16, right: -10 },
+  qrBar: {
+    marginTop: 40,
     flexDirection: 'row',
     alignItems: 'center',
     border: '1px solid #ddd',
     borderRadius: 8,
     backgroundColor: '#fafafa',
-    padding: 16,
-    position: 'relative',
+    padding: 12,
   },
-  qrImage: { width: 70, height: 70 },
-  footerText: { flex: 1, textAlign: 'center' },
-  orgDate: { fontSize: 11 },
-  orgName: { marginTop: 10, fontWeight: 700 },
-  orgHeadTitle: { marginTop: 4, fontSize: 15, fontWeight: 700 },
-  qrSpacer: { width: 70 },
-  sealImage: { position: 'absolute', width: 54, height: 54, opacity: 0.85, top: 12, right: 96 },
+  qrBarImage: { width: 46, height: 46 },
+  qrBarText: { flex: 1, marginLeft: 14, fontSize: 9.5, color: '#666' },
 });
 
 function formatPrintDate(iso: string): string {
@@ -94,15 +94,18 @@ export async function renderCertificatePdf(record: Record<string, string>, verif
 
         <Text style={styles.verifyPhrase}>{VERIFY_PHRASE[record['종류']] ?? '위 내용을 확인합니다.'}</Text>
 
-        <View style={styles.footerBox}>
-          <Image src={qrDataUrl} style={styles.qrImage} />
-          <View style={styles.footerText}>
-            <Text style={styles.orgDate}>{formatPrintDate(record['발급일'])}</Text>
-            <Text style={styles.orgName}>사회복지법인 새문안교회사회복지재단</Text>
-            <Text style={styles.orgHeadTitle}>서대문노인종합복지관장</Text>
+        <View style={styles.closingBlock}>
+          <Text style={styles.closingDate}>{formatPrintDate(record['발급일'])}</Text>
+          <Text style={styles.closingOrgName}>사회복지법인 새문안교회사회복지재단</Text>
+          <View style={styles.closingTitleRow}>
+            <Text style={styles.closingTitle}>서대문노인종합복지관장</Text>
+            {sealDataUrl && <Image src={sealDataUrl} style={styles.sealImage} />}
           </View>
-          <View style={styles.qrSpacer} />
-          {sealDataUrl && <Image src={sealDataUrl} style={styles.sealImage} />}
+        </View>
+
+        <View style={styles.qrBar}>
+          <Image src={qrDataUrl} style={styles.qrBarImage} />
+          <Text style={styles.qrBarText}>QR 코드를 스캔하면 본 문서의 발급 진위 여부를 확인할 수 있습니다.</Text>
         </View>
       </Page>
     </Document>

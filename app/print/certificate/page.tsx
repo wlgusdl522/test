@@ -97,36 +97,40 @@ async function CertificateDoc({ record: r, origin }: { record: Record<string, st
         {VERIFY_PHRASE[r.종류] ?? '위 내용을 확인합니다.'}
       </p>
 
+      <div style={{ marginTop: 48, textAlign: 'center' }}>
+        <p style={{ fontSize: 12 }}>{formatPrintDate(r.발급일)}</p>
+        <p style={{ marginTop: 12, fontWeight: 700, fontSize: 14 }}>사회복지법인 새문안교회사회복지재단</p>
+        <div style={{ marginTop: 8, position: 'relative', display: 'inline-block' }}>
+          <p style={{ fontSize: 19, fontWeight: 700 }}>서대문노인종합복지관장</p>
+          {sealDataUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={sealDataUrl}
+              alt="직인"
+              width={58}
+              height={58}
+              style={{ position: 'absolute', top: -16, right: -10, opacity: 0.85 }}
+            />
+          )}
+        </div>
+      </div>
+
       <div
         style={{
-          marginTop: 56,
+          marginTop: 40,
           display: 'flex',
           alignItems: 'center',
           border: '1px solid #ddd',
           borderRadius: 8,
           background: '#fafafa',
-          padding: 16,
-          position: 'relative',
+          padding: 12,
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={qrDataUrl} alt="발급 확인 QR코드" width={70} height={70} />
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <p style={{ fontSize: 11 }}>{formatPrintDate(r.발급일)}</p>
-          <p style={{ marginTop: 10, fontWeight: 700 }}>사회복지법인 새문안교회사회복지재단</p>
-          <p style={{ marginTop: 4, fontSize: 18, fontWeight: 700 }}>서대문노인종합복지관장</p>
-        </div>
-        <div style={{ width: 70 }} />
-        {sealDataUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={sealDataUrl}
-            alt=""
-            width={54}
-            height={54}
-            style={{ position: 'absolute', top: 12, right: 96, opacity: 0.85 }}
-          />
-        )}
+        <img src={qrDataUrl} alt="발급 확인 QR코드" width={46} height={46} />
+        <p style={{ flex: 1, marginLeft: 14, fontSize: 11, color: '#666' }}>
+          QR 코드를 스캔하면 본 문서의 발급 진위 여부를 확인할 수 있습니다.
+        </p>
       </div>
     </div>
   );
