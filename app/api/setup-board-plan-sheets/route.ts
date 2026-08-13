@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
 import { requireViewerEmail, isAdminEmail } from '@/lib/auth-helpers';
 import { getSheetsClient } from '@/lib/sheets/client';
-import { BOARD_PLAN_HEADERS, BOARD_PLAN_TABLE, BOARD_STAT_VALUE_HEADERS, BOARD_STAT_VALUE_TABLE } from '@/lib/sheets/registry';
+import {
+  BOARD_PLAN_HEADERS, BOARD_PLAN_TABLE,
+  BOARD_STAT_ITEM_HEADERS, BOARD_STAT_ITEM_TABLE,
+  BOARD_STAT_VALUE_HEADERS, BOARD_STAT_VALUE_TABLE,
+} from '@/lib/sheets/registry';
 
-// 일회성 시딩/마이그레이션 라우트 — 실행 후 삭제할 것.
-// 1) "이사회사업계획" 탭을 새로 만든다.
-// 2) "이사회월별값" 탭에 "시설" 컬럼을 항목ID 다음 자리에 끼워 넣는다(이미 입력된 값이 있으면
-//    시설값을 '전체'로 채워 마이그레이션, 없으면 헤더만 다시 씀).
+// 일회성 시딩 라우트 — 실행 후 삭제할 것.
+// "이사회항목"/"이사회월별값" 탭이 실제 스프레드시트에 없는 것으로 확인돼(생성 이력은
+// 있었지만 그 사이 사라짐, 데이터도 없었음) 마이그레이션 없이 최신 헤더(시설 포함)로
+// 셋 다 그냥 다시 만든다. 이미 있으면 손대지 않는다(ensureSheet가 존재 여부부터 확인).
 
 function colLetter(n: number): string {
   let s = '';
@@ -51,46 +55,21 @@ async function ensureSheet(spreadsheetId: string, sheetName: string, headers: st
   return 'created';
 }
 
-// 기존 7컬럼(id,항목ID,년월,값,작성자이메일,작성자명,등록일시) → 새 8컬럼에
-// "시설" 컬럼을 3번째 자리(항목ID 다음)에 끼워 넣는다.
-async function migrateFacilityColumn(): Promise<{ header: string; rows: number }> {
-  const sheets = getSheetsClient();
-  const { spreadsheetId, sheetName } = BOARD_STAT_VALUE_TABLE;
-  const lastColOld = colLetter(7);
-  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A3:${lastColOld}100000` });
-  const oldRows = (res.data.values ?? []) as string[][];
-
-  const lastColNew = colLetter(BOARD_STAT_VALUE_HEADERS.length);
-  await sheets.spreadsheets.values.update({
-    spreadsheetId, range: `${sheetName}!A2:${lastColNew}2`, valueInputOption: 'RAW', requestBody: { values: [BOARD_STAT_VALUE_HEADERS] },
-  });
-
-  if (oldRows.length === 0) return { header: 'rewritten', rows: 0 };
-
-  const newRows = oldRows.map((r) => [r[0] ?? '', r[1] ?? '', '전체', r[2] ?? '', r[3] ?? '', r[4] ?? '', r[5] ?? '', r[6] ?? '']);
-  await sheets.spreadsheets.values.update({
-    spreadsheetId, range: `${sheetName}!A3:${lastColNew}${2 + newRows.length}`, valueInputOption: 'RAW', requestBody: { values: newRows },
-  });
-  return { header: 'rewritten', rows: newRows.length };
-}
-
 export async function GET() {
   const email = await requireViewerEmail();
   if (!(await isAdminEmail(email))) {
     return NextResponse.json({ error: '관리자만 실행할 수 있습니다.' }, { status: 403 });
   }
 
-  const meta = await getSheetsClient().spreadsheets.get({ spreadsheetId: BOARD_STAT_VALUE_TABLE.spreadsheetId });
-  const actualTitles = (meta.data.sheets ?? []).map((s) => s.properties?.title);
-
   try {
+    const item = await ensureSheet(BOARD_STAT_ITEM_TABLE.spreadsheetId, BOARD_STAT_ITEM_TABLE.sheetName, BOARD_STAT_ITEM_HEADERS);
+    const value = await ensureSheet(BOARD_STAT_VALUE_TABLE.spreadsheetId, BOARD_STAT_VALUE_TABLE.sheetName, BOARD_STAT_VALUE_HEADERS);
     const plan = await ensureSheet(BOARD_PLAN_TABLE.spreadsheetId, BOARD_PLAN_TABLE.sheetName, BOARD_PLAN_HEADERS);
-    const migration = await migrateFacilityColumn();
-    return NextResponse.json({ 이사회사업계획: plan, 이사회월별값_시설컬럼: migration, 실제탭목록: actualTitles });
+    return NextResponse.json({ 이사회항목: item, 이사회월별값: value, 이사회사업계획: plan });
   } catch (err) {
     console.error('[setup-board-plan-sheets]', err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined, 실제탭목록: actualTitles },
+      { error: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined },
       { status: 500 }
     );
   }
