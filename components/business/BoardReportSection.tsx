@@ -21,7 +21,7 @@ const EXAMPLES: Record<BoardReportType, { 사업명: string; 실시월일: strin
 
 const CONTENT_TEMPLATES: Record<BoardReportType, string> = {
   사업보고: '- 장소 : \n- 참여인원 : \n- 내용 : \n- 집행예산 : ',
-  사업계획: '- 장소 : \n- 대상 : \n- 내용 : \n- 목표 금액 : ',
+  사업계획: '- 장소 : \n- 대상 : \n- 내용 : \n- 소요예산 : ',
 };
 
 export default async function BoardReportSection({
