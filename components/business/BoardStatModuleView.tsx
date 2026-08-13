@@ -1,6 +1,6 @@
 import FormToggle from '@/components/FormToggle';
 import BoardStatEntryClient from '@/components/business/BoardStatEntryClient';
-import { getModuleItems, getModuleValues, priorCumulative, valueFor, type BoardStatModule } from '@/lib/mutate/boardStat';
+import { facilitiesFor, getModuleItems, getModuleValues, priorCumulative, valueFor, NO_FACILITY, type BoardStatModule } from '@/lib/mutate/boardStat';
 import { addBoardStatItemAction, deleteBoardStatItemAction, moveBoardStatItemAction } from '@/app/(portal)/business-summary/boardStatActions';
 import { btn, btnDanger, btnSecondary, card, h2, input, inputBase } from '@/lib/ui';
 
@@ -12,24 +12,38 @@ export default async function BoardStatModuleView({
   모듈,
   basePath,
   ymParam,
+  facilityParam,
 }: {
   모듈: BoardStatModule;
   basePath: string;
   ymParam?: string;
+  facilityParam?: string;
 }) {
   const ym = ymParam || todayKst().slice(0, 7);
+  const facilities = facilitiesFor(모듈);
+  const 시설 = facilities.includes(facilityParam ?? '') ? (facilityParam as string) : facilities[0];
   const items = await getModuleItems(모듈);
   const values = await getModuleValues(items.map((i) => i.id));
   const rows = items.map((i) => ({
     id: i.id,
     항목명: i.항목명,
-    전월누계: priorCumulative(values, i.id, ym),
-    금월실적: valueFor(values, i.id, ym),
+    전월누계: priorCumulative(values, i.id, 시설, ym),
+    금월실적: valueFor(values, i.id, 시설, ym),
   }));
 
   return (
     <>
       <form method="get" action={basePath} className="mb-4 flex flex-wrap items-center gap-3">
+        {시설 !== NO_FACILITY && (
+          <>
+            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">시설</label>
+            <select name="facility" defaultValue={시설} className={`${inputBase} w-auto`}>
+              {facilities.map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+          </>
+        )}
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">조회월</label>
         <input type="month" name="ym" defaultValue={ym} className={`${inputBase} w-auto`} />
         <button type="submit" className={btnSecondary}>조회</button>
@@ -70,8 +84,8 @@ export default async function BoardStatModuleView({
       </div>
 
       <div className={card}>
-        <h2 className={`${h2} mb-3`}>{ym} 값 입력</h2>
-        <BoardStatEntryClient ym={ym} rows={rows} />
+        <h2 className={`${h2} mb-3`}>{시설 !== NO_FACILITY ? `${시설} · ` : ''}{ym} 값 입력</h2>
+        <BoardStatEntryClient 시설={시설} ym={ym} rows={rows} />
       </div>
     </>
   );
