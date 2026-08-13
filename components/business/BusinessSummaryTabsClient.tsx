@@ -3,17 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const TABS = [
-  { href: '/business-summary', label: '이사회자료' },
-  { href: '/business-summary/quarterly', label: '분기실적보고' },
-];
-
-export default function BusinessSummaryTabsClient() {
+export default function BusinessSummaryTabsClient({ tabs }: { tabs: { href: string; label: string }[] }) {
   const pathname = usePathname();
 
   return (
     <div className="flex gap-1 mb-5 border-b border-zinc-200 dark:border-zinc-800">
-      {TABS.map((t) => {
+      {tabs.map((t) => {
         const isActive = pathname === t.href;
         return (
           <Link

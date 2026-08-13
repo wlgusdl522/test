@@ -1,6 +1,8 @@
 import { Fragment } from 'react';
 import { buildWorklogItems, getWorklogBusinessNames } from '@/lib/mutate/businessPlan';
 import { getDailyEntries, rangeSum } from '@/lib/mutate/worklogEntry';
+import { hasPageAccess } from '@/lib/mutate/permissions';
+import PageAccessDenied from '@/components/PageAccessDenied';
 import { badgeBase, badgeTone, btnSecondary, card, inputBase, table, td, th, tableWrap } from '@/lib/ui';
 
 export const runtime = 'nodejs';
@@ -51,6 +53,8 @@ export default async function BusinessSummaryBoardPage({
 }: {
   searchParams: Promise<{ from?: string; to?: string }>;
 }) {
+  if (!(await hasPageAccess('business-summary'))) return <PageAccessDenied />;
+
   const { from: fromParam, to: toParam } = await searchParams;
   const today = todayKst();
   const from = fromParam || today.slice(0, 7);

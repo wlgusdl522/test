@@ -10,6 +10,9 @@ export const CONFIGURABLE_PAGES = [
   { id: 'business-daily', label: '사업관리 - 총괄업무일지(업무입력)' },
   { id: 'business-monthly', label: '사업관리 - 총괄업무일지(월별현황)' },
   { id: 'business-summary', label: '사업관리 - 전체사업 실적집계' },
+  { id: 'business-accounting', label: '사업관리 - 이사회자료(회계)' },
+  { id: 'business-volunteers', label: '사업관리 - 이사회자료(자원봉사자)' },
+  { id: 'business-donations', label: '사업관리 - 이사회자료(후원)' },
 ];
 
 export const PRINTABLE_PAGES = [
