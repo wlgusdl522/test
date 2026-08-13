@@ -8,11 +8,22 @@ import { getSystemSettings } from '@/lib/mutate/settings';
 // 이 PDF는 관장 최종승인 후 "발행" 시점에만 생성되는 완결된 결과물이다.
 
 const VERIFY_PHRASE: Record<string, string> = {
-  재직증명서: '위와 같이 재직하고 있음을 증명합니다.',
-  경력증명서: '위와 같이 근무한 경력이 있음을 증명합니다.',
+  재직증명서: '위 사실을 증명합니다.',
+  경력증명서: '위 사실을 증명합니다.',
   원천징수영수증: '위 내용을 확인합니다.',
   기타: '위 내용을 확인합니다.',
 };
+
+// 실제 주민등록번호는 저장하지 않고, 생년월일+성별로 문서에 찍히는 마스킹된 형태만 재현한다.
+function maskedResidentNumber(birth: string, gender: string): string {
+  if (!birth) return '';
+  const [y, m, d] = birth.split('-');
+  if (!y || !m || !d) return '';
+  const yy = y.slice(2);
+  const isBefore2000 = Number(y) < 2000;
+  const genderDigit = gender === '여' ? (isBefore2000 ? '2' : '4') : (isBefore2000 ? '1' : '3');
+  return `${yy}${m}${d}-${genderDigit}******`;
+}
 
 let fontRegistered = false;
 function ensureFont() {
@@ -25,6 +36,7 @@ const styles = StyleSheet.create({
   page: { padding: 40, fontFamily: 'NotoSansKR', fontSize: 11, color: '#000' },
   docNumber: { fontSize: 10, marginBottom: 16 },
   title: { textAlign: 'center', fontSize: 24, letterSpacing: 8, marginTop: 16, marginBottom: 32 },
+  sectionLabel: { fontSize: 10, fontWeight: 700, color: '#555', marginBottom: 4, marginTop: 16 },
   infoTable: { border: '1px solid #333' },
   infoRow: { flexDirection: 'row', borderBottom: '1px solid #333' },
   infoRowLast: { flexDirection: 'row' },
@@ -69,11 +81,24 @@ export async function renderCertificatePdf(record: Record<string, string>, verif
 
         <Text style={styles.title}>{record['종류']}</Text>
 
+        <Text style={styles.sectionLabel}>인적사항</Text>
         <View style={styles.infoTable}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>성 명</Text>
             <Text style={styles.infoValue}>{record['대상자성명']}</Text>
           </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>주민등록번호</Text>
+            <Text style={styles.infoValue}>{maskedResidentNumber(record['생년월일'], record['성별'])}</Text>
+          </View>
+          <View style={styles.infoRowLast}>
+            <Text style={styles.infoLabel}>주 소</Text>
+            <Text style={styles.infoValue}>{record['대상자주소']}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.sectionLabel}>{record['종류'] === '경력증명서' ? '경력사항' : '재직사항'}</Text>
+        <View style={styles.infoTable}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>소 속</Text>
             <Text style={styles.infoValue}>{record['대상자소속']}</Text>
@@ -86,9 +111,27 @@ export async function renderCertificatePdf(record: Record<string, string>, verif
             <Text style={styles.infoLabel}>기 간</Text>
             <Text style={styles.infoValue}>{record['근무기간']}</Text>
           </View>
-          <View style={styles.infoRowLast}>
+          <View style={record['종류'] === '경력증명서' ? styles.infoRow : styles.infoRowLast}>
+            <Text style={styles.infoLabel}>담당업무</Text>
+            <Text style={styles.infoValue}>{record['담당업무']}</Text>
+          </View>
+          {record['종류'] === '경력증명서' && (
+            <View style={styles.infoRowLast}>
+              <Text style={styles.infoLabel}>퇴직사유</Text>
+              <Text style={styles.infoValue}>{record['퇴직사유']}</Text>
+            </View>
+          )}
+        </View>
+
+        <Text style={styles.sectionLabel}>용도 · 비고</Text>
+        <View style={styles.infoTable}>
+          <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>용 도</Text>
             <Text style={styles.infoValue}>{record['용도']}</Text>
+          </View>
+          <View style={styles.infoRowLast}>
+            <Text style={styles.infoLabel}>비 고</Text>
+            <Text style={styles.infoValue}>{record['비고']}</Text>
           </View>
         </View>
 

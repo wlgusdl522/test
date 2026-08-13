@@ -14,7 +14,7 @@ export async function addCertificateAction(formData: FormData): Promise<void> {
   await requireCanViewCertificateLog();
   const record = fieldsFromForm(formData, [
     '종류', '신청유형', '대상자성명', '대상자소속', '대상자직위', '대상자이메일',
-    '생년월일', '수령방법', '신청일', '용도', '비고',
+    '생년월일', '성별', '대상자주소', '담당업무', '퇴직사유', '수령방법', '근무기간', '신청일', '용도', '비고',
   ]);
   if (!CERTIFICATE_TYPES.includes(record['종류'] as (typeof CERTIFICATE_TYPES)[number])) {
     throw new Error('증명서 종류를 선택해주세요.');

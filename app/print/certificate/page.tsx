@@ -11,11 +11,22 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const VERIFY_PHRASE: Record<string, string> = {
-  재직증명서: '위와 같이 재직하고 있음을 증명합니다.',
-  경력증명서: '위와 같이 근무한 경력이 있음을 증명합니다.',
+  재직증명서: '위 사실을 증명합니다.',
+  경력증명서: '위 사실을 증명합니다.',
   원천징수영수증: '위 내용을 확인합니다.',
   기타: '위 내용을 확인합니다.',
 };
+
+// 실제 주민등록번호는 저장하지 않고, 생년월일+성별로 문서에 찍히는 마스킹된 형태만 재현한다.
+function maskedResidentNumber(birth: string, gender: string): string {
+  if (!birth) return '';
+  const [y, m, d] = birth.split('-');
+  if (!y || !m || !d) return '';
+  const yy = y.slice(2);
+  const isBefore2000 = Number(y) < 2000;
+  const genderDigit = gender === '여' ? (isBefore2000 ? '2' : '4') : (isBefore2000 ? '1' : '3');
+  return `${yy}${m}${d}-${genderDigit}******`;
+}
 
 function formatPrintDate(iso: string): string {
   const parts = String(iso || '').split('-');
@@ -76,6 +87,8 @@ async function CertificateDoc({ record: r, origin }: { record: Record<string, st
 
   const lbl: CSSProperties = { border: '1px solid #333', background: '#f2f2f2', fontWeight: 600, textAlign: 'center', whiteSpace: 'nowrap', padding: '10px' };
   const cell: CSSProperties = { border: '1px solid #333', padding: '10px' };
+  const sectionLabel: CSSProperties = { fontSize: 12, fontWeight: 700, color: '#555', margin: '18px 0 4px' };
+  const isCareer = r.종류 === '경력증명서';
 
   return (
     <div style={{ fontSize: 13.5, color: '#000', width: '186mm', margin: '0 auto' }} className="bg-white p-6 print:p-0">
@@ -83,13 +96,31 @@ async function CertificateDoc({ record: r, origin }: { record: Record<string, st
 
       <h2 style={{ textAlign: 'center', fontSize: 26, letterSpacing: 14, margin: '24px 0 32px' }}>{r.종류}</h2>
 
+      <p style={{ ...sectionLabel, marginTop: 0 }}>인적사항</p>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <tbody>
           <tr><td style={{ ...lbl, width: 120 }}>성&nbsp;&nbsp;&nbsp;&nbsp;명</td><td style={cell}>{r.대상자성명}</td></tr>
-          <tr><td style={lbl}>소&nbsp;&nbsp;&nbsp;&nbsp;속</td><td style={cell}>{r.대상자소속}</td></tr>
+          <tr><td style={lbl}>주민등록번호</td><td style={cell}>{maskedResidentNumber(r.생년월일, r.성별)}</td></tr>
+          <tr><td style={lbl}>주&nbsp;&nbsp;&nbsp;&nbsp;소</td><td style={cell}>{r.대상자주소}</td></tr>
+        </tbody>
+      </table>
+
+      <p style={sectionLabel}>{isCareer ? '경력사항' : '재직사항'}</p>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <tbody>
+          <tr><td style={{ ...lbl, width: 120 }}>소&nbsp;&nbsp;&nbsp;&nbsp;속</td><td style={cell}>{r.대상자소속}</td></tr>
           <tr><td style={lbl}>직&nbsp;&nbsp;&nbsp;&nbsp;위</td><td style={cell}>{r.대상자직위}</td></tr>
           <tr><td style={lbl}>기&nbsp;&nbsp;&nbsp;&nbsp;간</td><td style={cell}>{r.근무기간}</td></tr>
-          <tr><td style={lbl}>용&nbsp;&nbsp;&nbsp;&nbsp;도</td><td style={cell}>{r.용도}</td></tr>
+          <tr><td style={lbl}>담당업무</td><td style={cell}>{r.담당업무}</td></tr>
+          {isCareer && <tr><td style={lbl}>퇴직사유</td><td style={cell}>{r.퇴직사유}</td></tr>}
+        </tbody>
+      </table>
+
+      <p style={sectionLabel}>용도 · 비고</p>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <tbody>
+          <tr><td style={{ ...lbl, width: 120 }}>용&nbsp;&nbsp;&nbsp;&nbsp;도</td><td style={cell}>{r.용도}</td></tr>
+          <tr><td style={lbl}>비&nbsp;&nbsp;&nbsp;&nbsp;고</td><td style={cell}>{r.비고}</td></tr>
         </tbody>
       </table>
 
