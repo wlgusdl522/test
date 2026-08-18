@@ -431,3 +431,28 @@ export const DOCUMENT_INDEX_PREFIX_TABLE: KeyedTableConfig = {
   headers: DOCUMENT_INDEX_PREFIX_HEADERS,
   primaryKey: '팀명',
 };
+
+// 업무관리 "전체회의자료" — 원래 팀별로 구글슬라이드 한 장씩 만들던 것을 포털로 이관.
+// 사업구분(예: 시설관리, 운영지원사업)은 팀마다 고정 목록으로 미리 등록해두고, 매달 값(이번달
+// 업무보고/다음달 업무계획/타 부서 협조사항)만 채운다.
+export const STAFF_MEETING_ITEM_HEADERS = ['id', '팀명', '사업구분', '정렬순서'];
+
+export const STAFF_MEETING_ITEM_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '전체회의사업구분',
+  headers: STAFF_MEETING_ITEM_HEADERS,
+  primaryKey: 'id',
+};
+
+// 사업구분ID가 이미 팀을 유일하게 특정하지만, 다른 값 테이블들(이사회월별값 등)과 같은 관례로
+// 팀명도 키에 함께 둔다(조회 편의).
+export const STAFF_MEETING_VALUE_HEADERS = [
+  '사업구분ID', '팀명', '년월', '업무보고', '업무계획', '협조사항', '작성자이메일', '작성자명', '등록일시',
+];
+
+export const STAFF_MEETING_VALUE_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '전체회의업무보고',
+  headers: STAFF_MEETING_VALUE_HEADERS,
+  primaryKey: ['사업구분ID', '팀명', '년월'],
+};
