@@ -5,7 +5,7 @@ import { requireViewerEmail, getViewerStaffRecord } from '@/lib/auth-helpers';
 import {
   addModuleItem, deleteModuleItem, moveModuleItem, setModuleValue, type BoardStatModule,
 } from '@/lib/mutate/boardStat';
-import { saveRosterForYm, type RosterRowInput } from '@/lib/mutate/boardRoster';
+import { saveRosterForYm, setRosterGroupLabel, type RosterRowInput } from '@/lib/mutate/boardRoster';
 
 function revalidateAll() {
   revalidatePath('/business-summary/accounting');
@@ -48,5 +48,12 @@ export async function submitBoardStatValuesAction(
 
 export async function saveRosterAction(항목IDs: string[], ym: string, rows: RosterRowInput[]): Promise<void> {
   await saveRosterForYm(항목IDs, ym, rows);
+  revalidateAll();
+}
+
+export async function setRosterGroupLabelAction(formData: FormData): Promise<void> {
+  const ym = String(formData.get('년월') ?? '');
+  const 단체명 = String(formData.get('단체명') ?? '');
+  await setRosterGroupLabel(ym, 단체명);
   revalidateAll();
 }

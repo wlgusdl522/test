@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import FormToggle from '@/components/FormToggle';
 import BoardStatEntryClient from '@/components/business/BoardStatEntryClient';
-import BoardRosterTableClient from '@/components/business/BoardRosterTableClient';
+import BoardRosterGridClient from '@/components/business/BoardRosterGridClient';
+import RosterSummaryTable from '@/components/business/RosterSummaryTable';
 import { facilitiesFor, getModuleItems, getModuleValues, priorCumulative, valueFor, NO_FACILITY, type BoardStatModule } from '@/lib/mutate/boardStat';
-import { getRosterByItems } from '@/lib/mutate/boardRoster';
-import { addBoardStatItemAction, deleteBoardStatItemAction, moveBoardStatItemAction } from '@/app/(portal)/business-summary/boardStatActions';
+import { getRosterByItems, getRosterGroupLabel, summarizeRoster } from '@/lib/mutate/boardRoster';
+import { addBoardStatItemAction, deleteBoardStatItemAction, moveBoardStatItemAction, setRosterGroupLabelAction } from '@/app/(portal)/business-summary/boardStatActions';
 import { btn, btnDanger, btnOutline, btnSecondary, card, h2, input, inputBase } from '@/lib/ui';
 
 function todayKst(): string {
@@ -29,6 +30,8 @@ export default async function BoardStatModuleView({
   const values = await getModuleValues(items.map((i) => i.id));
   const showRoster = 모듈 === '자원봉사자';
   const roster = showRoster ? await getRosterByItems(items.map((i) => i.id), ym) : [];
+  const groupLabel = showRoster ? await getRosterGroupLabel(ym) : '';
+  const rosterRows = showRoster ? summarizeRoster(items, roster) : [];
   const rows = items.map((i) => ({
     id: i.id,
     항목명: i.항목명,
@@ -94,14 +97,26 @@ export default async function BoardStatModuleView({
       </div>
 
       {showRoster && (
-        <div className={card}>
-          <h2 className={`${h2} mb-3`}>{ym} 명단 입력</h2>
-          <BoardRosterTableClient
-            items={items.map((i) => ({ id: i.id, 항목명: i.항목명 }))}
-            ym={ym}
-            initialRows={roster.map((r) => ({ id: r.id, 항목ID: r.항목ID, 구분: r.구분, 이름: r.이름 }))}
-          />
-        </div>
+        <>
+          <RosterSummaryTable title={`1) 총괄 (${ym})`} groupLabel={groupLabel} rows={rosterRows} />
+
+          <div className={card}>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <h2 className={h2}>2) 분야별 명단 입력</h2>
+              <form action={setRosterGroupLabelAction} className="flex items-center gap-1.5">
+                <input type="hidden" name="년월" value={ym} />
+                <span className="text-xs text-zinc-400">단체명(</span>
+                <input
+                  name="단체명" defaultValue={groupLabel} placeholder="예: 새문안교회"
+                  className={`${inputBase} w-40`}
+                />
+                <span className="text-xs text-zinc-400">)</span>
+                <button type="submit" className={btnSecondary}>저장</button>
+              </form>
+            </div>
+            <BoardRosterGridClient items={rosterRows} ym={ym} groupLabel={groupLabel} />
+          </div>
+        </>
       )}
     </>
   );
