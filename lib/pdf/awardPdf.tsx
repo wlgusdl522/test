@@ -5,9 +5,14 @@ import { getDriveImageAsDataUrl } from '@/lib/drive/upload';
 import { getSystemSettings } from '@/lib/mutate/settings';
 import { getStaffList } from '@/lib/mutate/staff';
 
-// 기관에서 실제 쓰던 표창장/우수상 한글 양식(제N-N호 / 중앙 큰 제목 / 우측 정렬 "성 명 : OOO" /
-// 양쪽정렬 본문 / 중앙 날짜·기관명·관장 직함+성명)을 그대로 재현한다. 원본엔 없지만 QR·직인은
-// 재직/경력증명서와 동일한 위변조 확인용 하단 박스로 추가한다.
+// 기관에서 실제 쓰던 표창장 한글 양식(상장 테두리가 미리 인쇄된 용지에 텍스트만 겹쳐 인쇄하는 용도)의
+// PDF를 pdfjs로 직접 파싱해서 각 요소의 실제 좌표(pt)·글자크기·자간을 측정한 뒤, 그 값을 그대로
+// 절대좌표로 재현한다. 여백/폰트크기가 조금이라도 다르면 실물 상장 테두리와 어긋나기 때문에
+// 대략적인 느낌이 아니라 측정값을 그대로 쓴다. QR·직인 박스만 원본에 없던 우리쪽 추가 요소.
+const A4_WIDTH = 595.28;
+const CONTENT_LEFT = 96;
+const CONTENT_RIGHT = 96;
+const CONTENT_WIDTH = A4_WIDTH - CONTENT_LEFT - CONTENT_RIGHT;
 
 let fontRegistered = false;
 function ensureFont() {
@@ -17,28 +22,32 @@ function ensureFont() {
 }
 
 const styles = StyleSheet.create({
-  page: { padding: 64, fontFamily: 'NotoSansKR', fontSize: 12, color: '#000' },
-  docNumber: { fontSize: 11, marginBottom: 40 },
-  title: { textAlign: 'center', fontSize: 32, fontWeight: 700, letterSpacing: 14, marginBottom: 56 },
-  recipientRow: { textAlign: 'right', fontSize: 18, letterSpacing: 4, marginBottom: 48 },
-  body: { fontSize: 14, lineHeight: 2, textAlign: 'justify', textIndent: 28, marginBottom: 56 },
-  closingBlock: { marginTop: 24, alignItems: 'center' },
-  closingDate: { fontSize: 12 },
-  closingOrgName: { marginTop: 14, fontWeight: 700, fontSize: 14 },
-  closingTitleRow: { marginTop: 10, position: 'relative' },
-  closingTitle: { fontSize: 17, fontWeight: 700 },
-  sealImage: { position: 'absolute', width: 58, height: 58, opacity: 0.85, top: -18, right: -16 },
-  qrBar: {
-    marginTop: 40,
-    flexDirection: 'row',
-    alignItems: 'center',
-    border: '1px solid #ddd',
-    borderRadius: 8,
-    backgroundColor: '#fafafa',
-    padding: 12,
+  page: { fontFamily: 'NotoSansKR', color: '#000', position: 'relative' },
+  docNumber: { position: 'absolute', top: 108, left: CONTENT_LEFT, fontSize: 15 },
+  title: { position: 'absolute', top: 193, left: 0, right: 0, textAlign: 'center', fontSize: 38, fontWeight: 700, letterSpacing: 19 },
+  recipient: {
+    position: 'absolute', top: 306, left: CONTENT_LEFT, width: CONTENT_WIDTH,
+    textAlign: 'right', fontSize: 20, letterSpacing: 10,
   },
-  qrBarImage: { width: 46, height: 46 },
-  qrBarText: { flex: 1, marginLeft: 14, fontSize: 9.5, color: '#666' },
+  body: {
+    position: 'absolute', top: 390, left: CONTENT_LEFT, width: CONTENT_WIDTH,
+    fontSize: 22, lineHeight: 2.15, textAlign: 'justify', textIndent: 12,
+  },
+  date: { position: 'absolute', top: 650, left: 0, right: 0, textAlign: 'center', fontSize: 17 },
+  orgRow: { position: 'absolute', top: 700, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  orgLabelCol: { marginRight: 10 },
+  orgLabelLine: { fontSize: 10.5, lineHeight: 1.25 },
+  orgName: { fontSize: 19, fontWeight: 700 },
+  directorRow: { position: 'absolute', top: 735, left: 0, right: 0, alignItems: 'center' },
+  directorTitle: { fontSize: 18.9, fontWeight: 700 },
+  sealImage: { position: 'absolute', width: 56, height: 56, opacity: 0.85, top: -16, right: -20 },
+  qrBar: {
+    position: 'absolute', top: 786, left: CONTENT_LEFT, width: CONTENT_WIDTH,
+    flexDirection: 'row', alignItems: 'center',
+    border: '1px solid #ddd', borderRadius: 8, backgroundColor: '#fafafa', padding: 10,
+  },
+  qrBarImage: { width: 40, height: 40 },
+  qrBarText: { flex: 1, marginLeft: 12, fontSize: 9, color: '#666' },
 });
 
 function formatPrintDate(iso: string): string {
@@ -49,7 +58,7 @@ function formatPrintDate(iso: string): string {
 
 export async function renderAwardPdf(record: Record<string, string>, verifyUrl: string): Promise<Buffer> {
   ensureFont();
-  const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 120, margin: 1 });
+  const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 100, margin: 1 });
   const [{ certificateSealImageUrl }, staffList] = await Promise.all([getSystemSettings(), getStaffList()]);
   const sealDataUrl = certificateSealImageUrl ? await getDriveImageAsDataUrl(certificateSealImageUrl) : null;
   const directorName = staffList.find((s) => s['재직상태'] === '재직' && s['직급/직책'] === '관장')?.['성명'] ?? '';
@@ -61,15 +70,23 @@ export async function renderAwardPdf(record: Record<string, string>, verifyUrl: 
 
         <Text style={styles.title}>{record['종류'] || '상장'}</Text>
 
-        <Text style={styles.recipientRow}>성 명 : {record['대상자성명']}</Text>
+        <Text style={styles.recipient}>성 명 : {record['대상자성명']}</Text>
 
         <Text style={styles.body}>{record['본문']}</Text>
 
-        <View style={styles.closingBlock}>
-          <Text style={styles.closingDate}>{formatPrintDate(record['발급일'])}</Text>
-          <Text style={styles.closingOrgName}>사회복지법인 새문안교회사회복지재단</Text>
-          <View style={styles.closingTitleRow}>
-            <Text style={styles.closingTitle}>시립서대문노인종합복지관장{directorName ? ` ${directorName}` : ''}</Text>
+        <Text style={styles.date}>{formatPrintDate(record['발급일'])}</Text>
+
+        <View style={styles.orgRow}>
+          <View style={styles.orgLabelCol}>
+            <Text style={styles.orgLabelLine}>사회복지</Text>
+            <Text style={styles.orgLabelLine}>법 인</Text>
+          </View>
+          <Text style={styles.orgName}>새 문 안 교 회 사 회 복 지 재 단</Text>
+        </View>
+
+        <View style={styles.directorRow}>
+          <View style={{ position: 'relative' }}>
+            <Text style={styles.directorTitle}>시립서대문노인종합복지관장{directorName ? ` ${directorName}` : ''}</Text>
             {sealDataUrl && <Image src={sealDataUrl} style={styles.sealImage} />}
           </View>
         </View>

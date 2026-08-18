@@ -42,6 +42,9 @@ export default async function AwardPrintPage({
 
   return (
     <div className="p-6">
+      {/* 상장 테두리가 미리 인쇄된 용지에 맞춰야 해서, 전역 @page 12mm 여백(globals.css) 대신
+          이 페이지만 여백 0으로 — 절대좌표가 실제 용지 모서리 기준으로 계산되어 있다. */}
+      <style>{'@media print { @page { margin: 0; } }'}</style>
       <div className={`${card} print:hidden flex flex-wrap items-center gap-4`}>
         <p className="text-sm text-zinc-500">{records.length}건 인쇄</p>
         <PrintButton />
@@ -56,11 +59,19 @@ export default async function AwardPrintPage({
   );
 }
 
+// 실제 상장 테두리 인쇄용지에 맞춰야 해서, 원본 한글 양식 PDF를 pdfjs로 파싱해 얻은 실측 좌표(pt)를
+// 그대로 절대좌표로 재현한다(lib/pdf/awardPdf.tsx와 동일한 수치 — 두 렌더링 경로가 어긋나면 안 됨).
+const A4_WIDTH_PT = 595.28;
+const A4_HEIGHT_PT = 841.89;
+const CONTENT_LEFT = 96;
+const CONTENT_RIGHT = 96;
+const CONTENT_WIDTH = A4_WIDTH_PT - CONTENT_LEFT - CONTENT_RIGHT;
+
 async function AwardDoc({
   record: r, origin, isLast,
 }: { record: Record<string, string>; origin: string; isLast: boolean }) {
   const verifyUrl = `${origin}/verify/certificate/${r.id}`;
-  const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 120, margin: 1 });
+  const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 100, margin: 1 });
   const [{ certificateSealImageUrl }, staffList] = await Promise.all([getSystemSettings(), getStaffList()]);
   const sealDataUrl = certificateSealImageUrl ? await getDriveImageAsDataUrl(certificateSealImageUrl) : null;
   const directorName = staffList.find((s) => s['재직상태'] === '재직' && s['직급/직책'] === '관장')?.['성명'] ?? '';
@@ -71,32 +82,57 @@ async function AwardDoc({
     <div
       style={{
         ...pageStyle,
+        position: 'relative',
         fontFamily: '"바탕체", "바탕", Batang, serif',
-        fontSize: 13.5,
         color: '#000',
-        width: '186mm',
+        width: `${A4_WIDTH_PT}pt`,
+        height: `${A4_HEIGHT_PT}pt`,
         margin: '0 auto 40px',
       }}
-      className="bg-white p-10 print:p-0"
+      className="bg-white print:m-0"
     >
-      <div style={{ fontSize: 12 }}>제 {r.문서번호}호</div>
-      <h2 style={{ textAlign: 'center', fontSize: 32, fontWeight: 700, letterSpacing: 14, margin: '40px 0 56px' }}>{r.종류 || '상장'}</h2>
-      <p style={{ textAlign: 'right', fontSize: 18, letterSpacing: 4, marginBottom: 48 }}>성 명 : {r.대상자성명}</p>
-      <p style={{ fontSize: 14, lineHeight: 2, textAlign: 'justify', textIndent: '1.5em', whiteSpace: 'pre-wrap', marginBottom: 56 }}>{r.본문}</p>
+      <div style={{ position: 'absolute', top: 108, left: CONTENT_LEFT, fontSize: 15 }}>제 {r.문서번호}호</div>
 
-      <div style={{ marginTop: 24, textAlign: 'center' }}>
-        <p style={{ fontSize: 12 }}>{formatPrintDate(r.발급일)}</p>
-        <p style={{ marginTop: 14, fontWeight: 700, fontSize: 14 }}>사회복지법인 새문안교회사회복지재단</p>
-        <div style={{ marginTop: 10, position: 'relative', display: 'inline-block' }}>
-          <p style={{ fontSize: 17, fontWeight: 700 }}>시립서대문노인종합복지관장{directorName ? ` ${directorName}` : ''}</p>
+      <h2 style={{ position: 'absolute', top: 193, left: 0, right: 0, textAlign: 'center', fontSize: 38, fontWeight: 700, letterSpacing: 19, margin: 0 }}>
+        {r.종류 || '상장'}
+      </h2>
+
+      <p style={{ position: 'absolute', top: 306, left: CONTENT_LEFT, width: CONTENT_WIDTH, textAlign: 'right', fontSize: 20, letterSpacing: 10, margin: 0 }}>
+        성 명 : {r.대상자성명}
+      </p>
+
+      <p
+        style={{
+          position: 'absolute', top: 390, left: CONTENT_LEFT, width: CONTENT_WIDTH,
+          fontSize: 22, lineHeight: 2.15, textAlign: 'justify', textIndent: 12, whiteSpace: 'pre-wrap', margin: 0,
+        }}
+      >
+        {r.본문}
+      </p>
+
+      <p style={{ position: 'absolute', top: 650, left: 0, right: 0, textAlign: 'center', fontSize: 17, margin: 0 }}>
+        {formatPrintDate(r.발급일)}
+      </p>
+
+      <div style={{ position: 'absolute', top: 700, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ marginRight: 10, fontSize: 10.5, lineHeight: 1.25, textAlign: 'center' }}>
+          <div>사회복지</div>
+          <div>법 인</div>
+        </div>
+        <div style={{ fontSize: 19, fontWeight: 700 }}>새 문 안 교 회 사 회 복 지 재 단</div>
+      </div>
+
+      <div style={{ position: 'absolute', top: 735, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'relative' }}>
+          <p style={{ fontSize: 18.9, fontWeight: 700, margin: 0 }}>시립서대문노인종합복지관장{directorName ? ` ${directorName}` : ''}</p>
           {sealDataUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={sealDataUrl}
               alt="직인"
-              width={58}
-              height={58}
-              style={{ position: 'absolute', top: -16, right: -10, opacity: 0.85 }}
+              width={56}
+              height={56}
+              style={{ position: 'absolute', top: -16, right: -20, opacity: 0.85 }}
             />
           )}
         </div>
@@ -104,18 +140,14 @@ async function AwardDoc({
 
       <div
         style={{
-          marginTop: 40,
-          display: 'flex',
-          alignItems: 'center',
-          border: '1px solid #ddd',
-          borderRadius: 8,
-          background: '#fafafa',
-          padding: 12,
+          position: 'absolute', top: 786, left: CONTENT_LEFT, width: CONTENT_WIDTH,
+          display: 'flex', alignItems: 'center',
+          border: '1px solid #ddd', borderRadius: 8, background: '#fafafa', padding: 10,
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={qrDataUrl} alt="발급 확인 QR코드" width={46} height={46} />
-        <p style={{ flex: 1, marginLeft: 14, fontSize: 11, color: '#666' }}>
+        <img src={qrDataUrl} alt="발급 확인 QR코드" width={40} height={40} />
+        <p style={{ flex: 1, marginLeft: 12, fontSize: 9, color: '#666', margin: 0 }}>
           QR 코드를 스캔하면 본 문서의 발급 진위 여부를 확인할 수 있습니다.
         </p>
       </div>
