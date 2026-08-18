@@ -31,7 +31,7 @@ export type DonationRowInput = {
 
 // 참고 서식의 표기 그대로 — 내부 시설 코드(복지관/요양센터/데이케어센터)와 다른 정식 명칭.
 export const DONATION_FACILITY_LABEL: Record<string, string> = {
-  복지관: '서대문복지관',
+  복지관: '복지관',
   요양센터: '병설 요양센터',
   데이케어센터: '병설 데이케어센터',
 };

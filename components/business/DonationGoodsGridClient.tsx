@@ -2,10 +2,14 @@
 
 import { useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { btn, btnDanger, btnSecondary, table, td, th, tableWrap } from '@/lib/ui';
+import { btn, btnDanger, btnSecondary, hint, table, td, th, tableWrap } from '@/lib/ui';
 import { saveDonationDetailsAction } from '@/app/(portal)/business-summary/boardDonationActions';
+import { parsePastedGrid } from '@/lib/pasteGrid';
 
 type Row = { key: string; id?: string; 품목: string; 수량: string; 환가액: string; 후원자: string; 지급대상: string };
+
+const COLUMNS: (keyof Omit<Row, 'key' | 'id'>)[] = ['품목', '수량', '환가액', '후원자', '지급대상'];
+const NUMERIC_FIELDS = new Set(['환가액']);
 
 const cellInput =
   'w-full min-w-[6rem] rounded border border-transparent bg-[#fcfbf8] px-2 py-1 text-[13.5px] focus:border-brand focus:outline-none dark:bg-zinc-950';
@@ -41,6 +45,34 @@ export default function DonationGoodsGridClient({
 
   function removeRow(key: string) {
     setRows((prev) => prev.filter((r) => r.key !== key));
+  }
+
+  // 엑셀 등에서 여러 행을 한 번에 복사해 붙여넣으면, 붙여넣은 셀부터 아래로 채우고
+  // 행이 모자라면 자동으로 새 행을 만든다. 값 하나만 붙여넣을 땐 평소처럼 그 칸만 바뀐다.
+  function handlePaste(e: React.ClipboardEvent<HTMLInputElement>, rowIndex: number, colIndex: number) {
+    const text = e.clipboardData.getData('text');
+    if (!text.includes('\t') && !text.includes('\n')) return;
+    e.preventDefault();
+    const grid = parsePastedGrid(text);
+    setRows((prev) => {
+      const next = [...prev];
+      grid.forEach((cells, i) => {
+        const idx = rowIndex + i;
+        const patch: Partial<Row> = {};
+        cells.forEach((raw, j) => {
+          const field = COLUMNS[colIndex + j];
+          if (!field) return;
+          patch[field] = NUMERIC_FIELDS.has(field) ? raw.replace(/,/g, '') : raw;
+        });
+        if (idx < next.length) {
+          next[idx] = { ...next[idx], ...patch };
+        } else {
+          counterRef.current += 1;
+          next.push({ key: `new-${counterRef.current}`, 품목: '', 수량: '', 환가액: '', 후원자: '', 지급대상: '', ...patch });
+        }
+      });
+      return next;
+    });
   }
 
   function handleSave() {
@@ -85,25 +117,34 @@ export default function DonationGoodsGridClient({
               <tr key={r.key}>
                 <td className={`${td} text-center tabular-nums text-zinc-400`}>{i + 1}</td>
                 <td className={td}>
-                  <input value={r.품목} onChange={(e) => update(r.key, '품목', e.target.value)} placeholder="후원품명" className={cellInput} />
+                  <input
+                    value={r.품목} onChange={(e) => update(r.key, '품목', e.target.value)}
+                    onPaste={(e) => handlePaste(e, i, 0)} placeholder="후원품명" className={cellInput}
+                  />
                 </td>
                 <td className={td}>
                   <input
                     value={r.수량} onChange={(e) => update(r.key, '수량', e.target.value)}
-                    placeholder="1" className={`${cellInput} text-right`}
+                    onPaste={(e) => handlePaste(e, i, 1)} placeholder="1" className={`${cellInput} text-right`}
                   />
                 </td>
                 <td className={td}>
                   <input
                     type="number" min="0" value={r.환가액} onChange={(e) => update(r.key, '환가액', e.target.value)}
-                    placeholder="0" className={`${cellInput} text-right font-mono`}
+                    onPaste={(e) => handlePaste(e, i, 2)} placeholder="0" className={`${cellInput} text-right font-mono`}
                   />
                 </td>
                 <td className={td}>
-                  <input value={r.후원자} onChange={(e) => update(r.key, '후원자', e.target.value)} className={cellInput} />
+                  <input
+                    value={r.후원자} onChange={(e) => update(r.key, '후원자', e.target.value)}
+                    onPaste={(e) => handlePaste(e, i, 3)} className={cellInput}
+                  />
                 </td>
                 <td className={td}>
-                  <input value={r.지급대상} onChange={(e) => update(r.key, '지급대상', e.target.value)} className={cellInput} />
+                  <input
+                    value={r.지급대상} onChange={(e) => update(r.key, '지급대상', e.target.value)}
+                    onPaste={(e) => handlePaste(e, i, 4)} className={cellInput}
+                  />
                 </td>
                 <td className={`${td} text-center`}>
                   <button type="button" onClick={() => removeRow(r.key)} className={btnDanger}>삭제</button>
@@ -113,6 +154,7 @@ export default function DonationGoodsGridClient({
           </tbody>
         </table>
       </div>
+      <p className={`${hint} mt-2 mb-0`}>엑셀 등에서 여러 줄을 복사해 아무 칸에나 붙여넣으면(Ctrl+V) 한 번에 여러 행이 채워집니다.</p>
       <div className="mt-3 flex items-center gap-3">
         <button type="button" onClick={addRow} className={btnSecondary}>+ 행 추가</button>
         <button type="button" onClick={handleSave} disabled={isPending} className={btn}>저장</button>
