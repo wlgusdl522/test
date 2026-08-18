@@ -1,10 +1,11 @@
+import Link from 'next/link';
 import FormToggle from '@/components/FormToggle';
 import BoardStatEntryClient from '@/components/business/BoardStatEntryClient';
 import BoardRosterTableClient from '@/components/business/BoardRosterTableClient';
 import { facilitiesFor, getModuleItems, getModuleValues, priorCumulative, valueFor, NO_FACILITY, type BoardStatModule } from '@/lib/mutate/boardStat';
 import { getRosterByItems } from '@/lib/mutate/boardRoster';
 import { addBoardStatItemAction, deleteBoardStatItemAction, moveBoardStatItemAction } from '@/app/(portal)/business-summary/boardStatActions';
-import { btn, btnDanger, btnSecondary, card, h2, input, inputBase } from '@/lib/ui';
+import { btn, btnDanger, btnOutline, btnSecondary, card, h2, input, inputBase } from '@/lib/ui';
 
 function todayKst(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
@@ -51,6 +52,7 @@ export default async function BoardStatModuleView({
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">조회월</label>
         <input type="month" name="ym" defaultValue={ym} className={`${inputBase} w-auto`} />
         <button type="submit" className={btnSecondary}>조회</button>
+        {showRoster && <Link href={`${basePath}/view?ym=${ym}`} className={btnOutline}>보기 전용 화면</Link>}
       </form>
 
       <FormToggle label="항목 관리" buttonLabel="항목 관리" wrapperClassName="mb-5">
