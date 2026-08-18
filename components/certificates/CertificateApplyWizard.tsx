@@ -1,12 +1,31 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useActionState, useEffect, useMemo, useRef, useState } from 'react';
 import { btn, btnOutline, card, input, label } from '@/lib/ui';
 import Modal from '@/components/Modal';
 import StaffPicker from '@/components/duty/StaffPicker';
 import { AWARD_TARGET_KINDS, AWARD_TYPES } from '@/lib/certificateTypes';
 
 const EXCLUDED_TEAMS = ['요양센터', '데이케어센터'];
+
+// 신청/등록 서버 액션은 성공 시 void를 반환해서, 폼 제출이 실제로 반영됐는지 화면만 봐서는
+// 알기 어렵다 — useActionState로 감싸서 매 성공마다 바뀌는 토큰을 만들고, 그 변화를 감지해
+// "완료" 모달을 띄운다.
+function useActionSuccess(action: (formData: FormData) => void | Promise<void>) {
+  const [token, dispatch] = useActionState(async (_prev: number, formData: FormData) => {
+    await action(formData);
+    return Date.now();
+  }, 0);
+  const [show, setShow] = useState(false);
+  const prevToken = useRef(token);
+  useEffect(() => {
+    if (token !== prevToken.current) {
+      prevToken.current = token;
+      setShow(true);
+    }
+  }, [token]);
+  return { formAction: dispatch, show, dismiss: () => setShow(false) };
+}
 
 type DocType = '재직증명서' | '경력증명서' | '상장';
 type WhoType = 'staff' | 'instructor';
@@ -138,6 +157,11 @@ export default function CertificateApplyWizard({
     () => staff.filter((s) => !EXCLUDED_TEAMS.includes(s.소속팀)),
     [staff]
   );
+  const directorName = useMemo(
+    () => staff.find((s) => s['재직상태'] === '재직' && s['직급/직책'] === '관장')?.['성명'] ?? '',
+    [staff]
+  );
+  const certSuccess = useActionSuccess(certificateAction);
 
   const [docType, setDocType] = useState<DocType | null>(null);
   const [who, setWho] = useState<WhoType | null>(null);
@@ -238,10 +262,10 @@ export default function CertificateApplyWizard({
           </ButtonGroup>
         </div>
       )}
-      {docType === '상장' && <AwardForm action={awardAction} />}
+      {docType === '상장' && <AwardForm action={awardAction} directorName={directorName} />}
 
       {docType !== '상장' && resolved && (
-        <form action={certificateAction} className="max-w-md">
+        <form action={certSuccess.formAction} className="max-w-md">
           <input type="hidden" name="종류" value={resolved.kind} />
           <input type="hidden" name="신청유형" value={resolved.신청유형} />
           <input type="hidden" name="대상자성명" value={성명} />
@@ -324,34 +348,60 @@ export default function CertificateApplyWizard({
           </div>
         </form>
       )}
+
+      {certSuccess.show && (
+        <Modal title="신청 완료" onClose={certSuccess.dismiss}>
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">신청이 정상적으로 접수되었습니다.</p>
+          <button type="button" onClick={certSuccess.dismiss} className={`${btn} mt-4 w-full`}>확인</button>
+        </Modal>
+      )}
       </div>
     </div>
   );
 }
 
-function AwardPreview({ kind, names, body }: { kind: string; names: string[]; body: string }) {
+// 실제 발행되는 PDF·인쇄화면(lib/pdf/awardPdf.tsx, app/print/award)과 같은 순서·비율로 구성한
+// 미리보기 — 문서번호·직인·QR은 발급 전이라 실제 값 대신 자리표시자로 보여준다.
+export function AwardPreview({
+  kind, names, body, directorName,
+}: { kind: string; names: string[]; body: string; directorName?: string }) {
   return (
     <div style={{ fontFamily: '"바탕체", "바탕", Batang, serif' }}>
-      <h2 className="text-center text-[28px] font-bold tracking-[0.4em] text-zinc-900 dark:text-zinc-50" style={{ textIndent: '0.4em' }}>
+      <p className="text-[11px] text-zinc-300 dark:text-zinc-600">제 ____ 호</p>
+
+      <h2 className="mt-6 text-center text-[28px] font-bold tracking-[0.4em] text-zinc-900 dark:text-zinc-50" style={{ textIndent: '0.4em' }}>
         {kind || '상장'}
       </h2>
 
-      <p className="mt-12 text-right text-[16px] tracking-[0.15em] text-zinc-800 dark:text-zinc-100">
+      <p className="mt-10 text-right text-[15px] tracking-[0.12em] text-zinc-800 dark:text-zinc-100">
         성 명 : {(names[0] || '대상자명') + (names.length > 1 ? ` 외 ${names.length - 1}명` : '')}
       </p>
 
-      <p className="mt-10 whitespace-pre-wrap text-justify text-[14px] leading-loose text-zinc-600 dark:text-zinc-300" style={{ textIndent: '1.5em' }}>
+      <p className="mt-8 whitespace-pre-wrap text-justify text-[13px] leading-loose text-zinc-600 dark:text-zinc-300" style={{ textIndent: '1.3em' }}>
         {body || '"본문 입력하기"로 작성하면 여기에 미리보기가 표시됩니다.'}
       </p>
 
-      <div className="mt-14 rounded-lg bg-zinc-50 py-5 text-center text-[11px] text-zinc-400 dark:bg-zinc-800/60">
-        발급일 · 직인 · QR코드는 발급승인 시 자동으로 채워집니다.
+      <div className="mt-10 text-center">
+        <p className="text-[11px] text-zinc-300 dark:text-zinc-600">발급일 (발급승인 시 자동 기록)</p>
+        <div className="mt-2 flex items-center justify-center gap-1.5">
+          <span className="text-[8px] leading-tight text-zinc-500 dark:text-zinc-400">사회복지<br />법 인</span>
+          <span className="text-[13px] font-bold text-zinc-700 dark:text-zinc-200">새 문 안 교 회 사 회 복 지 재 단</span>
+        </div>
+        <p className="mt-2 text-[15px] font-bold text-zinc-800 dark:text-zinc-100">
+          시립서대문노인종합복지관장{directorName ? ` ${directorName}` : ''}
+        </p>
+      </div>
+
+      <div className="mt-8 flex items-center gap-3 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/60">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-zinc-200 text-[8px] text-zinc-400 dark:bg-zinc-700 dark:text-zinc-500">QR</div>
+        <p className="text-[10px] text-zinc-400">직인·QR코드는 발급승인 시 자동으로 채워집니다.</p>
       </div>
     </div>
   );
 }
 
-function AwardForm({ action }: { action: (formData: FormData) => void }) {
+function AwardForm({ action, directorName }: { action: (formData: FormData) => void; directorName?: string }) {
+  const awardSuccess = useActionSuccess(action);
   const [상장구분, set상장구분] = useState<string>(AWARD_TYPES[0]);
   const [상장구분기타, set상장구분기타] = useState('');
   const [대상자원본, set대상자원본] = useState('');
@@ -376,7 +426,7 @@ function AwardForm({ action }: { action: (formData: FormData) => void }) {
 
   return (
     <div className="flex items-start gap-6">
-      <form action={action} className="w-[380px] shrink-0">
+      <form action={awardSuccess.formAction} className="w-[380px] shrink-0">
         <input type="hidden" name="대상자성명" value={대상자원본} />
         <input type="hidden" name="종류" value={finalKind} />
         <input type="hidden" name="대상자구분" value={대상자구분} />
@@ -461,7 +511,7 @@ function AwardForm({ action }: { action: (formData: FormData) => void }) {
         <div className="mx-auto max-w-[560px] rounded-2xl bg-zinc-100 p-6 dark:bg-black/20 sm:p-10">
           <div className="rounded-sm border border-zinc-200 bg-white p-3 shadow-[0_10px_40px_rgba(15,23,42,0.08)] dark:border-zinc-700 dark:bg-zinc-900">
             <div className="border border-zinc-100 p-8 dark:border-zinc-800">
-              <AwardPreview kind={finalKind} names={names} body={본문} />
+              <AwardPreview kind={finalKind} names={names} body={본문} directorName={directorName} />
             </div>
           </div>
         </div>
@@ -471,6 +521,15 @@ function AwardForm({ action }: { action: (formData: FormData) => void }) {
         <Modal title="본문 입력하기" onClose={() => setBodyModalOpen(false)}>
           <textarea className={`${input} h-56 resize-none`} value={본문} onChange={(e) => set본문(e.target.value)} />
           <button type="button" onClick={() => setBodyModalOpen(false)} className={`${btn} mt-3 w-full`}>완료</button>
+        </Modal>
+      )}
+
+      {awardSuccess.show && (
+        <Modal title="등록 완료" onClose={awardSuccess.dismiss}>
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">
+            {names.length > 1 ? `상장 ${names.length}건이 정상적으로 등록되었습니다.` : '상장이 정상적으로 등록되었습니다.'}
+          </p>
+          <button type="button" onClick={awardSuccess.dismiss} className={`${btn} mt-4 w-full`}>확인</button>
         </Modal>
       )}
     </div>

@@ -4,6 +4,7 @@ import { getCertificateList } from '@/lib/supabase/certificate';
 import { getStaffList } from '@/lib/mutate/staff';
 import CertificateApplyWizard from '@/components/certificates/CertificateApplyWizard';
 import ProcessForm from '@/components/certificates/ProcessForm';
+import AwardApprovalPanel from '@/components/certificates/AwardApprovalPanel';
 import FormToggle from '@/components/FormToggle';
 import {
   badgeBase,
@@ -102,18 +103,9 @@ export default async function CertificatesPage({
                   <td className={tdClean}>{r.신청일}</td>
                   <td className={tdClean}>
                     {r.구분 === '상장' ? (
-                      <div className="flex items-center gap-2">
-                        <form action={actOnCertificateAction}>
-                          <input type="hidden" name="id" value={r.id} />
-                          <input type="hidden" name="action" value="승인" />
-                          <button type="submit" className={btn}>발급승인</button>
-                        </form>
-                        <form action={actOnCertificateAction}>
-                          <input type="hidden" name="id" value={r.id} />
-                          <input type="hidden" name="action" value="반려" />
-                          <button type="submit" className={btnDanger}>반려</button>
-                        </form>
-                      </div>
+                      <FormToggle label={`${r.종류} 발급 처리 · ${r.대상자성명}`} buttonLabel="미리보기·발급승인" buttonClassName={btn} wrapperClassName="">
+                        <AwardApprovalPanel r={r} action={actOnCertificateAction} staff={staff} />
+                      </FormToggle>
                     ) : (
                       <FormToggle label={`${r.신청유형} 발급 처리 · ${r.대상자성명}`} buttonLabel="처리하기" buttonClassName={btn} wrapperClassName="">
                         <ProcessForm r={r} action={processCertificateAction} />
