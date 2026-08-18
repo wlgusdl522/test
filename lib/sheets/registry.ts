@@ -387,3 +387,40 @@ export const BOARD_BUDGET_AMOUNT_TABLE: KeyedTableConfig = {
   headers: BOARD_BUDGET_AMOUNT_HEADERS,
   primaryKey: ['시설', '카테고리', '연도'],
 };
+
+// 업무관리 "색인목록"(공문 등록대장) — 팀마다 문서번호 계열(접두사+일련번호)을 독립적으로 관리한다.
+// 문서번호는 등록 시점에 완성해서 그대로 저장한다(나중에 접두사를 바꿔도 과거 문서번호 텍스트는
+// 안 바뀌어야 하므로). "스탬프 결재"(문서번호가 필요 없는 내부결재)는 일련번호/문서번호가 빈 값이고
+// 일련번호 카운터도 그 항목 때문에 증가하지 않는다.
+export const DOCUMENT_INDEX_HEADERS = [
+  'id', '팀명', '연도', '권', '구분', '일련번호', '문서번호', '제목', '월일', '수신', '발신',
+  '정렬순서', '등록일시', '작성자이메일', '작성자명',
+];
+
+export const DOCUMENT_INDEX_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '색인목록',
+  headers: DOCUMENT_INDEX_HEADERS,
+  primaryKey: 'id',
+};
+
+// 팀+연도별 채번 상태. "새 권 시작" 버튼은 현재권만 +1 하고 다음일련번호는 건드리지 않는다
+// (일련번호는 연도가 바뀌면 1로 리셋되지만, 같은 연도 안에서는 권이 바뀌어도 이어진다).
+export const DOCUMENT_INDEX_STATE_HEADERS = ['팀명', '연도', '현재권', '다음일련번호'];
+
+export const DOCUMENT_INDEX_STATE_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '색인목록상태',
+  headers: DOCUMENT_INDEX_STATE_HEADERS,
+  primaryKey: ['팀명', '연도'],
+};
+
+// 팀별 문서번호 접두사(예: 서노복102A) — 팀마다 전체 문자열을 설정 화면에서 직접 입력해 관리한다.
+export const DOCUMENT_INDEX_PREFIX_HEADERS = ['팀명', '접두사'];
+
+export const DOCUMENT_INDEX_PREFIX_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '색인목록접두사',
+  headers: DOCUMENT_INDEX_PREFIX_HEADERS,
+  primaryKey: '팀명',
+};

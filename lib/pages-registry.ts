@@ -6,6 +6,7 @@ export const CONFIGURABLE_PAGES = [
   { id: 'weekly-plan-write', label: '주간업무 - 작성' },
   { id: 'weekly-plan-review', label: '주간업무 - 부서장확인' },
   { id: 'weekly-plan-meeting', label: '주간업무 - 회의록작성' },
+  { id: 'document-index', label: '업무관리 - 색인목록' },
   { id: 'business-goal', label: '사업관리 - 세부사업계획' },
   { id: 'business-daily', label: '사업관리 - 총괄업무일지(업무입력)' },
   { id: 'business-monthly', label: '사업관리 - 총괄업무일지(월별현황)' },
