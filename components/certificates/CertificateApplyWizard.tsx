@@ -4,7 +4,7 @@ import { useActionState, useEffect, useMemo, useRef, useState } from 'react';
 import { btn, btnOutline, card, input, label } from '@/lib/ui';
 import Modal from '@/components/Modal';
 import StaffPicker from '@/components/duty/StaffPicker';
-import { AWARD_TARGET_KINDS, AWARD_TYPES } from '@/lib/certificateTypes';
+import { AWARD_TARGET_KINDS, AWARD_TYPES, CERTIFICATE_PURPOSES } from '@/lib/certificateTypes';
 
 const EXCLUDED_TEAMS = ['요양센터', '데이케어센터'];
 
@@ -176,7 +176,10 @@ export default function CertificateApplyWizard({
   const [근무종료일, set근무종료일] = useState('');
   const [신청일, set신청일] = useState(todayISO());
   const [이메일, set이메일] = useState('');
+  const [용도, set용도] = useState<string>(CERTIFICATE_PURPOSES[0]);
+  const [용도기타, set용도기타] = useState('');
   const [비고, set비고] = useState('');
+  const 최종용도 = 용도 === '기타' ? (용도기타 || '기타') : 용도;
 
   function resetInstructorFields() {
     set성명('');
@@ -273,6 +276,7 @@ export default function CertificateApplyWizard({
           <input type="hidden" name="대상자직위" value={resolved.needStaffPicker ? '' : 직위} />
           <input type="hidden" name="근무기간" value={근무기간} />
           <input type="hidden" name="신청일" value={신청일} />
+          <input type="hidden" name="용도" value={최종용도} />
           <input type="hidden" name="수령방법" value={receiveMethod === 'email' ? '이메일' : '직접수령'} />
 
           <div className={card}>
@@ -281,6 +285,20 @@ export default function CertificateApplyWizard({
                 신청일
                 <input type="date" className={input} value={신청일} onChange={(e) => set신청일(e.target.value)} />
               </label>
+              <label className={label}>
+                용도
+                <select className={input} value={용도} onChange={(e) => set용도(e.target.value)}>
+                  {CERTIFICATE_PURPOSES.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </label>
+              {용도 === '기타' && (
+                <label className={label}>
+                  용도 (직접입력)
+                  <input required className={input} value={용도기타} onChange={(e) => set용도기타(e.target.value)} />
+                </label>
+              )}
 
               {resolved.needStaffPicker ? (
                 <div>
@@ -334,7 +352,7 @@ export default function CertificateApplyWizard({
               </label>
               {receiveMethod === 'email' && (
                 <label className={label}>
-                  발급받을 이메일
+                  받으실 분 이메일 (대상자 본인 이메일 - 본인 대신 신청하는 경우에도 신청자가 아닌 대상자 이메일)
                   <input type="email" name="대상자이메일" className={input} value={이메일} onChange={(e) => set이메일(e.target.value)} />
                 </label>
               )}
@@ -363,8 +381,8 @@ export default function CertificateApplyWizard({
 // 실제 발행되는 PDF·인쇄화면(lib/pdf/awardPdf.tsx, app/print/award)과 같은 순서·비율로 구성한
 // 미리보기 — 문서번호·직인·QR은 발급 전이라 실제 값 대신 자리표시자로 보여준다.
 export function AwardPreview({
-  kind, names, body, directorName,
-}: { kind: string; names: string[]; body: string; directorName?: string }) {
+  kind, names, body, directorName, showQr = true,
+}: { kind: string; names: string[]; body: string; directorName?: string; showQr?: boolean }) {
   return (
     <div style={{ fontFamily: '"바탕체", "바탕", Batang, serif' }}>
       <p className="text-[11px] text-zinc-300 dark:text-zinc-600">제 ____ 호</p>
@@ -392,10 +410,12 @@ export function AwardPreview({
         </p>
       </div>
 
-      <div className="mt-8 flex items-center gap-3 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/60">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-zinc-200 text-[8px] text-zinc-400 dark:bg-zinc-700 dark:text-zinc-500">QR</div>
-        <p className="text-[10px] text-zinc-400">직인·QR코드는 발급승인 시 자동으로 채워집니다.</p>
-      </div>
+      {showQr && (
+        <div className="mt-8 flex items-center gap-3 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/60">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-zinc-200 text-[8px] text-zinc-400 dark:bg-zinc-700 dark:text-zinc-500">QR</div>
+          <p className="text-[10px] text-zinc-400">직인·QR코드는 발급승인 시 자동으로 채워집니다.</p>
+        </div>
+      )}
     </div>
   );
 }

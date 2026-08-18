@@ -29,9 +29,19 @@ function maskedResidentNumber(birth: string, gender: string): string {
 }
 
 let fontRegistered = false;
+// 가변폰트(Variable) 파일 하나만 등록하면 fontWeight:700을 줘도 항상 기본 인스턴스(얇게)로만
+// 렌더링된다 - react-pdf/fontkit이 같은 src를 여러 fontWeight로 등록해두면 그 굵기의 배리에이션을
+// 뽑아 쓴다. 그래서 실제 문서에서 라벨/제목이 굵게 안 나오고 전체적으로 얇아 보였다.
 function ensureFont() {
   if (fontRegistered) return;
-  Font.register({ family: 'NotoSansKR', src: path.join(process.cwd(), 'lib/pdf/fonts/NotoSansKR-Variable.ttf') });
+  const src = path.join(process.cwd(), 'lib/pdf/fonts/NotoSansKR-Variable.ttf');
+  Font.register({
+    family: 'NotoSansKR',
+    fonts: [
+      { src, fontWeight: 400 },
+      { src, fontWeight: 700 },
+    ],
+  });
   fontRegistered = true;
 }
 
