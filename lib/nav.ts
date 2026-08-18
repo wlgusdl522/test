@@ -31,6 +31,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/weekly-plan', label: '주간업무', description: '업무 입력·회의록·부서장 확인' },
       { href: '/duty', label: '당직근무', description: '당직 배정·교체·근무일지 작성' },
+      { href: '/document-index', label: '색인목록', description: '팀별 공문 등록대장(문서번호 자동 채번)' },
     ],
   },
   {
@@ -61,6 +62,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: '/settings/simple-lists', label: '팀 / 직급 / 결재라인', description: '팀·직급·결재라인 목록 관리' },
       { href: '/settings/duty-lists', label: '당직순서/공휴일/제외목록', description: '당직 평일·토요 순서, 공휴일, 기간 제외자 관리' },
       { href: '/settings/business-list', label: '사업목록', description: '사업명·소관팀 목록 관리' },
+      { href: '/settings/document-index', label: '색인목록 접두사', description: '팀별 공문 문서번호 접두사 관리' },
       { href: '/settings/vehicles', label: '차량목록', description: '보유 차량 목록 관리' },
       { href: '/settings/budget-items', label: '예산과목', description: '지출 예산 과목 관리' },
       { href: '/settings/transit-cards', label: '교통카드목록', description: '교통카드 등록·초기잔액 관리' },
