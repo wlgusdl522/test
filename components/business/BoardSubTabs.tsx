@@ -8,6 +8,7 @@ const SUB_TABS = [
   { href: '/business-summary/volunteers', label: '자원봉사', pageId: 'business-volunteers' },
   { href: '/business-summary/accounting', label: '회계', pageId: 'business-accounting' },
   { href: '/business-summary/donations', label: '후원', pageId: 'business-donations' },
+  { href: '/business-summary/admin-notes', label: '행정사항', pageId: 'business-admin-notes' },
 ];
 
 // "이사회자료" 최상단 탭 안에서만 쓰는 하위 탭 — 분기실적보고는 이 탭바에 속하지 않는다.

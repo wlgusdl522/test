@@ -11,6 +11,7 @@ export const CONFIGURABLE_PAGES = [
   { id: 'business-monthly', label: '사업관리 - 총괄업무일지(월별현황)' },
   { id: 'business-summary', label: '사업관리 - 전체사업 실적집계' },
   { id: 'business-overview', label: '사업관리 - 이사회자료(요약보고)' },
+  { id: 'business-admin-notes', label: '사업관리 - 이사회자료(행정사항)' },
   { id: 'business-board-plan', label: '사업관리 - 이사회자료(업무보고)' },
   { id: 'business-accounting', label: '사업관리 - 이사회자료(회계)' },
   { id: 'business-volunteers', label: '사업관리 - 이사회자료(자원봉사자)' },

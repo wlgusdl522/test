@@ -4,7 +4,6 @@ import PageAccessDenied from '@/components/PageAccessDenied';
 import BoardSubTabs from '@/components/business/BoardSubTabs';
 import FacilityStatEntryClient from '@/components/business/FacilityStatEntryClient';
 import FacilityStatTable from '@/components/business/FacilityStatTable';
-import AdminNoteListClient from '@/components/business/AdminNoteListClient';
 import AccountingSummaryTable from '@/components/business/AccountingSummaryTable';
 import DonationSummaryTable from '@/components/business/DonationSummaryTable';
 import {
@@ -159,7 +158,18 @@ export default async function BusinessSummaryOverviewPage({
 
       <div className={card}>
         <h2 className={`${h2} mb-3`}>8) 행정사항 ({ym})</h2>
-        <AdminNoteListClient ym={ym} initialRows={adminNotes.map((n) => ({ id: n.id, 내용: n.내용 }))} />
+        {adminNotes.length === 0 ? (
+          <p className="text-sm text-zinc-400">
+            등록된 행정사항이 없습니다. <Link href="/business-summary/admin-notes" className="text-brand underline">행정사항</Link>에서 작성해주세요.
+          </p>
+        ) : (
+          <>
+            <ol className="mb-3 list-decimal space-y-1 pl-5 text-sm text-zinc-800 dark:text-zinc-200">
+              {adminNotes.map((n) => <li key={n.id}>{n.내용}</li>)}
+            </ol>
+            <Link href={`/business-summary/admin-notes?ym=${ym}`} className="text-sm text-brand underline">수정하기</Link>
+          </>
+        )}
       </div>
     </>
   );

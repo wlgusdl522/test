@@ -352,3 +352,38 @@ export const BOARD_ADMIN_NOTE_TABLE: KeyedTableConfig = {
   headers: BOARD_ADMIN_NOTE_HEADERS,
   primaryKey: 'id',
 };
+
+// 사업실적 "실인원 산출내역" — 특정 기준일 하나(그 달 안에서 관리자가 고른 날짜) + 사업구분별
+// 실인원 수 목록. 기준일은 월 하나에 값 하나뿐이라 이사회기간설정과 같은 결로 별도 단순 테이블.
+export const BOARD_HEADCOUNT_HEADERS = ['id', '년월', '사업구분', '실인원', '비고', '정렬순서'];
+
+export const BOARD_HEADCOUNT_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '이사회실인원',
+  headers: BOARD_HEADCOUNT_HEADERS,
+  primaryKey: 'id',
+};
+
+export const BOARD_HEADCOUNT_DATE_HEADERS = ['년월', '기준일'];
+
+export const BOARD_HEADCOUNT_DATE_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '이사회실인원기준일',
+  headers: BOARD_HEADCOUNT_DATE_HEADERS,
+  primaryKey: '년월',
+};
+
+// 회계 "예산집행현황" — 항목별(인건비/업무추진비/운영비/재산조성비/기능보강사업비/사업비/
+// 후원사업비/잡지출 등) 연간 예산액만 관리자가 입력하고, 집행액/누계/집행률은 이미 있는
+// 수입지출현황 지출 데이터에서 규칙 기반으로 계산한다(lib/mutate/boardBudgetExecution.ts).
+// "사업비"는 기본사업비/특정보조사업비로 더 세분화해야 하는데, 세부항목별로 재원이 자체재원인지
+// 보조금인지는 회계담당자만 판단 가능해서(이름만으로 추론 불가) 지금은 한 카테고리로 묶어두고
+// 나중에 분류 기준이 정해지면 나눈다.
+export const BOARD_BUDGET_AMOUNT_HEADERS = ['시설', '카테고리', '연도', '예산액'];
+
+export const BOARD_BUDGET_AMOUNT_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '이사회예산액',
+  headers: BOARD_BUDGET_AMOUNT_HEADERS,
+  primaryKey: ['시설', '카테고리', '연도'],
+};

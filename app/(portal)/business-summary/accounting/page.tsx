@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import BoardSubTabs from '@/components/business/BoardSubTabs';
@@ -9,7 +10,7 @@ import BankBalanceEntryClient from '@/components/business/BankBalanceEntryClient
 import { FACILITIES, FACILITY_LABEL, getModuleValues } from '@/lib/mutate/boardStat';
 import { getAccountingItems, suggestCarryForward, computeFacilityTotals } from '@/lib/mutate/boardAccounting';
 import { getBankAccounts } from '@/lib/mutate/boardBankAccount';
-import { btnSecondary, card, h2, inputBase } from '@/lib/ui';
+import { btnOutline, btnSecondary, card, h2, inputBase } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -56,6 +57,10 @@ export default async function BusinessSummaryAccountingPage({
   return (
     <>
       <BoardSubTabs />
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className={`${btnOutline} pointer-events-none bg-brand-tint`}>수입지출현황</span>
+        <Link href={`/business-summary/accounting/budget?ym=${ym}&facility=${시설}`} className={btnOutline}>예산집행현황</Link>
+      </div>
       <AccountingSummaryTable title={`5) ${ym} 수입지출현황`} rows={summaryRows} />
 
       <form method="get" className="mb-4 flex flex-wrap items-center gap-3">

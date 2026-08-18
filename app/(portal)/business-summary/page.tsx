@@ -4,7 +4,10 @@ import { getDailyEntries, rangeSum } from '@/lib/mutate/worklogEntry';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import BoardSubTabs from '@/components/business/BoardSubTabs';
-import { badgeBase, badgeTone, btnSecondary, card, inputBase, table, td, th, tableWrap } from '@/lib/ui';
+import ActualHeadcountListClient from '@/components/business/ActualHeadcountListClient';
+import { getHeadcountRows, getHeadcountDate } from '@/lib/mutate/boardHeadcount';
+import { setHeadcountDateAction } from '@/app/(portal)/business-summary/boardHeadcountActions';
+import { badgeBase, badgeTone, btnSecondary, card, h2, inputBase, table, td, th, tableWrap } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -106,6 +109,8 @@ export default async function BusinessSummaryBoardPage({
     })
   );
 
+  const [headcountRows, headcountDate] = await Promise.all([getHeadcountRows(ym), getHeadcountDate(ym)]);
+
   const grandGoalC = perBusiness.reduce((a, b) => a + b.goalC, 0);
   const grandGoalP = perBusiness.reduce((a, b) => a + b.goalP, 0);
   const grandPrevC = perBusiness.reduce((a, b) => a + b.prevC, 0);
@@ -200,6 +205,17 @@ export default async function BusinessSummaryBoardPage({
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className={card}>
+        <h2 className={`${h2} mb-3`}>실인원 산출내역</h2>
+        <form action={setHeadcountDateAction} className="mb-4 flex flex-wrap items-center gap-3">
+          <input type="hidden" name="년월" value={ym} />
+          <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">기준일</label>
+          <input type="date" name="기준일" defaultValue={headcountDate} className={`${inputBase} w-auto`} />
+          <button type="submit" className={btnSecondary}>기준일 저장</button>
+        </form>
+        <ActualHeadcountListClient ym={ym} initialRows={headcountRows} />
       </div>
     </>
   );
