@@ -19,7 +19,6 @@ export type StaffMeetingValue = {
   업무보고: string;
   업무계획: string;
   협조사항: string;
-  발표포함: boolean;
 };
 
 function num(v: string | undefined): number {
@@ -95,7 +94,6 @@ export async function getStaffMeetingValues(사업구분IDs: string[]): Promise<
       업무보고: r.업무보고,
       업무계획: r.업무계획,
       협조사항: r.협조사항,
-      발표포함: r.발표포함 === 'TRUE',
     }));
 }
 
@@ -113,7 +111,7 @@ export function prevPlanFor(values: StaffMeetingValue[], 사업구분ID: string,
 export async function setStaffMeetingValues(
   팀명: string,
   ym: string,
-  entries: { 사업구분ID: string; 업무보고: string; 업무계획: string; 협조사항: string; 발표포함: boolean }[],
+  entries: { 사업구분ID: string; 업무보고: string; 업무계획: string; 협조사항: string }[],
   writerEmail: string,
   writerName: string
 ): Promise<void> {
@@ -143,7 +141,6 @@ export async function setStaffMeetingValues(
         작성자이메일: writerEmail,
         작성자명: writerName,
         등록일시: now,
-        발표포함: e.발표포함 ? 'TRUE' : 'FALSE',
       },
     });
   }

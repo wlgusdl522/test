@@ -12,7 +12,6 @@ type Row = {
   업무계획: string;
   협조사항: string;
   지난달계획: string;
-  발표포함: boolean;
 };
 
 const textareaClass =
@@ -22,14 +21,9 @@ export default function EntryClient({ 팀명, ym, rows }: { 팀명: string; ym: 
   const router = useRouter();
   // 이번달 업무보고를 아직 안 썼으면 지난달에 적어둔 "다음달 업무계획"을 그대로 옮겨 적어 시작점으로
   // 준다(회계 전월이월 추천값과 같은 방식 — 그대로 둬도 되고 고쳐 써도 됨, 잠긴 값이 아님).
-  const [values, setValues] = useState<
-    Record<string, { 업무보고: string; 업무계획: string; 협조사항: string; 발표포함: boolean }>
-  >(
+  const [values, setValues] = useState<Record<string, { 업무보고: string; 업무계획: string; 협조사항: string }>>(
     Object.fromEntries(
-      rows.map((r) => [
-        r.id,
-        { 업무보고: r.업무보고 || r.지난달계획, 업무계획: r.업무계획, 협조사항: r.협조사항, 발표포함: r.발표포함 },
-      ])
+      rows.map((r) => [r.id, { 업무보고: r.업무보고 || r.지난달계획, 업무계획: r.업무계획, 협조사항: r.협조사항 }])
     )
   );
   const [status, setStatus] = useState('');
@@ -41,10 +35,6 @@ export default function EntryClient({ 팀명, ym, rows }: { 팀명: string; ym: 
 
   function update(id: string, field: '업무보고' | '업무계획' | '협조사항', value: string) {
     setValues((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
-  }
-
-  function toggle발표(id: string, checked: boolean) {
-    setValues((prev) => ({ ...prev, [id]: { ...prev[id], 발표포함: checked } }));
   }
 
   function handleSubmit() {
@@ -63,15 +53,11 @@ export default function EntryClient({ 팀명, ym, rows }: { 팀명: string; ym: 
 
   return (
     <div>
-      <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
-        &quot;발표&quot;는 전체회의 때 실제로 발표할 사업구분만 체크하는 칸입니다(보기 화면에서 발표만 골라 볼 수 있어요).
-      </p>
       <div className={tableWrap}>
         <table className={table}>
           <thead>
             <tr>
               <th className={`${th} whitespace-nowrap`}>사업구분</th>
-              <th className={`${th} w-16 text-center`}>발표</th>
               <th className={th}>이번달 업무보고</th>
               <th className={th}>다음달 업무계획</th>
               <th className={th}>타 부서 협조사항 및 기타</th>
@@ -81,14 +67,6 @@ export default function EntryClient({ 팀명, ym, rows }: { 팀명: string; ym: 
             {rows.map((r) => (
               <tr key={r.id}>
                 <td className={`${td} whitespace-nowrap font-semibold align-top`}>{r.사업구분}</td>
-                <td className={`${td} text-center align-top`}>
-                  <input
-                    type="checkbox"
-                    checked={values[r.id]?.발표포함 ?? false}
-                    onChange={(e) => toggle발표(r.id, e.target.checked)}
-                    className="h-4 w-4 accent-brand"
-                  />
-                </td>
                 <td className={`${td} align-top`}>
                   <textarea
                     rows={4}

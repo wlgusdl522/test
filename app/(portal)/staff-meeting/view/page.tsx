@@ -22,12 +22,12 @@ function ymLabel(ym: string): string {
 export default async function StaffMeetingViewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ team?: string; ym?: string; mode?: string }>;
+  searchParams: Promise<{ team?: string; ym?: string }>;
 }) {
   if (!(await hasPageAccess('staff-meeting'))) return <PageAccessDenied />;
 
   const [teams, me] = await Promise.all([getSimpleList(TEAM_LIST_SHEET_NAME), getViewerStaffRecord()]);
-  const { team: teamParam, ym: ymParam, mode: modeParam } = await searchParams;
+  const { team: teamParam, ym: ymParam } = await searchParams;
   const myTeam = me?.소속팀 ?? '';
   const 팀명 = teams.includes(teamParam ?? '')
     ? (teamParam as string)
@@ -35,11 +35,9 @@ export default async function StaffMeetingViewPage({
       ? myTeam
       : (teams[0] ?? '');
   const ym = ymParam || currentYm();
-  const mode = modeParam === 'present' ? 'present' : 'all';
 
   const items = 팀명 ? await getStaffMeetingItems(팀명) : [];
   const values = await getStaffMeetingValues(items.map((i) => i.id));
-  const visibleItems = mode === 'present' ? items.filter((i) => valueFor(values, i.id, ym)?.발표포함) : items;
 
   return (
     <main className={pageFluid}>
@@ -57,24 +55,8 @@ export default async function StaffMeetingViewPage({
         </select>
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">조회월</label>
         <input type="month" name="ym" defaultValue={ym} className={`${inputBase} w-auto`} />
-        <input type="hidden" name="mode" value={mode} />
         <button type="submit" className={btnOutline}>조회</button>
       </form>
-
-      <div className="mb-4 flex gap-2">
-        <Link
-          href={`/staff-meeting/view?team=${encodeURIComponent(팀명)}&ym=${ym}&mode=all`}
-          className={mode === 'all' ? `${btnOutline} pointer-events-none bg-brand-tint` : btnOutline}
-        >
-          전체 보기
-        </Link>
-        <Link
-          href={`/staff-meeting/view?team=${encodeURIComponent(팀명)}&ym=${ym}&mode=present`}
-          className={mode === 'present' ? `${btnOutline} pointer-events-none bg-brand-tint` : btnOutline}
-        >
-          발표만 보기
-        </Link>
-      </div>
 
       {!팀명 ? (
         <div className={card}>설정 &gt; 팀 / 직급 / 결재라인 화면에서 팀을 먼저 등록해주세요.</div>
@@ -94,14 +76,12 @@ export default async function StaffMeetingViewPage({
                 </tr>
               </thead>
               <tbody>
-                {visibleItems.length === 0 && (
+                {items.length === 0 && (
                   <tr>
-                    <td className={`${td} text-center text-zinc-400`} colSpan={4}>
-                      {mode === 'present' ? '발표로 표시된 사업구분이 없습니다.' : '등록된 사업구분이 없습니다.'}
-                    </td>
+                    <td className={`${td} text-center text-zinc-400`} colSpan={4}>등록된 사업구분이 없습니다.</td>
                   </tr>
                 )}
-                {visibleItems.map((i) => {
+                {items.map((i) => {
                   const v = valueFor(values, i.id, ym);
                   return (
                     <tr key={i.id}>

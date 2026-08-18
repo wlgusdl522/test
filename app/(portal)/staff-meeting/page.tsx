@@ -45,7 +45,6 @@ export default async function StaffMeetingPage({
       업무계획: v?.업무계획 ?? '',
       협조사항: v?.협조사항 ?? '',
       지난달계획: prevPlanFor(values, i.id, ym),
-      발표포함: v?.발표포함 ?? false,
     };
   });
 
