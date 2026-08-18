@@ -6,7 +6,7 @@ import { btn, btnDanger, btnSecondary, table, td, th, tableWrap } from '@/lib/ui
 import { saveBoardReportSectionAction } from '@/app/(portal)/business-summary/boardPlanActions';
 import type { BoardPlanEntry, BoardReportType } from '@/lib/mutate/boardPlan';
 
-type Row = { key: string; id?: string; 사업명: string; 실시월일: string; 내용: string; 성과: string };
+type Row = { key: string; id?: string; 사업명: string; 실시월일: string; 내용: string; 성과: string; 요약포함: boolean };
 
 const cellInput =
   'w-full min-w-[7rem] resize-y rounded border border-transparent bg-[#fcfbf8] px-2 py-1 text-[13.5px] leading-relaxed focus:border-brand focus:outline-none dark:bg-zinc-950';
@@ -29,18 +29,27 @@ export default function BoardReportTableClient({
   const router = useRouter();
   const counterRef = useRef(0);
   const [rows, setRows] = useState<Row[]>(
-    initialRows.map((r) => ({ key: r.id, id: r.id, 사업명: r.사업명, 실시월일: r.실시월일, 내용: r.내용, 성과: r.성과 }))
+    initialRows.map((r) => ({
+      key: r.id, id: r.id, 사업명: r.사업명, 실시월일: r.실시월일, 내용: r.내용, 성과: r.성과, 요약포함: r.요약포함,
+    }))
   );
   const [status, setStatus] = useState('');
   const [isPending, startTransition] = useTransition();
 
-  function update(key: string, field: keyof Omit<Row, 'key' | 'id'>, value: string) {
+  function update(key: string, field: '사업명' | '실시월일' | '내용' | '성과', value: string) {
     setRows((prev) => prev.map((r) => (r.key === key ? { ...r, [field]: value } : r)));
+  }
+
+  function toggleSummary(key: string, checked: boolean) {
+    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, 요약포함: checked } : r)));
   }
 
   function addRow() {
     counterRef.current += 1;
-    setRows((prev) => [...prev, { key: `new-${counterRef.current}`, 사업명: '', 실시월일: '', 내용: contentTemplate, 성과: '' }]);
+    setRows((prev) => [
+      ...prev,
+      { key: `new-${counterRef.current}`, 사업명: '', 실시월일: '', 내용: contentTemplate, 성과: '', 요약포함: false },
+    ]);
   }
 
   function removeRow(key: string) {
@@ -53,7 +62,7 @@ export default function BoardReportTableClient({
       try {
         const payload = rows
           .filter((r) => r.사업명.trim() || r.실시월일.trim() || r.내용.trim() || r.성과.trim())
-          .map((r) => ({ id: r.id, 사업명: r.사업명, 실시월일: r.실시월일, 내용: r.내용, 성과: r.성과 }));
+          .map((r) => ({ id: r.id, 사업명: r.사업명, 실시월일: r.실시월일, 내용: r.내용, 성과: r.성과, 요약포함: r.요약포함 }));
         await saveBoardReportSectionAction(구분, ym, payload);
         setStatus('저장했습니다');
         router.refresh();
@@ -73,13 +82,14 @@ export default function BoardReportTableClient({
               <th className={`${th} w-28`}>실시월일</th>
               <th className={th}>내용</th>
               <th className={th}>{columnLabel}</th>
+              <th className={`${th} w-16 text-center`}>요약포함</th>
               <th className={`${th} w-12`} />
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td className={`${td} text-center text-zinc-400`} colSpan={5}>등록된 내용이 없습니다. 아래 &quot;행 추가&quot;로 시작하세요.</td>
+                <td className={`${td} text-center text-zinc-400`} colSpan={6}>등록된 내용이 없습니다. 아래 &quot;행 추가&quot;로 시작하세요.</td>
               </tr>
             )}
             {rows.map((r) => (
@@ -106,6 +116,12 @@ export default function BoardReportTableClient({
                   <textarea
                     value={r.성과} onChange={(e) => update(r.key, '성과', e.target.value)}
                     placeholder={examples.성과} rows={3} className={cellInput}
+                  />
+                </td>
+                <td className={`${td} align-top text-center`}>
+                  <input
+                    type="checkbox" checked={r.요약포함} onChange={(e) => toggleSummary(r.key, e.target.checked)}
+                    className="h-4 w-4 accent-brand"
                   />
                 </td>
                 <td className={`${td} align-top text-center`}>

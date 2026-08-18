@@ -298,7 +298,9 @@ export const BOARD_STAT_VALUE_TABLE: KeyedTableConfig = {
 // 추가한 이유: 기존에 이미 쌓여있던 데이터(전부 사업계획이던 시절)의 앞쪽 컬럼 위치가
 // 그대로 유지되어야 해서다 — 중간에 끼워 넣으면 기존 행의 값이 한 칸씩 밀려 읽힌다.
 // 년월도 구분과 같은 이유로 맨 뒤에 추가 — 월조회가 생기기 전 데이터는 조회 시점의 월로 간주한다.
-export const BOARD_PLAN_HEADERS = ['id', '사업명', '실시월일', '내용', '기대효과', '정렬순서', '구분', '년월'];
+// 요약포함: "요약 업무보고"(커버 요약본)에 이 행을 하이라이트로 넣을지 담당자가 직접 체크 —
+// 기존 컬럼 위치가 밀리지 않도록 맨 뒤에 추가.
+export const BOARD_PLAN_HEADERS = ['id', '사업명', '실시월일', '내용', '기대효과', '정렬순서', '구분', '년월', '요약포함'];
 
 export const BOARD_PLAN_TABLE: KeyedTableConfig = {
   spreadsheetId: WORKLOG_SHEET_ID,
@@ -337,5 +339,16 @@ export const BOARD_ROSTER_TABLE: KeyedTableConfig = {
   spreadsheetId: WORKLOG_SHEET_ID,
   sheetName: '이사회명단',
   headers: BOARD_ROSTER_HEADERS,
+  primaryKey: 'id',
+};
+
+// 요약 업무보고 "8. 행정사항" — 월별로 자유롭게 줄글을 몇 줄 적어 넣는 목록(업무보고 표와 같은
+// "행 추가 후 저장" 방식). 항목/그룹 구분이 필요 없어 이사회항목과는 별도의 단순 테이블로 둔다.
+export const BOARD_ADMIN_NOTE_HEADERS = ['id', '년월', '내용', '정렬순서'];
+
+export const BOARD_ADMIN_NOTE_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '이사회행정사항',
+  headers: BOARD_ADMIN_NOTE_HEADERS,
   primaryKey: 'id',
 };

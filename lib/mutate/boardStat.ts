@@ -23,6 +23,12 @@ export function facilitiesFor(모듈: BoardStatModule): readonly string[] {
   return 모듈 === '자원봉사자' ? [NO_FACILITY] : FACILITIES;
 }
 
+// 요약 업무보고 "3. 서비스 제공 인원 현황"/"4. 자원봉사자 현황(요약)" — 시설별로 숫자 하나만 매달
+// 입력하면 되는 값이라, 이사회항목에 항목을 따로 등록하지 않고 이 고정 문자열을 항목ID로 그대로
+// 써서 이사회월별값에 저장한다(값 테이블은 항목ID가 실제 이사회항목에 존재하는지 검사하지 않음).
+export const OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID = 'overview-service-headcount';
+export const OVERVIEW_VOLUNTEER_HEADCOUNT_ITEM_ID = 'overview-volunteer-headcount';
+
 export type BoardStatItem = { id: string; 모듈: string; 항목명: string; 정렬순서: number };
 export type BoardStatValue = { 항목ID: string; 시설: string; 년월: string; 값: number };
 
