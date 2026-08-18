@@ -1,5 +1,12 @@
 import type { KeyedTableConfig } from './keyedTable';
-import { CARD_LEDGER_SHEET_ID, STAFF_SHEET_ID, VEHICLE_SHEET_ID, WEEKLY_PLAN_SHEET_ID, WORKLOG_SHEET_ID } from './sheetIds';
+import {
+  CARD_LEDGER_SHEET_ID,
+  DOCUMENT_INDEX_SHEET_ID,
+  STAFF_SHEET_ID,
+  VEHICLE_SHEET_ID,
+  WEEKLY_PLAN_SHEET_ID,
+  WORKLOG_SHEET_ID,
+} from './sheetIds';
 
 export const VEHICLE_REQUEST_HEADERS = [
   'id', '차량번호', '신청자이메일', '신청자명', '소속팀',
@@ -398,7 +405,7 @@ export const DOCUMENT_INDEX_HEADERS = [
 ];
 
 export const DOCUMENT_INDEX_TABLE: KeyedTableConfig = {
-  spreadsheetId: WORKLOG_SHEET_ID,
+  spreadsheetId: DOCUMENT_INDEX_SHEET_ID,
   sheetName: '색인목록',
   headers: DOCUMENT_INDEX_HEADERS,
   primaryKey: 'id',
@@ -409,7 +416,7 @@ export const DOCUMENT_INDEX_TABLE: KeyedTableConfig = {
 export const DOCUMENT_INDEX_STATE_HEADERS = ['팀명', '연도', '현재권', '다음일련번호'];
 
 export const DOCUMENT_INDEX_STATE_TABLE: KeyedTableConfig = {
-  spreadsheetId: WORKLOG_SHEET_ID,
+  spreadsheetId: DOCUMENT_INDEX_SHEET_ID,
   sheetName: '색인목록상태',
   headers: DOCUMENT_INDEX_STATE_HEADERS,
   primaryKey: ['팀명', '연도'],
@@ -419,7 +426,7 @@ export const DOCUMENT_INDEX_STATE_TABLE: KeyedTableConfig = {
 export const DOCUMENT_INDEX_PREFIX_HEADERS = ['팀명', '접두사'];
 
 export const DOCUMENT_INDEX_PREFIX_TABLE: KeyedTableConfig = {
-  spreadsheetId: WORKLOG_SHEET_ID,
+  spreadsheetId: DOCUMENT_INDEX_SHEET_ID,
   sheetName: '색인목록접두사',
   headers: DOCUMENT_INDEX_PREFIX_HEADERS,
   primaryKey: '팀명',
