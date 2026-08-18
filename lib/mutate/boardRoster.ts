@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord } from '@/lib/mutate/keyedTable';
 import { BOARD_ROSTER_TABLE } from '@/lib/sheets/registry';
+import { FACILITIES, FACILITY_LABEL, getModuleItems } from '@/lib/mutate/boardStat';
 
 export type RosterPerson = { id: string; 항목ID: string; 년월: string; 구분: string; 이름: string; 정렬순서: number };
 export type RosterRowInput = { id?: string; 항목ID: string; 구분: string; 이름: string };
@@ -60,4 +61,41 @@ export function summarizeRoster(items: { id: string; 항목명: string }[], rost
     const 일반이름 = mine.filter((r) => !r.구분.trim()).map((r) => r.이름);
     return { id: i.id, 항목명: i.항목명, 단체이름, 일반이름, 단체: 단체이름.length, 일반: 일반이름.length, 소계: mine.length };
   });
+}
+
+export async function getRosterForYear(항목IDs: string[], year: string): Promise<RosterPerson[]> {
+  const rows = await getKeyedList(BOARD_ROSTER_TABLE);
+  const idSet = new Set(항목IDs);
+  return rows
+    .filter((r) => r.id && idSet.has(r.항목ID) && r.년월.slice(0, 4) === year)
+    .map((r) => ({ id: r.id, 항목ID: r.항목ID, 년월: r.년월, 구분: r.구분, 이름: r.이름, 정렬순서: num(r.정렬순서) }));
+}
+
+// 요약 업무보고 "4. 자원봉사자 현황" — 원본 서식과 실제 인원수를 대조해서 확인한 규칙: 봉사분야
+// "요양센터"/"데이케어센터" 명단은 그대로 그 시설로, 나머지 봉사분야(기타 포함)는 전부 복지관으로
+// 합산하면 원본의 시설별 합계와 정확히 일치한다(예: 전체 331명 - 요양센터 16명 - 데이케어센터
+// 10명 = 복지관 305명). 자원봉사자 명단 자체엔 시설 구분이 없어서(facilitiesFor('자원봉사자')가
+// NO_FACILITY 하나뿐) 이 매핑은 항목명으로 추론한다.
+function facilityForRosterItem(항목명: string): string {
+  if (항목명 === '요양센터') return '요양센터';
+  if (항목명 === '데이케어센터') return '데이케어센터';
+  return '복지관';
+}
+
+export async function getVolunteerFacilitySummary(
+  ym: string
+): Promise<{ 시설명: string; 전월누계: number; 금월실적: number }[]> {
+  const items = await getModuleItems('자원봉사자');
+  const facilityOf = new Map(items.map((i) => [i.id, facilityForRosterItem(i.항목명)]));
+  const year = ym.slice(0, 4);
+  const roster = await getRosterForYear(items.map((i) => i.id), year);
+
+  const counts: Record<string, { 전월누계: number; 금월실적: number }> = {};
+  for (const f of FACILITIES) counts[f] = { 전월누계: 0, 금월실적: 0 };
+  for (const r of roster) {
+    const facility = facilityOf.get(r.항목ID) ?? '복지관';
+    if (r.년월 === ym) counts[facility].금월실적 += 1;
+    else if (r.년월 < ym) counts[facility].전월누계 += 1;
+  }
+  return FACILITIES.map((f) => ({ 시설명: FACILITY_LABEL[f] ?? f, ...counts[f] }));
 }

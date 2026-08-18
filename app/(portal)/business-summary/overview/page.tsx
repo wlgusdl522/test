@@ -3,14 +3,16 @@ import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import BoardSubTabs from '@/components/business/BoardSubTabs';
 import FacilityStatEntryClient from '@/components/business/FacilityStatEntryClient';
+import FacilityStatTable from '@/components/business/FacilityStatTable';
 import AdminNoteListClient from '@/components/business/AdminNoteListClient';
 import AccountingSummaryTable from '@/components/business/AccountingSummaryTable';
 import DonationSummaryTable from '@/components/business/DonationSummaryTable';
 import {
   FACILITIES, FACILITY_LABEL, getModuleValues, priorCumulative, valueFor,
-  OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID, OVERVIEW_VOLUNTEER_HEADCOUNT_ITEM_ID,
+  OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID,
 } from '@/lib/mutate/boardStat';
 import { getSummaryHighlights } from '@/lib/mutate/boardPlan';
+import { getVolunteerFacilitySummary } from '@/lib/mutate/boardRoster';
 import { getAccountingItems, computeFacilityTotals } from '@/lib/mutate/boardAccounting';
 import { getBankAccounts } from '@/lib/mutate/boardBankAccount';
 import { getDonationDetailsForYear, donationPriorCumulative, donationValueFor } from '@/lib/mutate/boardDonation';
@@ -78,18 +80,13 @@ export default async function BusinessSummaryOverviewPage({
     getSummaryHighlights('사업계획', ym),
   ]);
 
-  const [serviceValues, volunteerValues] = await Promise.all([
-    getModuleValues([OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID]),
-    getModuleValues([OVERVIEW_VOLUNTEER_HEADCOUNT_ITEM_ID]),
-  ]);
-  const facilityRows = (itemId: string, values: typeof serviceValues) =>
-    FACILITIES.map((f) => ({
-      시설: f, 시설명: FACILITY_LABEL[f] ?? f,
-      전월누계: priorCumulative(values, itemId, f, ym),
-      금월실적: valueFor(values, itemId, f, ym),
-    }));
-  const serviceRows = facilityRows(OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID, serviceValues);
-  const volunteerRows = facilityRows(OVERVIEW_VOLUNTEER_HEADCOUNT_ITEM_ID, volunteerValues);
+  const serviceValues = await getModuleValues([OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID]);
+  const serviceRows = FACILITIES.map((f) => ({
+    시설: f, 시설명: FACILITY_LABEL[f] ?? f,
+    전월누계: priorCumulative(serviceValues, OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID, f, ym),
+    금월실적: valueFor(serviceValues, OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID, f, ym),
+  }));
+  const volunteerRows = await getVolunteerFacilitySummary(ym);
 
   const itemsByFacility = await Promise.all(FACILITIES.map((f) => getAccountingItems(f)));
   const allAccItems = itemsByFacility.flat();
@@ -142,7 +139,10 @@ export default async function BusinessSummaryOverviewPage({
 
       <div className={`${card} mb-5`}>
         <h2 className={`${h2} mb-3`}>4) 자원봉사자 현황 요약 ({ym})</h2>
-        <FacilityStatEntryClient 항목ID={OVERVIEW_VOLUNTEER_HEADCOUNT_ITEM_ID} ym={ym} rows={volunteerRows} />
+        <p className="mb-3 text-xs text-zinc-400">
+          자원봉사자 명단에서 자동 계산됩니다(요양센터/데이케어센터 분야는 그 시설로, 나머지는 복지관으로 합산).
+        </p>
+        <FacilityStatTable rows={volunteerRows} />
       </div>
 
       <AccountingSummaryTable title={`5) ${ym} 수입지출현황`} rows={accountingSummaryRows} />

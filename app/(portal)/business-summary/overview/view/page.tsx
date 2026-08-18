@@ -2,12 +2,14 @@ import Link from 'next/link';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import AccountingSummaryTable from '@/components/business/AccountingSummaryTable';
+import FacilityStatTable from '@/components/business/FacilityStatTable';
 import DonationSummaryTable from '@/components/business/DonationSummaryTable';
 import {
   FACILITIES, FACILITY_LABEL, getModuleValues, priorCumulative, valueFor,
-  OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID, OVERVIEW_VOLUNTEER_HEADCOUNT_ITEM_ID,
+  OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID,
 } from '@/lib/mutate/boardStat';
 import { getSummaryHighlights } from '@/lib/mutate/boardPlan';
+import { getVolunteerFacilitySummary } from '@/lib/mutate/boardRoster';
 import { getAccountingItems, computeFacilityTotals } from '@/lib/mutate/boardAccounting';
 import { getBankAccounts } from '@/lib/mutate/boardBankAccount';
 import { getDonationDetailsForYear, donationPriorCumulative, donationValueFor } from '@/lib/mutate/boardDonation';
@@ -57,33 +59,6 @@ function HighlightTable({ title, rows }: { title: string; rows: { 사업명: str
   );
 }
 
-function FacilityStatTable({ rows }: { rows: { 시설명: string; 전월누계: number; 금월실적: number }[] }) {
-  return (
-    <div className={tableWrap}>
-      <table className={table}>
-        <thead>
-          <tr>
-            <th className={th}>시설명</th>
-            <th className={`${th} text-right`}>전월 누계</th>
-            <th className={`${th} text-right`}>금월 실적</th>
-            <th className={`${th} text-right`}>누 계</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.시설명} className="even:bg-[#f8f9fb] dark:even:bg-zinc-800/30">
-              <td className={`${td} whitespace-nowrap`}>{r.시설명}</td>
-              <td className={`${td} text-right tabular-nums`}>{nf(r.전월누계)}</td>
-              <td className={`${td} text-right tabular-nums`}>{nf(r.금월실적)}</td>
-              <td className={`${td} text-right tabular-nums font-semibold`}>{nf(r.전월누계 + r.금월실적)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 export default async function BusinessSummaryOverviewViewPage({
   searchParams,
 }: {
@@ -100,18 +75,13 @@ export default async function BusinessSummaryOverviewViewPage({
     getSummaryHighlights('사업계획', ym),
   ]);
 
-  const [serviceValues, volunteerValues] = await Promise.all([
-    getModuleValues([OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID]),
-    getModuleValues([OVERVIEW_VOLUNTEER_HEADCOUNT_ITEM_ID]),
-  ]);
-  const facilityRows = (itemId: string, values: typeof serviceValues) =>
-    FACILITIES.map((f) => ({
-      시설명: FACILITY_LABEL[f] ?? f,
-      전월누계: priorCumulative(values, itemId, f, ym),
-      금월실적: valueFor(values, itemId, f, ym),
-    }));
-  const serviceRows = facilityRows(OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID, serviceValues);
-  const volunteerRows = facilityRows(OVERVIEW_VOLUNTEER_HEADCOUNT_ITEM_ID, volunteerValues);
+  const serviceValues = await getModuleValues([OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID]);
+  const serviceRows = FACILITIES.map((f) => ({
+    시설명: FACILITY_LABEL[f] ?? f,
+    전월누계: priorCumulative(serviceValues, OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID, f, ym),
+    금월실적: valueFor(serviceValues, OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID, f, ym),
+  }));
+  const volunteerRows = await getVolunteerFacilitySummary(ym);
 
   const itemsByFacility = await Promise.all(FACILITIES.map((f) => getAccountingItems(f)));
   const allAccItems = itemsByFacility.flat();
