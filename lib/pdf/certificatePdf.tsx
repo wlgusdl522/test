@@ -6,6 +6,8 @@ import { getSystemSettings } from '@/lib/mutate/settings';
 
 // 실제 발급되는 최종 문서에는 결재란이 나오지 않는다 — 결재는 신청~승인 단계에서 이미 끝난 상태이고,
 // 이 PDF는 관장 최종승인 후 "발행" 시점에만 생성되는 완결된 결과물이다.
+// 레이아웃(글자크기·자간·"인적사항/재직사항"을 표 왼쪽에 세로로 걸치는 라벨로 두는 방식)은
+// 기관에서 실제 쓰던 재직/경력증명서 한글 양식 PDF를 pdfjs로 파싱해 얻은 실측값을 반영했다.
 
 const VERIFY_PHRASE: Record<string, string> = {
   재직증명서: '위 사실을 증명합니다.',
@@ -33,22 +35,27 @@ function ensureFont() {
 }
 
 const styles = StyleSheet.create({
-  page: { padding: 40, fontFamily: 'NotoSansKR', fontSize: 11, color: '#000' },
-  docNumber: { fontSize: 10, marginBottom: 16 },
-  title: { textAlign: 'center', fontSize: 24, letterSpacing: 8, marginTop: 16, marginBottom: 32 },
-  sectionLabel: { fontSize: 10, fontWeight: 700, color: '#555', marginBottom: 4, marginTop: 16 },
-  infoTable: { border: '1px solid #333' },
+  page: { padding: 42, fontFamily: 'NotoSansKR', fontSize: 11, color: '#000' },
+  docNumber: { fontSize: 11, marginBottom: 56 },
+  title: { textAlign: 'center', fontSize: 25, fontWeight: 700, letterSpacing: 13, marginBottom: 40 },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', marginTop: 20 },
+  sectionLabelCol: { width: 64, alignItems: 'center' },
+  sectionLabelText: { fontSize: 11, fontWeight: 700 },
+  infoTable: { flex: 1, border: '1px solid #333' },
   infoRow: { flexDirection: 'row', borderBottom: '1px solid #333' },
   infoRowLast: { flexDirection: 'row' },
-  infoLabel: { width: 110, backgroundColor: '#f2f2f2', fontWeight: 700, textAlign: 'center', justifyContent: 'center', padding: 8, borderRight: '1px solid #333' },
-  infoValue: { flex: 1, padding: 8, justifyContent: 'center' },
-  verifyPhrase: { textAlign: 'center', marginTop: 32, fontSize: 13 },
-  closingBlock: { marginTop: 48, alignItems: 'center' },
-  closingDate: { fontSize: 11 },
-  closingOrgName: { marginTop: 12, fontWeight: 700, fontSize: 13 },
-  closingTitleRow: { marginTop: 8, position: 'relative' },
-  closingTitle: { fontSize: 18, fontWeight: 700 },
-  sealImage: { position: 'absolute', width: 58, height: 58, opacity: 0.85, top: -16, right: -10 },
+  infoLabel: { width: 110, backgroundColor: '#f2f2f2', fontWeight: 700, textAlign: 'center', justifyContent: 'center', padding: 12, borderRight: '1px solid #333' },
+  infoValue: { flex: 1, padding: 12, justifyContent: 'center' },
+  plainRow: { flexDirection: 'row', borderBottom: '1px solid #333' },
+  plainRowLast: { flexDirection: 'row' },
+  plainTable: { marginTop: 20, border: '1px solid #333' },
+  verifyPhrase: { textAlign: 'center', marginTop: 32, fontSize: 15 },
+  closingBlock: { marginTop: 40, alignItems: 'center' },
+  closingDate: { fontSize: 15 },
+  closingOrgName: { marginTop: 14, fontWeight: 700, fontSize: 15 },
+  closingTitleRow: { marginTop: 10, position: 'relative' },
+  closingTitle: { fontSize: 25, fontWeight: 700 },
+  sealImage: { position: 'absolute', width: 58, height: 58, opacity: 0.85, top: -18, right: -16 },
   qrBar: {
     marginTop: 40,
     flexDirection: 'row',
@@ -73,6 +80,7 @@ export async function renderCertificatePdf(record: Record<string, string>, verif
   const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 120, margin: 1 });
   const { certificateSealImageUrl } = await getSystemSettings();
   const sealDataUrl = certificateSealImageUrl ? await getDriveImageAsDataUrl(certificateSealImageUrl) : null;
+  const isCareer = record['종류'] === '경력증명서';
 
   const doc = (
     <Document>
@@ -81,55 +89,62 @@ export async function renderCertificatePdf(record: Record<string, string>, verif
 
         <Text style={styles.title}>{record['종류']}</Text>
 
-        <Text style={styles.sectionLabel}>인적사항</Text>
-        <View style={styles.infoTable}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>성 명</Text>
-            <Text style={styles.infoValue}>{record['대상자성명']}</Text>
+        <View style={styles.sectionRow}>
+          <View style={styles.sectionLabelCol}>
+            <Text style={styles.sectionLabelText}>인적사항</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>주민등록번호</Text>
-            <Text style={styles.infoValue}>{maskedResidentNumber(record['생년월일'], record['성별'])}</Text>
-          </View>
-          <View style={styles.infoRowLast}>
-            <Text style={styles.infoLabel}>주 소</Text>
-            <Text style={styles.infoValue}>{record['대상자주소']}</Text>
-          </View>
-        </View>
-
-        <Text style={styles.sectionLabel}>{record['종류'] === '경력증명서' ? '경력사항' : '재직사항'}</Text>
-        <View style={styles.infoTable}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>소 속</Text>
-            <Text style={styles.infoValue}>{record['대상자소속']}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>직 위</Text>
-            <Text style={styles.infoValue}>{record['대상자직위']}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>기 간</Text>
-            <Text style={styles.infoValue}>{record['근무기간']}</Text>
-          </View>
-          <View style={record['종류'] === '경력증명서' ? styles.infoRow : styles.infoRowLast}>
-            <Text style={styles.infoLabel}>담당업무</Text>
-            <Text style={styles.infoValue}>{record['담당업무']}</Text>
-          </View>
-          {record['종류'] === '경력증명서' && (
-            <View style={styles.infoRowLast}>
-              <Text style={styles.infoLabel}>퇴직사유</Text>
-              <Text style={styles.infoValue}>{record['퇴직사유']}</Text>
+          <View style={styles.infoTable}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>성 명</Text>
+              <Text style={styles.infoValue}>{record['대상자성명']}</Text>
             </View>
-          )}
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>주민등록번호</Text>
+              <Text style={styles.infoValue}>{maskedResidentNumber(record['생년월일'], record['성별'])}</Text>
+            </View>
+            <View style={styles.infoRowLast}>
+              <Text style={styles.infoLabel}>주 소</Text>
+              <Text style={styles.infoValue}>{record['대상자주소']}</Text>
+            </View>
+          </View>
         </View>
 
-        <Text style={styles.sectionLabel}>용도 · 비고</Text>
-        <View style={styles.infoTable}>
-          <View style={styles.infoRow}>
+        <View style={styles.sectionRow}>
+          <View style={styles.sectionLabelCol}>
+            <Text style={styles.sectionLabelText}>{isCareer ? '경력사항' : '재직사항'}</Text>
+          </View>
+          <View style={styles.infoTable}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>소 속</Text>
+              <Text style={styles.infoValue}>{record['대상자소속']}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>직 위</Text>
+              <Text style={styles.infoValue}>{record['대상자직위']}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>기 간</Text>
+              <Text style={styles.infoValue}>{record['근무기간']}</Text>
+            </View>
+            <View style={isCareer ? styles.infoRow : styles.infoRowLast}>
+              <Text style={styles.infoLabel}>담당업무</Text>
+              <Text style={styles.infoValue}>{record['담당업무']}</Text>
+            </View>
+            {isCareer && (
+              <View style={styles.infoRowLast}>
+                <Text style={styles.infoLabel}>퇴직사유</Text>
+                <Text style={styles.infoValue}>{record['퇴직사유']}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.plainTable}>
+          <View style={styles.plainRow}>
             <Text style={styles.infoLabel}>용 도</Text>
             <Text style={styles.infoValue}>{record['용도']}</Text>
           </View>
-          <View style={styles.infoRowLast}>
+          <View style={styles.plainRowLast}>
             <Text style={styles.infoLabel}>비 고</Text>
             <Text style={styles.infoValue}>{record['비고']}</Text>
           </View>

@@ -85,54 +85,57 @@ async function CertificateDoc({ record: r, origin }: { record: Record<string, st
   const { certificateSealImageUrl } = await getSystemSettings();
   const sealDataUrl = certificateSealImageUrl ? await getDriveImageAsDataUrl(certificateSealImageUrl) : null;
 
-  const lbl: CSSProperties = { border: '1px solid #333', background: '#f2f2f2', fontWeight: 600, textAlign: 'center', whiteSpace: 'nowrap', padding: '10px' };
-  const cell: CSSProperties = { border: '1px solid #333', padding: '10px' };
-  const sectionLabel: CSSProperties = { fontSize: 12, fontWeight: 700, color: '#555', margin: '18px 0 4px' };
+  const lbl: CSSProperties = { border: '1px solid #333', background: '#f2f2f2', fontWeight: 600, textAlign: 'center', whiteSpace: 'nowrap', padding: '12px' };
+  const cell: CSSProperties = { border: '1px solid #333', padding: '12px' };
+  const sectionLabelCol: CSSProperties = { width: 64, textAlign: 'center', fontSize: 13, fontWeight: 700 };
   const isCareer = r.종류 === '경력증명서';
 
   return (
     <div style={{ fontSize: 13.5, color: '#000', width: '186mm', margin: '0 auto' }} className="bg-white p-6 print:p-0">
       <div style={{ fontSize: 12 }}>제 {r.문서번호}호</div>
 
-      <h2 style={{ textAlign: 'center', fontSize: 26, letterSpacing: 14, margin: '24px 0 32px' }}>{r.종류}</h2>
+      <h2 style={{ textAlign: 'center', fontSize: 27, fontWeight: 700, letterSpacing: 15, margin: '24px 0 40px' }}>{r.종류}</h2>
 
-      <p style={{ ...sectionLabel, marginTop: 0 }}>인적사항</p>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <tbody>
-          <tr><td style={{ ...lbl, width: 120 }}>성&nbsp;&nbsp;&nbsp;&nbsp;명</td><td style={cell}>{r.대상자성명}</td></tr>
-          <tr><td style={lbl}>주민등록번호</td><td style={cell}>{maskedResidentNumber(r.생년월일, r.성별)}</td></tr>
-          <tr><td style={lbl}>주&nbsp;&nbsp;&nbsp;&nbsp;소</td><td style={cell}>{r.대상자주소}</td></tr>
-        </tbody>
-      </table>
+      <div style={{ display: 'flex', alignItems: 'center', marginTop: 20 }}>
+        <div style={sectionLabelCol}>인적사항</div>
+        <table style={{ flex: 1, width: '100%', borderCollapse: 'collapse' }}>
+          <tbody>
+            <tr><td style={{ ...lbl, width: 120 }}>성&nbsp;&nbsp;&nbsp;&nbsp;명</td><td style={cell}>{r.대상자성명}</td></tr>
+            <tr><td style={lbl}>주민등록번호</td><td style={cell}>{maskedResidentNumber(r.생년월일, r.성별)}</td></tr>
+            <tr><td style={lbl}>주&nbsp;&nbsp;&nbsp;&nbsp;소</td><td style={cell}>{r.대상자주소}</td></tr>
+          </tbody>
+        </table>
+      </div>
 
-      <p style={sectionLabel}>{isCareer ? '경력사항' : '재직사항'}</p>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <tbody>
-          <tr><td style={{ ...lbl, width: 120 }}>소&nbsp;&nbsp;&nbsp;&nbsp;속</td><td style={cell}>{r.대상자소속}</td></tr>
-          <tr><td style={lbl}>직&nbsp;&nbsp;&nbsp;&nbsp;위</td><td style={cell}>{r.대상자직위}</td></tr>
-          <tr><td style={lbl}>기&nbsp;&nbsp;&nbsp;&nbsp;간</td><td style={cell}>{r.근무기간}</td></tr>
-          <tr><td style={lbl}>담당업무</td><td style={cell}>{r.담당업무}</td></tr>
-          {isCareer && <tr><td style={lbl}>퇴직사유</td><td style={cell}>{r.퇴직사유}</td></tr>}
-        </tbody>
-      </table>
+      <div style={{ display: 'flex', alignItems: 'center', marginTop: 20 }}>
+        <div style={sectionLabelCol}>{isCareer ? '경력사항' : '재직사항'}</div>
+        <table style={{ flex: 1, width: '100%', borderCollapse: 'collapse' }}>
+          <tbody>
+            <tr><td style={{ ...lbl, width: 120 }}>소&nbsp;&nbsp;&nbsp;&nbsp;속</td><td style={cell}>{r.대상자소속}</td></tr>
+            <tr><td style={lbl}>직&nbsp;&nbsp;&nbsp;&nbsp;위</td><td style={cell}>{r.대상자직위}</td></tr>
+            <tr><td style={lbl}>기&nbsp;&nbsp;&nbsp;&nbsp;간</td><td style={cell}>{r.근무기간}</td></tr>
+            <tr><td style={lbl}>담당업무</td><td style={cell}>{r.담당업무}</td></tr>
+            {isCareer && <tr><td style={lbl}>퇴직사유</td><td style={cell}>{r.퇴직사유}</td></tr>}
+          </tbody>
+        </table>
+      </div>
 
-      <p style={sectionLabel}>용도 · 비고</p>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 20 }}>
         <tbody>
           <tr><td style={{ ...lbl, width: 120 }}>용&nbsp;&nbsp;&nbsp;&nbsp;도</td><td style={cell}>{r.용도}</td></tr>
           <tr><td style={lbl}>비&nbsp;&nbsp;&nbsp;&nbsp;고</td><td style={cell}>{r.비고}</td></tr>
         </tbody>
       </table>
 
-      <p style={{ textAlign: 'center', marginTop: 32, fontSize: 15 }}>
+      <p style={{ textAlign: 'center', marginTop: 32, fontSize: 17 }}>
         {VERIFY_PHRASE[r.종류] ?? '위 내용을 확인합니다.'}
       </p>
 
       <div style={{ marginTop: 48, textAlign: 'center' }}>
-        <p style={{ fontSize: 12 }}>{formatPrintDate(r.발급일)}</p>
-        <p style={{ marginTop: 12, fontWeight: 700, fontSize: 14 }}>사회복지법인 새문안교회사회복지재단</p>
-        <div style={{ marginTop: 8, position: 'relative', display: 'inline-block' }}>
-          <p style={{ fontSize: 19, fontWeight: 700 }}>시립서대문노인종합복지관장</p>
+        <p style={{ fontSize: 15 }}>{formatPrintDate(r.발급일)}</p>
+        <p style={{ marginTop: 14, fontWeight: 700, fontSize: 15 }}>사회복지법인 새문안교회사회복지재단</p>
+        <div style={{ marginTop: 10, position: 'relative', display: 'inline-block' }}>
+          <p style={{ fontSize: 27, fontWeight: 700 }}>시립서대문노인종합복지관장</p>
           {sealDataUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
