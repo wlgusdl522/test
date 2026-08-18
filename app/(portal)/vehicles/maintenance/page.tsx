@@ -44,7 +44,7 @@ export default async function VehicleMaintenancePage({
         </a>
       </div>
 
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         <a
           href={`/vehicles/maintenance${vehicleParam ? `?${vehicleParam}` : ''}`}
           className={`text-xs px-2.5 py-1 rounded-full ${!ym && !showAll ? 'bg-brand-tint text-brand-dark dark:text-brand font-medium' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'}`}
@@ -67,7 +67,7 @@ export default async function VehicleMaintenancePage({
         </a>
 
         <FormToggle label={editing ? '정비 기록 수정' : '정비 등록'} defaultOpen={!!editing}>
-        <form action={editing ? updateVehicleMaintenanceAction : addVehicleMaintenanceAction} className="grid grid-cols-2 gap-3">
+        <form action={editing ? updateVehicleMaintenanceAction : addVehicleMaintenanceAction} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {editing && <input type="hidden" name="id" value={editing.id} />}
           <label className={label}>
             차량 *
@@ -79,7 +79,7 @@ export default async function VehicleMaintenancePage({
             정비일자 *
             <input type="date" name="date" defaultValue={editing?.정비일자 ?? todayIso} required className={input} />
           </label>
-          <label className={`${label} col-span-2`}>
+          <label className={`${label} sm:col-span-2`}>
             정비내용 *
             <input name="content" defaultValue={editing?.정비내용 ?? ''} required className={input} />
           </label>
@@ -91,11 +91,11 @@ export default async function VehicleMaintenancePage({
             지출액
             <input type="number" name="cost" defaultValue={editing?.지출액 ?? ''} className={input} />
           </label>
-          <label className={`${label} col-span-2`}>
+          <label className={`${label} sm:col-span-2`}>
             비고
             <input name="note" defaultValue={editing?.비고 ?? ''} className={input} />
           </label>
-          <div className="col-span-2 flex items-center gap-3">
+          <div className="sm:col-span-2 flex items-center gap-3">
             <button type="submit" className={btn}>{editing ? '저장' : '등록'}</button>
           </div>
         </form>

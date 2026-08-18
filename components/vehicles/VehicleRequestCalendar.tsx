@@ -56,12 +56,12 @@ export default function VehicleRequestCalendar({
         <button type="button" onClick={() => onNavigate(nextMonthIso)} className="text-sm text-brand hover:underline">다음달 ▶</button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 mb-4">
+      <div className="grid grid-cols-7 gap-0.5 mb-4 sm:gap-1">
         {weekdayLabels.map((w) => (
           <div key={w} className="text-center text-xs font-semibold text-zinc-500 py-1">{w}</div>
         ))}
         {cells.map((iso, i) => {
-          if (!iso) return <div key={i} className="min-h-20" />;
+          if (!iso) return <div key={i} className="min-h-14 sm:min-h-20" />;
           const dayRequests = byDate.get(iso) ?? [];
           const vehiclesForDay = [...new Set(dayRequests.map((r) => r.차량번호))];
           const isSelected = iso === date;
@@ -72,23 +72,42 @@ export default function VehicleRequestCalendar({
               onClick={() => onSelectDate(iso)}
               onDoubleClick={() => onOpenNew(iso)}
               title="더블클릭하면 이 날짜로 바로 예약할 수 있어요"
-              className={`min-h-20 rounded-md border p-1 text-xs flex flex-col gap-0.5 items-stretch text-left hover:border-brand ${
+              className={`min-h-14 rounded-md border p-0.5 text-xs flex flex-col gap-0.5 items-stretch text-left hover:border-brand sm:min-h-20 sm:p-1 ${
                 isSelected ? 'border-brand bg-brand-tint' : 'border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900'
               }`}
             >
               <span className="font-semibold">{Number(iso.slice(-2))}</span>
-              {vehiclesForDay.slice(0, 2).map((v) => {
-                const allDone = dayRequests.filter((r) => r.차량번호 === v).every((r) => hasLogRequestIds.has(r.id));
-                return (
-                  <span
-                    key={v}
-                    className={`truncate rounded px-1 ${allDone ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400'}`}
-                  >
-                    {vehicleLabel(v, vehicles)}
-                  </span>
-                );
-              })}
-              {vehiclesForDay.length > 2 && <span className="text-zinc-400">+{vehiclesForDay.length - 2}</span>}
+
+              {/* 모바일: 칸이 좁아 차종 이름이 잘려 안 보이므로 색상 점으로만 표시 */}
+              {vehiclesForDay.length > 0 && (
+                <div className="flex flex-wrap gap-0.5 sm:hidden">
+                  {vehiclesForDay.slice(0, 4).map((v) => {
+                    const allDone = dayRequests.filter((r) => r.차량번호 === v).every((r) => hasLogRequestIds.has(r.id));
+                    return (
+                      <span
+                        key={v}
+                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${allDone ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                      />
+                    );
+                  })}
+                  {vehiclesForDay.length > 4 && <span className="text-[9px] leading-none text-zinc-400">+{vehiclesForDay.length - 4}</span>}
+                </div>
+              )}
+
+              <div className="hidden sm:flex sm:flex-col sm:gap-0.5">
+                {vehiclesForDay.slice(0, 2).map((v) => {
+                  const allDone = dayRequests.filter((r) => r.차량번호 === v).every((r) => hasLogRequestIds.has(r.id));
+                  return (
+                    <span
+                      key={v}
+                      className={`truncate rounded px-1 ${allDone ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400'}`}
+                    >
+                      {vehicleLabel(v, vehicles)}
+                    </span>
+                  );
+                })}
+                {vehiclesForDay.length > 2 && <span className="text-zinc-400">+{vehiclesForDay.length - 2}</span>}
+              </div>
             </button>
           );
         })}
