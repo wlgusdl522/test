@@ -19,8 +19,12 @@ const textareaClass =
 
 export default function EntryClient({ 팀명, ym, rows }: { 팀명: string; ym: string; rows: Row[] }) {
   const router = useRouter();
+  // 이번달 업무보고를 아직 안 썼으면 지난달에 적어둔 "다음달 업무계획"을 그대로 옮겨 적어 시작점으로
+  // 준다(회계 전월이월 추천값과 같은 방식 — 그대로 둬도 되고 고쳐 써도 됨, 잠긴 값이 아님).
   const [values, setValues] = useState<Record<string, { 업무보고: string; 업무계획: string; 협조사항: string }>>(
-    Object.fromEntries(rows.map((r) => [r.id, { 업무보고: r.업무보고, 업무계획: r.업무계획, 협조사항: r.협조사항 }]))
+    Object.fromEntries(
+      rows.map((r) => [r.id, { 업무보고: r.업무보고 || r.지난달계획, 업무계획: r.업무계획, 협조사항: r.협조사항 }])
+    )
   );
   const [status, setStatus] = useState('');
   const [isPending, startTransition] = useTransition();
@@ -64,11 +68,6 @@ export default function EntryClient({ 팀명, ym, rows }: { 팀명: string; ym: 
               <tr key={r.id}>
                 <td className={`${td} whitespace-nowrap font-semibold align-top`}>{r.사업구분}</td>
                 <td className={`${td} align-top`}>
-                  {r.지난달계획 && (
-                    <div className="mb-1.5 whitespace-pre-wrap rounded bg-[#f7f8fa] px-2 py-1 text-xs text-zinc-500 dark:bg-zinc-800/50 dark:text-zinc-400">
-                      지난달 계획: {r.지난달계획}
-                    </div>
-                  )}
                   <textarea
                     rows={4}
                     value={values[r.id]?.업무보고 ?? ''}
