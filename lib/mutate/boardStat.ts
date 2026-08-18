@@ -4,13 +4,13 @@ import { BOARD_STAT_ITEM_TABLE, BOARD_STAT_VALUE_TABLE } from '@/lib/sheets/regi
 
 export type BoardStatModule = '회계' | '자원봉사자' | '후원';
 
-// 회계만 복지관/요양센터/데이케어센터가 서로 다른 값을 갖는다 — 나머지 모듈은 이 상수 하나로 고정.
+// 회계/후원은 복지관/요양센터/데이케어센터가 서로 다른 값을 갖는다 — 자원봉사자만 시설 구분이 없다.
 export const FACILITIES = ['복지관', '요양센터', '데이케어센터'] as const;
 export type Facility = (typeof FACILITIES)[number];
 export const NO_FACILITY = '전체';
 
 export function facilitiesFor(모듈: BoardStatModule): readonly string[] {
-  return 모듈 === '회계' ? FACILITIES : [NO_FACILITY];
+  return 모듈 === '자원봉사자' ? [NO_FACILITY] : FACILITIES;
 }
 
 export type BoardStatItem = { id: string; 모듈: string; 항목명: string; 정렬순서: number };

@@ -1,0 +1,123 @@
+'use client';
+
+import { useRef, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { btn, btnDanger, btnSecondary, table, td, th, tableWrap } from '@/lib/ui';
+import { saveDonationDetailsAction } from '@/app/(portal)/business-summary/boardDonationActions';
+
+type Row = { key: string; id?: string; 품목: string; 수량: string; 환가액: string; 후원자: string; 지급대상: string };
+
+const cellInput =
+  'w-full min-w-[6rem] rounded border border-transparent bg-[#fcfbf8] px-2 py-1 text-[13.5px] focus:border-brand focus:outline-none dark:bg-zinc-950';
+
+export default function DonationGoodsGridClient({
+  시설,
+  ym,
+  initialRows,
+}: {
+  시설: string;
+  ym: string;
+  initialRows: { id: string; 이름: string; 수량: string; 금액: number; 후원자: string; 지급대상: string }[];
+}) {
+  const router = useRouter();
+  const counterRef = useRef(0);
+  const [rows, setRows] = useState<Row[]>(
+    initialRows.map((r) => ({
+      key: r.id, id: r.id, 품목: r.이름, 수량: r.수량, 환가액: r.금액 ? String(r.금액) : '',
+      후원자: r.후원자, 지급대상: r.지급대상,
+    }))
+  );
+  const [status, setStatus] = useState('');
+  const [isPending, startTransition] = useTransition();
+
+  function update(key: string, field: keyof Omit<Row, 'key' | 'id'>, value: string) {
+    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, [field]: value } : r)));
+  }
+
+  function addRow() {
+    counterRef.current += 1;
+    setRows((prev) => [...prev, { key: `new-${counterRef.current}`, 품목: '', 수량: '', 환가액: '', 후원자: '', 지급대상: '' }]);
+  }
+
+  function removeRow(key: string) {
+    setRows((prev) => prev.filter((r) => r.key !== key));
+  }
+
+  function handleSave() {
+    setStatus('저장 중...');
+    startTransition(async () => {
+      try {
+        const payload = rows
+          .filter((r) => r.품목.trim())
+          .map((r) => ({
+            id: r.id, 이름: r.품목.trim(), 수량: r.수량.trim(), 금액: Number(r.환가액) || 0,
+            후원자: r.후원자.trim(), 지급대상: r.지급대상.trim(),
+          }));
+        await saveDonationDetailsAction('후원물품', 시설, ym, payload);
+        setStatus('저장했습니다');
+        router.refresh();
+      } catch (err) {
+        setStatus(err instanceof Error ? err.message : '저장 실패');
+      }
+    });
+  }
+
+  return (
+    <div>
+      <div className={tableWrap}>
+        <table className={table}>
+          <thead>
+            <tr>
+              <th className={`${th} w-14 text-center`}>연번</th>
+              <th className={th}>후원품</th>
+              <th className={`${th} text-right`}>수량</th>
+              <th className={`${th} text-right`}>환가액(원)</th>
+              <th className={th}>후원자</th>
+              <th className={th}>지급대상</th>
+              <th className={`${th} w-12`} />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr><td className={`${td} text-center text-zinc-400`} colSpan={7}>등록된 명단이 없습니다.</td></tr>
+            )}
+            {rows.map((r, i) => (
+              <tr key={r.key}>
+                <td className={`${td} text-center tabular-nums text-zinc-400`}>{i + 1}</td>
+                <td className={td}>
+                  <input value={r.품목} onChange={(e) => update(r.key, '품목', e.target.value)} placeholder="후원품명" className={cellInput} />
+                </td>
+                <td className={td}>
+                  <input
+                    value={r.수량} onChange={(e) => update(r.key, '수량', e.target.value)}
+                    placeholder="1" className={`${cellInput} text-right`}
+                  />
+                </td>
+                <td className={td}>
+                  <input
+                    type="number" min="0" value={r.환가액} onChange={(e) => update(r.key, '환가액', e.target.value)}
+                    placeholder="0" className={`${cellInput} text-right font-mono`}
+                  />
+                </td>
+                <td className={td}>
+                  <input value={r.후원자} onChange={(e) => update(r.key, '후원자', e.target.value)} className={cellInput} />
+                </td>
+                <td className={td}>
+                  <input value={r.지급대상} onChange={(e) => update(r.key, '지급대상', e.target.value)} className={cellInput} />
+                </td>
+                <td className={`${td} text-center`}>
+                  <button type="button" onClick={() => removeRow(r.key)} className={btnDanger}>삭제</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-3 flex items-center gap-3">
+        <button type="button" onClick={addRow} className={btnSecondary}>+ 행 추가</button>
+        <button type="button" onClick={handleSave} disabled={isPending} className={btn}>저장</button>
+        <span className="text-sm text-zinc-500">{status}</span>
+      </div>
+    </div>
+  );
+}

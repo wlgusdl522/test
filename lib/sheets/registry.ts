@@ -268,8 +268,8 @@ export const BOARD_STAT_ITEM_TABLE: KeyedTableConfig = {
   primaryKey: 'id',
 };
 
-// 시설: 회계는 복지관/요양센터/데이케어센터가 서로 다른 값을 가지므로 항목ID+년월에 더해
-// 시설까지 키로 잡는다. 자원봉사자/후원처럼 시설 구분이 없는 모듈은 '전체' 고정값을 쓴다.
+// 시설: 회계/후원은 복지관/요양센터/데이케어센터가 서로 다른 값을 가지므로 항목ID+년월에 더해
+// 시설까지 키로 잡는다. 자원봉사자처럼 시설 구분이 없는 모듈은 '전체' 고정값을 쓴다.
 export const BOARD_STAT_VALUE_HEADERS = ['id', '항목ID', '시설', '년월', '값', '작성자이메일', '작성자명', '등록일시'];
 
 export const BOARD_STAT_VALUE_TABLE: KeyedTableConfig = {
@@ -301,6 +301,19 @@ export const BOARD_REPORT_PERIOD_TABLE: KeyedTableConfig = {
   sheetName: '이사회기간설정',
   headers: BOARD_REPORT_PERIOD_HEADERS,
   primaryKey: ['구분', '년월'],
+};
+
+// 후원 상세 명단 — 후원금(성명+금액+비고)과 후원물품(품목+수량+환가액+후원자+지급대상)이
+// 컬럼이 서로 달라서, 둘을 한 테이블에 합치되 안 쓰는 컬럼은 비워둔다(항목 값으로 구분).
+export const BOARD_DONATION_DETAIL_HEADERS = [
+  'id', '항목', '시설', '년월', '이름', '수량', '금액', '후원자', '지급대상', '비고', '정렬순서',
+];
+
+export const BOARD_DONATION_DETAIL_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '이사회후원상세',
+  headers: BOARD_DONATION_DETAIL_HEADERS,
+  primaryKey: 'id',
 };
 
 // 자원봉사 항목별 명단(이름) — 구분은 자유 텍스트(예: 새문안교회 등 특정 단체명)이고, 비어있으면 일반으로 취급한다.
