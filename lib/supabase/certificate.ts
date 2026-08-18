@@ -57,8 +57,20 @@ export async function getCertificateById(id: string): Promise<Record<string, str
   return normalizeRow(data as Record<string, unknown>);
 }
 
+// 결재이력JSON(ApprovalHistoryEntry[])을 시트에 넣기 좋은 한 줄짜리 사람이 읽는 문자열로 편다.
+function formatApprovalHistory(historyJson: string): string {
+  try {
+    const history = JSON.parse(historyJson || '[]') as { 단계: string; 액션: string; 승인자명: string; 일시: string }[];
+    if (!Array.isArray(history) || history.length === 0) return '';
+    return history.map((h) => `${h.단계}:${h.액션}(${h.승인자명}, ${h.일시})`).join(' → ');
+  } catch {
+    return '';
+  }
+}
+
 // 증명서·상장 발급대장(구글시트)에 append — 신청 접수 시점과 발급 확정 시점 둘 다 한 줄씩 남긴다
-// (마지막 컬럼 "단계"로 구분: 신청 | 발급). 대장 append 실패로 본 처리 자체가 실패하면 안 되므로
+// (컬럼 "단계"로 구분: 신청 | 발급). 결재상태/결재이력/발행파일 링크까지 함께 남겨서 시트만 보고도
+// 진행 상황을 확인할 수 있게 한다. 대장 append 실패로 본 처리 자체가 실패하면 안 되므로
 // (원본은 Supabase, 대장은 감사용 사본) 에러를 삼키고 로그만 남긴다.
 async function appendCertificateToLedger(record: Record<string, string>, stage: '신청' | '발급'): Promise<void> {
   try {
@@ -73,6 +85,9 @@ async function appendCertificateToLedger(record: Record<string, string>, stage: 
       record['발급일'] || '',
       record['등록자명'] || '',
       stage,
+      record['결재상태'] || '',
+      formatApprovalHistory(record['결재이력JSON'] || '[]'),
+      record['문서URL'] || '',
     ]);
   } catch (error) {
     console.error('[증명서·상장 발급대장 append 실패]', error);
@@ -281,9 +296,9 @@ async function markCertificateIssued(id: string): Promise<Record<string, string>
   const { error } = await table().update(patch).eq('id', id);
   if (error) throw new Error(`증명서 발행 처리 실패: ${error.message}`);
 
-  const finalRecord = { ...existing, ...patch };
-  await appendCertificateToLedger(finalRecord, '발급');
-  return finalRecord;
+  // 대장 기록은 여기서 하지 않는다 — 발행파일 링크(문서URL)가 아직 없어서(PDF 생성/업로드는
+  // issueCertificate()에서 이어서 진행), 그 링크까지 확정된 뒤 issueCertificate() 끝에서 남긴다.
+  return { ...existing, ...patch };
 }
 
 async function setCertificateDocumentUrl(id: string, url: string): Promise<void> {
@@ -352,6 +367,8 @@ export async function issueCertificate(id: string): Promise<IssueCertificateResu
       warnings.push('메일 발송에 실패했습니다 (Gmail 발송 권한이 아직 설정되지 않았을 수 있습니다).');
     }
   }
+
+  await appendCertificateToLedger({ ...issued, 문서URL: documentUrl }, '발급');
 
   const staffList = await getStaffList();
   const record = await decorate({ ...issued, 문서URL: documentUrl }, staffList);
