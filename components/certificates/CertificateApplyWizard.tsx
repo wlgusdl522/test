@@ -11,7 +11,6 @@ const EXCLUDED_TEAMS = ['요양센터', '데이케어센터'];
 type DocType = '재직증명서' | '경력증명서' | '상장';
 type WhoType = 'staff' | 'instructor';
 type InstructorType = '강사' | '생활지원사';
-type RegisteredType = 'registered' | 'unregistered';
 type ReceiveMethod = 'email' | 'inperson';
 
 function todayISO(): string {
@@ -68,7 +67,7 @@ function DocTypeCard({
     <button
       type="button"
       onClick={onClick}
-      className={`group flex flex-1 items-center gap-3 rounded-2xl border px-5 py-4 text-left transition-all ${
+      className={`group flex w-full items-center gap-3 rounded-2xl border px-5 py-4 text-left transition-all ${
         active
           ? 'border-brand bg-brand-tint shadow-[0_2px_12px_rgba(20,121,186,0.15)]'
           : 'border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700'
@@ -143,7 +142,6 @@ export default function CertificateApplyWizard({
   const [docType, setDocType] = useState<DocType | null>(null);
   const [who, setWho] = useState<WhoType | null>(null);
   const [instructorType, setInstructorType] = useState<InstructorType | null>(null);
-  const [registered, setRegistered] = useState<RegisteredType | null>(null);
   const [receiveMethod, setReceiveMethod] = useState<ReceiveMethod>('email');
 
   const [성명, set성명] = useState('');
@@ -169,14 +167,12 @@ export default function CertificateApplyWizard({
     setDocType(next);
     setWho(null);
     setInstructorType(null);
-    setRegistered(null);
     resetInstructorFields();
   }
 
   function selectWho(next: WhoType) {
     setWho(next);
     setInstructorType(null);
-    setRegistered(null);
     resetInstructorFields();
   }
 
@@ -199,26 +195,32 @@ export default function CertificateApplyWizard({
     if (docType === '재직증명서' && who === 'instructor' && instructorType) {
       return { kind: '재직증명서' as const, 신청유형: `재직증명서(${instructorType})`, needStaffPicker: false, submitLabel: '재직증명서 신청하기' };
     }
-    if (docType === '경력증명서' && who === 'staff' && registered === 'registered') {
-      return { kind: '경력증명서' as const, 신청유형: '경력증명서(직원-희망이음등록)', needStaffPicker: true, submitLabel: '경력증명서 신청하기' };
-    }
-    if (docType === '경력증명서' && who === 'staff' && registered === 'unregistered') {
-      // 희망이음 미등록(대부분 이미 퇴사해 직원명부에도 없는 경우) — 강사·생활지원사처럼 본인이 직접 입력.
-      return { kind: '경력증명서' as const, 신청유형: '경력증명서(직원-희망이음미등록)', needStaffPicker: false, submitLabel: '경력증명서 신청' };
+    if (docType === '경력증명서' && who === 'staff') {
+      // 신청 시점엔 본인도 희망이음 등록 여부를 정확히 모르는 경우가 많고, 이미 퇴사해 직원명부에도
+      // 없을 수 있어 강사·생활지원사처럼 본인이 직접 입력한다. 희망이음 등록 여부는 실제로 그
+      // 시스템에 접근권한이 있는 서무/회계가 "발급 처리" 단계에서 판단한다.
+      return { kind: '경력증명서' as const, 신청유형: '경력증명서(직원)', needStaffPicker: false, submitLabel: '경력증명서 신청하기' };
     }
     if (docType === '경력증명서' && who === 'instructor' && instructorType) {
       return { kind: '경력증명서' as const, 신청유형: `경력증명서(${instructorType})`, needStaffPicker: false, submitLabel: '경력증명서 신청' };
     }
     return null;
-  }, [docType, who, instructorType, registered]);
+  }, [docType, who, instructorType]);
 
   return (
-    <div className="mb-6">
-      <div className="mb-5 flex flex-col gap-2 sm:flex-row">
+    <div className="mb-6 flex items-start gap-6">
+      <div className="flex w-64 shrink-0 flex-col gap-2">
         {DOC_TYPES.map((dt) => (
           <DocTypeCard key={dt.value} docType={dt} active={docType === dt.value} onClick={() => selectDocType(dt.value)} />
         ))}
       </div>
+
+      <div className="min-w-0 flex-1">
+      {!docType && (
+        <div className={card}>
+          <p className="text-sm text-zinc-400">왼쪽에서 신청할 문서 종류를 선택해주세요.</p>
+        </div>
+      )}
 
       {(docType === '재직증명서' || docType === '경력증명서') && (
         <div className="mb-3">
@@ -236,19 +238,10 @@ export default function CertificateApplyWizard({
           </ButtonGroup>
         </div>
       )}
-      {docType === '경력증명서' && who === 'staff' && (
-        <div className="mb-3">
-          <ButtonGroup>
-            <PillButton active={registered === 'registered'} onClick={() => setRegistered('registered')}>희망이음 등록</PillButton>
-            <PillButton active={registered === 'unregistered'} onClick={() => setRegistered('unregistered')}>희망이음 미등록</PillButton>
-          </ButtonGroup>
-        </div>
-      )}
-
       {docType === '상장' && <AwardForm action={awardAction} />}
 
       {docType !== '상장' && resolved && (
-        <form action={certificateAction} className="mx-auto max-w-md">
+        <form action={certificateAction} className="max-w-md">
           <input type="hidden" name="종류" value={resolved.kind} />
           <input type="hidden" name="신청유형" value={resolved.신청유형} />
           <input type="hidden" name="대상자성명" value={성명} />
@@ -331,6 +324,7 @@ export default function CertificateApplyWizard({
           </div>
         </form>
       )}
+      </div>
     </div>
   );
 }
