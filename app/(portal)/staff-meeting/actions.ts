@@ -31,7 +31,7 @@ export async function moveStaffMeetingItemAction(formData: FormData) {
 export async function submitStaffMeetingValuesAction(
   팀명: string,
   ym: string,
-  entries: { 사업구분ID: string; 업무보고: string; 업무계획: string; 협조사항: string }[]
+  entries: { 사업구분ID: string; 업무보고: string; 업무계획: string; 협조사항: string; 발표포함: boolean }[]
 ) {
   const email = await requireViewerEmail();
   const me = await getViewerStaffRecord();
