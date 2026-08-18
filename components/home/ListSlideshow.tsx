@@ -66,6 +66,7 @@ const PANEL_HEIGHT = 'h-[420px]';
 
 export default function ListSlideshow({ slides }: { slides: ListSlide[] }) {
   const [index, setIndex] = useState(0);
+  const [open, setOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
 
   function go(delta: number) {
@@ -125,11 +126,32 @@ export default function ListSlideshow({ slides }: { slides: ListSlide[] }) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-label={open ? '목록 접기' : '목록 펼치기'}
+              aria-expanded={open}
+              className="ml-1 rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 sm:hidden"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
 
-      <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className={`${PANEL_HEIGHT} overflow-y-auto`}>
+      <div
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        className={`${PANEL_HEIGHT} ${open ? 'block' : 'hidden'} overflow-y-auto sm:block`}
+      >
         {isEmpty ? (
           <div className="flex h-full items-center justify-center">
             <p className="text-center text-sm text-zinc-400">{slide.emptyText}</p>
