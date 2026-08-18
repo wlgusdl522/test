@@ -3,7 +3,8 @@ import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import RosterSummaryTable from '@/components/business/RosterSummaryTable';
 import { getModuleItems } from '@/lib/mutate/boardStat';
-import { getRosterByItems, getRosterGroupLabel, summarizeRoster } from '@/lib/mutate/boardRoster';
+import { getRosterByItems, summarizeRoster } from '@/lib/mutate/boardRoster';
+import { ROSTER_GROUP_FULL } from '@/lib/mutate/rosterConstants';
 import { btnOutline, btnSecondary, card, inputBase, table, td, th, tableWrap } from '@/lib/ui';
 
 export const runtime = 'nodejs';
@@ -25,9 +26,7 @@ export default async function VolunteersViewPage({
 
   const items = await getModuleItems('자원봉사자');
   const roster = await getRosterByItems(items.map((i) => i.id), ym);
-  const groupLabel = await getRosterGroupLabel(ym);
   const rows = summarizeRoster(items, roster);
-  const label = groupLabel || '단체';
 
   const grand단체 = rows.reduce((a, r) => a + r.단체, 0);
   const grand일반 = rows.reduce((a, r) => a + r.일반, 0);
@@ -45,7 +44,7 @@ export default async function VolunteersViewPage({
         <Link href={`/business-summary/volunteers?ym=${ym}`} className={btnOutline}>수정하기</Link>
       </div>
 
-      <RosterSummaryTable title={`1) 총괄 (${ym})`} groupLabel={groupLabel} rows={rows} />
+      <RosterSummaryTable title={`1) 총괄 (${ym})`} rows={rows} />
 
       <div className={card}>
         <h2 className="mb-3 text-[13px] font-bold text-brand-dark dark:text-brand">2) 분야별</h2>
@@ -58,7 +57,7 @@ export default async function VolunteersViewPage({
                 <th className={`${th} text-center`} colSpan={2}>자원봉사자 명단</th>
               </tr>
               <tr>
-                <th className={th}>{label}</th>
+                <th className={th}>{ROSTER_GROUP_FULL}</th>
                 <th className={th}>일반</th>
               </tr>
             </thead>

@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
-import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord, upsertKeyedRecord } from '@/lib/mutate/keyedTable';
-import { BOARD_ROSTER_GROUP_TABLE, BOARD_ROSTER_TABLE } from '@/lib/sheets/registry';
+import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord } from '@/lib/mutate/keyedTable';
+import { BOARD_ROSTER_TABLE } from '@/lib/sheets/registry';
 
 export type RosterPerson = { id: string; 항목ID: string; 년월: string; 구분: string; 이름: string; 정렬순서: number };
 export type RosterRowInput = { id?: string; 항목ID: string; 구분: string; 이름: string };
@@ -39,15 +39,6 @@ export async function saveRosterForYm(항목IDs: string[], ym: string, rows: Ros
     }
     order++;
   }
-}
-
-export async function getRosterGroupLabel(ym: string): Promise<string> {
-  const rows = await getKeyedList(BOARD_ROSTER_GROUP_TABLE);
-  return rows.find((r) => r.년월 === ym)?.단체명 ?? '';
-}
-
-export async function setRosterGroupLabel(ym: string, 단체명: string): Promise<void> {
-  await upsertKeyedRecord(BOARD_ROSTER_GROUP_TABLE, { 년월: ym }, { 년월: ym, 단체명 });
 }
 
 export type RosterSummaryRow = {

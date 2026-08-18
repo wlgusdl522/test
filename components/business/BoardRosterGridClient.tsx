@@ -4,22 +4,23 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { btn, table, td, th, tableWrap } from '@/lib/ui';
 import { saveRosterAction } from '@/app/(portal)/business-summary/boardStatActions';
+import { ROSTER_GROUP_FULL } from '@/lib/mutate/rosterConstants';
 
 const cellInput =
   'w-full min-w-[10rem] resize-y rounded border border-transparent bg-[#fcfbf8] px-2 py-1 text-[13px] leading-relaxed focus:border-brand focus:outline-none dark:bg-zinc-950';
 
+// 한 줄에 한 명씩 입력하는 것으로 통일한다 — 이름 안에 띄어쓰기가 들어가는 경우와 구분이 안 돼서
+// 공백까지 구분자로 쓰면 애매해진다.
 function splitNames(text: string): string[] {
-  return text.split(/\s+/).map((s) => s.trim()).filter(Boolean);
+  return text.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
 }
 
 export default function BoardRosterGridClient({
   items,
   ym,
-  groupLabel,
 }: {
   items: { id: string; 항목명: string; 단체이름: string[]; 일반이름: string[] }[];
   ym: string;
-  groupLabel: string;
 }) {
   const router = useRouter();
   const [texts, setTexts] = useState<Record<string, { 단체: string; 일반: string }>>(
@@ -39,7 +40,7 @@ export default function BoardRosterGridClient({
         const rows: { 항목ID: string; 구분: string; 이름: string }[] = [];
         for (const i of items) {
           const t = texts[i.id];
-          splitNames(t.단체).forEach((이름) => rows.push({ 항목ID: i.id, 구분: groupLabel, 이름 }));
+          splitNames(t.단체).forEach((이름) => rows.push({ 항목ID: i.id, 구분: ROSTER_GROUP_FULL, 이름 }));
           splitNames(t.일반).forEach((이름) => rows.push({ 항목ID: i.id, 구분: '', 이름 }));
         }
         await saveRosterAction(items.map((i) => i.id), ym, rows);
@@ -65,7 +66,7 @@ export default function BoardRosterGridClient({
               <th className={`${th} text-center`} colSpan={2}>자원봉사자 명단</th>
             </tr>
             <tr>
-              <th className={th}>{groupLabel || '단체'}</th>
+              <th className={th}>{ROSTER_GROUP_FULL}</th>
               <th className={th}>일반</th>
             </tr>
           </thead>
@@ -76,13 +77,13 @@ export default function BoardRosterGridClient({
                 <td className={`${td} align-top`}>
                   <textarea
                     value={texts[i.id]?.단체 ?? ''} onChange={(e) => update(i.id, '단체', e.target.value)}
-                    rows={3} placeholder="이름을 띄어쓰기/줄바꿈으로 구분해 입력" className={cellInput}
+                    rows={3} placeholder="한 줄에 한 명씩 입력" className={cellInput}
                   />
                 </td>
                 <td className={`${td} align-top`}>
                   <textarea
                     value={texts[i.id]?.일반 ?? ''} onChange={(e) => update(i.id, '일반', e.target.value)}
-                    rows={3} placeholder="이름을 띄어쓰기/줄바꿈으로 구분해 입력" className={cellInput}
+                    rows={3} placeholder="한 줄에 한 명씩 입력" className={cellInput}
                   />
                 </td>
               </tr>

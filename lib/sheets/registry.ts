@@ -312,13 +312,3 @@ export const BOARD_ROSTER_TABLE: KeyedTableConfig = {
   headers: BOARD_ROSTER_HEADERS,
   primaryKey: 'id',
 };
-
-// 명단 표의 "단체명" 열 제목(예: 새문안교회) — 조회월별로 관리자가 직접 입력.
-export const BOARD_ROSTER_GROUP_HEADERS = ['년월', '단체명'];
-
-export const BOARD_ROSTER_GROUP_TABLE: KeyedTableConfig = {
-  spreadsheetId: WORKLOG_SHEET_ID,
-  sheetName: '이사회명단단체명',
-  headers: BOARD_ROSTER_GROUP_HEADERS,
-  primaryKey: '년월',
-};
