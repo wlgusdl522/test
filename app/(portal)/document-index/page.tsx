@@ -2,6 +2,7 @@ import { hasPageAccess } from '@/lib/mutate/permissions';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
+import PrinterIcon from '@/components/icons/PrinterIcon';
 import VolumeTabs from '@/components/documentIndex/VolumeTabs';
 import RegisterForm from '@/components/documentIndex/RegisterForm';
 import { getSimpleList } from '@/lib/mutate/simpleList';
@@ -60,6 +61,16 @@ export default async function DocumentIndexPage({
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">연도</label>
         <input type="number" name="year" defaultValue={연도} className={`${inputBase} w-24`} />
         <button type="submit" className={btnSecondary}>조회</button>
+        {팀명 && (
+          <a
+            href={`/print/document-index?team=${encodeURIComponent(팀명)}&year=${encodeURIComponent(연도)}`}
+            target="_blank"
+            className={btnSecondary}
+          >
+            <PrinterIcon />
+            인쇄
+          </a>
+        )}
       </form>
 
       {!팀명 ? (
