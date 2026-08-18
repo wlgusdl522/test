@@ -98,8 +98,11 @@ async function appendCertificateToLedger(record: Record<string, string>, stage: 
 const STEPS = ['서무/회계', '총무과 과장', '부장', '관장'];
 const AWARD_STEPS = ['서무/회계'];
 
+// TEMP(테스트용, 나중에 원복 예정): 재직/경력증명서도 상장처럼 서무/회계 단독 1단계로 임시 변경.
+// 되돌릴 때는 아래 return을 `record['구분'] === '상장' ? AWARD_STEPS : STEPS`로 바꾸면 끝.
 function stepsFor(record: Record<string, string>): string[] {
-  return record['구분'] === '상장' ? AWARD_STEPS : STEPS;
+  void record;
+  return AWARD_STEPS;
 }
 
 async function resolveStepApproverEmail(step: string, staffList: Record<string, string>[]): Promise<string> {
