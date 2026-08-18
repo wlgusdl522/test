@@ -1,11 +1,9 @@
 import { Readable } from 'stream';
 import { getDriveClient } from '@/lib/sheets/client';
-import { STAFF_STAMP_FOLDER_ID } from '@/lib/sheets/sheetIds';
+import { CERTIFICATE_ARCHIVE_FOLDER_ID } from '@/lib/sheets/sheetIds';
 
-const ROOT_FOLDER_NAME = '증명서 발급함';
-
-// 기존 업로드 폴더(개인 도장)와 같은 공유 드라이브 부모 아래에 "증명서 발급함" 루트를 두고,
-// 그 밑에 연도별 하위 폴더를 둔다. 이미 있으면 그대로 재사용하고, 없으면 그때 만든다.
+// 발급된 PDF는 CERTIFICATE_ARCHIVE_FOLDER_ID("증명서.상장 발급내역 원본") 아래
+// 연도별 하위 폴더에 저장한다. 연도 폴더가 없으면 그때 만든다.
 async function findOrCreateFolder(name: string, parentId: string | undefined): Promise<string> {
   const drive = getDriveClient();
   const parentClause = parentId ? ` and '${parentId}' in parents` : '';
@@ -33,21 +31,8 @@ async function findOrCreateFolder(name: string, parentId: string | undefined): P
   return id;
 }
 
-let rootParentId: string | null = null;
-async function getSharedDriveParentId(): Promise<string | undefined> {
-  if (rootParentId) return rootParentId;
-  const res = await getDriveClient().files.get({
-    fileId: STAFF_STAMP_FOLDER_ID,
-    fields: 'parents',
-    supportsAllDrives: true,
-  });
-  rootParentId = res.data.parents?.[0] ?? null;
-  return rootParentId ?? undefined;
-}
-
 export async function getCertificateRootFolderId(): Promise<string> {
-  const parent = await getSharedDriveParentId();
-  return findOrCreateFolder(ROOT_FOLDER_NAME, parent);
+  return CERTIFICATE_ARCHIVE_FOLDER_ID;
 }
 
 export async function getCertificateYearFolderId(year: number): Promise<string> {

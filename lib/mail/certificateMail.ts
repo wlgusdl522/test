@@ -31,6 +31,25 @@ export async function sendMail(to: string, subject: string, bodyText: string): P
   });
 }
 
+// 상장은 대상자(어르신·자원봉사자 등)에게 이메일이 없는 경우가 많아, 발급을 요청한
+// 담당자(등록자)에게 완료 안내 메일을 보낸다 — 증명서(대상자 본인에게 발송)와의 차이점.
+export function buildAwardEmail(record: Record<string, string>, documentUrl: string): { subject: string; body: string } {
+  const kind = record['종류'] || '상장';
+  const subject = `[서대문노인종합복지관] ${kind} 발급 완료 안내 (제 ${record['문서번호']}호)`;
+  const body = [
+    `${record['등록자명'] || ''}님, 안녕하세요.`,
+    '',
+    `요청하신 ${kind}(대상: ${record['대상자성명']})가 발급되어 안내드립니다.`,
+    `문서번호: 제 ${record['문서번호']}호`,
+    `발급일: ${record['발급일']}`,
+    '',
+    documentUrl ? `첨부 문서: ${documentUrl}` : '문서는 별도로 전달드리겠습니다.',
+    '',
+    '서대문노인종합복지관',
+  ].join('\n');
+  return { subject, body };
+}
+
 export function buildCertificateEmail(record: Record<string, string>, documentUrl: string): { subject: string; body: string } {
   const kind = record['종류'] || record['구분'];
   const subject = `[서대문노인종합복지관] ${kind} 발급 안내 (제 ${record['문서번호']}호)`;

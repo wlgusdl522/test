@@ -141,7 +141,7 @@ export async function renderCertificatePdf(record: Record<string, string>, verif
           <Text style={styles.closingDate}>{formatPrintDate(record['발급일'])}</Text>
           <Text style={styles.closingOrgName}>사회복지법인 새문안교회사회복지재단</Text>
           <View style={styles.closingTitleRow}>
-            <Text style={styles.closingTitle}>서대문노인종합복지관장</Text>
+            <Text style={styles.closingTitle}>시립서대문노인종합복지관장</Text>
             {sealDataUrl && <Image src={sealDataUrl} style={styles.sealImage} />}
           </View>
         </View>

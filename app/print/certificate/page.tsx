@@ -132,7 +132,7 @@ async function CertificateDoc({ record: r, origin }: { record: Record<string, st
         <p style={{ fontSize: 12 }}>{formatPrintDate(r.발급일)}</p>
         <p style={{ marginTop: 12, fontWeight: 700, fontSize: 14 }}>사회복지법인 새문안교회사회복지재단</p>
         <div style={{ marginTop: 8, position: 'relative', display: 'inline-block' }}>
-          <p style={{ fontSize: 19, fontWeight: 700 }}>서대문노인종합복지관장</p>
+          <p style={{ fontSize: 19, fontWeight: 700 }}>시립서대문노인종합복지관장</p>
           {sealDataUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img

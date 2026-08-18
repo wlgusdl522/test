@@ -15,3 +15,4 @@ export const APPROVAL_LINE_SHEET_NAME = '결재라인';
 export const ITEM_CHECK_PHOTO_FOLDER_ID = '1p3VMhrkWf0vadUeOqgf1eARyG4itcH3n';
 export const STAFF_STAMP_FOLDER_ID = '1amadx4xhlIISS4Yxn6wO0ebEd9p7EmWa';
 export const DUTY_SIGNATURE_FOLDER_ID = '1qThex3gbk7I-2Y5xDUC-IK58EHDOqzTI'; // "당직싸인이미지업로드" (공유 드라이브 — files.create에 supportsAllDrives 필요)
+export const CERTIFICATE_ARCHIVE_FOLDER_ID = '1taK8BLFjYPYHogLuQggh-pjfegaGVhPO'; // "증명서.상장 발급내역 원본" — 발급된 PDF 원본 보관 루트, 연도별 하위폴더는 그 아래 생성

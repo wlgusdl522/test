@@ -10,18 +10,19 @@ import { requireCanViewCertificateLog, isAdminEmail, requireViewerEmail } from '
 import { appendLedgerRow } from '@/lib/sheets/ledger';
 import { CERTIFICATE_LEDGER_SHEET_ID } from '@/lib/sheets/sheetIds';
 import { renderCertificatePdf } from '@/lib/pdf/certificatePdf';
+import { renderAwardPdf } from '@/lib/pdf/awardPdf';
 import { uploadCertificatePdf } from '@/lib/drive/certificateFolder';
-import { buildCertificateEmail, sendMail } from '@/lib/mail/certificateMail';
+import { buildAwardEmail, buildCertificateEmail, sendMail } from '@/lib/mail/certificateMail';
 
 // 증명서(재직/경력/원천징수/기타) + 상장 발급대장 — 시트 없이 Supabase가 원본(당직/부재중현황과 동일한 예외 패턴).
 // 구분='증명서'는 전자결재(결재상태/결재이력JSON) 대상, 구분='상장'은 결재 없이 즉시 확정된다.
 // 채번 시퀀스는 lib/mutate/certNumbering.ts(getSetting/setSetting 기반)를 공유한다.
 
-export const CERTIFICATE_TYPES = ['재직증명서', '경력증명서', '원천징수영수증', '기타'] as const;
+export { CERTIFICATE_TYPES, AWARD_TYPES, AWARD_TARGET_KINDS } from '@/lib/certificateTypes';
 
 const HEADERS = [
   'id', '문서번호', '구분', '종류', '신청유형', '대상자성명', '대상자소속', '대상자직위', '대상자이메일',
-  '생년월일', '성별', '대상자주소', '담당업무', '퇴직사유', '수령방법', '근무기간', '신청일', '용도',
+  '생년월일', '성별', '대상자주소', '대상자구분', '담당업무', '퇴직사유', '수령방법', '출처', '근무기간', '신청일', '용도', '본문',
   '등록자이메일', '등록자명', '등록일시',
   '결재상태', '결재이력JSON', '발급일', '발행일시', '문서URL', '비고',
 ];
@@ -76,8 +77,13 @@ async function appendCertificateToLedger(record: Record<string, string>): Promis
   }
 }
 
-// 서무/회계(기안자 본인 확인) → 총무과 과장 → 부장 → 관장, 4단계 결재.
+// 서무/회계(기안자 본인 확인) → 총무과 과장 → 부장 → 관장, 4단계 결재. 상장은 서무/회계 단독 1단계 승인.
 const STEPS = ['서무/회계', '총무과 과장', '부장', '관장'];
+const AWARD_STEPS = ['서무/회계'];
+
+function stepsFor(record: Record<string, string>): string[] {
+  return record['구분'] === '상장' ? AWARD_STEPS : STEPS;
+}
 
 async function resolveStepApproverEmail(step: string, staffList: Record<string, string>[]): Promise<string> {
   if (step === '서무/회계') return (await getSystemSettings()).certificateClerkEmail;
@@ -90,12 +96,13 @@ async function resolveStepApproverEmail(step: string, staffList: Record<string, 
 type DecoratedCertificate = Record<string, string>;
 
 async function decorate(record: Record<string, string>, staffList: Record<string, string>[]): Promise<DecoratedCertificate> {
+  const steps = stepsFor(record);
   const staffNameByEmail = (email: string) => staffList.find((s) => s['이메일(아이디)'] === email)?.['성명'] ?? '';
   const approverCache = new Map<string, string>();
-  for (const step of STEPS) {
+  for (const step of steps) {
     approverCache.set(step, await resolveStepApproverEmail(step, staffList));
   }
-  const { 결재이력, ...decorated } = decorateApprovalInfo(record, STEPS, (step) => approverCache.get(step) ?? '', staffNameByEmail);
+  const { 결재이력, ...decorated } = decorateApprovalInfo(record, steps, (step) => approverCache.get(step) ?? '', staffNameByEmail);
   void 결재이력;
   return { ...record, ...decorated };
 }
@@ -108,7 +115,7 @@ export async function getCertificateList(): Promise<DecoratedCertificate[]> {
 export async function getMyPendingCertificateApprovals(): Promise<DecoratedCertificate[]> {
   const viewerEmail = await requireViewerEmail();
   const all = await getCertificateList();
-  const pending = all.filter((r) => r.구분 === '증명서' && r.결재상태 === '결재중');
+  const pending = all.filter((r) => (r.구분 === '증명서' || r.구분 === '상장') && r.결재상태 === '결재중');
   if (await isAdminEmail(viewerEmail)) return pending;
   return pending.filter((r) => r.현재결재자이메일 && r.현재결재자이메일.toLowerCase() === viewerEmail);
 }
@@ -140,32 +147,38 @@ export async function addCertificate(payload: Record<string, string>): Promise<D
   return getCertificateList();
 }
 
-export async function addAward(payload: Record<string, string>): Promise<DecoratedCertificate[]> {
-  if (!payload['대상자성명'] || !payload['용도']) {
-    throw new Error('대상자성명과 사유(사업명)는 필수입니다.');
+// 상장은 결재(서무/회계 단독 1단계) 이후 발행 시점에 채번되므로, 등록 시점엔 문서번호를 비워두고
+// 결재중 상태로 여러 건(콤마로 구분된 대상자 수만큼) 한 번에 만든다.
+export async function addAwardBatch(payload: Record<string, string>): Promise<DecoratedCertificate[]> {
+  const names = (payload['대상자성명'] || '').split(',').map((s) => s.trim()).filter(Boolean);
+  if (names.length === 0 || !payload['용도']) {
+    throw new Error('대상자성명과 수여사유는 필수입니다.');
   }
   const viewerEmail = await requireViewerEmail();
   const staffList = await getStaffList();
   const me = staffList.find((s) => s['이메일(아이디)'] === viewerEmail);
-  const docNumber = await nextCertificateNumber();
 
-  const record: Record<string, string> = {};
-  for (const h of HEADERS) {
-    if (h === 'id') { record[h] = randomUUID(); continue; }
-    if (h === '문서번호') { record[h] = docNumber; continue; }
-    if (h === '구분') { record[h] = '상장'; continue; }
-    if (h === '신청유형') { record[h] = '상장'; continue; }
-    if (h === '등록자이메일') { record[h] = viewerEmail; continue; }
-    if (h === '등록자명') { record[h] = me?.['성명'] ?? viewerEmail; continue; }
-    if (h === '등록일시') { record[h] = nowTimestamp(); continue; }
-    if (h === '결재상태') { record[h] = '승인'; continue; }
-    if (h === '결재이력JSON') { record[h] = '[]'; continue; }
-    if (h === '발급일') { record[h] = payload['발급일'] || todayISO(); continue; }
-    record[h] = payload[h] ?? '';
-  }
-  const { error } = await table().insert(record);
+  const rows = names.map((name) => {
+    const record: Record<string, string> = {};
+    for (const h of HEADERS) {
+      if (h === 'id') { record[h] = randomUUID(); continue; }
+      if (h === '문서번호') { record[h] = ''; continue; }
+      if (h === '구분') { record[h] = '상장'; continue; }
+      if (h === '신청유형') { record[h] = '상장'; continue; }
+      if (h === '대상자성명') { record[h] = name; continue; }
+      if (h === '등록자이메일') { record[h] = viewerEmail; continue; }
+      if (h === '등록자명') { record[h] = me?.['성명'] ?? viewerEmail; continue; }
+      if (h === '등록일시') { record[h] = nowTimestamp(); continue; }
+      if (h === '결재상태') { record[h] = '결재중'; continue; }
+      if (h === '결재이력JSON') { record[h] = '[]'; continue; }
+      if (h === '발급일') { record[h] = ''; continue; }
+      record[h] = payload[h] ?? '';
+    }
+    return record;
+  });
+
+  const { error } = await table().insert(rows);
   if (error) throw new Error(`상장 등록 실패: ${error.message}`);
-  await appendCertificateToLedger(record);
   return getCertificateList();
 }
 
@@ -175,6 +188,7 @@ export async function actOnCertificate(id: string, action: '승인' | '반려', 
   if (!existing) throw new Error('처리할 증명서 신청을 찾을 수 없습니다.');
 
   const staffList = await getStaffList();
+  const steps = stepsFor(existing);
   const decorated = await decorate(existing, staffList);
   const admin = await isAdminEmail(viewerEmail);
   const me = staffList.find((s) => s['이메일(아이디)'] === viewerEmail);
@@ -183,7 +197,7 @@ export async function actOnCertificate(id: string, action: '승인' | '반려', 
   try {
     applied = applyApprovalAction({
       record: existing,
-      steps: STEPS,
+      steps,
       action,
       actorEmail: viewerEmail,
       actorName: me?.['성명'] ?? viewerEmail,
@@ -196,11 +210,18 @@ export async function actOnCertificate(id: string, action: '승인' | '반려', 
     throw err;
   }
 
-  // 관장 최종승인이 나도 여기서는 문서번호를 채번하지 않는다 — 채번/직인/PDF저장/메일발송은
-  // 서무·회계가 "발행" 버튼을 눌러야 진행되는 별도 단계(issueCertificate)다.
+  // 재직/경력증명서는 관장 최종승인이 나도 여기서 채번하지 않는다 — 채번/직인/PDF저장/메일발송은
+  // 서무·회계가 "발행" 버튼을 눌러야 진행되는 별도 단계(issueCertificate)다. 상장은 결재가
+  // 서무/회계 단독 1단계뿐이라, 승인 즉시 이 함수 안에서 발행까지 이어서 처리한다.
   const patch: Record<string, string> = { 결재상태: applied.nextStatus, 결재이력JSON: applied.historyJson };
   const { error } = await table().update(patch).eq('id', id);
   if (error) throw new Error(`증명서 처리 실패: ${error.message}`);
+
+  if (existing['구분'] === '상장' && applied.nextStatus === '승인') {
+    await issueCertificate(id);
+    const reissued = await getCertificateById(id);
+    return decorate(reissued ?? { ...existing, ...patch }, staffList);
+  }
 
   return decorate({ ...existing, ...patch }, staffList);
 }
@@ -218,13 +239,29 @@ export async function updateCertificateFields(id: string, fields: Record<string,
   if (error) throw new Error(`증명서 정보 수정 실패: ${error.message}`);
 }
 
-// 관장 최종승인 후 서무/회계가 누르는 "발행" — 문서번호 채번 + 발급일 확정 + 대장(시트) 기록.
+// 희망이음에서 출력한 PDF를 서무/회계가 "발급 처리" 단계에서 업로드하는 경로 — 우리 쪽에서
+// 직인·QR을 찍어 렌더링하지 않고, 업로드된 파일을 그대로 Drive에 저장해 문서URL로 확정한다.
+// 이후 결재(총무과장→부장→관장)는 동일하게 진행되고, issueCertificate()는 이미 문서URL이
+// 있으므로 renderCertificatePdf() 렌더링을 건너뛴다.
+export async function attachUploadedCertificatePdf(id: string, buffer: Buffer): Promise<void> {
+  await requireCanViewCertificateLog();
+  const existing = await getCertificateById(id);
+  if (!existing) throw new Error('증명서를 찾을 수 없습니다.');
+
+  const year = new Date().getFullYear();
+  const filename = `증명서_희망이음_${existing['대상자성명']}_${id.slice(0, 8)}.pdf`;
+  const url = await uploadCertificatePdf(buffer, filename, year);
+  const { error } = await table().update({ 문서URL: url, 출처: '희망이음업로드' }).eq('id', id);
+  if (error) throw new Error(`증명서 파일 저장 실패: ${error.message}`);
+}
+
+// 관장 최종승인(상장은 서무/회계 단독승인) 후 누르는 "발행" — 문서번호 채번 + 발급일 확정 + 대장(시트) 기록.
 // PDF 생성/직인 스탬프/Drive 저장/수령인 메일 발송은 아래 issueCertificate()에서 이어서 처리한다.
 async function markCertificateIssued(id: string): Promise<Record<string, string>> {
   const existing = await getCertificateById(id);
-  if (!existing) throw new Error('발행할 증명서를 찾을 수 없습니다.');
-  if (existing['구분'] !== '증명서' || existing['결재상태'] !== '승인') {
-    throw new Error('관장 최종승인이 완료된 증명서만 발행할 수 있습니다.');
+  if (!existing) throw new Error('발행할 문서를 찾을 수 없습니다.');
+  if ((existing['구분'] !== '증명서' && existing['구분'] !== '상장') || existing['결재상태'] !== '승인') {
+    throw new Error('결재가 완료된 문서만 발행할 수 있습니다.');
   }
   if (existing['발행일시']) {
     throw new Error('이미 발행된 문서입니다.');
@@ -262,38 +299,50 @@ export type IssueCertificateResult = {
   warnings: string[];
 };
 
-// "발행" 버튼 하나로 이어지는 전체 처리: 채번/대장기록 → PDF 생성(직인·QR 포함) → Drive 연도별 폴더 저장
-// → 대상자에게 메일 발송. PDF·메일 단계는 실패해도 채번/발행 자체를 무효화하지 않고 경고만 담아 돌려준다
+// "발행" 하나로 이어지는 전체 처리: 채번/대장기록 → PDF 생성(직인·QR 포함) → Drive 연도별 폴더 저장
+// → 메일 발송. PDF·메일 단계는 실패해도 채번/발행 자체를 무효화하지 않고 경고만 담아 돌려준다
 // (Gmail 발송 스코프가 아직 승인되지 않았거나 직인 이미지가 없는 초기 상태에서도 발행은 진행되어야 한다).
+// 상장은 증명서와 별도 PDF 템플릿을 쓰고, 메일 수신자도 대상자가 아니라 등록자(발급요청 담당자)다 —
+// 어르신·자원봉사자 등 상장 대상자는 이메일이 없는 경우가 많기 때문.
+// 희망이음에서 업로드된 증명서는 이미 문서URL이 있으므로 자체 렌더링을 건너뛴다.
 export async function issueCertificate(id: string): Promise<IssueCertificateResult> {
   await requireCanViewCertificateLog();
   const issued = await markCertificateIssued(id);
   const warnings: string[] = [];
+  const isAward = issued['구분'] === '상장';
 
-  let documentUrl = '';
-  try {
-    const origin = await getOrigin();
-    const verifyUrl = `${origin}/verify/certificate/${issued.id}`;
-    const pdfBuffer = await renderCertificatePdf(issued, verifyUrl);
-    const year = new Date(issued['발급일'] || new Date()).getFullYear();
-    documentUrl = await uploadCertificatePdf(pdfBuffer, `증명서_${issued['문서번호']}_${issued['대상자성명']}.pdf`, year);
-    await setCertificateDocumentUrl(id, documentUrl);
-  } catch (error) {
-    console.error('[증명서 PDF 생성/저장 실패]', error);
-    warnings.push('PDF 생성 또는 Drive 저장에 실패했습니다.');
+  let documentUrl = issued['문서URL'] || '';
+  const skipRender = issued['출처'] === '희망이음업로드' && !!documentUrl;
+  if (!skipRender) {
+    try {
+      const origin = await getOrigin();
+      const verifyUrl = `${origin}/verify/certificate/${issued.id}`;
+      const pdfBuffer = isAward
+        ? await renderAwardPdf(issued, verifyUrl)
+        : await renderCertificatePdf(issued, verifyUrl);
+      const year = new Date(issued['발급일'] || new Date()).getFullYear();
+      const filenamePrefix = isAward ? '상장' : '증명서';
+      documentUrl = await uploadCertificatePdf(pdfBuffer, `${filenamePrefix}_${issued['문서번호']}_${issued['대상자성명']}.pdf`, year);
+      await setCertificateDocumentUrl(id, documentUrl);
+    } catch (error) {
+      console.error('[증명서·상장 PDF 생성/저장 실패]', error);
+      warnings.push('PDF 생성 또는 Drive 저장에 실패했습니다.');
+    }
   }
 
   let emailSent = false;
-  const recipientEmail = issued['대상자이메일'];
+  const recipientEmail = isAward ? issued['등록자이메일'] : issued['대상자이메일'];
   if (!recipientEmail) {
-    warnings.push('대상자 이메일이 없어 발급 안내 메일을 보내지 않았습니다.');
+    warnings.push(isAward ? '등록자 이메일이 없어 발급 안내 메일을 보내지 않았습니다.' : '대상자 이메일이 없어 발급 안내 메일을 보내지 않았습니다.');
   } else {
     try {
-      const { subject, body } = buildCertificateEmail(issued, documentUrl);
+      const { subject, body } = isAward
+        ? buildAwardEmail(issued, documentUrl)
+        : buildCertificateEmail(issued, documentUrl);
       await sendMail(recipientEmail, subject, body);
       emailSent = true;
     } catch (error) {
-      console.error('[증명서 발급 메일 발송 실패]', error);
+      console.error('[증명서·상장 발급 메일 발송 실패]', error);
       warnings.push('메일 발송에 실패했습니다 (Gmail 발송 권한이 아직 설정되지 않았을 수 있습니다).');
     }
   }

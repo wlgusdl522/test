@@ -1,8 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { btn, input, label } from '@/lib/ui';
+import { btn, btnOutline, card, input, label } from '@/lib/ui';
+import Modal from '@/components/Modal';
 import StaffPicker from '@/components/duty/StaffPicker';
+import { AWARD_TARGET_KINDS, AWARD_TYPES } from '@/lib/certificateTypes';
 
 const EXCLUDED_TEAMS = ['요양센터', '데이케어센터'];
 
@@ -11,29 +13,8 @@ type WhoType = 'staff' | 'instructor';
 type RegisteredType = 'registered' | 'unregistered';
 type ReceiveMethod = 'email' | 'inperson';
 
-type Fields = {
-  성명: string;
-  생년월일: string;
-  성별: string;
-  주소: string;
-  용도: string;
-};
-
-const EMPTY_FIELDS: Fields = { 성명: '', 생년월일: '', 성별: '남', 주소: '', 용도: '' };
-
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
-}
-
-// 실제 주민등록번호는 저장하지 않고, 생년월일+성별로 문서에 찍히는 마스킹된 형태만 재현한다.
-function maskedResidentNumber(birth: string, gender: string): string {
-  if (!birth) return '';
-  const [y, m, d] = birth.split('-');
-  if (!y || !m || !d) return '';
-  const yy = y.slice(2);
-  const isBefore2000 = Number(y) < 2000;
-  const genderDigit = gender === '여' ? (isBefore2000 ? '2' : '4') : (isBefore2000 ? '1' : '3');
-  return `${yy}${m}${d}-${genderDigit}******`;
 }
 
 const DOC_TYPES: { value: DocType; label: string; desc: string; icon: React.ReactNode }[] = [
@@ -133,52 +114,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div className="border-t border-zinc-100 pt-4 first:border-t-0 first:pt-0 dark:border-zinc-800">
       <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-zinc-400">{title}</p>
-      <div className="space-y-0">{children}</div>
-    </div>
-  );
-}
-
-function PreviewRow({ label: rowLabel, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline gap-4 border-b border-zinc-100 py-2.5 last:border-b-0 dark:border-zinc-800">
-      <span className="w-20 shrink-0 text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-400">{rowLabel}</span>
-      <span className="flex-1 text-[14px] font-medium text-zinc-800 dark:text-zinc-100">{value || <span className="text-zinc-300 dark:text-zinc-700">-</span>}</span>
-    </div>
-  );
-}
-
-// 신청자가 적은 인적사항까지만 반영한 읽기전용 미리보기 — 소속·직위·기간 등 재직사항은
-// 발급 처리 단계에서 담당자가 확인 후 채우므로 이 화면에는 안내 문구만 둔다.
-function DocPreview({ title, fields }: { title: string; fields: Fields }) {
-  return (
-    <div>
-      <p className="text-center text-[11px] tracking-[0.3em] text-zinc-300">CERTIFICATE</p>
-      <h2 className="mt-2 text-center text-[26px] font-bold tracking-[0.5em] text-zinc-900 dark:text-zinc-50" style={{ textIndent: '0.5em' }}>
-        {title}
-      </h2>
-      <div className="mx-auto mt-4 h-px w-14 bg-zinc-300 dark:bg-zinc-700" />
-
-      <div className="mt-8">
-        <PreviewRow label="성명" value={fields.성명} />
-        <PreviewRow label="주민번호" value={maskedResidentNumber(fields.생년월일, fields.성별)} />
-        <PreviewRow label="주소" value={fields.주소} />
-      </div>
-
-      <div className="mt-6 rounded-lg border border-dashed border-zinc-200 p-4 text-center text-[11px] text-zinc-400 dark:border-zinc-700">
-        소속 · 직위 · 재직기간 · 담당업무는 접수 후 발급 담당자가 인사기록을 확인하여 기재합니다.
-      </div>
-
-      <div className="mt-6">
-        <PreviewRow label="용도" value={fields.용도} />
-      </div>
-
-      <p className="mt-10 text-center text-[14.5px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-        위 사실을 증명합니다.
-      </p>
-
-      <div className="mt-14 rounded-lg bg-zinc-50 py-5 text-center text-[11px] text-zinc-400 dark:bg-zinc-800/60">
-        발급일 · 직인 · QR코드는 관장 최종승인 후 발행 시 자동으로 채워집니다.
-      </div>
+      <div className="space-y-3">{children}</div>
     </div>
   );
 }
@@ -202,30 +138,30 @@ export default function CertificateApplyWizard({
   const [registered, setRegistered] = useState<RegisteredType | null>(null);
   const [receiveMethod, setReceiveMethod] = useState<ReceiveMethod>('email');
 
-  const [fields, setFields] = useState<Fields>(EMPTY_FIELDS);
+  const [성명, set성명] = useState('');
+  const [pickedStaff, setPickedStaff] = useState<Record<string, string> | null>(null);
   const [신청일, set신청일] = useState(todayISO());
   const [이메일, set이메일] = useState('');
   const [비고, set비고] = useState('');
-
-  function setField<K extends keyof Fields>(key: K, value: Fields[K]) {
-    setFields((f) => ({ ...f, [key]: value }));
-  }
 
   function selectDocType(next: DocType) {
     setDocType(next);
     setWho(null);
     setRegistered(null);
-    setFields(EMPTY_FIELDS);
+    set성명('');
+    setPickedStaff(null);
   }
 
   function selectWho(next: WhoType) {
     setWho(next);
     setRegistered(null);
-    setFields(EMPTY_FIELDS);
+    set성명('');
+    setPickedStaff(null);
   }
 
   function pickStaffMember(s: Record<string, string>) {
-    setField('성명', s.성명 ?? '');
+    setPickedStaff(s);
+    set성명(s.성명 ?? '');
   }
 
   // 어떤 화면이 확정됐는지에 따라 문서 제목/신청유형/직원선택 여부/제출버튼 문구를 정한다.
@@ -276,100 +212,59 @@ export default function CertificateApplyWizard({
       {docType === '상장' && <AwardForm action={awardAction} />}
 
       {docType !== '상장' && resolved && (
-        <form action={certificateAction} className="flex items-start gap-6">
+        <form action={certificateAction} className="mx-auto max-w-md">
           <input type="hidden" name="종류" value={resolved.kind} />
           <input type="hidden" name="신청유형" value={resolved.신청유형} />
-          <input type="hidden" name="대상자성명" value={fields.성명} />
-          <input type="hidden" name="생년월일" value={fields.생년월일} />
-          <input type="hidden" name="성별" value={fields.성별} />
-          <input type="hidden" name="대상자주소" value={fields.주소} />
-          <input type="hidden" name="용도" value={fields.용도} />
-          {who === 'instructor' && (
-            <input type="hidden" name="수령방법" value={receiveMethod === 'email' ? '이메일' : '직접수령'} />
-          )}
+          <input type="hidden" name="대상자성명" value={성명} />
+          <input type="hidden" name="신청일" value={신청일} />
+          <input type="hidden" name="수령방법" value={receiveMethod === 'email' ? '이메일' : '직접수령'} />
 
-          <div className="w-[340px] shrink-0 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className={card}>
             <Section title="신청 정보">
-              <label className={`${label} mb-3`}>
+              <label className={label}>
                 신청일
                 <input type="date" className={input} value={신청일} onChange={(e) => set신청일(e.target.value)} />
-                <input type="hidden" name="신청일" value={신청일} />
               </label>
 
               {resolved.needStaffPicker ? (
-                <div className="mb-1">
-                  <p className={label}>직원 선택 (선택 시 이름 자동 입력, 요양센터·데이케어센터 제외)</p>
+                <div>
+                  <p className={label}>직원 선택 (요양센터·데이케어센터 제외)</p>
                   <StaffPicker staff={pickableStaff} name="staffPick" onSelect={pickStaffMember} />
+                  {pickedStaff && (
+                    <p className="mt-2 text-xs text-zinc-400">
+                      {pickedStaff.소속팀} · {pickedStaff['직급/직책']}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <label className={label}>
                   대상자 성명
-                  <input className={input} value={fields.성명} onChange={(e) => setField('성명', e.target.value)} />
+                  <input className={input} value={성명} onChange={(e) => set성명(e.target.value)} />
                 </label>
               )}
             </Section>
 
-            <Section title="인적사항">
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <label className={`${label} flex-1`}>
-                    생년월일
-                    <input type="date" className={input} value={fields.생년월일} onChange={(e) => setField('생년월일', e.target.value)} />
-                  </label>
-                  <label className={`${label} w-24 shrink-0`}>
-                    성별
-                    <select className={input} value={fields.성별} onChange={(e) => setField('성별', e.target.value)}>
-                      <option value="남">남</option>
-                      <option value="여">여</option>
-                    </select>
-                  </label>
-                </div>
+            <Section title="수령 방법">
+              <label className={label}>
+                발급받을 방법
+                <select className={input} value={receiveMethod} onChange={(e) => setReceiveMethod(e.target.value as ReceiveMethod)}>
+                  <option value="email">이메일로 수령</option>
+                  <option value="inperson">직접 수령</option>
+                </select>
+              </label>
+              {receiveMethod === 'email' && (
                 <label className={label}>
-                  주소
-                  <input className={input} value={fields.주소} onChange={(e) => setField('주소', e.target.value)} />
+                  발급받을 이메일
+                  <input type="email" name="대상자이메일" className={input} value={이메일} onChange={(e) => set이메일(e.target.value)} />
                 </label>
-              </div>
-            </Section>
-
-            <Section title="발급 정보">
-              <div className="space-y-3">
-                <label className={label}>
-                  용도
-                  <input className={input} placeholder="예: 기관제출용" value={fields.용도} onChange={(e) => setField('용도', e.target.value)} />
-                </label>
-                {who === 'instructor' && (
-                  <label className={label}>
-                    수령방법
-                    <select className={input} value={receiveMethod} onChange={(e) => setReceiveMethod(e.target.value as ReceiveMethod)}>
-                      <option value="email">이메일로 수령</option>
-                      <option value="inperson">직접 수령</option>
-                    </select>
-                  </label>
-                )}
-                {(who !== 'instructor' || receiveMethod === 'email') && (
-                  <label className={label}>
-                    발급받을 이메일
-                    <input type="email" name="대상자이메일" className={input} value={이메일} onChange={(e) => set이메일(e.target.value)} />
-                  </label>
-                )}
-                <label className={label}>
-                  비고사항
-                  <input name="비고" className={input} value={비고} onChange={(e) => set비고(e.target.value)} />
-                </label>
-              </div>
+              )}
+              <label className={label}>
+                비고사항
+                <input name="비고" className={input} value={비고} onChange={(e) => set비고(e.target.value)} />
+              </label>
             </Section>
 
             <button type="submit" className={`${btn} mt-5 w-full`}>{resolved.submitLabel}</button>
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <div className="mx-auto max-w-[560px] rounded-2xl bg-zinc-100 p-6 dark:bg-black/20 sm:p-10">
-              <div className="rounded-sm border border-zinc-200 bg-white p-3 shadow-[0_10px_40px_rgba(15,23,42,0.08)] dark:border-zinc-700 dark:bg-zinc-900">
-                <div className="border border-zinc-100 p-8 dark:border-zinc-800">
-                  <DocPreview title={resolved.kind} fields={fields} />
-                </div>
-              </div>
-            </div>
           </div>
         </form>
       )}
@@ -378,33 +273,118 @@ export default function CertificateApplyWizard({
 }
 
 function AwardForm({ action }: { action: (formData: FormData) => void }) {
+  const [상장구분, set상장구분] = useState<string>(AWARD_TYPES[0]);
+  const [상장구분기타, set상장구분기타] = useState('');
+  const [대상자원본, set대상자원본] = useState('');
+  const [대상자구분, set대상자구분] = useState<string>(AWARD_TARGET_KINDS[0]);
+  const [용도, set용도] = useState('');
+  const [본문, set본문] = useState('');
+  const [비고, set비고] = useState('');
+  const [bodyModalOpen, setBodyModalOpen] = useState(false);
+
+  const names = useMemo(
+    () => 대상자원본.split(',').map((s) => s.trim()).filter(Boolean),
+    [대상자원본]
+  );
+  const finalKind = 상장구분 === '기타' ? (상장구분기타 || '기타') : 상장구분;
+
+  function openBodyModal() {
+    if (!본문) {
+      set본문(`${names[0] || '000'}님께서는 ${용도 || '____'}하였기에 이 ${finalKind}을(를) 드립니다.`);
+    }
+    setBodyModalOpen(true);
+  }
+
   return (
-    <form action={action} className="flex max-w-md flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <label className={label}>
-        대상자
-        <input name="대상자성명" required className={input} />
-      </label>
-      <label className={label}>
-        구분
-        <select name="종류" className={input} defaultValue="어르신">
-          <option value="어르신">어르신</option>
-          <option value="자원봉사자">자원봉사자</option>
-          <option value="기타">기타</option>
-        </select>
-      </label>
-      <label className={label}>
-        발급일 (미입력 시 오늘)
-        <input type="date" name="발급일" className={input} />
-      </label>
-      <label className={label}>
-        발급목적
-        <input name="용도" required className={input} />
-      </label>
-      <label className={label}>
-        비고
-        <input name="비고" className={input} />
-      </label>
-      <button type="submit" className={`${btn} w-fit`}>상장 등록</button>
+    <form action={action} className="mx-auto max-w-md">
+      <input type="hidden" name="대상자성명" value={대상자원본} />
+      <input type="hidden" name="종류" value={finalKind} />
+      <input type="hidden" name="대상자구분" value={대상자구분} />
+      <input type="hidden" name="본문" value={본문} />
+
+      <div className={`${card} flex flex-col gap-4`}>
+        <label className={label}>
+          상장 구분
+          <select className={input} value={상장구분} onChange={(e) => set상장구분(e.target.value)}>
+            {AWARD_TYPES.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </label>
+        {상장구분 === '기타' && (
+          <label className={label}>
+            상장 구분 (직접입력)
+            <input className={input} value={상장구분기타} onChange={(e) => set상장구분기타(e.target.value)} />
+          </label>
+        )}
+
+        <div>
+          <label className={label}>
+            대상자 (여러 명은 쉼표로 구분)
+            <input
+              className={input}
+              placeholder="예: 홍길동, 김철수, 이영희"
+              value={대상자원본}
+              onChange={(e) => set대상자원본(e.target.value)}
+              required
+            />
+          </label>
+          {names.length > 0 && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              {names.map((n, i) => (
+                <span key={`${n}-${i}`} className="rounded-full bg-brand-tint px-2.5 py-1 text-xs text-brand">{n}</span>
+              ))}
+              <span className="text-xs text-zinc-400">총 {names.length}명</span>
+            </div>
+          )}
+        </div>
+
+        <label className={label}>
+          구분
+          <select className={input} value={대상자구분} onChange={(e) => set대상자구분(e.target.value)}>
+            {AWARD_TARGET_KINDS.map((k) => (
+              <option key={k} value={k}>{k}</option>
+            ))}
+          </select>
+        </label>
+
+        <label className={label}>
+          수여사유
+          <input
+            name="용도"
+            required
+            className={input}
+            placeholder="예: OOO 프로그램 이수"
+            value={용도}
+            onChange={(e) => set용도(e.target.value)}
+          />
+        </label>
+
+        <div>
+          <button type="button" onClick={openBodyModal} className={btnOutline}>
+            {본문 ? '본문 수정하기' : '본문 입력하기'}
+          </button>
+          {본문 && (
+            <p className="mt-2 whitespace-pre-wrap rounded-lg bg-zinc-50 p-3 text-xs text-zinc-500 dark:bg-zinc-800/50">{본문}</p>
+          )}
+        </div>
+
+        <label className={label}>
+          비고
+          <input name="비고" className={input} value={비고} onChange={(e) => set비고(e.target.value)} />
+        </label>
+
+        <button type="submit" className={`${btn} w-full`}>
+          {names.length > 1 ? `상장 ${names.length}건 등록` : '상장 등록'}
+        </button>
+      </div>
+
+      {bodyModalOpen && (
+        <Modal title="본문 입력하기" onClose={() => setBodyModalOpen(false)}>
+          <textarea className={`${input} h-56 resize-none`} value={본문} onChange={(e) => set본문(e.target.value)} />
+          <button type="button" onClick={() => setBodyModalOpen(false)} className={`${btn} mt-3 w-full`}>완료</button>
+        </Modal>
+      )}
     </form>
   );
 }
