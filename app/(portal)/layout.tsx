@@ -21,9 +21,9 @@ export default async function PortalLayout({ children }: { children: React.React
 
   if (navLayout === 'left') {
     return (
-      <div className="flex min-h-screen bg-zinc-50/60 dark:bg-black">
+      <div className="flex min-h-screen flex-col bg-zinc-50/60 dark:bg-black md:flex-row">
         <Sidebar userName={userName} userSubtitle={userSubtitle} />
-        <main className="flex-1">{children}</main>
+        <main className="min-w-0 flex-1">{children}</main>
       </div>
     );
   }
