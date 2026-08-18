@@ -67,7 +67,14 @@ async function AwardDoc({
 
   return (
     <div
-      style={{ ...pageStyle, fontSize: 13.5, color: '#000', width: '186mm', margin: '0 auto 40px' }}
+      style={{
+        ...pageStyle,
+        fontFamily: '"바탕체", "바탕", Batang, serif',
+        fontSize: 13.5,
+        color: '#000',
+        width: '186mm',
+        margin: '0 auto 40px',
+      }}
       className="bg-white p-10 print:p-0"
     >
       <div style={{ fontSize: 12 }}>제 {r.문서번호}호</div>

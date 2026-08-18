@@ -13,12 +13,13 @@ function fieldsFromForm(formData: FormData, keys: string[]): Record<string, stri
   return record;
 }
 
-// 신청은 이름/수령방법/비고까지만 — 생년월일·성별·주소·용도와 소속/직위/기간/담당업무는 전부
-// "발급 처리" 탭에서 서무/회계·관리자가 인사기록을 확인해 채운다. 누구나(로그인한 직원이면)
-// 자기 증명서를 신청할 수 있다.
+// 신청은 이름/수령방법/비고까지만 — 생년월일·성별·주소·용도는 "발급 처리" 탭에서 서무/회계·관리자가
+// 인사기록을 확인해 채운다(직원명부에 있는 정직원 기준). 다만 강사·생활지원사는 직원명부에 없어서
+// 소속부서/직위(+강사는 재직·경력기간)를 신청 시점에 본인이 직접 적어서 낸다. 누구나(로그인한
+// 직원이면) 자기 증명서를 신청할 수 있다.
 export async function addCertificateAction(formData: FormData): Promise<void> {
   const record = fieldsFromForm(formData, [
-    '종류', '신청유형', '대상자성명', '대상자이메일', '수령방법', '신청일', '비고',
+    '종류', '신청유형', '대상자성명', '대상자소속', '대상자직위', '근무기간', '대상자이메일', '수령방법', '신청일', '비고',
   ]);
   if (!CERTIFICATE_TYPES.includes(record['종류'] as (typeof CERTIFICATE_TYPES)[number])) {
     throw new Error('증명서 종류를 선택해주세요.');

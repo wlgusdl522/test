@@ -10,6 +10,7 @@ const EXCLUDED_TEAMS = ['요양센터', '데이케어센터'];
 
 type DocType = '재직증명서' | '경력증명서' | '상장';
 type WhoType = 'staff' | 'instructor';
+type InstructorType = '강사' | '생활지원사';
 type RegisteredType = 'registered' | 'unregistered';
 type ReceiveMethod = 'email' | 'inperson';
 
@@ -17,11 +18,17 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function formatKoreanDate(iso: string): string {
+  const [y, m, d] = (iso || '').split('-');
+  if (!y || !m || !d) return '';
+  return `${y}년 ${Number(m)}월 ${Number(d)}일`;
+}
+
 const DOC_TYPES: { value: DocType; label: string; desc: string; icon: React.ReactNode }[] = [
   {
     value: '재직증명서',
     label: '재직증명서',
-    desc: '현재 재직 중인 직원·강사',
+    desc: '현재 재직 중인 직원·강사·생활지원사',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-6 w-6">
         <circle cx="12" cy="8" r="3.4" />
@@ -32,7 +39,7 @@ const DOC_TYPES: { value: DocType; label: string; desc: string; icon: React.Reac
   {
     value: '경력증명서',
     label: '경력증명서',
-    desc: '퇴사한 직원·강사',
+    desc: '퇴사한 직원·강사·생활지원사',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-6 w-6">
         <rect x="3.5" y="7" width="17" height="12" rx="2" />
@@ -135,28 +142,42 @@ export default function CertificateApplyWizard({
 
   const [docType, setDocType] = useState<DocType | null>(null);
   const [who, setWho] = useState<WhoType | null>(null);
+  const [instructorType, setInstructorType] = useState<InstructorType | null>(null);
   const [registered, setRegistered] = useState<RegisteredType | null>(null);
   const [receiveMethod, setReceiveMethod] = useState<ReceiveMethod>('email');
 
   const [성명, set성명] = useState('');
   const [pickedStaff, setPickedStaff] = useState<Record<string, string> | null>(null);
+  const [소속부서, set소속부서] = useState('');
+  const [직위, set직위] = useState('');
+  const [근무시작일, set근무시작일] = useState('');
+  const [근무종료일, set근무종료일] = useState('');
   const [신청일, set신청일] = useState(todayISO());
   const [이메일, set이메일] = useState('');
   const [비고, set비고] = useState('');
 
+  function resetInstructorFields() {
+    set성명('');
+    setPickedStaff(null);
+    set소속부서('');
+    set직위('');
+    set근무시작일('');
+    set근무종료일('');
+  }
+
   function selectDocType(next: DocType) {
     setDocType(next);
     setWho(null);
+    setInstructorType(null);
     setRegistered(null);
-    set성명('');
-    setPickedStaff(null);
+    resetInstructorFields();
   }
 
   function selectWho(next: WhoType) {
     setWho(next);
+    setInstructorType(null);
     setRegistered(null);
-    set성명('');
-    setPickedStaff(null);
+    resetInstructorFields();
   }
 
   function pickStaffMember(s: Record<string, string>) {
@@ -164,25 +185,32 @@ export default function CertificateApplyWizard({
     set성명(s.성명 ?? '');
   }
 
+  // 강사·생활지원사는 직원명부(StaffPicker)에 없어서 이름/소속부서/직위를 본인이 직접 적는다.
+  // 강사는 재직기간(재직증명서)·경력기간(경력증명서)도 직접 날짜로 적어야 한다.
+  const 근무기간 = instructorType === '강사' && 근무시작일
+    ? `${formatKoreanDate(근무시작일)} ~ ${docType === '재직증명서' ? '현재' : (근무종료일 ? formatKoreanDate(근무종료일) : '')}`
+    : '';
+
   // 어떤 화면이 확정됐는지에 따라 문서 제목/신청유형/직원선택 여부/제출버튼 문구를 정한다.
   const resolved = useMemo(() => {
     if (docType === '재직증명서' && who === 'staff') {
       return { kind: '재직증명서' as const, 신청유형: '재직증명서(직원)', needStaffPicker: true, submitLabel: '재직증명서 신청하기' };
     }
-    if (docType === '재직증명서' && who === 'instructor') {
-      return { kind: '재직증명서' as const, 신청유형: '재직증명서(강사)', needStaffPicker: false, submitLabel: '재직증명서 신청하기' };
+    if (docType === '재직증명서' && who === 'instructor' && instructorType) {
+      return { kind: '재직증명서' as const, 신청유형: `재직증명서(${instructorType})`, needStaffPicker: false, submitLabel: '재직증명서 신청하기' };
     }
     if (docType === '경력증명서' && who === 'staff' && registered === 'registered') {
       return { kind: '경력증명서' as const, 신청유형: '경력증명서(직원-희망이음등록)', needStaffPicker: true, submitLabel: '경력증명서 신청하기' };
     }
     if (docType === '경력증명서' && who === 'staff' && registered === 'unregistered') {
-      return { kind: '경력증명서' as const, 신청유형: '경력증명서(직원-희망이음미등록)', needStaffPicker: true, submitLabel: '경력증명서 신청' };
+      // 희망이음 미등록(대부분 이미 퇴사해 직원명부에도 없는 경우) — 강사·생활지원사처럼 본인이 직접 입력.
+      return { kind: '경력증명서' as const, 신청유형: '경력증명서(직원-희망이음미등록)', needStaffPicker: false, submitLabel: '경력증명서 신청' };
     }
-    if (docType === '경력증명서' && who === 'instructor') {
-      return { kind: '경력증명서' as const, 신청유형: '경력증명서(강사)', needStaffPicker: false, submitLabel: '경력증명서 신청' };
+    if (docType === '경력증명서' && who === 'instructor' && instructorType) {
+      return { kind: '경력증명서' as const, 신청유형: `경력증명서(${instructorType})`, needStaffPicker: false, submitLabel: '경력증명서 신청' };
     }
     return null;
-  }, [docType, who, registered]);
+  }, [docType, who, instructorType, registered]);
 
   return (
     <div className="mb-6">
@@ -195,8 +223,16 @@ export default function CertificateApplyWizard({
       {(docType === '재직증명서' || docType === '경력증명서') && (
         <div className="mb-3">
           <ButtonGroup>
-            <PillButton active={who === 'staff'} onClick={() => selectWho('staff')}>복지관·생활지원사 직원</PillButton>
-            <PillButton active={who === 'instructor'} onClick={() => selectWho('instructor')}>강사</PillButton>
+            <PillButton active={who === 'staff'} onClick={() => selectWho('staff')}>복지관 직원</PillButton>
+            <PillButton active={who === 'instructor'} onClick={() => selectWho('instructor')}>강사·생활지원사</PillButton>
+          </ButtonGroup>
+        </div>
+      )}
+      {(docType === '재직증명서' || docType === '경력증명서') && who === 'instructor' && (
+        <div className="mb-3">
+          <ButtonGroup>
+            <PillButton active={instructorType === '강사'} onClick={() => setInstructorType('강사')}>강사</PillButton>
+            <PillButton active={instructorType === '생활지원사'} onClick={() => setInstructorType('생활지원사')}>생활지원사</PillButton>
           </ButtonGroup>
         </div>
       )}
@@ -216,6 +252,9 @@ export default function CertificateApplyWizard({
           <input type="hidden" name="종류" value={resolved.kind} />
           <input type="hidden" name="신청유형" value={resolved.신청유형} />
           <input type="hidden" name="대상자성명" value={성명} />
+          <input type="hidden" name="대상자소속" value={resolved.needStaffPicker ? '' : 소속부서} />
+          <input type="hidden" name="대상자직위" value={resolved.needStaffPicker ? '' : 직위} />
+          <input type="hidden" name="근무기간" value={근무기간} />
           <input type="hidden" name="신청일" value={신청일} />
           <input type="hidden" name="수령방법" value={receiveMethod === 'email' ? '이메일' : '직접수령'} />
 
@@ -237,10 +276,34 @@ export default function CertificateApplyWizard({
                   )}
                 </div>
               ) : (
-                <label className={label}>
-                  대상자 성명
-                  <input className={input} value={성명} onChange={(e) => set성명(e.target.value)} />
-                </label>
+                <>
+                  <label className={label}>
+                    대상자 성명
+                    <input required className={input} value={성명} onChange={(e) => set성명(e.target.value)} />
+                  </label>
+                  <label className={label}>
+                    소속부서
+                    <input required className={input} value={소속부서} onChange={(e) => set소속부서(e.target.value)} />
+                  </label>
+                  <label className={label}>
+                    직위
+                    <input required className={input} value={직위} onChange={(e) => set직위(e.target.value)} />
+                  </label>
+                  {instructorType === '강사' && (
+                    <div className="flex gap-2">
+                      <label className={`${label} flex-1`}>
+                        {docType === '재직증명서' ? '재직기간 (시작일)' : '경력기간 (시작일)'}
+                        <input type="date" required className={input} value={근무시작일} onChange={(e) => set근무시작일(e.target.value)} />
+                      </label>
+                      {docType === '경력증명서' && (
+                        <label className={`${label} flex-1`}>
+                          경력기간 (종료일)
+                          <input type="date" required className={input} value={근무종료일} onChange={(e) => set근무종료일(e.target.value)} />
+                        </label>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </Section>
 
@@ -272,6 +335,30 @@ export default function CertificateApplyWizard({
   );
 }
 
+function AwardPreview({ kind, names, body }: { kind: string; names: string[]; body: string }) {
+  return (
+    <div style={{ fontFamily: '"바탕체", "바탕", Batang, serif' }}>
+      <p className="text-center text-[11px] tracking-[0.3em] text-zinc-300">AWARD</p>
+      <h2 className="mt-2 text-center text-[26px] font-bold tracking-[0.5em] text-zinc-900 dark:text-zinc-50" style={{ textIndent: '0.5em' }}>
+        {kind || '상장'}
+      </h2>
+      <div className="mx-auto mt-4 h-px w-14 bg-zinc-300 dark:bg-zinc-700" />
+
+      <p className="mt-10 text-center text-[18px] font-semibold text-zinc-800 dark:text-zinc-100">
+        {(names[0] || '대상자명') + (names.length > 1 ? ` 외 ${names.length - 1}명` : '')} 님
+      </p>
+
+      <p className="mt-6 whitespace-pre-wrap text-center text-[14px] leading-relaxed text-zinc-600 dark:text-zinc-300">
+        {body || '"본문 입력하기"로 작성하면 여기에 미리보기가 표시됩니다.'}
+      </p>
+
+      <div className="mt-14 rounded-lg bg-zinc-50 py-5 text-center text-[11px] text-zinc-400 dark:bg-zinc-800/60">
+        발급일 · 직인 · QR코드는 발급승인 시 자동으로 채워집니다.
+      </div>
+    </div>
+  );
+}
+
 function AwardForm({ action }: { action: (formData: FormData) => void }) {
   const [상장구분, set상장구분] = useState<string>(AWARD_TYPES[0]);
   const [상장구분기타, set상장구분기타] = useState('');
@@ -296,87 +383,96 @@ function AwardForm({ action }: { action: (formData: FormData) => void }) {
   }
 
   return (
-    <form action={action} className="mx-auto max-w-md">
-      <input type="hidden" name="대상자성명" value={대상자원본} />
-      <input type="hidden" name="종류" value={finalKind} />
-      <input type="hidden" name="대상자구분" value={대상자구분} />
-      <input type="hidden" name="본문" value={본문} />
+    <div className="flex items-start gap-6">
+      <form action={action} className="w-[380px] shrink-0">
+        <input type="hidden" name="대상자성명" value={대상자원본} />
+        <input type="hidden" name="종류" value={finalKind} />
+        <input type="hidden" name="대상자구분" value={대상자구분} />
+        <input type="hidden" name="본문" value={본문} />
 
-      <div className={`${card} flex flex-col gap-4`}>
-        <label className={label}>
-          상장 구분
-          <select className={input} value={상장구분} onChange={(e) => set상장구분(e.target.value)}>
-            {AWARD_TYPES.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </label>
-        {상장구분 === '기타' && (
+        <div className={`${card} flex flex-col gap-4`}>
           <label className={label}>
-            상장 구분 (직접입력)
-            <input className={input} value={상장구분기타} onChange={(e) => set상장구분기타(e.target.value)} />
+            상장 구분
+            <select className={input} value={상장구분} onChange={(e) => set상장구분(e.target.value)}>
+              {AWARD_TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
           </label>
-        )}
+          {상장구분 === '기타' && (
+            <label className={label}>
+              상장 구분 (직접입력)
+              <input className={input} value={상장구분기타} onChange={(e) => set상장구분기타(e.target.value)} />
+            </label>
+          )}
 
-        <div>
+          <div>
+            <label className={label}>
+              대상자 (여러 명은 쉼표로 구분)
+              <input
+                className={input}
+                placeholder="예: 홍길동, 김철수, 이영희"
+                value={대상자원본}
+                onChange={(e) => set대상자원본(e.target.value)}
+                required
+              />
+            </label>
+            {names.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {names.map((n, i) => (
+                  <span key={`${n}-${i}`} className="rounded-full bg-brand-tint px-2.5 py-1 text-xs text-brand">{n}</span>
+                ))}
+                <span className="text-xs text-zinc-400">총 {names.length}명</span>
+              </div>
+            )}
+          </div>
+
           <label className={label}>
-            대상자 (여러 명은 쉼표로 구분)
+            구분
+            <select className={input} value={대상자구분} onChange={(e) => set대상자구분(e.target.value)}>
+              {AWARD_TARGET_KINDS.map((k) => (
+                <option key={k} value={k}>{k}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className={label}>
+            수여사유
             <input
-              className={input}
-              placeholder="예: 홍길동, 김철수, 이영희"
-              value={대상자원본}
-              onChange={(e) => set대상자원본(e.target.value)}
+              name="용도"
               required
+              className={input}
+              placeholder="예: OOO 프로그램 이수"
+              value={용도}
+              onChange={(e) => set용도(e.target.value)}
             />
           </label>
-          {names.length > 0 && (
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              {names.map((n, i) => (
-                <span key={`${n}-${i}`} className="rounded-full bg-brand-tint px-2.5 py-1 text-xs text-brand">{n}</span>
-              ))}
-              <span className="text-xs text-zinc-400">총 {names.length}명</span>
-            </div>
-          )}
-        </div>
 
-        <label className={label}>
-          구분
-          <select className={input} value={대상자구분} onChange={(e) => set대상자구분(e.target.value)}>
-            {AWARD_TARGET_KINDS.map((k) => (
-              <option key={k} value={k}>{k}</option>
-            ))}
-          </select>
-        </label>
+          <div>
+            <button type="button" onClick={openBodyModal} className={btnOutline}>
+              {본문 ? '본문 수정하기' : '본문 입력하기'}
+            </button>
+          </div>
 
-        <label className={label}>
-          수여사유
-          <input
-            name="용도"
-            required
-            className={input}
-            placeholder="예: OOO 프로그램 이수"
-            value={용도}
-            onChange={(e) => set용도(e.target.value)}
-          />
-        </label>
+          <label className={label}>
+            비고
+            <input name="비고" className={input} value={비고} onChange={(e) => set비고(e.target.value)} />
+          </label>
 
-        <div>
-          <button type="button" onClick={openBodyModal} className={btnOutline}>
-            {본문 ? '본문 수정하기' : '본문 입력하기'}
+          <button type="submit" className={`${btn} w-full`}>
+            {names.length > 1 ? `상장 ${names.length}건 등록` : '상장 등록'}
           </button>
-          {본문 && (
-            <p className="mt-2 whitespace-pre-wrap rounded-lg bg-zinc-50 p-3 text-xs text-zinc-500 dark:bg-zinc-800/50">{본문}</p>
-          )}
         </div>
+      </form>
 
-        <label className={label}>
-          비고
-          <input name="비고" className={input} value={비고} onChange={(e) => set비고(e.target.value)} />
-        </label>
-
-        <button type="submit" className={`${btn} w-full`}>
-          {names.length > 1 ? `상장 ${names.length}건 등록` : '상장 등록'}
-        </button>
+      <div className="min-w-0 flex-1">
+        <div className="mx-auto max-w-[560px] rounded-2xl bg-zinc-100 p-6 dark:bg-black/20 sm:p-10">
+          <div className="rounded-sm border border-zinc-200 bg-white p-3 shadow-[0_10px_40px_rgba(15,23,42,0.08)] dark:border-zinc-700 dark:bg-zinc-900">
+            <div className="border border-zinc-100 p-8 dark:border-zinc-800">
+              <AwardPreview kind={finalKind} names={names} body={본문} />
+            </div>
+          </div>
+        </div>
       </div>
 
       {bodyModalOpen && (
@@ -385,6 +481,6 @@ function AwardForm({ action }: { action: (formData: FormData) => void }) {
           <button type="button" onClick={() => setBodyModalOpen(false)} className={`${btn} mt-3 w-full`}>완료</button>
         </Modal>
       )}
-    </form>
+    </div>
   );
 }

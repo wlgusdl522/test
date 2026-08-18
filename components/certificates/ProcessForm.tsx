@@ -81,15 +81,15 @@ export default function ProcessForm({
           </label>
           <label className={label}>
             소속
-            <input name="대상자소속" required className={input} />
+            <input name="대상자소속" defaultValue={r.대상자소속} required className={input} />
           </label>
           <label className={label}>
             직위
-            <input name="대상자직위" required className={input} />
+            <input name="대상자직위" defaultValue={r.대상자직위} required className={input} />
           </label>
           <label className={label}>
             기간
-            <input name="근무기간" placeholder="예: 2020년 03월 01일 ~ 현재" required className={input} />
+            <input name="근무기간" defaultValue={r.근무기간} placeholder="예: 2020년 03월 01일 ~ 현재" required className={input} />
           </label>
           <label className={label}>
             담당업무
