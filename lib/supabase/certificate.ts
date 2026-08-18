@@ -57,9 +57,10 @@ export async function getCertificateById(id: string): Promise<Record<string, str
   return normalizeRow(data as Record<string, unknown>);
 }
 
-// 증명서·상장 발급대장(구글시트)에 append — 결재 최종승인/즉시확정된 건만, 반려된 신청은 올라가지 않는다.
-// 대장 append 실패로 승인 처리 자체가 실패하면 안 되므로(원본은 Supabase, 대장은 감사용 사본) 에러를 삼키고 로그만 남긴다.
-async function appendCertificateToLedger(record: Record<string, string>): Promise<void> {
+// 증명서·상장 발급대장(구글시트)에 append — 신청 접수 시점과 발급 확정 시점 둘 다 한 줄씩 남긴다
+// (마지막 컬럼 "단계"로 구분: 신청 | 발급). 대장 append 실패로 본 처리 자체가 실패하면 안 되므로
+// (원본은 Supabase, 대장은 감사용 사본) 에러를 삼키고 로그만 남긴다.
+async function appendCertificateToLedger(record: Record<string, string>, stage: '신청' | '발급'): Promise<void> {
   try {
     await appendLedgerRow(CERTIFICATE_LEDGER_SHEET_ID, [
       record['문서번호'] || '',
@@ -71,6 +72,7 @@ async function appendCertificateToLedger(record: Record<string, string>): Promis
       record['용도'] || '',
       record['발급일'] || '',
       record['등록자명'] || '',
+      stage,
     ]);
   } catch (error) {
     console.error('[증명서·상장 발급대장 append 실패]', error);
@@ -144,6 +146,7 @@ export async function addCertificate(payload: Record<string, string>): Promise<D
   }
   const { error } = await table().insert(record);
   if (error) throw new Error(`증명서 신청 등록 실패: ${error.message}`);
+  await appendCertificateToLedger(record, '신청');
   return getCertificateList();
 }
 
@@ -179,6 +182,9 @@ export async function addAwardBatch(payload: Record<string, string>): Promise<De
 
   const { error } = await table().insert(rows);
   if (error) throw new Error(`상장 등록 실패: ${error.message}`);
+  for (const row of rows) {
+    await appendCertificateToLedger(row, '신청');
+  }
   return getCertificateList();
 }
 
@@ -276,7 +282,7 @@ async function markCertificateIssued(id: string): Promise<Record<string, string>
   if (error) throw new Error(`증명서 발행 처리 실패: ${error.message}`);
 
   const finalRecord = { ...existing, ...patch };
-  await appendCertificateToLedger(finalRecord);
+  await appendCertificateToLedger(finalRecord, '발급');
   return finalRecord;
 }
 
