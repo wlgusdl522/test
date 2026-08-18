@@ -1,6 +1,8 @@
 import { hasPageAccess } from '@/lib/mutate/permissions';
+import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
+import VolumeTabs from '@/components/documentIndex/VolumeTabs';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getDocumentIndexEntries, getDocumentIndexState } from '@/lib/mutate/documentIndex';
@@ -23,17 +25,23 @@ export default async function DocumentIndexPage({
 }) {
   if (!(await hasPageAccess('document-index'))) return <PageAccessDenied />;
 
-  const teams = await getSimpleList(TEAM_LIST_SHEET_NAME);
+  const [teams, me] = await Promise.all([getSimpleList(TEAM_LIST_SHEET_NAME), getViewerStaffRecord()]);
   const { team: teamParam, year: yearParam } = await searchParams;
-  const 팀명 = teams.includes(teamParam ?? '') ? (teamParam as string) : (teams[0] ?? '');
+  const myTeam = me?.소속팀 ?? '';
+  const 팀명 = teams.includes(teamParam ?? '')
+    ? (teamParam as string)
+    : teams.includes(myTeam)
+      ? myTeam
+      : (teams[0] ?? '');
   const 연도 = yearParam || currentYear();
 
   const [entries, state] = 팀명
     ? await Promise.all([getDocumentIndexEntries(팀명, 연도), getDocumentIndexState(팀명, 연도)])
     : [[], { 팀명, 연도, 현재권: 1, 다음일련번호: 1 }];
 
-  const volumes = Array.from(new Set(entries.map((e) => e.권))).sort((a, b) => a - b);
-  if (volumes.length === 0 || volumes[volumes.length - 1] !== state.현재권) volumes.push(state.현재권);
+  const volumesAsc = Array.from(new Set(entries.map((e) => e.권))).sort((a, b) => a - b);
+  if (volumesAsc.length === 0 || volumesAsc[volumesAsc.length - 1] !== state.현재권) volumesAsc.push(state.현재권);
+  const volumesDesc = [...volumesAsc].sort((a, b) => b - a);
 
   return (
     <main className={pageFluid}>
@@ -72,67 +80,75 @@ export default async function DocumentIndexPage({
             </form>
           </div>
 
-          {volumes.map((권) => {
-            const rows = entries.filter((e) => e.권 === 권);
-            const isLatest = 권 === state.현재권;
-            return (
-              <div key={권} className={card}>
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className={h2}>{권}권</h2>
-                  {isLatest && (
-                    <form action={startNewVolumeAction}>
-                      <input type="hidden" name="팀명" value={팀명} />
-                      <input type="hidden" name="연도" value={연도} />
-                      <ConfirmSubmitButton
-                        confirmMessage={`${권}권을 마감하고 ${권 + 1}권을 시작할까요? 이후 등록되는 공문은 ${권 + 1}권에 쌓입니다.`}
-                        className={btnSecondary}
-                      >
-                        다음 권 시작
-                      </ConfirmSubmitButton>
-                    </form>
-                  )}
-                </div>
-                <div className={tableWrap}>
-                  <table className={table}>
-                    <thead>
-                      <tr>
-                        <th className={`${th} w-10 text-center`}>No</th>
-                        <th className={th}>문서번호</th>
-                        <th className={th}>제목</th>
-                        <th className={th}>월/일</th>
-                        <th className={th}>수신</th>
-                        <th className={th}>발신</th>
-                        <th className={`${th} w-12`} />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.length === 0 && (
-                        <tr>
-                          <td className={`${td} text-center text-zinc-400`} colSpan={7}>등록된 공문이 없습니다.</td>
-                        </tr>
+          <div className={card}>
+            <VolumeTabs
+              volumes={volumesDesc}
+              defaultVolume={state.현재권}
+              panels={Object.fromEntries(
+                volumesDesc.map((권) => {
+                  const rows = entries.filter((e) => e.권 === 권);
+                  const isLatest = 권 === state.현재권;
+                  return [
+                    권,
+                    <div key={권}>
+                      {isLatest && (
+                        <div className="mb-3 flex justify-end">
+                          <form action={startNewVolumeAction}>
+                            <input type="hidden" name="팀명" value={팀명} />
+                            <input type="hidden" name="연도" value={연도} />
+                            <ConfirmSubmitButton
+                              confirmMessage={`${권}권을 마감하고 ${권 + 1}권을 시작할까요? 이후 등록되는 공문은 ${권 + 1}권에 쌓입니다.`}
+                              className={btnSecondary}
+                            >
+                              다음 권 시작
+                            </ConfirmSubmitButton>
+                          </form>
+                        </div>
                       )}
-                      {rows.map((r, i) => (
-                        <tr key={r.id}>
-                          <td className={`${td} text-center tabular-nums text-zinc-400`}>{i + 1}</td>
-                          <td className={td}>{r.구분 === '스탬프결재' ? '스탬프 결재' : r.문서번호}</td>
-                          <td className={td}>{r.제목}</td>
-                          <td className={td}>{r.월일}</td>
-                          <td className={td}>{r.수신}</td>
-                          <td className={td}>{r.발신}</td>
-                          <td className={`${td} text-center`}>
-                            <form action={deleteDocumentIndexEntryAction}>
-                              <input type="hidden" name="id" value={r.id} />
-                              <ConfirmSubmitButton confirmMessage="이 공문을 삭제할까요?" className={btnDanger}>삭제</ConfirmSubmitButton>
-                            </form>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            );
-          })}
+                      <div className={tableWrap}>
+                        <table className={table}>
+                          <thead>
+                            <tr>
+                              <th className={`${th} w-10 text-center`}>No</th>
+                              <th className={th}>문서번호</th>
+                              <th className={th}>제목</th>
+                              <th className={th}>월/일</th>
+                              <th className={th}>수신</th>
+                              <th className={th}>발신</th>
+                              <th className={`${th} w-12`} />
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rows.length === 0 && (
+                              <tr>
+                                <td className={`${td} text-center text-zinc-400`} colSpan={7}>등록된 공문이 없습니다.</td>
+                              </tr>
+                            )}
+                            {rows.map((r, i) => (
+                              <tr key={r.id}>
+                                <td className={`${td} text-center tabular-nums text-zinc-400`}>{i + 1}</td>
+                                <td className={td}>{r.구분 === '스탬프결재' ? '스탬프 결재' : r.문서번호}</td>
+                                <td className={td}>{r.제목}</td>
+                                <td className={td}>{r.월일}</td>
+                                <td className={td}>{r.수신}</td>
+                                <td className={td}>{r.발신}</td>
+                                <td className={`${td} text-center`}>
+                                  <form action={deleteDocumentIndexEntryAction}>
+                                    <input type="hidden" name="id" value={r.id} />
+                                    <ConfirmSubmitButton confirmMessage="이 공문을 삭제할까요?" className={btnDanger}>삭제</ConfirmSubmitButton>
+                                  </form>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>,
+                  ] as const;
+                })
+              )}
+            />
+          </div>
         </>
       )}
     </main>
