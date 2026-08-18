@@ -18,13 +18,25 @@ export async function uploadImageDataUrl(dataUrl: string, filenamePrefix: string
   const fileId = res.data.id;
   if (!fileId) throw new Error('파일 업로드에 실패했습니다.');
 
-  await drive.permissions.create({
-    fileId,
-    requestBody: { role: 'reader', type: 'anyone' },
-    supportsAllDrives: true,
-  });
+  await grantPublicReadIfPossible(fileId);
 
   return `https://drive.google.com/file/d/${fileId}/view`;
+}
+
+// 업로드 폴더가 속한 공유 드라이브에 "팀원에게만 공유 가능" 정책이 걸리면 anyone 권한 부여가
+// 400 teamDriveTeamMembersOnlyRestriction으로 항상 실패한다(관리자가 정책을 바꾸면 다시 될 수도
+// 있음). 파일 자체는 이미 업로드된 뒤라, 권한 부여 실패 때문에 저장 자체가 막히면 안 된다
+// (예전엔 여기서 throw해서 당직근무일지 서명 저장이 통째로 실패했었다) — 실패하면 경고만 남긴다.
+async function grantPublicReadIfPossible(fileId: string): Promise<void> {
+  try {
+    await getDriveClient().permissions.create({
+      fileId,
+      requestBody: { role: 'reader', type: 'anyone' },
+      supportsAllDrives: true,
+    });
+  } catch (error) {
+    console.warn('[Drive 공개 권한 부여 실패 - 공유 드라이브 정책 때문일 수 있음]', (error as Error).message);
+  }
 }
 
 export async function deleteDriveFileFromUrl(url: string): Promise<void> {

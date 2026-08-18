@@ -85,49 +85,48 @@ async function CertificateDoc({ record: r, origin }: { record: Record<string, st
   const { certificateSealImageUrl } = await getSystemSettings();
   const sealDataUrl = certificateSealImageUrl ? await getDriveImageAsDataUrl(certificateSealImageUrl) : null;
 
-  const lbl: CSSProperties = { border: '1px solid #333', background: '#f2f2f2', fontWeight: 600, textAlign: 'center', whiteSpace: 'nowrap', padding: '12px' };
-  const cell: CSSProperties = { border: '1px solid #333', padding: '12px' };
-  const sectionLabelCol: CSSProperties = { width: 64, textAlign: 'center', fontSize: 13, fontWeight: 700 };
+  const lbl: CSSProperties = { border: '1px solid #333', background: '#f2f2f2', fontWeight: 600, textAlign: 'center', whiteSpace: 'nowrap', padding: '10px' };
+  const cell: CSSProperties = { border: '1px solid #333', padding: '10px' };
+  const sectionLabelCell: CSSProperties = { ...lbl, width: 56 };
   const isCareer = r.종류 === '경력증명서';
 
   return (
     <div style={{ fontSize: 13.5, color: '#000', width: '186mm', margin: '0 auto' }} className="bg-white p-6 print:p-0">
       <div style={{ fontSize: 12 }}>제 {r.문서번호}호</div>
 
-      <h2 style={{ textAlign: 'center', fontSize: 27, fontWeight: 700, letterSpacing: 15, margin: '24px 0 40px' }}>{r.종류}</h2>
+      <h2 style={{ textAlign: 'center', fontSize: 25, fontWeight: 700, letterSpacing: 12, margin: '18px 0 24px' }}>{r.종류}</h2>
 
-      <div style={{ display: 'flex', alignItems: 'center', marginTop: 20 }}>
-        <div style={sectionLabelCol}>인적사항</div>
-        <table style={{ flex: 1, width: '100%', borderCollapse: 'collapse' }}>
-          <tbody>
-            <tr><td style={{ ...lbl, width: 120 }}>성&nbsp;&nbsp;&nbsp;&nbsp;명</td><td style={cell}>{r.대상자성명}</td></tr>
-            <tr><td style={lbl}>주민등록번호</td><td style={cell}>{maskedResidentNumber(r.생년월일, r.성별)}</td></tr>
-            <tr><td style={lbl}>주&nbsp;&nbsp;&nbsp;&nbsp;소</td><td style={cell}>{r.대상자주소}</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 12 }}>
+        <tbody>
+          <tr>
+            <td rowSpan={2} style={sectionLabelCell}>인적사항</td>
+            <td style={{ ...lbl, width: 90 }}>성&nbsp;&nbsp;명</td><td style={cell}>{r.대상자성명}</td>
+            <td style={{ ...lbl, width: 100 }}>주민등록번호</td><td style={cell}>{maskedResidentNumber(r.생년월일, r.성별)}</td>
+          </tr>
+          <tr>
+            <td style={lbl}>주&nbsp;&nbsp;소</td><td style={cell} colSpan={3}>{r.대상자주소}</td>
+          </tr>
+        </tbody>
+      </table>
 
-      <div style={{ display: 'flex', alignItems: 'center', marginTop: 20 }}>
-        <div style={sectionLabelCol}>{isCareer ? '경력사항' : '재직사항'}</div>
-        <table style={{ flex: 1, width: '100%', borderCollapse: 'collapse' }}>
-          <tbody>
-            <tr><td style={{ ...lbl, width: 120 }}>소&nbsp;&nbsp;&nbsp;&nbsp;속</td><td style={cell}>{r.대상자소속}</td></tr>
-            <tr><td style={lbl}>직&nbsp;&nbsp;&nbsp;&nbsp;위</td><td style={cell}>{r.대상자직위}</td></tr>
-            <tr><td style={lbl}>기&nbsp;&nbsp;&nbsp;&nbsp;간</td><td style={cell}>{r.근무기간}</td></tr>
-            <tr><td style={lbl}>담당업무</td><td style={cell}>{r.담당업무}</td></tr>
-            {isCareer && <tr><td style={lbl}>퇴직사유</td><td style={cell}>{r.퇴직사유}</td></tr>}
-          </tbody>
-        </table>
-      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 12 }}>
+        <tbody>
+          <tr><td rowSpan={isCareer ? 5 : 4} style={sectionLabelCell}>{isCareer ? '경력사항' : '재직사항'}</td><td style={{ ...lbl, width: 120 }}>소&nbsp;&nbsp;&nbsp;&nbsp;속</td><td style={cell}>{r.대상자소속}</td></tr>
+          <tr><td style={lbl}>직&nbsp;&nbsp;&nbsp;&nbsp;위</td><td style={cell}>{r.대상자직위}</td></tr>
+          <tr><td style={lbl}>기&nbsp;&nbsp;&nbsp;&nbsp;간</td><td style={cell}>{r.근무기간}</td></tr>
+          <tr><td style={lbl}>담당업무</td><td style={cell}>{r.담당업무}</td></tr>
+          {isCareer && <tr><td style={lbl}>퇴직사유</td><td style={cell}>{r.퇴직사유}</td></tr>}
+        </tbody>
+      </table>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 20 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 12 }}>
         <tbody>
           <tr><td style={{ ...lbl, width: 120 }}>용&nbsp;&nbsp;&nbsp;&nbsp;도</td><td style={cell}>{r.용도}</td></tr>
           <tr><td style={lbl}>비&nbsp;&nbsp;&nbsp;&nbsp;고</td><td style={cell}>{r.비고}</td></tr>
         </tbody>
       </table>
 
-      <p style={{ textAlign: 'center', marginTop: 32, fontSize: 17 }}>
+      <p style={{ textAlign: 'center', marginTop: 20, fontSize: 15 }}>
         {VERIFY_PHRASE[r.종류] ?? '위 내용을 확인합니다.'}
       </p>
 

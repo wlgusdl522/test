@@ -168,11 +168,12 @@ export default async function CertificatesPage({
                     <td className={tdClean}>{r.발급일}</td>
                     <td className={tdClean}>{r.등록일시}</td>
                     <td className={`${tdClean} flex items-center gap-2`}>
-                      {r.결재상태 === '승인' && r.구분 === '증명서' && r.발행일시 && (
-                        <Link href={`/print/certificate?id=${r.id}`} className="text-brand hover:underline">인쇄</Link>
-                      )}
-                      {r.문서URL && (
-                        <a href={r.문서URL} target="_blank" rel="noreferrer" className="text-brand hover:underline">PDF</a>
+                      {r.문서URL ? (
+                        <a href={`/api/certificate/${r.id}/pdf`} target="_blank" rel="noreferrer" className="text-brand hover:underline">인쇄</a>
+                      ) : (
+                        r.결재상태 === '승인' && r.구분 === '증명서' && r.발행일시 && (
+                          <Link href={`/print/certificate?id=${r.id}`} className="text-brand hover:underline">인쇄(임시)</Link>
+                        )
                       )}
                       {r.결재상태 === '승인' && r.구분 === '증명서' && !r.발행일시 && (
                         <form action={issueCertificateAction}>

@@ -6,8 +6,9 @@ import { getSystemSettings } from '@/lib/mutate/settings';
 
 // 실제 발급되는 최종 문서에는 결재란이 나오지 않는다 — 결재는 신청~승인 단계에서 이미 끝난 상태이고,
 // 이 PDF는 관장 최종승인 후 "발행" 시점에만 생성되는 완결된 결과물이다.
-// 레이아웃(글자크기·자간·"인적사항/재직사항"을 표 왼쪽에 세로로 걸치는 라벨로 두는 방식)은
-// 기관에서 실제 쓰던 재직/경력증명서 한글 양식 PDF를 pdfjs로 파싱해 얻은 실측값을 반영했다.
+// 레이아웃(글자크기·자간·"인적사항/재직사항"을 표 왼쪽에 걸치는 라벨 셀로 두는 방식, 성명·주민등록번호를
+// 한 행에 나란히 배치하는 것)은 기관에서 실제 쓰던 재직/경력증명서 한글 양식 PDF를 pdfjs로 파싱해
+// 얻은 실측값을 반영했다. 여백은 한 페이지 안에 다 들어가도록 압축했다(넘치면 QR이 2페이지로 밀림).
 
 const VERIFY_PHRASE: Record<string, string> = {
   재직증명서: '위 사실을 증명합니다.',
@@ -35,38 +36,45 @@ function ensureFont() {
 }
 
 const styles = StyleSheet.create({
-  page: { padding: 42, fontFamily: 'NotoSansKR', fontSize: 11, color: '#000' },
-  docNumber: { fontSize: 11, marginBottom: 56 },
-  title: { textAlign: 'center', fontSize: 25, fontWeight: 700, letterSpacing: 13, marginBottom: 40 },
-  sectionRow: { flexDirection: 'row', alignItems: 'center', marginTop: 20 },
-  sectionLabelCol: { width: 64, alignItems: 'center' },
+  page: { padding: 38, fontFamily: 'NotoSansKR', fontSize: 11, color: '#000' },
+  docNumber: { fontSize: 11, marginBottom: 28 },
+  title: { textAlign: 'center', fontSize: 24, fontWeight: 700, letterSpacing: 12, marginBottom: 24 },
+  sectionRow: { flexDirection: 'row', marginTop: 12 },
+  sectionLabelCol: {
+    width: 60, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#f2f2f2', borderTop: '1px solid #333', borderLeft: '1px solid #333', borderBottom: '1px solid #333',
+  },
   sectionLabelText: { fontSize: 11, fontWeight: 700 },
-  infoTable: { flex: 1, border: '1px solid #333' },
+  infoTable: { flex: 1, borderTop: '1px solid #333', borderRight: '1px solid #333', borderBottom: '1px solid #333' },
   infoRow: { flexDirection: 'row', borderBottom: '1px solid #333' },
   infoRowLast: { flexDirection: 'row' },
-  infoLabel: { width: 110, backgroundColor: '#f2f2f2', fontWeight: 700, textAlign: 'center', justifyContent: 'center', padding: 12, borderRight: '1px solid #333' },
-  infoValue: { flex: 1, padding: 12, justifyContent: 'center' },
+  infoLabel: { width: 100, backgroundColor: '#f2f2f2', fontWeight: 700, textAlign: 'center', justifyContent: 'center', padding: 8, borderRight: '1px solid #333' },
+  infoValue: { flex: 1, padding: 8, justifyContent: 'center' },
+  infoLabelNarrow: { width: 60, backgroundColor: '#f2f2f2', fontWeight: 700, textAlign: 'center', justifyContent: 'center', padding: 8, borderRight: '1px solid #333' },
+  infoValueNarrow: { width: 120, padding: 8, justifyContent: 'center', borderRight: '1px solid #333' },
+  infoLabelWide: { width: 90, backgroundColor: '#f2f2f2', fontWeight: 700, textAlign: 'center', justifyContent: 'center', padding: 8, borderRight: '1px solid #333' },
+  infoValueWide: { flex: 1, padding: 8, justifyContent: 'center' },
   plainRow: { flexDirection: 'row', borderBottom: '1px solid #333' },
   plainRowLast: { flexDirection: 'row' },
-  plainTable: { marginTop: 20, border: '1px solid #333' },
-  verifyPhrase: { textAlign: 'center', marginTop: 32, fontSize: 15 },
-  closingBlock: { marginTop: 40, alignItems: 'center' },
-  closingDate: { fontSize: 15 },
-  closingOrgName: { marginTop: 14, fontWeight: 700, fontSize: 15 },
-  closingTitleRow: { marginTop: 10, position: 'relative' },
-  closingTitle: { fontSize: 25, fontWeight: 700 },
-  sealImage: { position: 'absolute', width: 58, height: 58, opacity: 0.85, top: -18, right: -16 },
+  plainTable: { marginTop: 12, border: '1px solid #333' },
+  verifyPhrase: { textAlign: 'center', marginTop: 20, fontSize: 13 },
+  closingBlock: { marginTop: 24, alignItems: 'center' },
+  closingDate: { fontSize: 13 },
+  closingOrgName: { marginTop: 10, fontWeight: 700, fontSize: 13 },
+  closingTitleRow: { marginTop: 8, position: 'relative' },
+  closingTitle: { fontSize: 21, fontWeight: 700 },
+  sealImage: { position: 'absolute', width: 52, height: 52, opacity: 0.85, top: -14, right: -14 },
   qrBar: {
-    marginTop: 40,
+    marginTop: 24,
     flexDirection: 'row',
     alignItems: 'center',
     border: '1px solid #ddd',
     borderRadius: 8,
     backgroundColor: '#fafafa',
-    padding: 12,
+    padding: 10,
   },
-  qrBarImage: { width: 46, height: 46 },
-  qrBarText: { flex: 1, marginLeft: 14, fontSize: 9.5, color: '#666' },
+  qrBarImage: { width: 42, height: 42 },
+  qrBarText: { flex: 1, marginLeft: 12, fontSize: 9, color: '#666' },
 });
 
 function formatPrintDate(iso: string): string {
@@ -77,7 +85,7 @@ function formatPrintDate(iso: string): string {
 
 export async function renderCertificatePdf(record: Record<string, string>, verifyUrl: string): Promise<Buffer> {
   ensureFont();
-  const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 120, margin: 1 });
+  const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 100, margin: 1 });
   const { certificateSealImageUrl } = await getSystemSettings();
   const sealDataUrl = certificateSealImageUrl ? await getDriveImageAsDataUrl(certificateSealImageUrl) : null;
   const isCareer = record['종류'] === '경력증명서';
@@ -95,12 +103,10 @@ export async function renderCertificatePdf(record: Record<string, string>, verif
           </View>
           <View style={styles.infoTable}>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>성 명</Text>
-              <Text style={styles.infoValue}>{record['대상자성명']}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>주민등록번호</Text>
-              <Text style={styles.infoValue}>{maskedResidentNumber(record['생년월일'], record['성별'])}</Text>
+              <Text style={styles.infoLabelNarrow}>성 명</Text>
+              <Text style={styles.infoValueNarrow}>{record['대상자성명']}</Text>
+              <Text style={styles.infoLabelWide}>주민등록번호</Text>
+              <Text style={styles.infoValueWide}>{maskedResidentNumber(record['생년월일'], record['성별'])}</Text>
             </View>
             <View style={styles.infoRowLast}>
               <Text style={styles.infoLabel}>주 소</Text>

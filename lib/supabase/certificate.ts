@@ -74,6 +74,9 @@ function formatApprovalHistory(historyJson: string): string {
 // (원본은 Supabase, 대장은 감사용 사본) 에러를 삼키고 로그만 남긴다.
 async function appendCertificateToLedger(record: Record<string, string>, stage: '신청' | '발급'): Promise<void> {
   try {
+    // 문서URL은 서비스계정만 열 수 있는 Drive 파일ID일 뿐이라, 대장에는 실제로 클릭해서 열어볼 수
+    // 있는 앱 내 인증 라우트 링크를 남긴다(/api/certificate/[id]/pdf).
+    const fileLink = record['문서URL'] && record['id'] ? `${await getOrigin()}/api/certificate/${record['id']}/pdf` : '';
     await appendLedgerRow(CERTIFICATE_LEDGER_SHEET_ID, [
       record['문서번호'] || '',
       record['구분'] || '',
@@ -87,7 +90,7 @@ async function appendCertificateToLedger(record: Record<string, string>, stage: 
       stage,
       record['결재상태'] || '',
       formatApprovalHistory(record['결재이력JSON'] || '[]'),
-      record['문서URL'] || '',
+      fileLink,
     ]);
   } catch (error) {
     console.error('[증명서·상장 발급대장 append 실패]', error);
@@ -360,9 +363,10 @@ export async function issueCertificate(id: string): Promise<IssueCertificateResu
     warnings.push(isAward ? '등록자 이메일이 없어 발급 안내 메일을 보내지 않았습니다.' : '대상자 이메일이 없어 발급 안내 메일을 보내지 않았습니다.');
   } else {
     try {
+      const fileLink = documentUrl ? `${await getOrigin()}/api/certificate/${id}/pdf` : '';
       const { subject, body } = isAward
-        ? buildAwardEmail(issued, documentUrl)
-        : buildCertificateEmail(issued, documentUrl);
+        ? buildAwardEmail(issued, fileLink)
+        : buildCertificateEmail(issued, fileLink);
       await sendMail(recipientEmail, subject, body);
       emailSent = true;
     } catch (error) {
