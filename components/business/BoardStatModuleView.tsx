@@ -1,5 +1,6 @@
 import FormToggle from '@/components/FormToggle';
 import BoardStatEntryClient from '@/components/business/BoardStatEntryClient';
+import BoardRosterTableClient from '@/components/business/BoardRosterTableClient';
 import { facilitiesFor, getModuleItems, getModuleValues, priorCumulative, valueFor, NO_FACILITY, type BoardStatModule } from '@/lib/mutate/boardStat';
 import { getRosterByItems } from '@/lib/mutate/boardRoster';
 import { addBoardStatItemAction, deleteBoardStatItemAction, moveBoardStatItemAction } from '@/app/(portal)/business-summary/boardStatActions';
@@ -32,7 +33,6 @@ export default async function BoardStatModuleView({
     항목명: i.항목명,
     전월누계: priorCumulative(values, i.id, 시설, ym),
     금월실적: valueFor(values, i.id, 시설, ym),
-    명단: roster.filter((r) => r.항목ID === i.id).map((r) => ({ id: r.id, 구분: r.구분, 이름: r.이름 })),
   }));
 
   return (
@@ -86,10 +86,21 @@ export default async function BoardStatModuleView({
         </div>
       </FormToggle>
 
-      <div className={card}>
+      <div className={`${card} mb-5`}>
         <h2 className={`${h2} mb-3`}>{시설 !== NO_FACILITY ? `${시설} · ` : ''}{ym} 값 입력</h2>
-        <BoardStatEntryClient 시설={시설} ym={ym} rows={rows} showRoster={showRoster} />
+        <BoardStatEntryClient 시설={시설} ym={ym} rows={rows} />
       </div>
+
+      {showRoster && (
+        <div className={card}>
+          <h2 className={`${h2} mb-3`}>{ym} 명단 입력</h2>
+          <BoardRosterTableClient
+            items={items.map((i) => ({ id: i.id, 항목명: i.항목명 }))}
+            ym={ym}
+            initialRows={roster.map((r) => ({ id: r.id, 항목ID: r.항목ID, 구분: r.구분, 이름: r.이름 }))}
+          />
+        </div>
+      )}
     </>
   );
 }

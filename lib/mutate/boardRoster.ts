@@ -3,7 +3,7 @@ import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord } fr
 import { BOARD_ROSTER_TABLE } from '@/lib/sheets/registry';
 
 export type RosterPerson = { id: string; 항목ID: string; 년월: string; 구분: string; 이름: string; 정렬순서: number };
-export type RosterRowInput = { id?: string; 구분: string; 이름: string };
+export type RosterRowInput = { id?: string; 항목ID: string; 구분: string; 이름: string };
 
 function num(v: string | undefined): number {
   const n = Number(v);
@@ -19,10 +19,10 @@ export async function getRosterByItems(항목IDs: string[], ym: string): Promise
     .sort((a, b) => a.정렬순서 - b.정렬순서);
 }
 
-// 명단도 업무보고 표처럼 통째로 편집하다가 "저장" 한 번으로 반영한다 — 화면에서 넘어온 rows가
-// 그 항목+년월의 최종 상태이므로, 빠진 id는 삭제하고 나머지는 upsert한다.
-export async function saveRosterForItem(항목ID: string, ym: string, rows: RosterRowInput[]): Promise<void> {
-  const existing = await getRosterByItems([항목ID], ym);
+// 업무보고 표와 같은 방식 — 전체 명단(여러 봉사분야가 한 표에 섞여 있음)을 통째로 편집하다가
+// "저장" 한 번으로 반영한다. rows가 이 년월의 최종 상태이므로, 빠진 id는 삭제하고 나머지는 upsert한다.
+export async function saveRosterForYm(항목IDs: string[], ym: string, rows: RosterRowInput[]): Promise<void> {
+  const existing = await getRosterByItems(항목IDs, ym);
   const keepIds = new Set(rows.filter((r) => r.id).map((r) => r.id));
   for (const e of existing) {
     if (!keepIds.has(e.id)) await deleteKeyedRecord(BOARD_ROSTER_TABLE, { id: e.id });
@@ -31,7 +31,7 @@ export async function saveRosterForItem(항목ID: string, ym: string, rows: Rost
   let order = 1;
   for (const r of rows) {
     const id = r.id || randomUUID();
-    const record = { id, 항목ID, 년월: ym, 구분: r.구분, 이름: r.이름, 정렬순서: String(order) };
+    const record = { id, 항목ID: r.항목ID, 년월: ym, 구분: r.구분, 이름: r.이름, 정렬순서: String(order) };
     if (r.id) {
       await updateKeyedRecord(BOARD_ROSTER_TABLE, { id }, record);
     } else {
