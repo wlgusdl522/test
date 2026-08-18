@@ -85,6 +85,11 @@ export async function getDocumentIndexPrefixes(): Promise<{ 팀명: string; 접�
   return rows.filter((r) => r.팀명).map((r) => ({ 팀명: r.팀명, 접두사: r.접두사 }));
 }
 
+export async function getDocumentIndexPrefix(팀명: string): Promise<string> {
+  const prefixes = await getDocumentIndexPrefixes();
+  return prefixes.find((p) => p.팀명 === 팀명)?.접두사 ?? '';
+}
+
 export async function setDocumentIndexPrefix(팀명: string, 접두사: string): Promise<void> {
   const trimmedTeam = 팀명.trim();
   if (!trimmedTeam) throw new Error('팀을 선택해주세요.');

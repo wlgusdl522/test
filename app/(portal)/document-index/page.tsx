@@ -3,13 +3,12 @@ import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
 import VolumeTabs from '@/components/documentIndex/VolumeTabs';
+import RegisterForm from '@/components/documentIndex/RegisterForm';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
-import { getDocumentIndexEntries, getDocumentIndexState } from '@/lib/mutate/documentIndex';
-import {
-  btn, btnDanger, btnSecondary, card, h1, h2, input, inputBase, pageFluid, table, td, th, tableWrap,
-} from '@/lib/ui';
-import { addDocumentIndexEntryAction, deleteDocumentIndexEntryAction, startNewVolumeAction } from './actions';
+import { getDocumentIndexEntries, getDocumentIndexPrefix, getDocumentIndexState } from '@/lib/mutate/documentIndex';
+import { btnDanger, btnSecondary, card, h1, h2, inputBase, pageFluid, table, td, th, tableWrap } from '@/lib/ui';
+import { deleteDocumentIndexEntryAction, startNewVolumeAction } from './actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -35,9 +34,13 @@ export default async function DocumentIndexPage({
       : (teams[0] ?? '');
   const 연도 = yearParam || currentYear();
 
-  const [entries, state] = 팀명
-    ? await Promise.all([getDocumentIndexEntries(팀명, 연도), getDocumentIndexState(팀명, 연도)])
-    : [[], { 팀명, 연도, 현재권: 1, 다음일련번호: 1 }];
+  const [entries, state, prefix] = 팀명
+    ? await Promise.all([
+        getDocumentIndexEntries(팀명, 연도),
+        getDocumentIndexState(팀명, 연도),
+        getDocumentIndexPrefix(팀명),
+      ])
+    : [[], { 팀명, 연도, 현재권: 1, 다음일련번호: 1 }, ''];
 
   const volumesAsc = Array.from(new Set(entries.map((e) => e.권))).sort((a, b) => a - b);
   if (volumesAsc.length === 0 || volumesAsc[volumesAsc.length - 1] !== state.현재권) volumesAsc.push(state.현재권);
@@ -65,19 +68,7 @@ export default async function DocumentIndexPage({
         <>
           <div className={card}>
             <h2 className={`${h2} mb-3`}>공문 등록</h2>
-            <form action={addDocumentIndexEntryAction} className="grid grid-cols-2 gap-3 md:grid-cols-6">
-              <input type="hidden" name="팀명" value={팀명} />
-              <input type="hidden" name="연도" value={연도} />
-              <select name="구분" defaultValue="일반문서" className={input}>
-                <option value="일반문서">일반문서</option>
-                <option value="스탬프결재">스탬프결재</option>
-              </select>
-              <input name="제목" placeholder="제목" required className={`${input} md:col-span-2`} />
-              <input name="월일" placeholder="월/일 (예: 1/5)" className={input} />
-              <input name="수신" placeholder="수신" className={input} />
-              <input name="발신" placeholder="발신" className={input} />
-              <button type="submit" className={`${btn} md:col-span-1`}>등록</button>
-            </form>
+            <RegisterForm 팀명={팀명} 연도={연도} prefix={prefix} nextSeq={state.다음일련번호} />
           </div>
 
           <div className={card}>
