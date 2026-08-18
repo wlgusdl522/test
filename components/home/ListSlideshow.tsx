@@ -174,8 +174,8 @@ export default function ListSlideshow({ slides }: { slides: ListSlide[] }) {
             </table>
           </div>
         ) : slide.kind === 'split' ? (
-          <div className="grid h-full grid-cols-2 gap-4">
-            <div className="border-r border-zinc-100 pr-4 dark:border-zinc-800">
+          <div className="grid h-full grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="border-b border-zinc-100 pb-4 dark:border-zinc-800 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-4">
               <SplitPaneView pane={slide.left} />
             </div>
             <SplitPaneView pane={slide.right} />
