@@ -27,11 +27,14 @@ export default async function BoardStatModuleView({
   const facilities = facilitiesFor(모듈);
   const 시설 = facilities.includes(facilityParam ?? '') ? (facilityParam as string) : facilities[0];
   const items = await getModuleItems(모듈);
-  const values = await getModuleValues(items.map((i) => i.id));
   const showRoster = 모듈 === '자원봉사자';
   const roster = showRoster ? await getRosterByItems(items.map((i) => i.id), ym) : [];
   const groupLabel = showRoster ? await getRosterGroupLabel(ym) : '';
   const rosterRows = showRoster ? summarizeRoster(items, roster) : [];
+
+  // 자원봉사자는 명단에서 실제 인원수가 계산되므로, 예전에 손으로 입력하던 값(금월실적) 표는
+  // 회계/후원에만 필요하다 — 값이 있는데도 굳이 조회할 필요 없이 건너뛴다.
+  const values = showRoster ? [] : await getModuleValues(items.map((i) => i.id));
   const rows = items.map((i) => ({
     id: i.id,
     항목명: i.항목명,
@@ -91,10 +94,12 @@ export default async function BoardStatModuleView({
         </div>
       </FormToggle>
 
-      <div className={`${card} mb-5`}>
-        <h2 className={`${h2} mb-3`}>{시설 !== NO_FACILITY ? `${시설} · ` : ''}{ym} 값 입력</h2>
-        <BoardStatEntryClient 시설={시설} ym={ym} rows={rows} />
-      </div>
+      {!showRoster && (
+        <div className={`${card} mb-5`}>
+          <h2 className={`${h2} mb-3`}>{시설 !== NO_FACILITY ? `${시설} · ` : ''}{ym} 값 입력</h2>
+          <BoardStatEntryClient 시설={시설} ym={ym} rows={rows} />
+        </div>
+      )}
 
       {showRoster && (
         <>
