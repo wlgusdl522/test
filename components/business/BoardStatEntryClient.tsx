@@ -2,20 +2,38 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { btn, table, td, th, tableWrap } from '@/lib/ui';
+import { btn, btnSecondary, table, td, th, tableWrap } from '@/lib/ui';
 import { submitBoardStatValuesAction } from '@/app/(portal)/business-summary/boardStatActions';
+import BoardRosterModal from '@/components/business/BoardRosterModal';
 
-type Row = { id: string; 항목명: string; 전월누계: number; 금월실적: number };
+type Row = {
+  id: string;
+  항목명: string;
+  전월누계: number;
+  금월실적: number;
+  명단?: { id: string; 구분: string; 이름: string }[];
+};
 
 const nf = (n: number) => (n || 0).toLocaleString('ko-KR');
 
-export default function BoardStatEntryClient({ 시설, ym, rows }: { 시설: string; ym: string; rows: Row[] }) {
+export default function BoardStatEntryClient({
+  시설,
+  ym,
+  rows,
+  showRoster,
+}: {
+  시설: string;
+  ym: string;
+  rows: Row[];
+  showRoster?: boolean;
+}) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, string>>(
     Object.fromEntries(rows.map((r) => [r.id, r.금월실적 ? String(r.금월실적) : '']))
   );
   const [status, setStatus] = useState('');
   const [isPending, startTransition] = useTransition();
+  const [rosterItemId, setRosterItemId] = useState<string | null>(null);
 
   if (rows.length === 0) {
     return <p className="text-sm text-zinc-400">등록된 항목이 없습니다. 위에서 항목을 먼저 추가해주세요.</p>;
@@ -35,6 +53,8 @@ export default function BoardStatEntryClient({ 시설, ym, rows }: { 시설: str
     });
   }
 
+  const rosterRow = showRoster ? rows.find((r) => r.id === rosterItemId) : undefined;
+
   return (
     <div>
       <div className={tableWrap}>
@@ -45,6 +65,7 @@ export default function BoardStatEntryClient({ 시설, ym, rows }: { 시설: str
               <th className={`${th} text-right`}>전월누계</th>
               <th className={`${th} text-right`}>금월실적</th>
               <th className={`${th} text-right`}>누계</th>
+              {showRoster && <th className={`${th} text-center`}>명단</th>}
             </tr>
           </thead>
           <tbody>
@@ -63,6 +84,13 @@ export default function BoardStatEntryClient({ 시설, ym, rows }: { 시설: str
                     />
                   </td>
                   <td className={`${td} text-right tabular-nums font-semibold`}>{nf(r.전월누계 + current)}</td>
+                  {showRoster && (
+                    <td className={`${td} text-center`}>
+                      <button type="button" onClick={() => setRosterItemId(r.id)} className={btnSecondary}>
+                        명단 ({(r.명단 ?? []).length}명)
+                      </button>
+                    </td>
+                  )}
                 </tr>
               );
             })}
@@ -73,6 +101,16 @@ export default function BoardStatEntryClient({ 시설, ym, rows }: { 시설: str
         <button type="button" onClick={handleSubmit} disabled={isPending} className={btn}>저장</button>
         <span className="text-sm text-zinc-500">{status}</span>
       </div>
+      {rosterRow && (
+        <BoardRosterModal
+          key={rosterRow.id}
+          항목ID={rosterRow.id}
+          항목명={rosterRow.항목명}
+          ym={ym}
+          initialRoster={rosterRow.명단 ?? []}
+          onClose={() => setRosterItemId(null)}
+        />
+      )}
     </div>
   );
 }

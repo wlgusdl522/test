@@ -1,6 +1,7 @@
 import FormToggle from '@/components/FormToggle';
 import BoardStatEntryClient from '@/components/business/BoardStatEntryClient';
 import { facilitiesFor, getModuleItems, getModuleValues, priorCumulative, valueFor, NO_FACILITY, type BoardStatModule } from '@/lib/mutate/boardStat';
+import { getRosterByItems } from '@/lib/mutate/boardRoster';
 import { addBoardStatItemAction, deleteBoardStatItemAction, moveBoardStatItemAction } from '@/app/(portal)/business-summary/boardStatActions';
 import { btn, btnDanger, btnSecondary, card, h2, input, inputBase } from '@/lib/ui';
 
@@ -24,11 +25,14 @@ export default async function BoardStatModuleView({
   const 시설 = facilities.includes(facilityParam ?? '') ? (facilityParam as string) : facilities[0];
   const items = await getModuleItems(모듈);
   const values = await getModuleValues(items.map((i) => i.id));
+  const showRoster = 모듈 === '자원봉사자';
+  const roster = showRoster ? await getRosterByItems(items.map((i) => i.id), ym) : [];
   const rows = items.map((i) => ({
     id: i.id,
     항목명: i.항목명,
     전월누계: priorCumulative(values, i.id, 시설, ym),
     금월실적: valueFor(values, i.id, 시설, ym),
+    명단: roster.filter((r) => r.항목ID === i.id).map((r) => ({ id: r.id, 구분: r.구분, 이름: r.이름 })),
   }));
 
   return (
@@ -49,43 +53,42 @@ export default async function BoardStatModuleView({
         <button type="submit" className={btnSecondary}>조회</button>
       </form>
 
-      <div className={`${card} mb-5`}>
-        <h2 className={`${h2} mb-3`}>항목 관리</h2>
-        <FormToggle label="항목 추가" wrapperClassName="mb-3">
+      <FormToggle label="항목 관리" buttonLabel="항목 관리" wrapperClassName="mb-5">
+        <div className="flex flex-col gap-4">
           <form action={addBoardStatItemAction} className="flex gap-2">
             <input type="hidden" name="모듈" value={모듈} />
             <input name="항목명" placeholder="추가할 항목명" required className={input} />
             <button type="submit" className={btn}>추가</button>
           </form>
-        </FormToggle>
-        <ul className="flex flex-col gap-1">
-          {items.map((item, i) => (
-            <li key={item.id} className="flex items-center gap-1.5 text-sm">
-              <span className="flex-1 text-zinc-800 dark:text-zinc-200">{item.항목명}</span>
-              <form action={moveBoardStatItemAction}>
-                <input type="hidden" name="모듈" value={모듈} />
-                <input type="hidden" name="id" value={item.id} />
-                <input type="hidden" name="direction" value="up" />
-                <button type="submit" disabled={i === 0} className={`${btnSecondary} disabled:opacity-30`}>위</button>
-              </form>
-              <form action={moveBoardStatItemAction}>
-                <input type="hidden" name="모듈" value={모듈} />
-                <input type="hidden" name="id" value={item.id} />
-                <input type="hidden" name="direction" value="down" />
-                <button type="submit" disabled={i === items.length - 1} className={`${btnSecondary} disabled:opacity-30`}>아래</button>
-              </form>
-              <form action={deleteBoardStatItemAction}>
-                <input type="hidden" name="id" value={item.id} />
-                <button type="submit" className={btnDanger}>삭제</button>
-              </form>
-            </li>
-          ))}
-        </ul>
-      </div>
+          <ul className="flex flex-col gap-1">
+            {items.map((item, i) => (
+              <li key={item.id} className="flex items-center gap-1.5 text-sm">
+                <span className="flex-1 text-zinc-800 dark:text-zinc-200">{item.항목명}</span>
+                <form action={moveBoardStatItemAction}>
+                  <input type="hidden" name="모듈" value={모듈} />
+                  <input type="hidden" name="id" value={item.id} />
+                  <input type="hidden" name="direction" value="up" />
+                  <button type="submit" disabled={i === 0} className={`${btnSecondary} disabled:opacity-30`}>위</button>
+                </form>
+                <form action={moveBoardStatItemAction}>
+                  <input type="hidden" name="모듈" value={모듈} />
+                  <input type="hidden" name="id" value={item.id} />
+                  <input type="hidden" name="direction" value="down" />
+                  <button type="submit" disabled={i === items.length - 1} className={`${btnSecondary} disabled:opacity-30`}>아래</button>
+                </form>
+                <form action={deleteBoardStatItemAction}>
+                  <input type="hidden" name="id" value={item.id} />
+                  <button type="submit" className={btnDanger}>삭제</button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </FormToggle>
 
       <div className={card}>
         <h2 className={`${h2} mb-3`}>{시설 !== NO_FACILITY ? `${시설} · ` : ''}{ym} 값 입력</h2>
-        <BoardStatEntryClient 시설={시설} ym={ym} rows={rows} />
+        <BoardStatEntryClient 시설={시설} ym={ym} rows={rows} showRoster={showRoster} />
       </div>
     </>
   );

@@ -302,3 +302,13 @@ export const BOARD_REPORT_PERIOD_TABLE: KeyedTableConfig = {
   headers: BOARD_REPORT_PERIOD_HEADERS,
   primaryKey: ['구분', '년월'],
 };
+
+// 자원봉사 항목별 명단(이름) — 구분은 자유 텍스트(예: 새문안교회 등 특정 단체명)이고, 비어있으면 일반으로 취급한다.
+export const BOARD_ROSTER_HEADERS = ['id', '항목ID', '년월', '구분', '이름', '정렬순서'];
+
+export const BOARD_ROSTER_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '이사회명단',
+  headers: BOARD_ROSTER_HEADERS,
+  primaryKey: 'id',
+};

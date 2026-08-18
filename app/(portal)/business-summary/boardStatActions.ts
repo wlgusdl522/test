@@ -5,6 +5,7 @@ import { requireViewerEmail, getViewerStaffRecord } from '@/lib/auth-helpers';
 import {
   addModuleItem, deleteModuleItem, moveModuleItem, setModuleValue, type BoardStatModule,
 } from '@/lib/mutate/boardStat';
+import { saveRosterForItem, type RosterRowInput } from '@/lib/mutate/boardRoster';
 
 function revalidateAll() {
   revalidatePath('/business-summary/accounting');
@@ -42,5 +43,10 @@ export async function submitBoardStatValuesAction(
   for (const e of entries) {
     await setModuleValue(e.항목ID, 시설, 년월, e.값, viewerEmail, name);
   }
+  revalidateAll();
+}
+
+export async function saveRosterAction(항목ID: string, ym: string, rows: RosterRowInput[]): Promise<void> {
+  await saveRosterForItem(항목ID, ym, rows);
   revalidateAll();
 }
