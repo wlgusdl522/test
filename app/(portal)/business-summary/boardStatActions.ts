@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireViewerEmail, getViewerStaffRecord } from '@/lib/auth-helpers';
 import {
-  addModuleItem, deleteModuleItem, moveModuleItem, setModuleValue, type BoardStatModule,
+  addModuleItem, deleteModuleItem, moveModuleItem, setModuleValues, type BoardStatModule,
 } from '@/lib/mutate/boardStat';
 import { saveRosterForYm, type RosterRowInput } from '@/lib/mutate/boardRoster';
 
@@ -40,9 +40,11 @@ export async function submitBoardStatValuesAction(
   const viewerEmail = await requireViewerEmail();
   const me = await getViewerStaffRecord();
   const name = me?.성명 ?? '';
-  for (const e of entries) {
-    await setModuleValue(e.항목ID, 시설, 년월, e.값, viewerEmail, name);
-  }
+  await setModuleValues(
+    entries.map((e) => ({ 항목ID: e.항목ID, 시설, 년월, 값: e.값 })),
+    viewerEmail,
+    name
+  );
   revalidateAll();
 }
 

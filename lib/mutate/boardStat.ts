@@ -1,5 +1,7 @@
 import { randomUUID } from 'crypto';
-import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord, upsertKeyedRecord } from '@/lib/mutate/keyedTable';
+import {
+  addKeyedRecord, deleteKeyedRecord, deleteKeyedRecords, getKeyedList, updateKeyedRecord, upsertKeyedRecords,
+} from '@/lib/mutate/keyedTable';
 import { BOARD_STAT_ITEM_TABLE, BOARD_STAT_VALUE_TABLE } from '@/lib/sheets/registry';
 
 export type BoardStatModule = '회계' | '자원봉사자' | '후원';
@@ -62,26 +64,38 @@ export async function getModuleValues(항목IDs: string[]): Promise<BoardStatVal
 }
 
 // 값이 0/빈칸이면 굳이 시트에 빈 행을 남기지 않고 지운다 — 일일실적의 setDailyEntry와 동일한 동작.
-export async function setModuleValue(
-  항목ID: string,
-  시설: string,
-  년월: string,
-  값: number,
+// 행마다 upsert/delete를 순차 호출하면(매번 읽기+쓰기+Supabase미러링 반복) 항목이 많은 회계처럼
+// 한 번에 수십 건을 저장할 때 API 호출이 항목 수만큼 늘어나 속도제한/타임아웃에 걸릴 수 있어
+// (후원 저장 때 실제로 겪은 문제, boardDonation.ts saveDonationDetails 참고) 삭제/upsert를
+// 각각 batch 한 번씩으로 묶는다.
+export async function setModuleValues(
+  entries: { 항목ID: string; 시설: string; 년월: string; 값: number }[],
   writerEmail: string,
   writerName: string
 ): Promise<void> {
   const rows = await getKeyedList(BOARD_STAT_VALUE_TABLE);
-  const existing = rows.find((r) => r.항목ID === 항목ID && r.시설 === 시설 && r.년월 === 년월);
-  if (!값) {
-    if (existing) await deleteKeyedRecord(BOARD_STAT_VALUE_TABLE, { 항목ID, 시설, 년월 });
-    return;
+  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const toDelete: { 항목ID: string; 시설: string; 년월: string }[] = [];
+  const toUpsert: { keyValues: Record<string, string>; record: Record<string, string> }[] = [];
+
+  for (const e of entries) {
+    const existing = rows.find((r) => r.항목ID === e.항목ID && r.시설 === e.시설 && r.년월 === e.년월);
+    if (!e.값) {
+      if (existing) toDelete.push({ 항목ID: e.항목ID, 시설: e.시설, 년월: e.년월 });
+      continue;
+    }
+    toUpsert.push({
+      keyValues: { 항목ID: e.항목ID, 시설: e.시설, 년월: e.년월 },
+      record: {
+        id: existing?.id || randomUUID(),
+        항목ID: e.항목ID, 시설: e.시설, 년월: e.년월, 값: String(e.값),
+        작성자이메일: writerEmail, 작성자명: writerName, 등록일시: now,
+      },
+    });
   }
-  await upsertKeyedRecord(BOARD_STAT_VALUE_TABLE, { 항목ID, 시설, 년월 }, {
-    id: existing?.id || randomUUID(),
-    항목ID, 시설, 년월, 값: String(값),
-    작성자이메일: writerEmail, 작성자명: writerName,
-    등록일시: new Date().toISOString().slice(0, 19).replace('T', ' '),
-  });
+
+  if (toDelete.length > 0) await deleteKeyedRecords(BOARD_STAT_VALUE_TABLE, toDelete);
+  if (toUpsert.length > 0) await upsertKeyedRecords(BOARD_STAT_VALUE_TABLE, toUpsert);
 }
 
 // 전월누계: 같은 연도 안에서 조회월 이전 달들의 값을 합친 것 — 회계연도가 바뀌면(1월) 0부터 다시 쌓인다.

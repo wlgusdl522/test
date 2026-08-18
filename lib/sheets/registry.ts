@@ -259,12 +259,26 @@ export const BUSINESS_SHARE_TABLE: KeyedTableConfig = {
 
 // 이사회자료 중 사업량 외 항목(회계/자원봉사자/후원) — 모듈별로 항목(틀)만 먼저 두고
 // 담당자가 월별 값을 직접 입력하게 한다. 전월누계/누계는 저장된 월별 값에서 매번 계산한다.
-export const BOARD_STAT_ITEM_HEADERS = ['id', '모듈', '항목명', '정렬순서'];
+// 시설/구분/그룹은 회계 전용(시설마다 항목 구성이 다르고, 수입/지출 그룹별 소계가 필요해서 추가) —
+// 기존 자원봉사자/후원 항목은 이 3개 컬럼을 안 쓰므로 빈 값으로 둔다. 맨 뒤에 추가한 이유는
+// 이미 쌓여있던 기존 항목 행들의 앞쪽 컬럼(항목명/정렬순서) 위치가 밀리지 않게 하기 위함.
+export const BOARD_STAT_ITEM_HEADERS = ['id', '모듈', '항목명', '정렬순서', '시설', '구분', '그룹'];
 
 export const BOARD_STAT_ITEM_TABLE: KeyedTableConfig = {
   spreadsheetId: WORKLOG_SHEET_ID,
   sheetName: '이사회항목',
   headers: BOARD_STAT_ITEM_HEADERS,
+  primaryKey: 'id',
+};
+
+// 회계 "예금잔액명세" — 계좌 메타데이터(은행명/계좌번호/비고)는 거의 안 바뀌는 마스터,
+// 매달 바뀌는 잔액값은 이사회월별값(항목ID 자리에 계좌 id를 그대로 재사용)에 저장한다.
+export const BOARD_BANK_ACCOUNT_HEADERS = ['id', '시설', '은행명', '계좌번호', '비고', '정렬순서'];
+
+export const BOARD_BANK_ACCOUNT_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '이사회예금계좌',
+  headers: BOARD_BANK_ACCOUNT_HEADERS,
   primaryKey: 'id',
 };
 
