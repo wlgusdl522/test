@@ -329,6 +329,46 @@ export type IssueCertificateResult = {
 // "발행" 하나로 이어지는 전체 처리: 채번/대장기록 → PDF 생성(직인·QR 포함) → Drive 연도별 폴더 저장
 // → 메일 발송. PDF·메일 단계는 실패해도 채번/발행 자체를 무효화하지 않고 경고만 담아 돌려준다
 // (Gmail 발송 스코프가 아직 승인되지 않았거나 직인 이미지가 없는 초기 상태에서도 발행은 진행되어야 한다).
+// 상장은 대상자(어르신·자원봉사자 등)에게 이메일이 없는 경우가 많아 등록자(발급요청 담당자)에게 보낸다.
+// Vercel 서버리스 함수 실행시간 제한 안에서 PDF 렌더링·Drive 업로드까지 끝낸 뒤 메일 발송까지
+// 이어가다 보면 타임아웃으로 메일 단계가 통째로 못 돌고 끝나버릴 수 있다(예외 없이 그냥 잘림) —
+// 그럴 때 서무/회계가 발급대장에서 "메일발송" 버튼으로 이 함수만 다시 호출해 재시도할 수 있다.
+async function sendCertificateNotificationEmail(
+  record: Record<string, string>,
+  documentUrl: string
+): Promise<{ emailSent: boolean; warning?: string }> {
+  const isAward = record['구분'] === '상장';
+  const recipientEmail = isAward ? record['등록자이메일'] : record['대상자이메일'];
+  if (!recipientEmail) {
+    return {
+      emailSent: false,
+      warning: isAward ? '등록자 이메일이 없어 발급 안내 메일을 보내지 않았습니다.' : '대상자 이메일이 없어 발급 안내 메일을 보내지 않았습니다.',
+    };
+  }
+  try {
+    const fileLink = documentUrl ? `${await getOrigin()}/api/certificate/${record['id']}/pdf` : '';
+    const { subject, body } = isAward
+      ? buildAwardEmail(record, fileLink)
+      : buildCertificateEmail(record, fileLink);
+    await sendMail(recipientEmail, subject, body);
+    return { emailSent: true };
+  } catch (error) {
+    console.error('[증명서·상장 발급 메일 발송 실패]', error);
+    return { emailSent: false, warning: '메일 발송에 실패했습니다 (Gmail 발송 권한이 아직 설정되지 않았을 수 있습니다).' };
+  }
+}
+
+// 이미 발행된(문서URL 있는) 건의 안내 메일만 다시 보낸다 - 발행 당시 메일 발송이 실패했거나
+// 타임아웃으로 아예 시도되지 못했을 때 재시도하는 용도.
+export async function resendCertificateEmail(id: string): Promise<void> {
+  await requireCanViewCertificateLog();
+  const record = await getCertificateById(id);
+  if (!record) throw new Error('문서를 찾을 수 없습니다.');
+  if (!record['문서URL']) throw new Error('아직 발행되지 않은 문서입니다.');
+  const { warning } = await sendCertificateNotificationEmail(record, record['문서URL']);
+  if (warning) throw new Error(warning);
+}
+
 // 상장은 증명서와 별도 PDF 템플릿을 쓰고, 메일 수신자도 대상자가 아니라 등록자(발급요청 담당자)다 —
 // 어르신·자원봉사자 등 상장 대상자는 이메일이 없는 경우가 많기 때문.
 // 희망이음에서 업로드된 증명서는 이미 문서URL이 있으므로 자체 렌더링을 건너뛴다.
@@ -357,23 +397,8 @@ export async function issueCertificate(id: string): Promise<IssueCertificateResu
     }
   }
 
-  let emailSent = false;
-  const recipientEmail = isAward ? issued['등록자이메일'] : issued['대상자이메일'];
-  if (!recipientEmail) {
-    warnings.push(isAward ? '등록자 이메일이 없어 발급 안내 메일을 보내지 않았습니다.' : '대상자 이메일이 없어 발급 안내 메일을 보내지 않았습니다.');
-  } else {
-    try {
-      const fileLink = documentUrl ? `${await getOrigin()}/api/certificate/${id}/pdf` : '';
-      const { subject, body } = isAward
-        ? buildAwardEmail(issued, fileLink)
-        : buildCertificateEmail(issued, fileLink);
-      await sendMail(recipientEmail, subject, body);
-      emailSent = true;
-    } catch (error) {
-      console.error('[증명서·상장 발급 메일 발송 실패]', error);
-      warnings.push('메일 발송에 실패했습니다 (Gmail 발송 권한이 아직 설정되지 않았을 수 있습니다).');
-    }
-  }
+  const { emailSent, warning: emailWarning } = await sendCertificateNotificationEmail(issued, documentUrl);
+  if (emailWarning) warnings.push(emailWarning);
 
   await appendCertificateToLedger({ ...issued, 문서URL: documentUrl }, '발급');
 

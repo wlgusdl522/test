@@ -23,6 +23,7 @@ import {
 } from '@/lib/ui';
 import {
   actOnCertificateAction, addAwardAction, addCertificateAction, issueCertificateAction, processCertificateAction,
+  resendCertificateEmailAction,
 } from './actions';
 
 export const runtime = 'nodejs';
@@ -179,6 +180,12 @@ export default async function CertificatesPage({
                         <form action={issueCertificateAction}>
                           <input type="hidden" name="id" value={r.id} />
                           <button type="submit" className={btn}>발행</button>
+                        </form>
+                      )}
+                      {r.문서URL && (
+                        <form action={resendCertificateEmailAction}>
+                          <input type="hidden" name="id" value={r.id} />
+                          <button type="submit" className={btnOutline}>메일발송</button>
                         </form>
                       )}
                     </td>

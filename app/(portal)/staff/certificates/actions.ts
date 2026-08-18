@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { requireCanViewCertificateLog } from '@/lib/auth-helpers';
 import {
   addAwardBatch, addCertificate, actOnCertificate, attachUploadedCertificatePdf, issueCertificate,
-  updateCertificateFields, CERTIFICATE_TYPES,
+  resendCertificateEmail, updateCertificateFields, CERTIFICATE_TYPES,
 } from '@/lib/supabase/certificate';
 
 function fieldsFromForm(formData: FormData, keys: string[]): Record<string, string> {
@@ -81,5 +81,11 @@ export async function issueCertificateAction(formData: FormData): Promise<void> 
   if (result.warnings.length > 0) {
     console.warn(`[증명서 발행 경고] id=${id}`, result.warnings);
   }
+  revalidatePath('/staff/certificates');
+}
+
+export async function resendCertificateEmailAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '');
+  await resendCertificateEmail(id);
   revalidatePath('/staff/certificates');
 }
