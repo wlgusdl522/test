@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import { getAllCertificates } from '@/lib/supabase/certificate';
 import { getDriveImageAsDataUrl } from '@/lib/drive/upload';
 import { getSystemSettings } from '@/lib/mutate/settings';
+import { getStaffList } from '@/lib/mutate/staff';
 import PrintButton from '@/components/print/PrintButton';
 import { card } from '@/lib/ui';
 
@@ -60,8 +61,9 @@ async function AwardDoc({
 }: { record: Record<string, string>; origin: string; isLast: boolean }) {
   const verifyUrl = `${origin}/verify/certificate/${r.id}`;
   const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 120, margin: 1 });
-  const { certificateSealImageUrl } = await getSystemSettings();
+  const [{ certificateSealImageUrl }, staffList] = await Promise.all([getSystemSettings(), getStaffList()]);
   const sealDataUrl = certificateSealImageUrl ? await getDriveImageAsDataUrl(certificateSealImageUrl) : null;
+  const directorName = staffList.find((s) => s['재직상태'] === '재직' && s['직급/직책'] === '관장')?.['성명'] ?? '';
 
   const pageStyle: CSSProperties = isLast ? {} : { pageBreakAfter: 'always' };
 
@@ -78,15 +80,15 @@ async function AwardDoc({
       className="bg-white p-10 print:p-0"
     >
       <div style={{ fontSize: 12 }}>제 {r.문서번호}호</div>
-      <h2 style={{ textAlign: 'center', fontSize: 28, letterSpacing: 12, margin: '32px 0 40px' }}>{r.종류 || '상장'}</h2>
-      <p style={{ textAlign: 'center', fontSize: 18, fontWeight: 700, marginBottom: 32 }}>{r.대상자성명} 님</p>
-      <p style={{ fontSize: 14, lineHeight: 1.9, textAlign: 'center', whiteSpace: 'pre-wrap', marginBottom: 40 }}>{r.본문}</p>
+      <h2 style={{ textAlign: 'center', fontSize: 32, fontWeight: 700, letterSpacing: 14, margin: '40px 0 56px' }}>{r.종류 || '상장'}</h2>
+      <p style={{ textAlign: 'right', fontSize: 18, letterSpacing: 4, marginBottom: 48 }}>성 명 : {r.대상자성명}</p>
+      <p style={{ fontSize: 14, lineHeight: 2, textAlign: 'justify', textIndent: '1.5em', whiteSpace: 'pre-wrap', marginBottom: 56 }}>{r.본문}</p>
 
-      <div style={{ marginTop: 48, textAlign: 'center' }}>
+      <div style={{ marginTop: 24, textAlign: 'center' }}>
         <p style={{ fontSize: 12 }}>{formatPrintDate(r.발급일)}</p>
-        <p style={{ marginTop: 12, fontWeight: 700, fontSize: 14 }}>사회복지법인 새문안교회사회복지재단</p>
-        <div style={{ marginTop: 8, position: 'relative', display: 'inline-block' }}>
-          <p style={{ fontSize: 19, fontWeight: 700 }}>시립서대문노인종합복지관장</p>
+        <p style={{ marginTop: 14, fontWeight: 700, fontSize: 14 }}>사회복지법인 새문안교회사회복지재단</p>
+        <div style={{ marginTop: 10, position: 'relative', display: 'inline-block' }}>
+          <p style={{ fontSize: 17, fontWeight: 700 }}>시립서대문노인종합복지관장{directorName ? ` ${directorName}` : ''}</p>
           {sealDataUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img

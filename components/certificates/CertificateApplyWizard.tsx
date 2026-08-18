@@ -332,17 +332,15 @@ export default function CertificateApplyWizard({
 function AwardPreview({ kind, names, body }: { kind: string; names: string[]; body: string }) {
   return (
     <div style={{ fontFamily: '"바탕체", "바탕", Batang, serif' }}>
-      <p className="text-center text-[11px] tracking-[0.3em] text-zinc-300">AWARD</p>
-      <h2 className="mt-2 text-center text-[26px] font-bold tracking-[0.5em] text-zinc-900 dark:text-zinc-50" style={{ textIndent: '0.5em' }}>
+      <h2 className="text-center text-[28px] font-bold tracking-[0.4em] text-zinc-900 dark:text-zinc-50" style={{ textIndent: '0.4em' }}>
         {kind || '상장'}
       </h2>
-      <div className="mx-auto mt-4 h-px w-14 bg-zinc-300 dark:bg-zinc-700" />
 
-      <p className="mt-10 text-center text-[18px] font-semibold text-zinc-800 dark:text-zinc-100">
-        {(names[0] || '대상자명') + (names.length > 1 ? ` 외 ${names.length - 1}명` : '')} 님
+      <p className="mt-12 text-right text-[16px] tracking-[0.15em] text-zinc-800 dark:text-zinc-100">
+        성 명 : {(names[0] || '대상자명') + (names.length > 1 ? ` 외 ${names.length - 1}명` : '')}
       </p>
 
-      <p className="mt-6 whitespace-pre-wrap text-center text-[14px] leading-relaxed text-zinc-600 dark:text-zinc-300">
+      <p className="mt-10 whitespace-pre-wrap text-justify text-[14px] leading-loose text-zinc-600 dark:text-zinc-300" style={{ textIndent: '1.5em' }}>
         {body || '"본문 입력하기"로 작성하면 여기에 미리보기가 표시됩니다.'}
       </p>
 
