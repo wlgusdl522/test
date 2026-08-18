@@ -6,10 +6,9 @@ import AccountingEntryClient from '@/components/business/AccountingEntryClient';
 import AccountingSummaryTable from '@/components/business/AccountingSummaryTable';
 import BankAccountManageModal from '@/components/business/BankAccountManageModal';
 import BankBalanceEntryClient from '@/components/business/BankBalanceEntryClient';
-import { FACILITIES } from '@/lib/mutate/boardStat';
+import { FACILITIES, FACILITY_LABEL, getModuleValues } from '@/lib/mutate/boardStat';
 import { getAccountingItems, suggestCarryForward, computeFacilityTotals } from '@/lib/mutate/boardAccounting';
 import { getBankAccounts } from '@/lib/mutate/boardBankAccount';
-import { getModuleValues } from '@/lib/mutate/boardStat';
 import { btnSecondary, card, h2, inputBase } from '@/lib/ui';
 
 export const runtime = 'nodejs';
@@ -36,7 +35,7 @@ export default async function BusinessSummaryAccountingPage({
 
   const summaryRows = FACILITIES.map((f, i) => {
     const totals = computeFacilityTotals(allItems, allValues, f, ym);
-    return { 시설명: f === '복지관' ? '서대문복지관' : `병설 ${f}`, ...totals };
+    return { 시설명: FACILITY_LABEL[f] ?? f, ...totals };
   });
 
   const items = itemsByFacility[FACILITIES.indexOf(시설 as (typeof FACILITIES)[number])];
@@ -63,7 +62,7 @@ export default async function BusinessSummaryAccountingPage({
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">시설</label>
         <select name="facility" defaultValue={시설} className={`${inputBase} w-auto`}>
           {FACILITIES.map((f) => (
-            <option key={f} value={f}>{f}</option>
+            <option key={f} value={f}>{FACILITY_LABEL[f] ?? f}</option>
           ))}
         </select>
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">조회월</label>
@@ -74,7 +73,7 @@ export default async function BusinessSummaryAccountingPage({
       <AccountingItemManageModal 시설={시설} items={items} />
 
       <div className={`${card} mb-5`}>
-        <h2 className={`${h2} mb-3`}>{시설} · {ym} 수입지출 입력</h2>
+        <h2 className={`${h2} mb-3`}>{FACILITY_LABEL[시설] ?? 시설} · {ym} 수입지출 입력</h2>
         <AccountingEntryClient
           시설={시설} ym={ym} income={income} expense={expense}
           initialValues={initialValues} suggestedCarryForward={carrySuggestion}
@@ -84,7 +83,7 @@ export default async function BusinessSummaryAccountingPage({
       <BankAccountManageModal 시설={시설} accounts={accounts} />
 
       <div className={card}>
-        <h2 className={`${h2} mb-3`}>6) {시설} · {ym} 예금잔액명세</h2>
+        <h2 className={`${h2} mb-3`}>6) {FACILITY_LABEL[시설] ?? 시설} · {ym} 예금잔액명세</h2>
         <BankBalanceEntryClient 시설={시설} ym={ym} accounts={accounts} initialValues={accountInitialValues} />
       </div>
     </>

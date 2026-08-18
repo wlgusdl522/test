@@ -11,6 +11,14 @@ export const FACILITIES = ['복지관', '요양센터', '데이케어센터'] as
 export type Facility = (typeof FACILITIES)[number];
 export const NO_FACILITY = '전체';
 
+// 참고 서식의 표기 그대로 — 내부 시설 코드(복지관/요양센터/데이케어센터)와 다른 정식 명칭.
+// 후원/회계 등 이사회자료 화면 전체에서 공용으로 쓴다.
+export const FACILITY_LABEL: Record<string, string> = {
+  복지관: '복지관',
+  요양센터: '병설 요양센터',
+  데이케어센터: '병설 데이케어센터',
+};
+
 export function facilitiesFor(모듈: BoardStatModule): readonly string[] {
   return 모듈 === '자원봉사자' ? [NO_FACILITY] : FACILITIES;
 }

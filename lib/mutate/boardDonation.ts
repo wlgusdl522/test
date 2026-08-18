@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { deleteKeyedRecords, getKeyedList, upsertKeyedRecords } from '@/lib/mutate/keyedTable';
 import { BOARD_DONATION_DETAIL_TABLE } from '@/lib/sheets/registry';
-import { priorCumulative, type BoardStatValue } from '@/lib/mutate/boardStat';
+import { priorCumulative, FACILITY_LABEL, type BoardStatValue } from '@/lib/mutate/boardStat';
 
 export type DonationItem = '후원금' | '후원물품';
 
@@ -29,12 +29,8 @@ export type DonationRowInput = {
   비고?: string;
 };
 
-// 참고 서식의 표기 그대로 — 내부 시설 코드(복지관/요양센터/데이케어센터)와 다른 정식 명칭.
-export const DONATION_FACILITY_LABEL: Record<string, string> = {
-  복지관: '복지관',
-  요양센터: '병설 요양센터',
-  데이케어센터: '병설 데이케어센터',
-};
+// 회계 등 다른 이사회자료 모듈도 같이 쓰는 공용 매핑이라 boardStat.ts로 옮김 — 기존 이름 그대로 재노출.
+export const DONATION_FACILITY_LABEL = FACILITY_LABEL;
 
 function num(v: string | undefined): number {
   const n = Number(v);
