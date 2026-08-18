@@ -1,6 +1,8 @@
-import { getGmailClient } from '@/lib/sheets/client';
+import { getGmailClientAs } from '@/lib/sheets/client';
 
-// 서비스계정 도메인 위임으로 GOOGLE_IMPERSONATE_EMAIL 계정을 발신자로 삼아 Gmail API로 보낸다.
+// 시트/드라이브(GOOGLE_IMPERSONATE_EMAIL)와 달리, 증명서·상장 발급 메일은 기관 대표 이메일
+// (CERTIFICATE_SENDER_EMAIL)을 발신자로 삼는다 — 도메인 위임에 이미 gmail.send 스코프가
+// 있으므로 같은 서비스계정으로 다른 조직 구성원을 대신 발송 가능(그 계정이 실제 존재해야 함).
 // 관리자가 도메인 위임 설정에 gmail.send 스코프를 추가해주기 전까지는 403으로 실패한다 — 호출부에서
 // 실패를 삼키고 경고만 보여주도록 설계되어 있다(발행 자체는 막지 않음).
 function encodeSubject(subject: string): string {
@@ -12,8 +14,8 @@ function base64UrlEncode(input: string): string {
 }
 
 export async function sendMail(to: string, subject: string, bodyText: string): Promise<void> {
-  const from = process.env.GOOGLE_IMPERSONATE_EMAIL;
-  if (!from) throw new Error('GOOGLE_IMPERSONATE_EMAIL이 설정되지 않아 발신자를 알 수 없습니다.');
+  const from = process.env.CERTIFICATE_SENDER_EMAIL || process.env.GOOGLE_IMPERSONATE_EMAIL;
+  if (!from) throw new Error('CERTIFICATE_SENDER_EMAIL(또는 GOOGLE_IMPERSONATE_EMAIL)이 설정되지 않아 발신자를 알 수 없습니다.');
 
   const message = [
     `From: ${from}`,
@@ -25,7 +27,7 @@ export async function sendMail(to: string, subject: string, bodyText: string): P
     bodyText,
   ].join('\r\n');
 
-  await getGmailClient().users.messages.send({
+  await getGmailClientAs(from).users.messages.send({
     userId: 'me',
     requestBody: { raw: base64UrlEncode(message) },
   });

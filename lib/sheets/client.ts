@@ -40,6 +40,24 @@ export function getGmailClient() {
   return gmail;
 }
 
+// 시트/드라이브 작업과는 다른 발신 계정으로 메일을 보내고 싶을 때(예: 증명서 발급 메일을
+// 기관 대표 이메일로) 쓰는 전용 클라이언트 — 매번 새로 만들며 캐싱하지 않는다(발신 계정이
+// 호출마다 달라질 수 있어서).
+export function getGmailClientAs(subjectEmail: string) {
+  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  if (!email || !key) {
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_PRIVATE_KEY 환경변수가 설정되지 않았습니다.');
+  }
+  const auth = new google.auth.JWT({
+    email,
+    key,
+    subject: subjectEmail,
+    scopes: ['https://www.googleapis.com/auth/gmail.send'],
+  });
+  return google.gmail({ version: 'v1', auth });
+}
+
 // 탭 이름 -> gid(시트 내부 숫자 ID) 매핑. 스프레드시트 구조는 거의 안 바뀌므로 프로세스 생존 기간 동안 캐싱한다.
 const gidCache = new Map<string, number>();
 
