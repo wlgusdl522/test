@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord } from '@/lib/mutate/keyedTable';
+import { deleteKeyedRecords, getKeyedList, upsertKeyedRecords } from '@/lib/mutate/keyedTable';
 import { BOARD_DONATION_DETAIL_TABLE } from '@/lib/sheets/registry';
 import { priorCumulative, type BoardStatValue } from '@/lib/mutate/boardStat';
 
@@ -84,6 +84,9 @@ export function donationValueFor(details: DonationDetail[], 항목: DonationItem
 }
 
 // 업무보고/명단 표와 같은 방식 — 한 시설·항목·조회월의 행 전체를 통째로 편집하다가 저장한다.
+// 행마다 add/update를 순차 호출하면(읽기+쓰기+Supabase미러링을 매번 반복) 붙여넣기로 한 번에
+// 여러 줄이 생겼을 때 API 호출이 줄 수만큼 늘어나 속도제한/타임아웃에 걸릴 수 있어, 삭제/추가·수정을
+// 각각 batch(deleteKeyedRecords/upsertKeyedRecords) 한 번씩으로 묶는다.
 export async function saveDonationDetails(
   항목: DonationItem,
   시설: string,
@@ -92,24 +95,18 @@ export async function saveDonationDetails(
 ): Promise<void> {
   const existing = await getDonationDetails(항목, 시설, ym);
   const keepIds = new Set(rows.filter((r) => r.id).map((r) => r.id));
-  for (const e of existing) {
-    if (!keepIds.has(e.id)) await deleteKeyedRecord(BOARD_DONATION_DETAIL_TABLE, { id: e.id });
-  }
+  const toDelete = existing.filter((e) => !keepIds.has(e.id)).map((e) => ({ id: e.id }));
+  if (toDelete.length > 0) await deleteKeyedRecords(BOARD_DONATION_DETAIL_TABLE, toDelete);
 
-  let order = 1;
-  for (const r of rows) {
+  const items = rows.map((r, i) => {
     const id = r.id || randomUUID();
     const record = {
       id, 항목, 시설, 년월: ym,
       이름: r.이름, 수량: r.수량 ?? '', 금액: String(r.금액 || 0),
       후원자: r.후원자 ?? '', 지급대상: r.지급대상 ?? '', 비고: r.비고 ?? '',
-      정렬순서: String(order),
+      정렬순서: String(i + 1),
     };
-    if (r.id) {
-      await updateKeyedRecord(BOARD_DONATION_DETAIL_TABLE, { id }, record);
-    } else {
-      await addKeyedRecord(BOARD_DONATION_DETAIL_TABLE, record);
-    }
-    order++;
-  }
+    return { keyValues: { id }, record };
+  });
+  if (items.length > 0) await upsertKeyedRecords(BOARD_DONATION_DETAIL_TABLE, items);
 }
