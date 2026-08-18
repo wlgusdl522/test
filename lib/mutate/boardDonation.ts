@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord } from '@/lib/mutate/keyedTable';
 import { BOARD_DONATION_DETAIL_TABLE } from '@/lib/sheets/registry';
-import { priorCumulative, valueFor, type BoardStatValue } from '@/lib/mutate/boardStat';
+import { priorCumulative, type BoardStatValue } from '@/lib/mutate/boardStat';
 
 export type DonationItem = '후원금' | '후원물품';
 
@@ -75,8 +75,12 @@ export function donationPriorCumulative(details: DonationDetail[], 항목: Donat
   return priorCumulative(asStatValues(details), 항목, 시설, ym);
 }
 
+// valueFor(회계용)는 항목+시설+월당 행이 하나뿐이라는 전제로 find() 하나만 반환하는데,
+// 후원은 한 달에 후원자 수만큼 행이 여러 개라 반드시 합산해야 한다 — 여기서 직접 sum.
 export function donationValueFor(details: DonationDetail[], 항목: DonationItem, 시설: string, ym: string): number {
-  return valueFor(asStatValues(details), 항목, 시설, ym);
+  return details
+    .filter((d) => d.항목 === 항목 && d.시설 === 시설 && d.년월 === ym)
+    .reduce((a, d) => a + d.금액, 0);
 }
 
 // 업무보고/명단 표와 같은 방식 — 한 시설·항목·조회월의 행 전체를 통째로 편집하다가 저장한다.
