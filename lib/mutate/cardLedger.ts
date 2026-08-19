@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
-import { addKeyedRecord, deleteKeyedRecord, getKeyedList, updateKeyedRecord, updateKeyedRecords } from '@/lib/mutate/keyedTable';
-import { getAllRecords } from '@/lib/sheets/keyedTable';
+import { getKeyedList } from '@/lib/mutate/keyedTable';
+import { appendRecord, deleteRecord, getAllRecords, updateRecord, updateRecords } from '@/lib/sheets/keyedTable';
+import { deleteRowsFromSupabase, upsertRowsToSupabase } from '@/lib/supabase/keyedTable';
 import { CARD_LEDGER_TABLE, ITEM_CHECK_PHOTO_TABLE, ITEM_CHECK_REPORT_TABLE } from '@/lib/sheets/registry';
 import { getSystemSettings } from '@/lib/mutate/settings';
 import { parseAmount } from '@/lib/format';
@@ -13,8 +14,18 @@ export const CARD_LEDGER_STATUS = {
   EXEMPT: '검수불요',
 } as const;
 
+const SUPABASE_CONFIG = { tableName: CARD_LEDGER_TABLE.sheetName, primaryKey: CARD_LEDGER_TABLE.primaryKey };
+
 function nowTimestamp(): string {
   return new Date().toISOString().slice(0, 19).replace('T', ' ');
+}
+
+// 시트 저장은 그대로 필수(회계 원장 = 시트가 원본)로 두고, Supabase 반영만 "테이블 전체
+// 재복제" 대신 "방금 쓴 행만 콕 집어 upsert"로 바꿨다 — 새 컬럼 하나가 Supabase에 없어서
+// 전체 재복제가 실패하면 방금 입력한 건까지 화면에서 통째로 안 보이던 문제(2026-08-19) 때문.
+async function afterCardLedgerWrite(records: Record<string, string>[]): Promise<Record<string, string>[]> {
+  await upsertRowsToSupabase(SUPABASE_CONFIG, records);
+  return getKeyedList(CARD_LEDGER_TABLE);
 }
 
 export async function getCardLedgerList(): Promise<Record<string, string>[]> {
@@ -53,7 +64,8 @@ export async function addCardLedgerRecord(payload: Record<string, string>): Prom
     else if (h === '반려사유') record[h] = '';
     else record[h] = payload[h] ?? '';
   });
-  const requests = await addKeyedRecord(CARD_LEDGER_TABLE, record);
+  await appendRecord(CARD_LEDGER_TABLE, record);
+  const requests = await afterCardLedgerWrite([record]);
   return { id, requests };
 }
 
@@ -76,7 +88,8 @@ export async function updateCardLedgerRecord(
     else if (h === '반려사유') record[h] = existing['반려사유'] ?? '';
     else record[h] = payload[h] ?? '';
   });
-  const result = await updateKeyedRecord(CARD_LEDGER_TABLE, { id }, record);
+  await updateRecord(CARD_LEDGER_TABLE, { id }, record);
+  const result = await afterCardLedgerWrite([record]);
   if (!exempt) await recomputeCardLedgerStatus(id);
   return result;
 }
@@ -86,7 +99,9 @@ export async function deleteCardLedgerRecord(id: string): Promise<Record<string,
   if (existing?.['상태'] === CARD_LEDGER_STATUS.PRINTED) {
     throw new Error('인쇄완료(잠금)된 내역은 삭제할 수 없습니다. 회계에 반려를 요청해주세요.');
   }
-  return deleteKeyedRecord(CARD_LEDGER_TABLE, { id });
+  await deleteRecord(CARD_LEDGER_TABLE, { id });
+  await deleteRowsFromSupabase(SUPABASE_CONFIG, [{ id }]);
+  return getKeyedList(CARD_LEDGER_TABLE);
 }
 
 // 사진/조서 등록·삭제 직후 호출 — 필요 조건(사진 항상, 조서는 금액기준)이 다 채워졌는지 다시 계산해서
@@ -109,7 +124,9 @@ export async function recomputeCardLedgerStatus(ledgerId: string): Promise<void>
   const complete = hasPhoto && (!reportRequired || hasReport);
   const newStatus = complete ? CARD_LEDGER_STATUS.DONE : CARD_LEDGER_STATUS.PENDING;
   if (newStatus !== ledger['상태']) {
-    await updateKeyedRecord(CARD_LEDGER_TABLE, { id: ledgerId }, { ...ledger, 상태: newStatus });
+    const record = { ...ledger, 상태: newStatus };
+    await updateRecord(CARD_LEDGER_TABLE, { id: ledgerId }, record);
+    await upsertRowsToSupabase(SUPABASE_CONFIG, [record]);
   }
 }
 
@@ -120,11 +137,13 @@ export async function printCardLedgerRecord(id: string): Promise<Record<string, 
   if (existing['상태'] !== CARD_LEDGER_STATUS.DONE) {
     throw new Error('검수완료(사진/조서 등록 완료) 상태인 건만 인쇄할 수 있습니다.');
   }
-  return updateKeyedRecord(CARD_LEDGER_TABLE, { id }, { ...existing, 상태: CARD_LEDGER_STATUS.PRINTED, 반려사유: '' });
+  const record = { ...existing, 상태: CARD_LEDGER_STATUS.PRINTED, 반려사유: '' };
+  await updateRecord(CARD_LEDGER_TABLE, { id }, record);
+  return afterCardLedgerWrite([record]);
 }
 
-// 회계 전용 — 여러 건을 한 번에 인쇄(=잠금) 처리한다. 건마다 읽기+쓰기+미러링을 반복하면
-// 선택 건수가 많을 때 API 요청이 급증하므로, 대상 전체를 한 번만 읽고 batchUpdate 한 번으로 처리한다.
+// 회계 전용 — 여러 건을 한 번에 인쇄(=잠금) 처리한다. 건마다 읽기+쓰기+반영을 반복하면
+// 선택 건수가 많을 때 API 요청이 급증하므로, 대상 전체를 한 번만 읽고 batchUpdate/배치 upsert로 처리한다.
 export async function printCardLedgerRecords(ids: string[]): Promise<Record<string, string>[]> {
   if (ids.length === 0) return getKeyedList(CARD_LEDGER_TABLE);
   const all = await getKeyedList(CARD_LEDGER_TABLE);
@@ -136,13 +155,12 @@ export async function printCardLedgerRecords(ids: string[]): Promise<Record<stri
     }
     return existing;
   });
-  return updateKeyedRecords(
+  const records: Record<string, string>[] = targets.map((existing) => ({ ...existing, 상태: CARD_LEDGER_STATUS.PRINTED, 반려사유: '' }));
+  await updateRecords(
     CARD_LEDGER_TABLE,
-    targets.map((existing) => ({
-      keyValues: { id: existing.id },
-      record: { ...existing, 상태: CARD_LEDGER_STATUS.PRINTED, 반려사유: '' },
-    }))
+    records.map((record) => ({ keyValues: { id: record.id }, record }))
   );
+  return afterCardLedgerWrite(records);
 }
 
 // 관리자가 검수사진 미등록 건에 잔디 알림을 보낸 뒤 "마지막 알림" 시각을 기록한다.
@@ -154,10 +172,12 @@ export async function markCardLedgerNotified(ids: string[]): Promise<void> {
     .map((id) => all.find((r) => r.id === id))
     .filter((r): r is Record<string, string> => Boolean(r));
   if (targets.length === 0) return;
-  await updateKeyedRecords(
+  const records: Record<string, string>[] = targets.map((existing) => ({ ...existing, 마지막알림일시: now }));
+  await updateRecords(
     CARD_LEDGER_TABLE,
-    targets.map((existing) => ({ keyValues: { id: existing.id }, record: { ...existing, 마지막알림일시: now } }))
+    records.map((record) => ({ keyValues: { id: record.id }, record }))
   );
+  await upsertRowsToSupabase(SUPABASE_CONFIG, records);
 }
 
 // 회계 전용 — 인쇄(잠금)된 건을 반려하면 잠금이 풀리고 담당자가 다시 수정/재등록할 수 있게 된다.
@@ -168,5 +188,7 @@ export async function rejectCardLedgerRecord(id: string, reason: string): Promis
   if (existing['상태'] !== CARD_LEDGER_STATUS.PRINTED) {
     throw new Error('인쇄완료 상태인 건만 반려할 수 있습니다.');
   }
-  return updateKeyedRecord(CARD_LEDGER_TABLE, { id }, { ...existing, 상태: CARD_LEDGER_STATUS.REJECTED, 반려사유: reason.trim() });
+  const record = { ...existing, 상태: CARD_LEDGER_STATUS.REJECTED, 반려사유: reason.trim() };
+  await updateRecord(CARD_LEDGER_TABLE, { id }, record);
+  return afterCardLedgerWrite([record]);
 }

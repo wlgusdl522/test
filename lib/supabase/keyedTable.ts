@@ -62,6 +62,41 @@ export async function getAllFromSupabase(
   return ((data ?? []) as Record<string, unknown>[]).map(normalizeSupabaseRow);
 }
 
+// mirrorKeyedTableToSupabase처럼 테이블 전체를 다시 읽어 diff하지 않고, 지금 막 시트에 쓴
+// 행(들)만 그대로 올린다 — 다른 행에 스키마/데이터 문제가 있어도 방금 쓴 이 행은 영향을 안 받고,
+// 매번 테이블 전체를 훑지 않아 훨씬 가볍다. (괄호 등 안전하지 않은 키 컬럼을 쓰는 테이블은
+// on_conflict 파라미터 파싱이 깨지므로 이 헬퍼 대상에서 제외 — 호출하는 쪽에서 알아서 그런
+// 테이블에는 쓰지 않아야 한다.)
+export async function upsertRowsToSupabase(
+  config: SupabaseKeyedTableConfig,
+  records: Record<string, string>[]
+): Promise<void> {
+  if (records.length === 0) return;
+  if (hasUnsafeKeyColumn(config)) {
+    console.error(`[Supabase 건별 upsert 실패] ${config.tableName}: 괄호 등 안전하지 않은 키 컬럼은 건별 upsert를 지원하지 않습니다.`);
+    return;
+  }
+  const { error } = await table(config.tableName).upsert(records, {
+    onConflict: keyColumns(config).join(','),
+  });
+  if (error) console.error(`[Supabase 건별 upsert 실패] ${config.tableName}`, error);
+}
+
+// 위와 짝을 이루는 건별 삭제 — 삭제 대상 키들만 지워서 확인한다.
+export async function deleteRowsFromSupabase(
+  config: SupabaseKeyedTableConfig,
+  keyValuesList: Record<string, string>[]
+): Promise<void> {
+  for (const keyValues of keyValuesList) {
+    let query = table(config.tableName).delete();
+    for (const [col, value] of Object.entries(keyValues)) {
+      query = query.eq(col, value);
+    }
+    const { error } = await query;
+    if (error) console.error(`[Supabase 건별 삭제 실패] ${config.tableName}`, error);
+  }
+}
+
 export async function mirrorKeyedTableToSupabase(
   config: SupabaseKeyedTableConfig,
   records: Record<string, string>[]
