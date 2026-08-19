@@ -8,9 +8,23 @@ const iconBtn =
 
 // 발표모드에서 팀이 보여지는 순서 — 설정 > 팀목록 순서와 별개로 여기서 직접 관리한다
 // (예: 총무팀이 팀목록에선 앞이지만 발표는 맨 마지막이어야 하는 경우).
-export default function TeamOrderModal({ teams }: { teams: string[] }) {
+export default function TeamOrderModal({
+  teams,
+  buttonClassName,
+  onOpen,
+}: {
+  teams: string[];
+  buttonClassName?: string;
+  onOpen?: () => void;
+}) {
   return (
-    <FormToggle label="발표순서 관리" buttonLabel="발표순서 관리" buttonClassName={btnOutline} wrapperClassName="">
+    <FormToggle
+      label="발표순서 관리"
+      buttonLabel="발표순서 관리"
+      buttonClassName={buttonClassName ?? btnOutline}
+      wrapperClassName=""
+      onOpen={onOpen}
+    >
       <p className={`${hint} mb-4`}>발표 모드에서 팀이 나오는 순서예요. 화살표로 순서를 바꿀 수 있어요.</p>
       <ul className="flex flex-col gap-1.5">
         {teams.map((t, i) => (

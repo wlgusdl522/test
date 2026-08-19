@@ -37,6 +37,9 @@ export const btnSecondary =
 export const btnOutline =
   'inline-flex items-center justify-center gap-1.5 rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800';
 
+export const btnSuccess =
+  'inline-flex items-center justify-center gap-1.5 rounded-md bg-emerald-600 px-4 py-2 text-sm text-white transition-colors hover:bg-emerald-700';
+
 export const btnDanger =
   'inline-flex items-center justify-center gap-1 rounded-md bg-[#eef1f6] dark:bg-zinc-800 px-2.5 py-1.5 text-xs text-[#b51c31] dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-950/40';
 

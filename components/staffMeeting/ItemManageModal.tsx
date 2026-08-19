@@ -15,9 +15,25 @@ const iconBtnDanger = `${iconBtn} hover:!bg-red-50 hover:!text-red-600 dark:hove
 
 // 팀별 "사업구분" 고정 목록 관리 — 회계/자원봉사자/후원의 ItemManageModal과 같은 결이지만
 // 모듈(전체 시설 공용)이 아니라 팀 단위 항목이라 별도 액션(staff-meeting)에 연결한 전용 컴포넌트.
-export default function ItemManageModal({ 팀명, items }: { 팀명: string; items: StaffMeetingItem[] }) {
+export default function ItemManageModal({
+  팀명,
+  items,
+  buttonClassName,
+  onOpen,
+}: {
+  팀명: string;
+  items: StaffMeetingItem[];
+  buttonClassName?: string;
+  onOpen?: () => void;
+}) {
   return (
-    <FormToggle label="사업구분 관리" buttonLabel="사업구분 관리" buttonClassName={btnOutline} wrapperClassName="">
+    <FormToggle
+      label="사업구분 관리"
+      buttonLabel="사업구분 관리"
+      buttonClassName={buttonClassName ?? btnOutline}
+      wrapperClassName=""
+      onOpen={onOpen}
+    >
       <p className={`${hint} mb-4`}>화살표로 순서를 바꾸고, 삭제는 되돌릴 수 없어요.</p>
 
       <p className={`${hint} mb-2`}>줄바꿈으로 입력하면 표에서도 그 줄바꿈 그대로 보여요(예: &quot;상담사업{'\n'}권익증진사업&quot;).</p>
