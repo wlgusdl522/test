@@ -10,6 +10,7 @@ import { resolveApprovalLineLabels } from '@/lib/approval/approvalLine';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import { btnSecondary, inputBase } from '@/lib/ui';
 import MeetingComposer from '@/components/weekly/MeetingComposer';
+import MeetingInfoSection from '@/components/weekly/MeetingInfoSection';
 import PrinterIcon from '@/components/icons/PrinterIcon';
 import PageAccessDenied from '@/components/PageAccessDenied';
 
@@ -22,6 +23,13 @@ function mondayOf(date: Date): string {
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
   return d.toISOString().slice(0, 10);
+}
+
+function formatKoreanDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-');
+  const d = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  return `${year}년 ${parseInt(month)}월 ${parseInt(day)}일 (${dayNames[d.getDay()]})`;
 }
 
 export default async function MeetingPage({
@@ -58,13 +66,29 @@ export default async function MeetingPage({
         </a>
       </div>
 
-      <form method="get" className="flex flex-wrap gap-2 mb-6">
+      <form method="get" className="flex flex-wrap gap-2 mb-4">
         <select name="team" defaultValue={team} className={`${inputBase} w-auto`}>
           {teams.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
         <input type="date" name="date" defaultValue={date} className={`${inputBase} w-auto`} />
         <button type="submit" className={btnSecondary}>조회</button>
+        <MeetingInfoSection team={team} date={date} meta={meta} />
       </form>
+
+      <div className="mb-6 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-900">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <div className="text-zinc-600 dark:text-zinc-400 font-medium">회의일시</div>
+            <div className="text-zinc-900 dark:text-zinc-100">
+              {formatKoreanDate(date)} {meta?.회의시간 ? meta.회의시간 : '시간 미설정'}
+            </div>
+          </div>
+          <div>
+            <div className="text-zinc-600 dark:text-zinc-400 font-medium">회의장소</div>
+            <div className="text-zinc-900 dark:text-zinc-100">{meta?.회의장소 || '미설정'}</div>
+          </div>
+        </div>
+      </div>
 
       <MeetingComposer
         team={team}
