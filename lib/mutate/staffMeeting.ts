@@ -16,6 +16,7 @@ import {
 } from '@/lib/sheets/registry';
 import { getSystemSettings } from '@/lib/mutate/settings';
 import { jandiPostRich } from '@/lib/notify/jandi';
+import { getViewerStaffRecord, isAdminEmail, requireViewerEmail } from '@/lib/auth-helpers';
 
 // 매달 크게 안 바뀌는 값이라 기본값으로 미리 채워두고, 담당자가 그대로 두거나 고쳐서 저장한다
 // (회계 전월이월 추천값과 같은 결 — 잠긴 값 아님).
@@ -224,10 +225,32 @@ export async function getStaffMeetingInfo(ym: string): Promise<StaffMeetingInfo>
   };
 }
 
+// 관리자는 항상 가능. 설정 > 시스템 설정값에서 지정한 팀/담당자 이메일이 있으면 그
+// 팀 소속이거나 지정된 이메일인 사람만 가능하고, 둘 다 비어있으면(기본값) 제한 없음.
+export async function canEditStaffMeetingInfo(): Promise<boolean> {
+  const email = await requireViewerEmail();
+  if (await isAdminEmail(email)) return true;
+
+  const settings = await getSystemSettings();
+  const team = settings.staffMeetingInfoEditTeam.trim();
+  const emails = settings.staffMeetingInfoEditEmails
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  if (!team && emails.length === 0) return true;
+  if (emails.includes(email.toLowerCase())) return true;
+  if (team) {
+    const me = await getViewerStaffRecord();
+    if (me?.소속팀 === team) return true;
+  }
+  return false;
+}
+
 export async function setStaffMeetingInfo(
   ym: string,
   fields: { 회의일시: string; 장소: string; 진행: string; 참석부서: string; 업무보고기간: string; 업무계획기간: string }
 ): Promise<void> {
+  if (!(await canEditStaffMeetingInfo())) throw new Error('회의정보 편집 권한이 없습니다.');
   const existing = await getStaffMeetingInfo(ym);
   await upsertKeyedRecord(
     STAFF_MEETING_INFO_TABLE,
