@@ -221,10 +221,9 @@ function nowTimestamp(): string {
   return new Date().toISOString().slice(0, 19).replace('T', ' ');
 }
 
-// "잔디 알림 보내기" 버튼을 누르면 즉시 호출 — 예약/크론 없이 그 자리에서 바로 발송한다.
-export async function sendStaffMeetingNotification(ym: string): Promise<void> {
-  const [info, settings] = await Promise.all([getStaffMeetingInfo(ym), getSystemSettings()]);
-  const message = [
+// 잔디 알림 화면에 기본으로 채워주는 문구 — 그대로 보내도 되고 고쳐서 보내도 된다.
+export function buildStaffMeetingNotificationMessage(ym: string, info: StaffMeetingInfo): string {
+  return [
     `📢 ${ym} 전체회의 안내`,
     info.회의일시 ? `일시: ${info.회의일시.replace('T', ' ')}` : '',
     info.장소 ? `장소: ${info.장소}` : '',
@@ -232,6 +231,12 @@ export async function sendStaffMeetingNotification(ym: string): Promise<void> {
     info.참석부서 ? `참석부서: ${info.참석부서}` : '',
     '업무포털 > 업무관리 > 전체회의자료에서 자료 준비 부탁드립니다.',
   ].filter(Boolean).join('\n');
+}
+
+// "잔디 알림 보내기" 버튼을 누르면 즉시 호출 — 예약/크론 없이 그 자리에서 바로 발송한다.
+// message: 화면에서 기본 문구를 고쳐 썼을 수도 있으므로 그대로 전달받아 보낸다.
+export async function sendStaffMeetingNotification(ym: string, message: string): Promise<void> {
+  const [info, settings] = await Promise.all([getStaffMeetingInfo(ym), getSystemSettings()]);
 
   await jandiPost(settings.staffMeetingJandiWebhook, message);
   await upsertKeyedRecord(

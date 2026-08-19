@@ -15,7 +15,14 @@ type Row = {
 };
 
 const textareaClass =
-  'w-full min-w-[200px] rounded border border-transparent bg-[#fcfbf8] px-2 py-1 text-[13px] focus:border-brand focus:outline-none dark:bg-zinc-950';
+  'w-full min-w-[200px] resize-none overflow-hidden rounded border border-transparent bg-[#fcfbf8] px-2 py-1 text-[13px] focus:border-brand focus:outline-none dark:bg-zinc-950';
+
+// 입력한 글자 수만큼 칸이 늘어나도록 스크롤 높이에 맞춰 실제 높이를 다시 잰다.
+function autoResize(el: HTMLTextAreaElement | null) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
+}
 
 export default function EntryClient({
   팀명,
@@ -81,25 +88,28 @@ export default function EntryClient({
                 <td className={`${td} whitespace-pre-wrap font-semibold align-top`}>{r.사업구분}</td>
                 <td className={`${td} align-top`}>
                   <textarea
+                    ref={autoResize}
                     rows={4}
                     value={values[r.id]?.업무보고 ?? ''}
-                    onChange={(e) => update(r.id, '업무보고', e.target.value)}
+                    onChange={(e) => { update(r.id, '업무보고', e.target.value); autoResize(e.target); }}
                     className={textareaClass}
                   />
                 </td>
                 <td className={`${td} align-top`}>
                   <textarea
+                    ref={autoResize}
                     rows={4}
                     value={values[r.id]?.업무계획 ?? ''}
-                    onChange={(e) => update(r.id, '업무계획', e.target.value)}
+                    onChange={(e) => { update(r.id, '업무계획', e.target.value); autoResize(e.target); }}
                     className={textareaClass}
                   />
                 </td>
                 <td className={`${td} align-top`}>
                   <textarea
+                    ref={autoResize}
                     rows={4}
                     value={values[r.id]?.협조사항 ?? ''}
-                    onChange={(e) => update(r.id, '협조사항', e.target.value)}
+                    onChange={(e) => { update(r.id, '협조사항', e.target.value); autoResize(e.target); }}
                     className={textareaClass}
                   />
                 </td>

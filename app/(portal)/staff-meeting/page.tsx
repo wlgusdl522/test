@@ -7,6 +7,7 @@ import ItemManageModal from '@/components/staffMeeting/ItemManageModal';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import {
+  buildStaffMeetingNotificationMessage,
   getStaffMeetingInfo,
   getStaffMeetingItems,
   getStaffMeetingValues,
@@ -130,19 +131,30 @@ export default async function StaffMeetingPage({
           </div>
         </form>
 
-        <div className="mt-4 flex items-center gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+        <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
           <form action={sendStaffMeetingNotificationAction}>
             <input type="hidden" name="년월" value={ym} />
-            <ConfirmSubmitButton
-              confirmMessage="잔디 공용 채널로 전체회의 안내를 지금 바로 보낼까요?"
-              className={btnSecondary}
-            >
-              잔디 알림 보내기
-            </ConfirmSubmitButton>
+            <label className={label}>
+              잔디로 보낼 문구(수정 가능)
+              <textarea
+                name="메시지"
+                rows={5}
+                defaultValue={buildStaffMeetingNotificationMessage(ym, meetingInfo)}
+                className={`${input} whitespace-pre-wrap`}
+              />
+            </label>
+            <div className="mt-2 flex items-center gap-3">
+              <ConfirmSubmitButton
+                confirmMessage="위 문구로 잔디 공용 채널에 지금 바로 보낼까요?"
+                className={btnSecondary}
+              >
+                잔디 알림 보내기
+              </ConfirmSubmitButton>
+              {meetingInfo.알림발송일시 && (
+                <span className="text-xs text-zinc-400">마지막 발송: {meetingInfo.알림발송일시}</span>
+              )}
+            </div>
           </form>
-          {meetingInfo.알림발송일시 && (
-            <span className="text-xs text-zinc-400">마지막 발송: {meetingInfo.알림발송일시}</span>
-          )}
         </div>
       </div>
 

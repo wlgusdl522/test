@@ -47,7 +47,8 @@ export async function saveStaffMeetingInfoAction(formData: FormData) {
 
 export async function sendStaffMeetingNotificationAction(formData: FormData) {
   const ym = String(formData.get('년월') ?? '');
-  await sendStaffMeetingNotification(ym);
+  const message = String(formData.get('메시지') ?? '');
+  await sendStaffMeetingNotification(ym, message);
   revalidatePath('/staff-meeting');
 }
 
