@@ -97,9 +97,12 @@ export default async function MyPage() {
                   <td className={tdClean}>{r.품명} · {Number(r.금액 || 0).toLocaleString()}원</td>
                   <td className={tdClean}>{r.현재결재단계}</td>
                   <td className={`${tdClean} flex items-center gap-1.5`}>
-                    <form action={actOnItemCheckReportAction}>
+                    <form action={actOnItemCheckReportAction} className="flex items-center gap-1">
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="action" value="승인" />
+                      {r.현재결재단계 === '물품출납원' && (
+                        <input name="assetNo" placeholder="비품등록번호" required className={`${inputBase} w-28 text-xs`} />
+                      )}
                       <button type="submit" className={btn}>승인</button>
                     </form>
                     <form action={actOnItemCheckReportAction} className="flex items-center gap-1">

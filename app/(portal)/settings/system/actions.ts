@@ -12,6 +12,7 @@ export async function saveSystemSettingsAction(formData: FormData) {
   await setSystemSettings({
     itemCheckReportThreshold: Number(formData.get('itemCheckReportThreshold') ?? 0),
     itemCheckAssetManagerEmail: String(formData.get('itemCheckAssetManagerEmail') ?? ''),
+    itemCheckGeneralAffairsManagerEmail: String(formData.get('itemCheckGeneralAffairsManagerEmail') ?? ''),
     itemCheckAccountingEmail: String(formData.get('itemCheckAccountingEmail') ?? ''),
     itemCheckReportJandiWebhook: String(formData.get('itemCheckReportJandiWebhook') ?? ''),
     vehicleLogApprovalMode: String(formData.get('vehicleLogApprovalMode') ?? ''),

@@ -145,6 +145,21 @@ export async function printCardLedgerRecords(ids: string[]): Promise<Record<stri
   );
 }
 
+// 관리자가 검수사진 미등록 건에 잔디 알림을 보낸 뒤 "마지막 알림" 시각을 기록한다.
+export async function markCardLedgerNotified(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const all = await getKeyedList(CARD_LEDGER_TABLE);
+  const now = nowTimestamp();
+  const targets = ids
+    .map((id) => all.find((r) => r.id === id))
+    .filter((r): r is Record<string, string> => Boolean(r));
+  if (targets.length === 0) return;
+  await updateKeyedRecords(
+    CARD_LEDGER_TABLE,
+    targets.map((existing) => ({ keyValues: { id: existing.id }, record: { ...existing, 마지막알림일시: now } }))
+  );
+}
+
 // 회계 전용 — 인쇄(잠금)된 건을 반려하면 잠금이 풀리고 담당자가 다시 수정/재등록할 수 있게 된다.
 export async function rejectCardLedgerRecord(id: string, reason: string): Promise<Record<string, string>[]> {
   if (!reason?.trim()) throw new Error('반려 사유를 입력해주세요.');

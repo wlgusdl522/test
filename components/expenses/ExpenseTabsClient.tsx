@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 const TABS = [
   { href: '/expenses/mine', label: '카드사용입력·조회' },
   { href: '/expenses/review', label: '물품검수 인쇄' },
+  { href: '/expenses/manage', label: '검수사진 미등록 관리' },
 ];
 
 export default function ExpenseTabsClient() {
