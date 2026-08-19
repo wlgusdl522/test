@@ -5,6 +5,7 @@ import PageAccessDenied from '@/components/PageAccessDenied';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getStaffMeetingItems, getStaffMeetingValues, nextYm, valueFor } from '@/lib/mutate/staffMeeting';
+import SubmitButton from '@/components/SubmitButton';
 import { getStaffMeetingContext, setStaffMeetingContextAction } from '@/lib/prefs-actions';
 import { btnOutline, card, h1, inputBase, pageFluid, table, td, th, tableWrap } from '@/lib/ui';
 
@@ -68,7 +69,7 @@ export default async function StaffMeetingViewPage({
         </select>
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">조회월</label>
         <input type="month" name="ym" defaultValue={ym} className={`${inputBase} w-auto`} />
-        <button type="submit" className={btnOutline}>조회</button>
+        <SubmitButton className={btnOutline} pendingLabel="조회 중...">조회</SubmitButton>
       </form>
 
       {!팀명 ? (

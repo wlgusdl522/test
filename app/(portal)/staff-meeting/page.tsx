@@ -14,6 +14,7 @@ import {
   valueFor,
 } from '@/lib/mutate/staffMeeting';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
+import SubmitButton from '@/components/SubmitButton';
 import { getStaffMeetingContext, setStaffMeetingContextAction } from '@/lib/prefs-actions';
 import { btn, btnOutline, btnSecondary, card, h1, h2, input, inputBase, label, pageFluid } from '@/lib/ui';
 import { saveStaffMeetingInfoAction, sendStaffMeetingNotificationAction } from './actions';
@@ -89,7 +90,7 @@ export default async function StaffMeetingPage({
         </select>
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">조회월</label>
         <input type="month" name="ym" defaultValue={ym} className={`${inputBase} w-auto`} />
-        <button type="submit" className={btnOutline}>조회</button>
+        <SubmitButton className={btnOutline} pendingLabel="조회 중...">조회</SubmitButton>
       </form>
 
       <div className={card}>
@@ -113,7 +114,7 @@ export default async function StaffMeetingPage({
             <input name="참석부서" defaultValue={meetingInfo.참석부서} className={input} />
           </label>
           <div className="col-span-2 flex items-end md:col-span-1">
-            <button type="submit" className={btn}>저장</button>
+            <SubmitButton className={btn} pendingLabel="저장 중...">저장</SubmitButton>
           </div>
         </form>
 
