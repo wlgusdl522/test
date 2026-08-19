@@ -4,6 +4,8 @@ import PresentClient from '@/components/staffMeeting/PresentClient';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import {
+  formatMeetingDateTime,
+  getOrderedStaffMeetingTeams,
   getStaffMeetingInfo,
   getStaffMeetingItems,
   getStaffMeetingValues,
@@ -18,19 +20,9 @@ export const dynamic = 'force-dynamic';
 // 원본 구글슬라이드가 한 장에 사업구분 2개 정도만 담던 것과 맞춰, 팀당 사업구분이 이 개수를
 // 넘으면 자동으로 다음 장으로 나눈다.
 const ITEMS_PER_PAGE = 2;
-const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
 
 function currentYm(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date()).slice(0, 7);
-}
-
-function formatMeetingDateTime(dt: string): string {
-  if (!dt) return '';
-  const d = new Date(dt);
-  if (Number.isNaN(d.getTime())) return dt;
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일(${WEEKDAY[d.getDay()]}) ${hh}:${mm}`;
 }
 
 function chunk<T>(arr: T[], size: number): T[][] {
@@ -51,9 +43,10 @@ export default async function StaffMeetingPresentPage({
   const ym = ymParam || cookieCtx.ym || currentYm();
 
   const [teams, meetingInfo] = await Promise.all([getSimpleList(TEAM_LIST_SHEET_NAME), getStaffMeetingInfo(ym)]);
+  const orderedTeams = await getOrderedStaffMeetingTeams(teams);
 
   const teamData = await Promise.all(
-    teams.map(async (team) => {
+    orderedTeams.map(async (team) => {
       const items = await getStaffMeetingItems(team);
       const values = await getStaffMeetingValues(items.map((i) => i.id));
       return { team, items, values };
@@ -120,7 +113,7 @@ export default async function StaffMeetingPresentPage({
 
   return (
     <main className={pageFluid}>
-      <PresentClient pages={pages} />
+      <PresentClient pages={pages} ym={ym} />
     </main>
   );
 }

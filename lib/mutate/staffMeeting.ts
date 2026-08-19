@@ -8,9 +8,14 @@ import {
   upsertKeyedRecord,
   upsertKeyedRecords,
 } from '@/lib/mutate/keyedTable';
-import { STAFF_MEETING_INFO_TABLE, STAFF_MEETING_ITEM_TABLE, STAFF_MEETING_VALUE_TABLE } from '@/lib/sheets/registry';
+import {
+  STAFF_MEETING_INFO_TABLE,
+  STAFF_MEETING_ITEM_TABLE,
+  STAFF_MEETING_TEAM_ORDER_TABLE,
+  STAFF_MEETING_VALUE_TABLE,
+} from '@/lib/sheets/registry';
 import { getSystemSettings } from '@/lib/mutate/settings';
-import { jandiPost } from '@/lib/notify/jandi';
+import { jandiPostRich } from '@/lib/notify/jandi';
 
 // 매달 크게 안 바뀌는 값이라 기본값으로 미리 채워두고, 담당자가 그대로 두거나 고쳐서 저장한다
 // (회계 전월이월 추천값과 같은 결 — 잠긴 값 아님).
@@ -94,6 +99,29 @@ export async function moveStaffMeetingItem(팀명: string, id: string, direction
   await updateKeyedRecord(
     STAFF_MEETING_ITEM_TABLE, { id: b.id },
     { id: b.id, 팀명: b.팀명, 사업구분: b.사업구분, 정렬순서: String(a.정렬순서) }
+  );
+}
+
+// 발표모드 팀 순서 — 저장된 순서가 있는 팀은 그 순서대로, 아직 순서를 정하지 않은 팀은
+// 팀목록(심플리스트) 순서 그대로 뒤에 이어붙인다.
+export async function getOrderedStaffMeetingTeams(teams: string[]): Promise<string[]> {
+  const rows = await getKeyedList(STAFF_MEETING_TEAM_ORDER_TABLE);
+  const orderMap = new Map(rows.map((r) => [r.팀명, num(r.순서)]));
+  const known = teams.filter((t) => orderMap.has(t)).sort((a, b) => orderMap.get(a)! - orderMap.get(b)!);
+  const unknown = teams.filter((t) => !orderMap.has(t));
+  return [...known, ...unknown];
+}
+
+export async function moveStaffMeetingTeamOrder(teams: string[], 팀명: string, direction: 'up' | 'down'): Promise<void> {
+  const ordered = await getOrderedStaffMeetingTeams(teams);
+  const idx = ordered.indexOf(팀명);
+  const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (idx < 0 || swapIdx < 0 || swapIdx >= ordered.length) return;
+  const next = [...ordered];
+  [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+  await upsertKeyedRecords(
+    STAFF_MEETING_TEAM_ORDER_TABLE,
+    next.map((t, i) => ({ keyValues: { 팀명: t }, record: { 팀명: t, 순서: String(i + 1) } }))
   );
 }
 
@@ -221,24 +249,38 @@ function nowTimestamp(): string {
   return new Date().toISOString().slice(0, 19).replace('T', ' ');
 }
 
-// 잔디 알림 화면에 기본으로 채워주는 문구 — 그대로 보내도 되고 고쳐서 보내도 된다.
-export function buildStaffMeetingNotificationMessage(ym: string, info: StaffMeetingInfo): string {
-  return [
-    `📢 ${ym} 전체회의 안내`,
-    info.회의일시 ? `일시: ${info.회의일시.replace('T', ' ')}` : '',
-    info.장소 ? `장소: ${info.장소}` : '',
-    info.진행 ? `진행: ${info.진행}` : '',
-    info.참석부서 ? `참석부서: ${info.참석부서}` : '',
-    '업무포털 > 업무관리 > 전체회의자료에서 자료 준비 부탁드립니다.',
-  ].filter(Boolean).join('\n');
+const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
+
+export function formatMeetingDateTime(dt: string): string {
+  if (!dt) return '';
+  const d = new Date(dt);
+  if (Number.isNaN(d.getTime())) return dt;
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일(${WEEKDAY[d.getDay()]}) ${hh}:${mm}`;
+}
+
+// 잔디 알림 화면에 제목/내용을 따로 기본값으로 채워주고, 담당자가 그대로 두거나 고쳐서 보낸다.
+export function buildStaffMeetingNotificationTitle(ym: string): string {
+  return `${ymLabel(ym)} 전체회의 안내`;
+}
+
+// 회의록 작성 마감일은 저장해둔 값이 없어 자동으로 채울 수 없으므로 빈칸으로 남겨 담당자가 직접 적는다.
+export function buildStaffMeetingNotificationContent(info: StaffMeetingInfo): string {
+  const lines = ['직원 전체 월례회의 일정을 안내합니다.', ''];
+  if (info.회의일시) lines.push(` - 일시 : ${formatMeetingDateTime(info.회의일시)}`);
+  if (info.장소) lines.push(` - 장소 : ${info.장소}`);
+  lines.push('', '전체회의록 작성은  까지 작성부탁드립니다.');
+  return lines.join('\n');
 }
 
 // "잔디 알림 보내기" 버튼을 누르면 즉시 호출 — 예약/크론 없이 그 자리에서 바로 발송한다.
-// message: 화면에서 기본 문구를 고쳐 썼을 수도 있으므로 그대로 전달받아 보낸다.
-export async function sendStaffMeetingNotification(ym: string, message: string): Promise<void> {
+// title/content: 화면에서 기본 문구를 고쳐 썼을 수도 있으므로 그대로 전달받아 보낸다.
+// 제목+본문을 하나로 합쳐서 보내면 잔디가 통째로 한 줄 미리보기로 뭉개버려서 따로 보낸다.
+export async function sendStaffMeetingNotification(ym: string, title: string, content: string): Promise<void> {
   const [info, settings] = await Promise.all([getStaffMeetingInfo(ym), getSystemSettings()]);
 
-  await jandiPost(settings.staffMeetingJandiWebhook, message);
+  await jandiPostRich(settings.staffMeetingJandiWebhook, title, content);
   await upsertKeyedRecord(
     STAFF_MEETING_INFO_TABLE,
     { 년월: ym },

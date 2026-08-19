@@ -473,3 +473,14 @@ export const STAFF_MEETING_INFO_TABLE: KeyedTableConfig = {
   headers: STAFF_MEETING_INFO_HEADERS,
   primaryKey: '년월',
 };
+
+// 발표모드에서 팀이 보여지는 순서 — 설정 > 팀목록(심플리스트)의 순서와는 별개로 관리한다
+// (예: 총무팀이 팀목록에선 앞이지만 발표는 맨 마지막이어야 하는 경우).
+export const STAFF_MEETING_TEAM_ORDER_HEADERS = ['팀명', '순서'];
+
+export const STAFF_MEETING_TEAM_ORDER_TABLE: KeyedTableConfig = {
+  spreadsheetId: STAFF_MEETING_SHEET_ID,
+  sheetName: '전체회의발표순서',
+  headers: STAFF_MEETING_TEAM_ORDER_HEADERS,
+  primaryKey: '팀명',
+};

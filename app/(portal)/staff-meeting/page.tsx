@@ -4,10 +4,13 @@ import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import EntryClient from '@/components/staffMeeting/EntryClient';
 import ItemManageModal from '@/components/staffMeeting/ItemManageModal';
+import TeamOrderModal from '@/components/staffMeeting/TeamOrderModal';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import {
-  buildStaffMeetingNotificationMessage,
+  buildStaffMeetingNotificationContent,
+  buildStaffMeetingNotificationTitle,
+  getOrderedStaffMeetingTeams,
   getStaffMeetingInfo,
   getStaffMeetingItems,
   getStaffMeetingValues,
@@ -53,6 +56,7 @@ export default async function StaffMeetingPage({
   const items = 팀명 ? await getStaffMeetingItems(팀명) : [];
   const values = await getStaffMeetingValues(items.map((i) => i.id));
   const meetingInfo = await getStaffMeetingInfo(ym);
+  const orderedTeams = await getOrderedStaffMeetingTeams(teams);
 
   const rows = items.map((i) => {
     const v = valueFor(values, i.id, ym);
@@ -71,12 +75,6 @@ export default async function StaffMeetingPage({
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className={h1}>업무관리 &gt; 전체회의자료</h1>
         <div className="flex gap-2">
-          <Link
-            href={`/staff-meeting/view?team=${encodeURIComponent(팀명)}&ym=${ym}`}
-            className={btnOutline}
-          >
-            보기 전용 화면
-          </Link>
           <Link href={`/staff-meeting/present?ym=${ym}`} className={btnOutline}>발표 모드</Link>
         </div>
       </div>
@@ -135,17 +133,21 @@ export default async function StaffMeetingPage({
           <form action={sendStaffMeetingNotificationAction}>
             <input type="hidden" name="년월" value={ym} />
             <label className={label}>
-              잔디로 보낼 문구(수정 가능)
+              제목
+              <input name="제목" defaultValue={buildStaffMeetingNotificationTitle(ym)} className={input} />
+            </label>
+            <label className={`${label} mt-3`}>
+              내용
               <textarea
-                name="메시지"
-                rows={5}
-                defaultValue={buildStaffMeetingNotificationMessage(ym, meetingInfo)}
+                name="내용"
+                rows={7}
+                defaultValue={buildStaffMeetingNotificationContent(meetingInfo)}
                 className={`${input} whitespace-pre-wrap`}
               />
             </label>
             <div className="mt-2 flex items-center gap-3">
               <ConfirmSubmitButton
-                confirmMessage="위 문구로 잔디 공용 채널에 지금 바로 보낼까요?"
+                confirmMessage="위 제목/내용으로 잔디 공용 채널에 지금 바로 보낼까요?"
                 className={btnSecondary}
               >
                 잔디 알림 보내기
@@ -157,6 +159,8 @@ export default async function StaffMeetingPage({
           </form>
         </div>
       </div>
+
+      <TeamOrderModal teams={orderedTeams} />
 
       {!팀명 ? (
         <div className={card}>설정 &gt; 팀 / 직급 / 결재라인 화면에서 팀을 먼저 등록해주세요.</div>

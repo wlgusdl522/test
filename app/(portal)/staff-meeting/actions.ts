@@ -2,10 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 import { getViewerStaffRecord, requireViewerEmail } from '@/lib/auth-helpers';
+import { getSimpleList } from '@/lib/mutate/simpleList';
+import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import {
   addStaffMeetingItem,
   deleteStaffMeetingItem,
   moveStaffMeetingItem,
+  moveStaffMeetingTeamOrder,
   sendStaffMeetingNotification,
   setStaffMeetingInfo,
   setStaffMeetingValues,
@@ -30,6 +33,17 @@ export async function moveStaffMeetingItemAction(formData: FormData) {
   revalidatePath('/staff-meeting');
 }
 
+export async function moveStaffMeetingTeamOrderAction(formData: FormData) {
+  const teams = await getSimpleList(TEAM_LIST_SHEET_NAME);
+  await moveStaffMeetingTeamOrder(
+    teams,
+    String(formData.get('팀명') ?? ''),
+    formData.get('direction') === 'up' ? 'up' : 'down'
+  );
+  revalidatePath('/staff-meeting');
+  revalidatePath('/staff-meeting/present');
+}
+
 export async function saveStaffMeetingInfoAction(formData: FormData) {
   const ym = String(formData.get('년월') ?? '');
   await setStaffMeetingInfo(ym, {
@@ -41,14 +55,14 @@ export async function saveStaffMeetingInfoAction(formData: FormData) {
     업무계획기간: String(formData.get('업무계획기간') ?? ''),
   });
   revalidatePath('/staff-meeting');
-  revalidatePath('/staff-meeting/view');
   revalidatePath('/staff-meeting/present');
 }
 
 export async function sendStaffMeetingNotificationAction(formData: FormData) {
   const ym = String(formData.get('년월') ?? '');
-  const message = String(formData.get('메시지') ?? '');
-  await sendStaffMeetingNotification(ym, message);
+  const 제목 = String(formData.get('제목') ?? '');
+  const 내용 = String(formData.get('내용') ?? '');
+  await sendStaffMeetingNotification(ym, 제목, 내용);
   revalidatePath('/staff-meeting');
 }
 
@@ -61,5 +75,4 @@ export async function submitStaffMeetingValuesAction(
   const me = await getViewerStaffRecord();
   await setStaffMeetingValues(팀명, ym, entries, email, me?.성명 ?? '');
   revalidatePath('/staff-meeting');
-  revalidatePath('/staff-meeting/view');
 }
