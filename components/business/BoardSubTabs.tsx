@@ -13,8 +13,10 @@ const SUB_TABS = [
 ];
 
 // "이사회자료" 최상단 탭 안에서만 쓰는 하위 탭 — 분기실적보고는 이 탭바에 속하지 않는다.
-export default async function BoardSubTabs() {
+// ym을 넘기면 탭 링크마다 그대로 붙여서, 한 탭에서 고른 조회월이 다른 탭으로 넘어가도 유지된다
+// (안 넘기면 각 페이지가 기본값인 이번 달로 새로 시작).
+export default async function BoardSubTabs({ ym }: { ym?: string } = {}) {
   const checks = await Promise.all(SUB_TABS.map((t) => hasPageAccess(t.pageId)));
   const visible = SUB_TABS.filter((_, i) => checks[i]).map(({ href, label }) => ({ href, label }));
-  return <BoardSubTabsClient tabs={visible} />;
+  return <BoardSubTabsClient tabs={visible} ym={ym} />;
 }
