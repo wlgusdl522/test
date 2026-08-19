@@ -21,6 +21,7 @@ export async function saveSystemSettingsAction(formData: FormData) {
     certificateApproverEmail: String(formData.get('certificateApproverEmail') ?? ''),
     certificateClerkEmail: String(formData.get('certificateClerkEmail') ?? ''),
     certificateSealImageUrl: current.certificateSealImageUrl,
+    staffMeetingJandiWebhook: String(formData.get('staffMeetingJandiWebhook') ?? ''),
   });
   revalidatePath('/settings/system');
 }

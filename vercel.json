@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/cron/staff-meeting-notify", "schedule": "0 0 * * *" }
+  ]
+}

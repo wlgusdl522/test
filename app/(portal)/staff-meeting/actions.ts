@@ -6,6 +6,7 @@ import {
   addStaffMeetingItem,
   deleteStaffMeetingItem,
   moveStaffMeetingItem,
+  setStaffMeetingInfo,
   setStaffMeetingValues,
 } from '@/lib/mutate/staffMeeting';
 
@@ -26,6 +27,19 @@ export async function moveStaffMeetingItemAction(formData: FormData) {
     formData.get('direction') === 'up' ? 'up' : 'down'
   );
   revalidatePath('/staff-meeting');
+}
+
+export async function saveStaffMeetingInfoAction(formData: FormData) {
+  const ym = String(formData.get('년월') ?? '');
+  await setStaffMeetingInfo(ym, {
+    회의일시: String(formData.get('회의일시') ?? ''),
+    장소: String(formData.get('장소') ?? ''),
+    진행: String(formData.get('진행') ?? ''),
+    참석부서: String(formData.get('참석부서') ?? ''),
+    알림일수전: Number(formData.get('알림일수전') ?? 2),
+  });
+  revalidatePath('/staff-meeting');
+  revalidatePath('/staff-meeting/present');
 }
 
 export async function submitStaffMeetingValuesAction(

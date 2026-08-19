@@ -5,9 +5,10 @@ import {
   deleteKeyedRecords,
   getKeyedList,
   updateKeyedRecord,
+  upsertKeyedRecord,
   upsertKeyedRecords,
 } from '@/lib/mutate/keyedTable';
-import { STAFF_MEETING_ITEM_TABLE, STAFF_MEETING_VALUE_TABLE } from '@/lib/sheets/registry';
+import { STAFF_MEETING_INFO_TABLE, STAFF_MEETING_ITEM_TABLE, STAFF_MEETING_VALUE_TABLE } from '@/lib/sheets/registry';
 
 // 전체회의자료 — 팀별로 사업구분(고정 목록)마다 이번달 업무보고/다음달 업무계획/타 부서 협조사항을
 // 매달 입력한다. 원래 구글슬라이드로 팀별 한 장씩 만들던 것을 그대로 포털로 옮긴 것.
@@ -147,4 +148,82 @@ export async function setStaffMeetingValues(
 
   if (toDelete.length > 0) await deleteKeyedRecords(STAFF_MEETING_VALUE_TABLE, toDelete);
   if (toUpsert.length > 0) await upsertKeyedRecords(STAFF_MEETING_VALUE_TABLE, toUpsert);
+}
+
+// 회의 자체의 메타정보(일시/장소/진행/참석부서) — 서무가 매달 등록. 알림일수전은 담당자가
+// 직접 지정(기본 2일 전), 알림발송일시는 크론이 보낸 뒤 채워서 같은 날 중복 발송을 막는 용도.
+export type StaffMeetingInfo = {
+  년월: string;
+  회의일시: string;
+  장소: string;
+  진행: string;
+  참석부서: string;
+  알림일수전: number;
+  알림발송일시: string;
+};
+
+export async function getStaffMeetingInfo(ym: string): Promise<StaffMeetingInfo> {
+  const rows = await getKeyedList(STAFF_MEETING_INFO_TABLE);
+  const found = rows.find((r) => r.년월 === ym);
+  return {
+    년월: ym,
+    회의일시: found?.회의일시 ?? '',
+    장소: found?.장소 ?? '',
+    진행: found?.진행 ?? '',
+    참석부서: found?.참석부서 ?? '',
+    알림일수전: found?.알림일수전 ? num(found.알림일수전) : 2,
+    알림발송일시: found?.알림발송일시 ?? '',
+  };
+}
+
+export async function getAllStaffMeetingInfo(): Promise<StaffMeetingInfo[]> {
+  const rows = await getKeyedList(STAFF_MEETING_INFO_TABLE);
+  return rows
+    .filter((r) => r.년월)
+    .map((r) => ({
+      년월: r.년월,
+      회의일시: r.회의일시,
+      장소: r.장소,
+      진행: r.진행,
+      참석부서: r.참석부서,
+      알림일수전: r.알림일수전 ? num(r.알림일수전) : 2,
+      알림발송일시: r.알림발송일시 ?? '',
+    }));
+}
+
+export async function setStaffMeetingInfo(
+  ym: string,
+  fields: { 회의일시: string; 장소: string; 진행: string; 참석부서: string; 알림일수전: number }
+): Promise<void> {
+  // 회의일시가 바뀌면 알림을 다시 보낼 수 있어야 하므로 알림발송일시는 여기서 초기화한다.
+  await upsertKeyedRecord(
+    STAFF_MEETING_INFO_TABLE,
+    { 년월: ym },
+    {
+      년월: ym,
+      회의일시: fields.회의일시.trim(),
+      장소: fields.장소.trim(),
+      진행: fields.진행.trim(),
+      참석부서: fields.참석부서.trim(),
+      알림일수전: String(fields.알림일수전 || 2),
+      알림발송일시: '',
+    }
+  );
+}
+
+// 크론(잔디 알림)에서만 쓴다 — 알림을 실제로 보낸 뒤 발송 시각을 기록해 같은 날 중복 발송을 막는다.
+export async function markStaffMeetingNotified(ym: string, info: StaffMeetingInfo, timestamp: string): Promise<void> {
+  await upsertKeyedRecord(
+    STAFF_MEETING_INFO_TABLE,
+    { 년월: ym },
+    {
+      년월: ym,
+      회의일시: info.회의일시,
+      장소: info.장소,
+      진행: info.진행,
+      참석부서: info.참석부서,
+      알림일수전: String(info.알림일수전),
+      알림발송일시: timestamp,
+    }
+  );
 }

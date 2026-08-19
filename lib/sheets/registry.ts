@@ -457,3 +457,16 @@ export const STAFF_MEETING_VALUE_TABLE: KeyedTableConfig = {
   headers: STAFF_MEETING_VALUE_HEADERS,
   primaryKey: ['사업구분ID', '팀명', '년월'],
 };
+
+// 회의 자체의 메타정보(일시/장소/진행/참석부서) — 서무가 매달 회의 일정에 맞게 등록한다.
+// 알림발송일시: 크론이 잔디 알림을 보낸 뒤 채워서 같은 날 중복 발송을 막는다(맨 뒤에 추가).
+export const STAFF_MEETING_INFO_HEADERS = [
+  '년월', '회의일시', '장소', '진행', '참석부서', '알림일수전', '알림발송일시',
+];
+
+export const STAFF_MEETING_INFO_TABLE: KeyedTableConfig = {
+  spreadsheetId: STAFF_MEETING_SHEET_ID,
+  sheetName: '전체회의정보',
+  headers: STAFF_MEETING_INFO_HEADERS,
+  primaryKey: '년월',
+};
