@@ -5,6 +5,7 @@ import PageAccessDenied from '@/components/PageAccessDenied';
 import EntryClient from '@/components/staffMeeting/EntryClient';
 import FormToggle from '@/components/FormToggle';
 import MeetingSettingsMenu from '@/components/staffMeeting/MeetingSettingsMenu';
+import StaffMeetingInfoSection from '@/components/staffMeeting/StaffMeetingInfoSection';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import {
@@ -38,11 +39,12 @@ export default async function StaffMeetingPage({
 }) {
   if (!(await hasPageAccess('staff-meeting'))) return <PageAccessDenied />;
 
-  const [teams, me, cookieCtx, canSendNotification] = await Promise.all([
+  const [teams, me, cookieCtx, canSendNotification, canEditInfo] = await Promise.all([
     getSimpleList(TEAM_LIST_SHEET_NAME),
     getViewerStaffRecord(),
     getStaffMeetingContext(),
     canSendStaffMeetingNotification(),
+    canEditStaffMeetingInfo(),
   ]);
   const { team: teamParam, ym: ymParam } = await searchParams;
   const myTeam = me?.소속팀 ?? '';
@@ -123,7 +125,23 @@ export default async function StaffMeetingPage({
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">조회월</label>
         <input type="month" name="ym" defaultValue={ym} className={`${inputBase} w-auto`} />
         <SubmitButton className={btnOutline} pendingLabel="조회 중...">조회</SubmitButton>
+        <StaffMeetingInfoSection ym={ym} meta={meetingInfo} canEdit={canEditInfo} />
       </form>
+
+      <div className="mb-6 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-900">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <div className="text-zinc-600 dark:text-zinc-400 font-medium">회의일시</div>
+            <div className="text-zinc-900 dark:text-zinc-100">
+              {meetingInfo.회의일시 || '미설정'}
+            </div>
+          </div>
+          <div>
+            <div className="text-zinc-600 dark:text-zinc-400 font-medium">회의장소</div>
+            <div className="text-zinc-900 dark:text-zinc-100">{meetingInfo.장소 || '미설정'}</div>
+          </div>
+        </div>
+      </div>
 
       {!팀명 ? (
         <div className={card}>설정 &gt; 팀 / 직급 / 결재라인 화면에서 팀을 먼저 등록해주세요.</div>
