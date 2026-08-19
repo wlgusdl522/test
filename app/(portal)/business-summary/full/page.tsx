@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import BoardSubTabs from '@/components/business/BoardSubTabs';
+import CleanTableCopy from '@/components/business/full/CleanTableCopy';
 import FullReportBody from '@/components/business/full/FullReportBody';
 import { getFullBoardReportData } from '@/lib/mutate/boardFullReport';
 import { btnOutline, btnSecondary, card, inputBase } from '@/lib/ui';
@@ -40,6 +41,7 @@ export default async function BusinessSummaryFullPage({
       <p className="mb-3 text-xs text-zinc-400">
         각 탭에서 입력한 내용을 한 화면에 모아 보여줍니다(읽기 전용). 수정은 각 탭에서 해주세요.
       </p>
+      <CleanTableCopy containerId="full-report-body" />
       <div className={card}>
         <div id="full-report-body">
           <FullReportBody data={data} />
