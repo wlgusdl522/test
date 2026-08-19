@@ -1,8 +1,8 @@
 import { randomUUID } from 'crypto';
 import { getKeyedList } from '@/lib/mutate/keyedTable';
-import { appendRecord, deleteRecord, getAllRecords, updateRecord } from '@/lib/sheets/keyedTable';
+import { appendRecord, deleteRecord, updateRecord } from '@/lib/sheets/keyedTable';
 import { ITEM_CHECK_REPORT_TABLE } from '@/lib/sheets/registry';
-import { mirrorKeyedTableToSupabase } from '@/lib/supabase/keyedTable';
+import { deleteRowsFromSupabase, upsertRowsToSupabase } from '@/lib/supabase/keyedTable';
 import {
   ApprovalPermissionError,
   applyApprovalAction,
@@ -16,6 +16,8 @@ import { notifyJandiPersonal } from '@/lib/notify/jandi';
 import { isAdminEmail, requireViewerEmail } from '@/lib/auth-helpers';
 import { recomputeCardLedgerStatus } from '@/lib/mutate/cardLedger';
 import { parseAmount } from '@/lib/format';
+
+const SUPABASE_CONFIG = { tableName: ITEM_CHECK_REPORT_TABLE.sheetName, primaryKey: ITEM_CHECK_REPORT_TABLE.primaryKey };
 
 function nowTimestamp(): string {
   return new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -112,14 +114,11 @@ function buildSubmitMessage(decorated: DecoratedReport): string {
   );
 }
 
-// appendRecord/updateRecord/deleteRecord는 시트에만 쓰므로, 미러링 대상은 Supabase를
-// 먼저 보는 getKeyedList가 아니라 시트에서 바로 다시 읽어야 방금 쓴 변경이 반영된다.
-async function afterWrite(): Promise<DecoratedReport[]> {
-  const raw = await getAllRecords(ITEM_CHECK_REPORT_TABLE);
-  await mirrorKeyedTableToSupabase(
-    { tableName: ITEM_CHECK_REPORT_TABLE.sheetName, primaryKey: ITEM_CHECK_REPORT_TABLE.primaryKey },
-    raw
-  );
+// 시트 저장은 필수로 두고, Supabase 반영은 "테이블 전체 재복제" 대신 "방금 쓴 행만 upsert"로 한다 —
+// 카드사용대장에서 겪은 것과 같은 문제(다른 행/새 컬럼 문제로 전체 재복제가 실패하면 방금 쓴 것까지
+// 화면에서 안 보이는 것)를 막기 위해서다.
+async function afterWrite(record: Record<string, string>): Promise<DecoratedReport[]> {
+  await upsertRowsToSupabase(SUPABASE_CONFIG, [record]);
   return getItemCheckReportList();
 }
 
@@ -171,7 +170,7 @@ export async function addItemCheckReport(payload: Record<string, string>): Promi
     const decorated = decorate(record, staffList, settings);
     await notifyJandiPersonal(decorated.현재결재자이메일, staffList, buildSubmitMessage(decorated), settings.itemCheckReportJandiWebhook);
   }
-  const result = await afterWrite();
+  const result = await afterWrite(record);
   await recomputeCardLedgerStatus(record['카드사용대장ID']);
   return result;
 }
@@ -203,13 +202,14 @@ export async function updateItemCheckReport(id: string, payload: Record<string, 
     const decorated = decorate(record, staffList, settings);
     await notifyJandiPersonal(decorated.현재결재자이메일, staffList, buildSubmitMessage(decorated), settings.itemCheckReportJandiWebhook);
   }
-  return afterWrite();
+  return afterWrite(record);
 }
 
 export async function deleteItemCheckReport(id: string): Promise<DecoratedReport[]> {
   const existing = (await getKeyedList(ITEM_CHECK_REPORT_TABLE)).find((r) => r.id === id);
   await deleteRecord(ITEM_CHECK_REPORT_TABLE, { id });
-  const result = await afterWrite();
+  await deleteRowsFromSupabase(SUPABASE_CONFIG, [{ id }]);
+  const result = await getItemCheckReportList();
   if (existing) await recomputeCardLedgerStatus(existing['카드사용대장ID']);
   return result;
 }
@@ -261,10 +261,7 @@ export async function actOnItemCheckReport(id: string, action: '승인' | '반�
     record['비품등록번호'] = assetNo.trim();
   }
   await updateRecord(ITEM_CHECK_REPORT_TABLE, { id }, record);
-  await mirrorKeyedTableToSupabase(
-    { tableName: ITEM_CHECK_REPORT_TABLE.sheetName, primaryKey: ITEM_CHECK_REPORT_TABLE.primaryKey },
-    await getAllRecords(ITEM_CHECK_REPORT_TABLE)
-  );
+  await upsertRowsToSupabase(SUPABASE_CONFIG, [record]);
 
   const redecorated = decorate(record, staffList, settings);
   await notifyJandiPersonal(
@@ -280,9 +277,7 @@ export async function setItemCheckReportPrinted(id: string, printed: boolean): P
   const existing = (await getKeyedList(ITEM_CHECK_REPORT_TABLE)).find((r) => r.id === id);
   if (!existing) throw new Error('조서를 찾을 수 없습니다.');
   const value = printed ? nowTimestamp() : '';
-  await updateRecord(ITEM_CHECK_REPORT_TABLE, { id }, { ...existing, 인쇄일시: value });
-  await mirrorKeyedTableToSupabase(
-    { tableName: ITEM_CHECK_REPORT_TABLE.sheetName, primaryKey: ITEM_CHECK_REPORT_TABLE.primaryKey },
-    await getAllRecords(ITEM_CHECK_REPORT_TABLE)
-  );
+  const record = { ...existing, 인쇄일시: value };
+  await updateRecord(ITEM_CHECK_REPORT_TABLE, { id }, record);
+  await upsertRowsToSupabase(SUPABASE_CONFIG, [record]);
 }

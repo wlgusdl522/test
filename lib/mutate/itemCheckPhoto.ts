@@ -1,26 +1,25 @@
 import { randomUUID } from 'crypto';
 import { getKeyedList } from '@/lib/mutate/keyedTable';
-import { appendRecord, updateRecord, deleteRecord, getAllRecords } from '@/lib/sheets/keyedTable';
+import { appendRecord, updateRecord, deleteRecord } from '@/lib/sheets/keyedTable';
 import { ITEM_CHECK_PHOTO_SLOTS, ITEM_CHECK_PHOTO_TABLE } from '@/lib/sheets/registry';
-import { mirrorKeyedTableToSupabase } from '@/lib/supabase/keyedTable';
+import { deleteRowsFromSupabase, upsertRowsToSupabase } from '@/lib/supabase/keyedTable';
 import { deleteDriveFileFromUrl, uploadImageDataUrl } from '@/lib/drive/upload';
 import { ITEM_CHECK_PHOTO_FOLDER_ID } from '@/lib/sheets/sheetIds';
 import { requireViewerEmail } from '@/lib/auth-helpers';
 import { recomputeCardLedgerStatus } from '@/lib/mutate/cardLedger';
 
+const SUPABASE_CONFIG = { tableName: ITEM_CHECK_PHOTO_TABLE.sheetName, primaryKey: ITEM_CHECK_PHOTO_TABLE.primaryKey };
+
 function nowTimestamp(): string {
   return new Date().toISOString().slice(0, 19).replace('T', ' ');
 }
 
-// appendRecord/updateRecord/deleteRecord는 시트에만 쓰므로, 미러링 대상은 Supabase를
-// 먼저 보는 getKeyedList가 아니라 시트에서 바로 다시 읽어야 방금 쓴 변경이 반영된다.
-async function afterWrite(): Promise<Record<string, string>[]> {
-  const all = await getAllRecords(ITEM_CHECK_PHOTO_TABLE);
-  await mirrorKeyedTableToSupabase(
-    { tableName: ITEM_CHECK_PHOTO_TABLE.sheetName, primaryKey: ITEM_CHECK_PHOTO_TABLE.primaryKey },
-    all
-  );
-  return all;
+// 시트 저장은 필수로 두고, Supabase 반영은 "테이블 전체 재복제" 대신 "방금 쓴 행만 upsert"로 한다 —
+// 카드사용대장에서 겪은 것과 같은 문제(다른 행/새 컬럼 문제로 전체 재복제가 실패하면 방금 쓴 것까지
+// 화면에서 안 보이는 것)를 막기 위해서다.
+async function afterWrite(record: Record<string, string>): Promise<Record<string, string>[]> {
+  await upsertRowsToSupabase(SUPABASE_CONFIG, [record]);
+  return getItemCheckPhotoList();
 }
 
 export async function getItemCheckPhotoList(): Promise<Record<string, string>[]> {
@@ -65,7 +64,7 @@ export async function saveItemCheckPhoto(
   if (isNew) await appendRecord(ITEM_CHECK_PHOTO_TABLE, record);
   else await updateRecord(ITEM_CHECK_PHOTO_TABLE, { id }, record);
 
-  const result = await afterWrite();
+  const result = await afterWrite(record);
   await recomputeCardLedgerStatus(record['카드사용대장ID']);
   return result;
 }
@@ -77,7 +76,8 @@ export async function deleteItemCheckPhoto(id: string): Promise<Record<string, s
     if (existing[slot]) await deleteDriveFileFromUrl(existing[slot]);
   }
   await deleteRecord(ITEM_CHECK_PHOTO_TABLE, { id });
-  const result = await afterWrite();
+  await deleteRowsFromSupabase(SUPABASE_CONFIG, [{ id }]);
+  const result = await getItemCheckPhotoList();
   await recomputeCardLedgerStatus(existing['카드사용대장ID']);
   return result;
 }
@@ -87,9 +87,7 @@ export async function setItemCheckPhotoPrinted(id: string, printed: boolean): Pr
   const existing = (await getKeyedList(ITEM_CHECK_PHOTO_TABLE)).find((r) => r.id === id);
   if (!existing) throw new Error('검수사진 내역을 찾을 수 없습니다.');
   const value = printed ? nowTimestamp() : '';
-  await updateRecord(ITEM_CHECK_PHOTO_TABLE, { id }, { ...existing, 인쇄일시: value });
-  await mirrorKeyedTableToSupabase(
-    { tableName: ITEM_CHECK_PHOTO_TABLE.sheetName, primaryKey: ITEM_CHECK_PHOTO_TABLE.primaryKey },
-    await getAllRecords(ITEM_CHECK_PHOTO_TABLE)
-  );
+  const record = { ...existing, 인쇄일시: value };
+  await updateRecord(ITEM_CHECK_PHOTO_TABLE, { id }, record);
+  await upsertRowsToSupabase(SUPABASE_CONFIG, [record]);
 }
