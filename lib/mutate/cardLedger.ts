@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { getKeyedList } from '@/lib/mutate/keyedTable';
-import { appendRecord, deleteRecord, getAllRecords, updateRecord, updateRecords } from '@/lib/sheets/keyedTable';
+import { appendRecord, deleteRecord, updateRecord, updateRecords } from '@/lib/sheets/keyedTable';
 import { deleteRowsFromSupabase, upsertRowsToSupabase } from '@/lib/supabase/keyedTable';
 import { CARD_LEDGER_TABLE, ITEM_CHECK_PHOTO_TABLE, ITEM_CHECK_REPORT_TABLE } from '@/lib/sheets/registry';
 import { getSystemSettings } from '@/lib/mutate/settings';
@@ -106,16 +106,19 @@ export async function deleteCardLedgerRecord(id: string): Promise<Record<string,
 
 // 사진/조서 등록·삭제 직후 호출 — 필요 조건(사진 항상, 조서는 금액기준)이 다 채워졌는지 다시 계산해서
 // 카드사용대장 자체의 상태를 검수대기 ⇄ 검수완료로 맞춘다. 인쇄완료(잠금) 상태는 회계만 바꿀 수 있으므로 건드리지 않는다.
+// 호출 시점엔 이미 (카드사용대장/사진/조서) 방금 쓴 행이 건별 upsert로 Supabase에 반영된 뒤이므로,
+// 시트를 통째로 다시 읽는 getAllRecords 대신 훨씬 가벼운 getKeyedList(Supabase 우선)로 읽는다 —
+// 카드사용대장처럼 행이 많은 시트에서 사진/조서 하나 저장할 때마다 매번 전체를 읽어오면 느려진다.
 export async function recomputeCardLedgerStatus(ledgerId: string): Promise<void> {
   if (!ledgerId) return;
-  const all = await getAllRecords(CARD_LEDGER_TABLE);
+  const all = await getKeyedList(CARD_LEDGER_TABLE);
   const ledger = all.find((r) => r.id === ledgerId);
   if (!ledger) return;
   if (ledger['상태'] === CARD_LEDGER_STATUS.PRINTED || ledger['검수불요여부'] === 'Y') return;
 
   const [photos, reports, settings] = await Promise.all([
-    getAllRecords(ITEM_CHECK_PHOTO_TABLE),
-    getAllRecords(ITEM_CHECK_REPORT_TABLE),
+    getKeyedList(ITEM_CHECK_PHOTO_TABLE),
+    getKeyedList(ITEM_CHECK_REPORT_TABLE),
     getSystemSettings(),
   ]);
   const hasPhoto = photos.some((p) => p['카드사용대장ID'] === ledgerId);
