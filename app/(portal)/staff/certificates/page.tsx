@@ -44,11 +44,11 @@ function tabClass(active: boolean) {
 export default async function CertificatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; resend?: string; reason?: string }>;
 }) {
   const canManage = await canViewCertificateLog();
   const viewerEmail = await requireViewerEmail();
-  const { tab } = await searchParams;
+  const { tab, resend, reason } = await searchParams;
   const activeTab = tab === 'manage' || tab === 'process'
     ? (canManage ? tab : 'apply')
     : tab === 'award-output' ? tab : 'apply';
@@ -81,6 +81,17 @@ export default async function CertificatesPage({
           </>
         )}
       </div>
+
+      {resend === 'ok' && (
+        <p className="mb-4 rounded-lg bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+          메일을 다시 보냈습니다.
+        </p>
+      )}
+      {resend === 'fail' && (
+        <p className="mb-4 rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-400">
+          메일 발송 실패: {reason || '알 수 없는 오류'}
+        </p>
+      )}
 
       {activeTab === 'apply' && (
         <CertificateApplyWizard

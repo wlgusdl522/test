@@ -460,9 +460,9 @@ export const STAFF_MEETING_VALUE_TABLE: KeyedTableConfig = {
 };
 
 // 회의 자체의 메타정보(일시/장소/진행/참석부서) — 서무가 매달 회의 일정에 맞게 등록한다.
-// 알림발송일시: 크론이 잔디 알림을 보낸 뒤 채워서 같은 날 중복 발송을 막는다(맨 뒤에 추가).
+// 알림발송일시: "잔디 알림 보내기" 버튼을 누른 마지막 시각(참고용 표시일 뿐 재발송을 막지 않음).
 export const STAFF_MEETING_INFO_HEADERS = [
-  '년월', '회의일시', '장소', '진행', '참석부서', '알림일수전', '알림발송일시',
+  '년월', '회의일시', '장소', '진행', '참석부서', '알림발송일시',
 ];
 
 export const STAFF_MEETING_INFO_TABLE: KeyedTableConfig = {
