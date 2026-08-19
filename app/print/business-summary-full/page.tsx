@@ -34,7 +34,7 @@ export default async function BusinessSummaryFullPrintPage({
         </form>
         <PrintButton />
         <CopyPlanTableButton targetId="full-report-body" />
-        <a href={`/api/board-full-report-hwpx?ym=${ym}`} className={btnSecondary}>hwpx 다운로드</a>
+        <a href={`/api/board-full-report-hwpx?ym=${ym}`} download={`이사회자료_${ym}.hwpx`} className={btnSecondary}>hwpx 다운로드</a>
       </div>
 
       <div className="bg-white dark:bg-zinc-900">
