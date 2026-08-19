@@ -2,6 +2,7 @@ import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import PrintButton from '@/components/print/PrintButton';
 import CopyPlanTableButton from '@/components/business/CopyPlanTableButton';
+import CleanTableCopy from '@/components/business/full/CleanTableCopy';
 import FullReportBody from '@/components/business/full/FullReportBody';
 import { getFullBoardReportData } from '@/lib/mutate/boardFullReport';
 import { btnSecondary, card, inputBase } from '@/lib/ui';
@@ -36,6 +37,7 @@ export default async function BusinessSummaryFullPrintPage({
         <CopyPlanTableButton targetId="full-report-body" mode="text" className={btnSecondary} />
       </div>
 
+      <CleanTableCopy containerId="full-report-body" />
       <div className="bg-white dark:bg-zinc-900">
         <div id="full-report-body">
           <FullReportBody data={data} />
