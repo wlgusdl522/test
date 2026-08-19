@@ -12,6 +12,8 @@ const TEAM_TITLE_FONT_SIZE = 44;
 const TEAM_TITLE_MARGIN_BOTTOM = 20;
 // 표 테두리/여백/측정 오차를 흡수하는 여유분 — 이만큼 빼고 채워야 실제로 스크롤 없이 꽉 찬다.
 const SAFETY_MARGIN = 48;
+// 내용이 짧아 화면에 여유가 많이 남아도, 한 페이지에는 최대 이 개수까지만 보여준다.
+const MAX_ROWS_PER_PAGE = 3;
 
 type Row = { id: string; 사업구분: string; 업무보고: string; 업무계획: string; 협조사항: string };
 type Section = { team: string; rows: Row[] };
@@ -42,7 +44,7 @@ function TeamTable({ team, rows, reportLabel, planLabel }: { team: string; rows:
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
-                <td className={`${td} whitespace-nowrap font-semibold align-top`}>{r.사업구분}</td>
+                <td className={`${td} whitespace-pre-wrap font-semibold align-top`}>{r.사업구분}</td>
                 <td className={`${td} align-top whitespace-pre-wrap`}>{r.업무보고}</td>
                 <td className={`${td} align-top whitespace-pre-wrap`}>{r.업무계획}</td>
                 <td className={`${td} align-top whitespace-pre-wrap`}>{r.협조사항}</td>
@@ -102,7 +104,7 @@ export default function PresentClient({
       let currentHeight = 0;
       section.rows.forEach((row, i) => {
         const h = rowEls[i]?.offsetHeight ?? 0;
-        if (current.length > 0 && currentHeight + h > available) {
+        if (current.length > 0 && (current.length >= MAX_ROWS_PER_PAGE || currentHeight + h > available)) {
           groups.push({ team: section.team, rows: current });
           current = [];
           currentHeight = 0;
@@ -163,9 +165,11 @@ export default function PresentClient({
   const current = clampedIndex === 0 ? null : pageGroups?.[clampedIndex - 1];
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-zinc-950">
-      {/* 실제 화면과 같은 너비로 숨겨서 렌더링해 각 팀 제목/표 머리글/행의 실제 높이를 잰다. */}
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
+    <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-white dark:bg-zinc-950">
+      {/* 실제 화면과 같은 너비로 숨겨서 렌더링해 각 팀 제목/표 머리글/행의 실제 높이를 잰다.
+          overflow:hidden으로 감싸서, 측정용 사본이 아무리 넓어져도 실제 화면 가로 스크롤에
+          영향을 주지 않게 한다. */}
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: 0, overflow: 'hidden', visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
         <div className="px-10">
           {sections.map((section) => (
             <div key={section.team}>
@@ -199,7 +203,7 @@ export default function PresentClient({
                         arr[i] = el;
                       }}
                     >
-                      <td className={`${td} whitespace-nowrap font-semibold align-top`}>{r.사업구분}</td>
+                      <td className={`${td} whitespace-pre-wrap font-semibold align-top`}>{r.사업구분}</td>
                       <td className={`${td} align-top whitespace-pre-wrap`}>{r.업무보고}</td>
                       <td className={`${td} align-top whitespace-pre-wrap`}>{r.업무계획}</td>
                       <td className={`${td} align-top whitespace-pre-wrap`}>{r.협조사항}</td>
