@@ -47,14 +47,14 @@ export function cleanCloneNode(node: Node): Node | null {
 
 // 원래 화면에서 flex로 나란히(좌우) 배치했던 표들은 정리 과정에서 감싸던 div가 span으로
 // 낮춰지면서 표 두 개가 사이 구분 없이 바로 붙는다 — 한글은 표 사이에 문단 구분이 없으면
-// 하나의 표로 합쳐버리므로, 표가 연속으로 붙어있으면 그 사이에 빈 문단을 끼워 넣는다.
+// 하나의 표로 합쳐버리므로, 표가 연속으로 붙어있으면 그 사이에 문단(빈 줄)을 끼워 넣는다.
 export function insertTableSeparators(root: Element): void {
   function walk(el: Element) {
     const children = Array.from(el.children);
     for (let i = 0; i < children.length - 1; i++) {
       if (children[i].tagName === 'TABLE' && children[i + 1].tagName === 'TABLE') {
         const sep = document.createElement('p');
-        sep.appendChild(document.createElement('br'));
+        sep.textContent = ' ';
         el.insertBefore(sep, children[i + 1]);
       }
     }
