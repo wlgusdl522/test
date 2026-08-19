@@ -11,6 +11,7 @@ import {
   buildStaffMeetingNotificationContent,
   buildStaffMeetingNotificationTitle,
   canEditStaffMeetingInfo,
+  canSendStaffMeetingNotification,
   getOrderedStaffMeetingTeams,
   getStaffMeetingInfo,
   getStaffMeetingItems,
@@ -37,11 +38,12 @@ export default async function StaffMeetingPage({
 }) {
   if (!(await hasPageAccess('staff-meeting'))) return <PageAccessDenied />;
 
-  const [teams, me, cookieCtx, canEditInfo] = await Promise.all([
+  const [teams, me, cookieCtx, canEditInfo, canSendNotification] = await Promise.all([
     getSimpleList(TEAM_LIST_SHEET_NAME),
     getViewerStaffRecord(),
     getStaffMeetingContext(),
     canEditStaffMeetingInfo(),
+    canSendStaffMeetingNotification(),
   ]);
   const { team: teamParam, ym: ymParam } = await searchParams;
   const myTeam = me?.소속팀 ?? '';
@@ -140,30 +142,32 @@ export default async function StaffMeetingPage({
           }
         />
 
-        <FormToggle label="잔디 알림 보내기" buttonLabel="🟢 잔디 알림 보내기" buttonClassName={btnSuccess} wrapperClassName="">
-          <form action={sendStaffMeetingNotificationAction}>
-            <input type="hidden" name="년월" value={ym} />
-            <label className={label}>
-              제목
-              <input name="제목" defaultValue={buildStaffMeetingNotificationTitle(ym)} className={input} />
-            </label>
-            <label className={`${label} mt-3`}>
-              내용
-              <textarea
-                name="내용"
-                rows={7}
-                defaultValue={buildStaffMeetingNotificationContent(meetingInfo)}
-                className={`${input} whitespace-pre-wrap`}
-              />
-            </label>
-            <div className="mt-4 flex items-center gap-3">
-              <SubmitButton className={btn} pendingLabel="보내는 중...">전송</SubmitButton>
-              {meetingInfo.알림발송일시 && (
-                <span className="text-xs text-zinc-400">마지막 발송: {meetingInfo.알림발송일시}</span>
-              )}
-            </div>
-          </form>
-        </FormToggle>
+        {canSendNotification && (
+          <FormToggle label="잔디 알림 보내기" buttonLabel="🟢 잔디 알림 보내기" buttonClassName={btnSuccess} wrapperClassName="">
+            <form action={sendStaffMeetingNotificationAction}>
+              <input type="hidden" name="년월" value={ym} />
+              <label className={label}>
+                제목
+                <input name="제목" defaultValue={buildStaffMeetingNotificationTitle(ym)} className={input} />
+              </label>
+              <label className={`${label} mt-3`}>
+                내용
+                <textarea
+                  name="내용"
+                  rows={7}
+                  defaultValue={buildStaffMeetingNotificationContent(meetingInfo)}
+                  className={`${input} whitespace-pre-wrap`}
+                />
+              </label>
+              <div className="mt-4 flex items-center gap-3">
+                <SubmitButton className={btn} pendingLabel="보내는 중...">전송</SubmitButton>
+                {meetingInfo.알림발송일시 && (
+                  <span className="text-xs text-zinc-400">마지막 발송: {meetingInfo.알림발송일시}</span>
+                )}
+              </div>
+            </form>
+          </FormToggle>
+        )}
       </div>
 
       {!팀명 ? (

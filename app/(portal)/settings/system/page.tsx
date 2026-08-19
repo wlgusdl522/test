@@ -1,3 +1,4 @@
+import { getActiveStaffList } from '@/lib/mutate/permissions';
 import { getSystemSettings, VEHICLE_LOG_APPROVAL_MODE_ELECTRONIC, VEHICLE_LOG_APPROVAL_MODE_MANUAL } from '@/lib/mutate/settings';
 import { btn, h1, hint, input, label, pageFluid } from '@/lib/ui';
 import { saveCertificateSealAction, saveSystemSettingsAction } from './actions';
@@ -6,7 +7,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export default async function SystemSettingsPage() {
-  const settings = await getSystemSettings();
+  const [settings, staff] = await Promise.all([getSystemSettings(), getActiveStaffList()]);
 
   return (
     <main className={pageFluid}>
@@ -54,9 +55,18 @@ export default async function SystemSettingsPage() {
           <input name="certificateApproverEmail" defaultValue={settings.certificateApproverEmail} className={input} />
         </label>
         <label className={label}>
-          증명서 발급 담당(서무) 이메일
-          <input name="certificateClerkEmail" defaultValue={settings.certificateClerkEmail} className={input} />
+          증명서 발급 담당(서무)
+          <select name="certificateClerkEmail" defaultValue={settings.certificateClerkEmail} className={input}>
+            <option value="">(지정 안 함)</option>
+            {staff.map((s) => (
+              <option key={s.email} value={s.email}>{s.name} ({s.team})</option>
+            ))}
+          </select>
         </label>
+        <p className={`${hint} -mt-2`}>
+          여기서 지정한 서무는 증명서 발급뿐 아니라 전체회의자료 &quot;잔디 알림 보내기&quot;도
+          할 수 있어요(관리자는 항상 가능). 지정 안 하면 제한 없이 누구나 보낼 수 있어요.
+        </p>
         <label className={label}>
           전체회의자료 JANDI 공용 웹훅 (회의 알림)
           <input name="staffMeetingJandiWebhook" defaultValue={settings.staffMeetingJandiWebhook} className={input} />

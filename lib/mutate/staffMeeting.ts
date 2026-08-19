@@ -297,10 +297,23 @@ export function buildStaffMeetingNotificationContent(info: StaffMeetingInfo): st
   return lines.join('\n');
 }
 
+// 관리자는 항상 가능. 설정 > 시스템 설정값에서 지정한 "증명서 발급 담당(서무)"를 그대로
+// 잔디 알림 발송 담당자로 재사용한다 — 지정 안 하면(기본값) 제한 없음.
+export async function canSendStaffMeetingNotification(): Promise<boolean> {
+  const email = await requireViewerEmail();
+  if (await isAdminEmail(email)) return true;
+
+  const settings = await getSystemSettings();
+  const clerkEmail = settings.certificateClerkEmail.trim();
+  if (!clerkEmail) return true;
+  return clerkEmail.toLowerCase() === email.toLowerCase();
+}
+
 // "잔디 알림 보내기" 버튼을 누르면 즉시 호출 — 예약/크론 없이 그 자리에서 바로 발송한다.
 // title/content: 화면에서 기본 문구를 고쳐 썼을 수도 있으므로 그대로 전달받아 보낸다.
 // 제목+본문을 하나로 합쳐서 보내면 잔디가 통째로 한 줄 미리보기로 뭉개버려서 따로 보낸다.
 export async function sendStaffMeetingNotification(ym: string, title: string, content: string): Promise<void> {
+  if (!(await canSendStaffMeetingNotification())) throw new Error('잔디 알림 발송 권한이 없습니다.');
   const [info, settings] = await Promise.all([getStaffMeetingInfo(ym), getSystemSettings()]);
 
   await jandiPostRich(settings.staffMeetingJandiWebhook, title, content);
