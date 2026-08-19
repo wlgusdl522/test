@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.6.0",
+    "@ssabrojs/hwpxjs": "^0.4.0",
     "@supabase/supabase-js": "^2.110.9",
     "google-auth-library": "^10.9.1",
     "googleapis": "^173.0.0",

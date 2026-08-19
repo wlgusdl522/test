@@ -19,6 +19,7 @@ export const CONFIGURABLE_PAGES = [
   { id: 'business-accounting', label: '사업관리 - 이사회자료(회계)' },
   { id: 'business-volunteers', label: '사업관리 - 이사회자료(자원봉사자)' },
   { id: 'business-donations', label: '사업관리 - 이사회자료(후원)' },
+  { id: 'business-full', label: '사업관리 - 이사회자료(전체보기/인쇄)' },
 ];
 
 export const PRINTABLE_PAGES = [
