@@ -107,7 +107,8 @@ export default function MeetingComposer({
         </div>
       </div>
 
-      <div>
+      {/* 모바일에서는 미리보기를 생략 — 인쇄는 상단 인쇄 버튼으로 확인 */}
+      <div className="hidden lg:block">
         <h3 className="text-sm font-semibold mb-2 text-zinc-700 dark:text-zinc-200">인쇄 미리보기</h3>
         <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>

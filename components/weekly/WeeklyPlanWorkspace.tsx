@@ -72,6 +72,7 @@ export default function WeeklyPlanWorkspace({
   );
   const [statusText, setStatusText] = useState('');
   const [isPending, startTransition] = useTransition();
+  const [mobileTab, setMobileTab] = useState<'write' | 'team'>('write');
 
   function addRow(iso: string, text: string) {
     const trimmed = text.trim();
@@ -136,9 +137,27 @@ export default function WeeklyPlanWorkspace({
 
   const meetingSummaryLines = buildMeetingSummaryLines(dayDates, rowsByDay);
 
+  function mobileTabClass(active: boolean) {
+    return `-mb-px rounded-t-md border border-b-0 px-3.5 py-2 text-sm transition-colors ${
+      active
+        ? 'border-zinc-200 bg-white font-medium text-brand dark:border-zinc-800 dark:bg-zinc-900'
+        : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+    }`;
+  }
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-      <div>
+    <div>
+      <div className="mb-4 flex gap-1 border-b border-zinc-200 dark:border-zinc-800 lg:hidden">
+        <button type="button" onClick={() => setMobileTab('write')} className={mobileTabClass(mobileTab === 'write')}>
+          내 업무 입력
+        </button>
+        <button type="button" onClick={() => setMobileTab('team')} className={mobileTabClass(mobileTab === 'team')}>
+          팀 조회
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className={`${mobileTab === 'write' ? 'block' : 'hidden'} lg:block`}>
         <div className="flex flex-col mb-4 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
           {dayDates.map((iso, i) => {
             const d = new Date(`${iso}T00:00:00`);
@@ -231,7 +250,7 @@ export default function WeeklyPlanWorkspace({
         </div>
       </div>
 
-      <div>
+      <div className={`${mobileTab === 'team' ? 'block' : 'hidden'} lg:block`}>
         <div className="flex items-center gap-2 mb-2">
           <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">팀 조회</h3>
           <form method="get" className="flex items-center gap-1.5 ml-auto">
@@ -337,6 +356,7 @@ export default function WeeklyPlanWorkspace({
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </div>
   );
