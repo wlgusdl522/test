@@ -8,6 +8,7 @@ import { sectionTitle, subTitle, reportTable, th, td, tdC, tdR, totalRow, styleA
 // 화면에 보이는 내용과 어긋나지 않는다. FullReportBody.tsx를 고치면 이 파일도 같이 맞춰야 한다.
 
 const nf = (n: number) => (n || 0).toLocaleString('ko-KR');
+const pct = (v: number | null) => (v === null ? '–' : v.toFixed(1));
 
 function esc(v: unknown): string {
   return String(v ?? '')
@@ -35,6 +36,31 @@ const sMini = 'font-size:11.5px;font-weight:700;margin:8px 0 4px';
 
 function emptyRow(colSpan: number, text = '등록된 내용이 없습니다.'): string {
   return `<tr><td style="${sEmpty}" colspan="${colSpan}">${esc(text)}</td></tr>`;
+}
+
+// 참고 서식처럼 후원금 명단이 길면 좌/우로 나눠서(번호가 이어지게) 배치한다 — 짧은 목록까지
+// 반으로 쪼개면 어색해서 일정 인원 이상일 때만 나눈다. hwpx 변환은 div로 감싸면 구조가 깨지는
+// 버그가 있어(파일 상단 설명 참고) 두 표를 나란히(flex) 두지 못하고 위아래로 순서대로 둔다.
+const CASH_SPLIT_THRESHOLD = 10;
+
+function cashHalfTable(rows: { id: string; 이름: string; 금액: number; 비고: string }[], startIndex: number): string {
+  return `
+    <table style="${sTable}">
+      <colgroup><col style="width:10%"/><col/><col style="width:22%"/><col style="width:20%"/></colgroup>
+      <thead><tr><th style="${sTh}">연번</th><th style="${sTh}">성 명</th><th style="${sTh}">후원금액(원)</th><th style="${sTh}">비 고</th></tr></thead>
+      <tbody>
+        ${rows.length === 0 ? emptyRow(4) : rows.map((d, i) => `
+          <tr><td style="${sTdC}">${startIndex + i}</td><td style="${sTd}">${esc(d.이름)}</td>
+          <td style="${sTdR}">${nf(d.금액)}</td><td style="${sTd}">${esc(d.비고)}</td></tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+}
+
+function donationCashTable(details: { id: string; 이름: string; 금액: number; 비고: string }[]): string {
+  if (details.length <= CASH_SPLIT_THRESHOLD) return cashHalfTable(details, 1);
+  const mid = Math.ceil(details.length / 2);
+  return cashHalfTable(details.slice(0, mid), 1) + cashHalfTable(details.slice(mid), mid + 1);
 }
 
 function highlightTable(title: string, rows: { 사업명: string; 실시월일: string; 내용: string; 성과: string }[]): string {
@@ -151,36 +177,19 @@ export function renderFullReportHtml(data: FullBoardReportData): string {
             <td style="${sTd}">${esc(a.비고)}</td></tr>
           `).join('')}
         </tbody>
-      </table>
-      <div style="${sMini}">예산집행현황</div>
-      <table style="${sTable}">
-        <thead><tr><th style="${sTh}">항목</th><th style="${sTh}">예산액</th><th style="${sTh}">집행액</th><th style="${sTh}">누계</th><th style="${sTh}">비고</th></tr></thead>
-        <tbody>
-          ${fa.budgetRows.length === 0 ? emptyRow(5) : fa.budgetRows.map((r) => `
-            <tr><td style="${sTd}">${esc(r.항목명)}</td><td style="${sTdR}">${nf(r.예산액)}</td>
-            <td style="${sTdR}">${nf(r.집행액)}</td><td style="${sTdR}">${nf(r.누계)}</td><td style="${sTd}">${esc(r.비고)}</td></tr>
-          `).join('')}
-        </tbody>
       </table>`;
   }).join('');
 
   const donationHtml = donation.facilities.map((fa, fi) => `
     <div style="${sSub}">${fi + 1}) ${esc(fa.시설명)} 명단</div>
     <div style="${sMini}">후원금</div>
-    <table style="${sTable}">
-      <thead><tr><th style="${sTh}">성명</th><th style="${sTh}">후원금액(원)</th><th style="${sTh}">비고</th></tr></thead>
-      <tbody>
-        ${fa.cashDetails.length === 0 ? emptyRow(3) : fa.cashDetails.map((d) => `
-          <tr><td style="${sTd}">${esc(d.이름)}</td><td style="${sTdR}">${nf(d.금액)}</td><td style="${sTd}">${esc(d.비고)}</td></tr>
-        `).join('')}
-      </tbody>
-    </table>
+    ${donationCashTable(fa.cashDetails)}
     <div style="${sMini}">후원물품</div>
     <table style="${sTable}">
-      <thead><tr><th style="${sTh}">후원품</th><th style="${sTh}">수량</th><th style="${sTh}">환가액(원)</th><th style="${sTh}">후원자</th><th style="${sTh}">지급대상</th></tr></thead>
+      <thead><tr><th style="${sTh}">연번</th><th style="${sTh}">후원품</th><th style="${sTh}">수량</th><th style="${sTh}">환가액(원)</th><th style="${sTh}">후원자</th><th style="${sTh}">지급대상</th></tr></thead>
       <tbody>
-        ${fa.goodsDetails.length === 0 ? emptyRow(5) : fa.goodsDetails.map((d) => `
-          <tr><td style="${sTd}">${esc(d.이름)}</td><td style="${sTdC}">${esc(d.수량)}</td><td style="${sTdR}">${nf(d.금액)}</td>
+        ${fa.goodsDetails.length === 0 ? emptyRow(6) : fa.goodsDetails.map((d, i) => `
+          <tr><td style="${sTdC}">${i + 1}</td><td style="${sTd}">${esc(d.이름)}</td><td style="${sTdC}">${esc(d.수량)}</td><td style="${sTdR}">${nf(d.금액)}</td>
           <td style="${sTd}">${esc(d.후원자)}</td><td style="${sTd}">${esc(d.지급대상)}</td></tr>
         `).join('')}
       </tbody>
@@ -295,5 +304,49 @@ export function renderFullReportHtml(data: FullBoardReportData): string {
   ${adminNotes.length === 0
     ? '<p style="font-size:11px;color:#888">등록된 행정사항이 없습니다.</p>'
     : adminNotes.map((n) => `<div style="font-size:11px;margin-bottom:6px">${nl2br(n.내용)}</div>`).join('')}
+
+  <div style="${sTitle}">9. 예산집행현황</div>
+  <table style="${sTable}">
+    <colgroup><col style="width:12%"/><col/><col style="width:13%"/><col style="width:13%"/><col style="width:13%"/><col style="width:9%"/><col style="width:15%"/></colgroup>
+    <thead>
+      <tr>
+        <th style="${sTh}">시설</th><th style="${sTh}">항목</th><th style="${sTh}">예산액</th><th style="${sTh}">집행액</th>
+        <th style="${sTh}">누계</th><th style="${sTh}">집행률(%)</th><th style="${sTh}">비고</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${accounting.facilities.every((fa) => fa.budgetRows.length === 0) ? emptyRow(7) : accounting.facilities.map((fa) => {
+        const rows = fa.budgetRows;
+        if (rows.length === 0) return '';
+        const sum예산 = rows.reduce((a, r) => a + r.예산액, 0);
+        const sum집행 = rows.reduce((a, r) => a + r.집행액, 0);
+        const sum누계 = rows.reduce((a, r) => a + r.누계, 0);
+        return `
+          ${rows.map((r, i) => `
+            <tr>
+              ${i === 0 ? `<td style="${sTdBold}" rowspan="${rows.length + 1}">${esc(fa.시설명)}</td>` : ''}
+              <td style="${sTd}">${esc(r.항목명)}</td><td style="${sTdR}">${nf(r.예산액)}</td><td style="${sTdR}">${nf(r.집행액)}</td>
+              <td style="${sTdR}">${nf(r.누계)}</td><td style="${sTdC}">${pct(r.예산액 > 0 ? (r.누계 / r.예산액) * 100 : null)}</td>
+              <td style="${sTd}">${esc(r.비고)}</td>
+            </tr>`).join('')}
+          <tr style="${sTotalRow}">
+            <td style="${sTd}">소계</td><td style="${sTdR}">${nf(sum예산)}</td><td style="${sTdR}">${nf(sum집행)}</td><td style="${sTdR}">${nf(sum누계)}</td>
+            <td style="${sTdC}">${pct(sum예산 > 0 ? (sum누계 / sum예산) * 100 : null)}</td><td style="${sTd}"></td>
+          </tr>`;
+      }).join('')}
+      ${(() => {
+        const all = accounting.facilities.flatMap((fa) => fa.budgetRows);
+        if (all.length === 0) return '';
+        const 총예산 = all.reduce((a, r) => a + r.예산액, 0);
+        const 총집행 = all.reduce((a, r) => a + r.집행액, 0);
+        const 총누계 = all.reduce((a, r) => a + r.누계, 0);
+        return `
+          <tr style="${styleAttr(totalRow, { background: '#ddd' })}">
+            <td style="${sTd}" colspan="2">총 계</td><td style="${sTdR}">${nf(총예산)}</td><td style="${sTdR}">${nf(총집행)}</td><td style="${sTdR}">${nf(총누계)}</td>
+            <td style="${sTdC}">${pct(총예산 > 0 ? (총누계 / 총예산) * 100 : null)}</td><td style="${sTd}"></td>
+          </tr>`;
+      })()}
+    </tbody>
+  </table>
 `;
 }

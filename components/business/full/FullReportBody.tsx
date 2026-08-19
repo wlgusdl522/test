@@ -1,5 +1,6 @@
 import { Fragment } from 'react';
 import type { FullBoardReportData } from '@/lib/mutate/boardFullReport';
+import type { DonationDetail } from '@/lib/mutate/boardDonation';
 import { sectionTitle, subTitle, reportTable as table, th, td, tdC, tdR, totalRow } from '@/components/business/full/reportStyles';
 
 // 이사회자료 "전체 통" 화면/인쇄에서 쓰는 컴포넌트. hwpx 변환 경로는 Next.js가 라우트 핸들러에서
@@ -9,9 +10,44 @@ import { sectionTitle, subTitle, reportTable as table, th, td, tdC, tdR, totalRo
 // 페이지에서 이미 쓰던 것과 같은 오피스 문서 스타일(검은 테두리·회색 헤더 인라인 스타일)을 그대로 쓴다.
 
 const nf = (n: number) => (n || 0).toLocaleString('ko-KR');
+const pct = (v: number | null) => (v === null ? '–' : v.toFixed(1));
 
 function Empty({ colSpan, text = '등록된 내용이 없습니다.' }: { colSpan: number; text?: string }) {
   return <tr><td style={{ ...tdC, color: '#888' }} colSpan={colSpan}>{text}</td></tr>;
+}
+
+// 참고 서식(이사회 회의자료 PDF)에서 후원금 명단은 인원이 많으면 한 표를 좌/우로 나눠서(번호가
+// 이어지게) 배치한다 — 짧은 목록까지 굳이 반으로 쪼개면 오른쪽이 텅 비어 보이므로 일정 인원
+// 이상일 때만 좌/우 분할한다.
+const CASH_SPLIT_THRESHOLD = 10;
+
+function CashHalfTable({ rows, startIndex, flex }: { rows: DonationDetail[]; startIndex: number; flex?: boolean }) {
+  return (
+    <table style={flex ? { ...table, flex: 1 } : table}>
+      <colgroup><col style={{ width: '10%' }} /><col /><col style={{ width: '22%' }} /><col style={{ width: '20%' }} /></colgroup>
+      <thead><tr><th style={th}>연번</th><th style={th}>성 명</th><th style={th}>후원금액(원)</th><th style={th}>비 고</th></tr></thead>
+      <tbody>
+        {rows.length === 0 && <Empty colSpan={4} />}
+        {rows.map((d, i) => (
+          <tr key={d.id}>
+            <td style={tdC}>{startIndex + i}</td><td style={td}>{d.이름}</td>
+            <td style={tdR}>{nf(d.금액)}</td><td style={td}>{d.비고}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function DonationCashTable({ details }: { details: DonationDetail[] }) {
+  if (details.length <= CASH_SPLIT_THRESHOLD) return <CashHalfTable rows={details} startIndex={1} />;
+  const mid = Math.ceil(details.length / 2);
+  return (
+    <div style={{ display: 'flex', gap: 10 }}>
+      <CashHalfTable rows={details.slice(0, mid)} startIndex={1} flex />
+      <CashHalfTable rows={details.slice(mid)} startIndex={mid + 1} flex />
+    </div>
+  );
 }
 
 function HighlightTable({ title, rows }: { title: string; rows: { 사업명: string; 실시월일: string; 내용: string; 성과: string }[] }) {
@@ -282,19 +318,6 @@ export default function FullReportBody({ data }: { data: FullBoardReportData }) 
               ))}
             </tbody>
           </table>
-          <div style={{ fontSize: 11.5, fontWeight: 700, margin: '8px 0 4px' }}>예산집행현황</div>
-          <table style={table}>
-            <thead><tr><th style={th}>항목</th><th style={th}>예산액</th><th style={th}>집행액</th><th style={th}>누계</th><th style={th}>비고</th></tr></thead>
-            <tbody>
-              {fa.budgetRows.length === 0 && <Empty colSpan={5} />}
-              {fa.budgetRows.map((r) => (
-                <tr key={r.항목ID}>
-                  <td style={td}>{r.항목명}</td><td style={tdR}>{nf(r.예산액)}</td><td style={tdR}>{nf(r.집행액)}</td>
-                  <td style={tdR}>{nf(r.누계)}</td><td style={td}>{r.비고}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       ))}
 
@@ -308,23 +331,15 @@ export default function FullReportBody({ data }: { data: FullBoardReportData }) 
         <div key={fa.시설}>
           <div style={subTitle}>{fi + 1}) {fa.시설명} 명단</div>
           <div style={{ fontSize: 11.5, fontWeight: 700, margin: '4px 0' }}>후원금</div>
-          <table style={table}>
-            <thead><tr><th style={th}>성명</th><th style={th}>후원금액(원)</th><th style={th}>비고</th></tr></thead>
-            <tbody>
-              {fa.cashDetails.length === 0 && <Empty colSpan={3} />}
-              {fa.cashDetails.map((d) => (
-                <tr key={d.id}><td style={td}>{d.이름}</td><td style={tdR}>{nf(d.금액)}</td><td style={td}>{d.비고}</td></tr>
-              ))}
-            </tbody>
-          </table>
+          <DonationCashTable details={fa.cashDetails} />
           <div style={{ fontSize: 11.5, fontWeight: 700, margin: '8px 0 4px' }}>후원물품</div>
           <table style={table}>
-            <thead><tr><th style={th}>후원품</th><th style={th}>수량</th><th style={th}>환가액(원)</th><th style={th}>후원자</th><th style={th}>지급대상</th></tr></thead>
+            <thead><tr><th style={th}>연번</th><th style={th}>후원품</th><th style={th}>수량</th><th style={th}>환가액(원)</th><th style={th}>후원자</th><th style={th}>지급대상</th></tr></thead>
             <tbody>
-              {fa.goodsDetails.length === 0 && <Empty colSpan={5} />}
-              {fa.goodsDetails.map((d) => (
+              {fa.goodsDetails.length === 0 && <Empty colSpan={6} />}
+              {fa.goodsDetails.map((d, i) => (
                 <tr key={d.id}>
-                  <td style={td}>{d.이름}</td><td style={tdC}>{d.수량}</td><td style={tdR}>{nf(d.금액)}</td>
+                  <td style={tdC}>{i + 1}</td><td style={td}>{d.이름}</td><td style={tdC}>{d.수량}</td><td style={tdR}>{nf(d.금액)}</td>
                   <td style={td}>{d.후원자}</td><td style={td}>{d.지급대상}</td>
                 </tr>
               ))}
@@ -342,6 +357,58 @@ export default function FullReportBody({ data }: { data: FullBoardReportData }) 
           {adminNotes.map((n) => <li key={n.id} style={{ marginBottom: 6 }}>{n.내용}</li>)}
         </ol>
       )}
+
+      {/* 9) 예산집행현황 — 참고 서식과 같이 시설별로 묶은 표 하나(회계 섹션과는 별도) */}
+      <div style={sectionTitle}>9. 예산집행현황</div>
+      <table style={table}>
+        <colgroup><col style={{ width: '12%' }} /><col /><col style={{ width: '13%' }} /><col style={{ width: '13%' }} /><col style={{ width: '13%' }} /><col style={{ width: '9%' }} /><col style={{ width: '15%' }} /></colgroup>
+        <thead>
+          <tr>
+            <th style={th}>시설</th><th style={th}>항목</th><th style={th}>예산액</th><th style={th}>집행액</th>
+            <th style={th}>누계</th><th style={th}>집행률(%)</th><th style={th}>비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          {accounting.facilities.every((fa) => fa.budgetRows.length === 0) && <Empty colSpan={7} />}
+          {accounting.facilities.map((fa) => {
+            const rows = fa.budgetRows;
+            if (rows.length === 0) return null;
+            const sum예산 = rows.reduce((a, r) => a + r.예산액, 0);
+            const sum집행 = rows.reduce((a, r) => a + r.집행액, 0);
+            const sum누계 = rows.reduce((a, r) => a + r.누계, 0);
+            return (
+              <Fragment key={fa.시설}>
+                {rows.map((r, i) => (
+                  <tr key={r.항목ID}>
+                    {i === 0 && <td style={{ ...td, fontWeight: 700 }} rowSpan={rows.length + 1}>{fa.시설명}</td>}
+                    <td style={td}>{r.항목명}</td><td style={tdR}>{nf(r.예산액)}</td><td style={tdR}>{nf(r.집행액)}</td>
+                    <td style={tdR}>{nf(r.누계)}</td>
+                    <td style={tdC}>{pct(r.예산액 > 0 ? (r.누계 / r.예산액) * 100 : null)}</td>
+                    <td style={td}>{r.비고}</td>
+                  </tr>
+                ))}
+                <tr style={totalRow}>
+                  <td style={td}>소계</td><td style={tdR}>{nf(sum예산)}</td><td style={tdR}>{nf(sum집행)}</td><td style={tdR}>{nf(sum누계)}</td>
+                  <td style={tdC}>{pct(sum예산 > 0 ? (sum누계 / sum예산) * 100 : null)}</td><td style={td} />
+                </tr>
+              </Fragment>
+            );
+          })}
+          {(() => {
+            const all = accounting.facilities.flatMap((fa) => fa.budgetRows);
+            if (all.length === 0) return null;
+            const 총예산 = all.reduce((a, r) => a + r.예산액, 0);
+            const 총집행 = all.reduce((a, r) => a + r.집행액, 0);
+            const 총누계 = all.reduce((a, r) => a + r.누계, 0);
+            return (
+              <tr style={{ ...totalRow, background: '#ddd' }}>
+                <td style={td} colSpan={2}>총 계</td><td style={tdR}>{nf(총예산)}</td><td style={tdR}>{nf(총집행)}</td><td style={tdR}>{nf(총누계)}</td>
+                <td style={tdC}>{pct(총예산 > 0 ? (총누계 / 총예산) * 100 : null)}</td><td style={td} />
+              </tr>
+            );
+          })()}
+        </tbody>
+      </table>
     </div>
   );
 }
