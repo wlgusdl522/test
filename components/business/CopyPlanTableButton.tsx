@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { insertTableSeparators } from '@/lib/cleanTableHtml';
 
 // 화면에 실제로 렌더링된 표(outerHTML)를 그대로 클립보드에 text/html로 담아 붙여넣기 시
 // 표 구조와 인라인 스타일(테두리·배경 등)이 그대로 유지되게 한다 — 별도로 만든 HTML 문자열을
@@ -11,7 +12,8 @@ import { useState } from 'react';
 // 단, display:flex로 표를 나란히 배치한 곳(후원금 좌우분할, 회계 수입/지출 좌우배치)은
 // 한글이 flex 레이아웃을 이해하지 못해 표 경계가 헷갈리게 붙여넣어지므로, 복사할 때만
 // 그 flex 속성을 걷어낸다(표가 나란히 대신 세로로 붙지만 경계는 명확해짐). 나머지 서식은
-// 그대로 둔다.
+// 그대로 둔다. flex를 걷어내면 표 두 개가 사이 구분 없이 바로 붙게 되므로, 표가 연속으로
+// 붙어있으면 그 사이에 빈 문단을 끼워 넣어 한글이 하나로 합치지 않게 한다.
 function stripFlexLayout(root: HTMLElement): HTMLElement {
   const clone = root.cloneNode(true) as HTMLElement;
   clone.querySelectorAll<HTMLElement>('[style]').forEach((el) => {
@@ -22,6 +24,7 @@ function stripFlexLayout(root: HTMLElement): HTMLElement {
       el.style.removeProperty('gap');
     }
   });
+  insertTableSeparators(clone);
   return clone;
 }
 
