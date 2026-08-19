@@ -57,12 +57,12 @@ export default async function StaffMeetingPresentPage({
 
   pages.push(
     <div key="cover" className="flex h-full flex-col items-center justify-center text-center">
-      <h1 className="mb-10 text-4xl font-bold leading-snug">
+      <h1 className="mb-10 text-6xl font-bold leading-snug">
         {meetingInfo.업무보고기간} 보고 및<br />
         {meetingInfo.업무계획기간} 계획
       </h1>
       {(meetingInfo.회의일시 || meetingInfo.장소 || meetingInfo.진행 || meetingInfo.참석부서) && (
-        <div className="rounded-lg bg-amber-50 px-8 py-6 text-left text-lg leading-loose dark:bg-amber-500/10">
+        <div className="rounded-lg bg-amber-50 px-8 py-6 text-left text-2xl leading-loose dark:bg-amber-500/10">
           {meetingInfo.회의일시 && <div><b>회의일시</b> : {formatMeetingDateTime(meetingInfo.회의일시)}</div>}
           {meetingInfo.장소 && <div><b>장소</b> : {meetingInfo.장소}</div>}
           {meetingInfo.진행 && <div><b>진행</b> : {meetingInfo.진행}</div>}
@@ -79,10 +79,10 @@ export default async function StaffMeetingPresentPage({
       pages.push(
         <div key={`${team}-${gi}`}>
           <div style={{ textAlign: 'center', marginBottom: 20 }}>
-            <div style={{ fontSize: 32, fontWeight: 700 }}>{team}</div>
+            <div style={{ fontSize: 40, fontWeight: 700 }}>{team}</div>
           </div>
           <div className={tableWrap}>
-            <table className={table} style={{ fontSize: '16px' }}>
+            <table className={table} style={{ fontSize: '21px' }}>
               <colgroup>
                 <col style={{ width: '14%' }} />
                 <col style={{ width: '38%' }} />
