@@ -14,6 +14,10 @@ const TEAM_TITLE_MARGIN_BOTTOM = 20;
 const SAFETY_MARGIN = 48;
 // 내용이 짧아 화면에 여유가 많이 남아도, 한 페이지에는 최대 이 개수까지만 보여준다.
 const MAX_ROWS_PER_PAGE = 3;
+// th 공용 클래스에 whitespace-nowrap이 박혀있어 협조사항처럼 좁은 열은 헤더 글자("타 부서
+// 협조사항 및 기타")가 한 줄로 강제되며 옆으로 넘쳐 가로 스크롤이 생겼다. 인라인 스타일로
+// 덮어써 좁은 열에서는 헤더도 줄바꿈되게 한다(인라인 스타일이 클래스보다 항상 우선한다).
+const HEADER_WRAP_STYLE: React.CSSProperties = { whiteSpace: 'normal' };
 
 type Row = { id: string; 사업구분: string; 업무보고: string; 업무계획: string; 협조사항: string };
 type Section = { team: string; rows: Row[] };
@@ -35,10 +39,10 @@ function TeamTable({ team, rows, reportLabel, planLabel }: { team: string; rows:
           </colgroup>
           <thead>
             <tr>
-              <th className={th}>사업구분</th>
-              <th className={th}>{reportLabel} 업무보고</th>
-              <th className={th}>{planLabel} 업무계획</th>
-              <th className={th}>타 부서 협조사항 및 기타</th>
+              <th className={th} style={HEADER_WRAP_STYLE}>사업구분</th>
+              <th className={th} style={HEADER_WRAP_STYLE}>{reportLabel} 업무보고</th>
+              <th className={th} style={HEADER_WRAP_STYLE}>{planLabel} 업무계획</th>
+              <th className={th} style={HEADER_WRAP_STYLE}>타 부서 협조사항 및 기타</th>
             </tr>
           </thead>
           <tbody>
@@ -188,10 +192,10 @@ export default function PresentClient({
                 </colgroup>
                 <thead ref={(el) => { theadRefs.current[section.team] = el; }}>
                   <tr>
-                    <th className={th}>사업구분</th>
-                    <th className={th}>{reportLabel} 업무보고</th>
-                    <th className={th}>{planLabel} 업무계획</th>
-                    <th className={th}>타 부서 협조사항 및 기타</th>
+                    <th className={th} style={HEADER_WRAP_STYLE}>사업구분</th>
+                    <th className={th} style={HEADER_WRAP_STYLE}>{reportLabel} 업무보고</th>
+                    <th className={th} style={HEADER_WRAP_STYLE}>{planLabel} 업무계획</th>
+                    <th className={th} style={HEADER_WRAP_STYLE}>타 부서 협조사항 및 기타</th>
                   </tr>
                 </thead>
                 <tbody>
