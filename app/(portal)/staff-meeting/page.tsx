@@ -13,6 +13,7 @@ import {
   buildStaffMeetingNotificationTitle,
   canEditStaffMeetingInfo,
   canSendStaffMeetingNotification,
+  formatMeetingDateTime,
   getOrderedStaffMeetingTeams,
   getStaffMeetingInfo,
   getStaffMeetingItems,
@@ -133,7 +134,7 @@ export default async function StaffMeetingPage({
           <div>
             <div className="text-zinc-600 dark:text-zinc-400 font-medium">회의일시</div>
             <div className="text-zinc-900 dark:text-zinc-100">
-              {meetingInfo.회의일시 || '미설정'}
+              {meetingInfo.회의일시 ? formatMeetingDateTime(meetingInfo.회의일시) : '미설정'}
             </div>
           </div>
           <div>
