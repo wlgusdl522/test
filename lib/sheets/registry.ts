@@ -461,8 +461,10 @@ export const STAFF_MEETING_VALUE_TABLE: KeyedTableConfig = {
 
 // 회의 자체의 메타정보(일시/장소/진행/참석부서) — 서무가 매달 회의 일정에 맞게 등록한다.
 // 알림발송일시: "잔디 알림 보내기" 버튼을 누른 마지막 시각(참고용 표시일 뿐 재발송을 막지 않음).
+// 업무보고기간/업무계획기간: 표 헤더 문구(비우면 조회월 기준 자동 계산, 5~6월처럼 여러 달을
+// 묶을 때는 직접 입력해서 덮어씀) — 맨 뒤에 추가.
 export const STAFF_MEETING_INFO_HEADERS = [
-  '년월', '회의일시', '장소', '진행', '참석부서', '알림발송일시',
+  '년월', '회의일시', '장소', '진행', '참석부서', '알림발송일시', '업무보고기간', '업무계획기간',
 ];
 
 export const STAFF_MEETING_INFO_TABLE: KeyedTableConfig = {

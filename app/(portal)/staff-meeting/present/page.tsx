@@ -7,7 +7,6 @@ import {
   getStaffMeetingInfo,
   getStaffMeetingItems,
   getStaffMeetingValues,
-  nextYm,
   valueFor,
 } from '@/lib/mutate/staffMeeting';
 import { getStaffMeetingContext } from '@/lib/prefs-actions';
@@ -23,11 +22,6 @@ const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
 
 function currentYm(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date()).slice(0, 7);
-}
-
-function ymTitle(ym: string): string {
-  const [y, m] = ym.split('-');
-  return `${y}년 ${Number(m)}월`;
 }
 
 function formatMeetingDateTime(dt: string): string {
@@ -71,8 +65,8 @@ export default async function StaffMeetingPresentPage({
   pages.push(
     <div key="cover" className="flex h-full flex-col items-center justify-center text-center">
       <h1 className="mb-10 text-4xl font-bold leading-snug">
-        {ymTitle(ym)} 보고 및<br />
-        {ymTitle(nextYm(ym))} 계획
+        {meetingInfo.업무보고기간} 보고 및<br />
+        {meetingInfo.업무계획기간} 계획
       </h1>
       {(meetingInfo.회의일시 || meetingInfo.장소 || meetingInfo.진행 || meetingInfo.참석부서) && (
         <div className="rounded-lg bg-amber-50 px-8 py-6 text-left text-lg leading-loose dark:bg-amber-500/10">
@@ -99,8 +93,8 @@ export default async function StaffMeetingPresentPage({
               <thead>
                 <tr>
                   <th className={th}>사업구분</th>
-                  <th className={th}>{ymTitle(ym)} 업무보고</th>
-                  <th className={th}>{ymTitle(nextYm(ym))} 업무계획</th>
+                  <th className={th}>{meetingInfo.업무보고기간} 업무보고</th>
+                  <th className={th}>{meetingInfo.업무계획기간} 업무계획</th>
                   <th className={th}>타 부서 협조사항 및 기타</th>
                 </tr>
               </thead>

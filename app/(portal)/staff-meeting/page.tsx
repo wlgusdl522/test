@@ -113,6 +113,14 @@ export default async function StaffMeetingPage({
             참석부서
             <input name="참석부서" defaultValue={meetingInfo.참석부서} className={input} />
           </label>
+          <label className={label}>
+            업무보고 표시(비우면 자동)
+            <input name="업무보고기간" defaultValue={meetingInfo.업무보고기간} placeholder="예: 2026년 5~6월" className={input} />
+          </label>
+          <label className={label}>
+            업무계획 표시(비우면 자동)
+            <input name="업무계획기간" defaultValue={meetingInfo.업무계획기간} placeholder="예: 2026년 7월" className={input} />
+          </label>
           <div className="col-span-2 flex items-end md:col-span-1">
             <SubmitButton className={btn} pendingLabel="저장 중...">저장</SubmitButton>
           </div>
@@ -140,7 +148,13 @@ export default async function StaffMeetingPage({
         <>
           <ItemManageModal 팀명={팀명} items={items} />
           <div className={card}>
-            <EntryClient 팀명={팀명} ym={ym} rows={rows} />
+            <EntryClient
+              팀명={팀명}
+              ym={ym}
+              rows={rows}
+              reportLabel={meetingInfo.업무보고기간}
+              planLabel={meetingInfo.업무계획기간}
+            />
           </div>
         </>
       )}
