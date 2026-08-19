@@ -354,8 +354,19 @@ async function sendCertificateNotificationEmail(
     return { emailSent: true };
   } catch (error) {
     console.error('[증명서·상장 발급 메일 발송 실패]', error);
-    return { emailSent: false, warning: '메일 발송에 실패했습니다 (Gmail 발송 권한이 아직 설정되지 않았을 수 있습니다).' };
+    return { emailSent: false, warning: `메일 발송에 실패했습니다: ${describeGoogleApiError(error)}` };
   }
+}
+
+// googleapis(gaxios) 에러는 .message가 "Bad Request" 같은 뜻없는 문구뿐이고, 실제 사유는
+// .response.data.error(.errors)에 있는 경우가 많다 - 화면에 원인을 그대로 보여주려고 최대한 뽑아낸다.
+function describeGoogleApiError(error: unknown): string {
+  const err = error as { message?: string; response?: { data?: { error?: { message?: string; errors?: { reason?: string; message?: string }[] } } } };
+  const detail = err.response?.data?.error;
+  const reason = detail?.errors?.[0]?.reason;
+  const detailMessage = detail?.message || detail?.errors?.[0]?.message;
+  const parts = [err.message, reason, detailMessage].filter(Boolean);
+  return parts.length > 0 ? parts.join(' / ') : String(error);
 }
 
 // 이미 발행된(문서URL 있는) 건의 안내 메일만 다시 보낸다 - 발행 당시 메일 발송이 실패했거나
