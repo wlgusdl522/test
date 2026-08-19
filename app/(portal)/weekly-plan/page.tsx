@@ -74,12 +74,12 @@ export default async function WeeklyPlanPage({
       </div>
 
       <div className={card}>
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex flex-wrap items-center gap-2 mb-1">
           <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{team}</span>
           <span className="text-sm text-zinc-500 dark:text-zinc-400">{me?.성명 ?? ''}</span>
-          <span className="text-xs text-zinc-400 ml-auto">{formatDayLabel(dayDates[0])} ~ {formatDayLabel(dayDates[5])}</span>
+          <span className="text-xs text-zinc-400 sm:ml-auto">{formatDayLabel(dayDates[0])} ~ {formatDayLabel(dayDates[5])}</span>
         </div>
-        <form method="get" className="flex items-center gap-2 mb-1">
+        <form method="get" className="flex flex-wrap items-center gap-2 mb-1">
           <input type="hidden" name="viewTeam" value={viewTeam} />
           <input type="date" name="weekStart" defaultValue={weekStart} className={`${inputBase} w-auto`} />
           <button type="submit" className={btnSecondary}>조회</button>

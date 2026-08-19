@@ -100,7 +100,28 @@ export default function SupervisorReviewList({
 
       <div>
         <h3 className="text-sm font-semibold mb-2 text-zinc-700 dark:text-zinc-200">반영 미리보기</h3>
-        <div className={cardTableWrap}>
+
+        {/* 모바일: 6열 표 대신 날짜별 카드로 나열 */}
+        <div className="flex flex-col gap-2 sm:hidden">
+          {dayDates.map((iso, i) => {
+            const dayTasks = reflectedTasks.filter((t) => t.날짜 === iso);
+            return (
+              <div key={iso} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{weekdayLabels[i]} ({formatMD(iso)})</p>
+                {dayTasks.length === 0 ? (
+                  <p className="mt-1 text-sm text-zinc-300 dark:text-zinc-700">-</p>
+                ) : (
+                  dayTasks.map((t) => (
+                    <div key={t.id} className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">• {t.성명}: {t.업무내용}</div>
+                  ))
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 데스크톱: 기존 표 레이아웃 유지 */}
+        <div className={`hidden sm:block ${cardTableWrap}`}>
           <table className={tableClean}>
             <thead>
               <tr>

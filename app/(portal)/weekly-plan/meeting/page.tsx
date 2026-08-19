@@ -58,7 +58,7 @@ export default async function MeetingPage({
         </a>
       </div>
 
-      <form method="get" className="flex gap-2 mb-6">
+      <form method="get" className="flex flex-wrap gap-2 mb-6">
         <select name="team" defaultValue={team} className={`${inputBase} w-auto`}>
           {teams.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>

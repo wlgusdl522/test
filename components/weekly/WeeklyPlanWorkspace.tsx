@@ -242,7 +242,59 @@ export default function WeeklyPlanWorkspace({
             <button type="submit" className={`${btnSecondary} text-xs py-1`}>조회</button>
           </form>
         </div>
-        <div className={cardTableWrap}>
+        {/* 모바일: 7열 표는 너무 좁아져서 담당자별 카드로, 카드 안에서 날짜별로 나열 */}
+        <div className="flex flex-col gap-2 sm:hidden">
+          {isOwnTeam && (
+            <div className="rounded-lg border border-brand bg-brand-tint p-3">
+              <p className="text-sm font-semibold text-brand-dark dark:text-brand">{myName}</p>
+              <div className="mt-1.5 flex flex-col gap-1.5">
+                {dayDates.map((iso, i) => {
+                  const dayRows = rowsByDay[iso] ?? [];
+                  if (dayRows.length === 0) return null;
+                  return (
+                    <div key={iso}>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                        {weekdayLabels[i]} ({new Date(`${iso}T00:00:00`).getMonth() + 1}/{new Date(`${iso}T00:00:00`).getDate()})
+                      </span>
+                      {dayRows.map((r, i) => <div key={i} className="text-sm text-zinc-700 dark:text-zinc-300">• {r.text}</div>)}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {roster
+            .filter((m) => !isOwnTeam || m.email.toLowerCase() !== myEmail.toLowerCase())
+            .map((member) => {
+              const memberTasks = teamTasks.filter((t) => t.email.toLowerCase() === member.email.toLowerCase());
+              return (
+                <div key={member.email} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{member.name}</p>
+                  {memberTasks.length === 0 ? (
+                    <p className="mt-1 text-sm text-zinc-300 dark:text-zinc-700">등록된 업무 없음</p>
+                  ) : (
+                    <div className="mt-1.5 flex flex-col gap-1.5">
+                      {dayDates.map((iso, i) => {
+                        const dayTasks = memberTasks.filter((t) => t.날짜 === iso);
+                        if (dayTasks.length === 0) return null;
+                        return (
+                          <div key={iso}>
+                            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                              {weekdayLabels[i]} ({new Date(`${iso}T00:00:00`).getMonth() + 1}/{new Date(`${iso}T00:00:00`).getDate()})
+                            </span>
+                            {dayTasks.map((t, i) => <div key={i} className="text-sm text-zinc-700 dark:text-zinc-300">• {t.업무내용}</div>)}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+        </div>
+
+        {/* 데스크톱: 기존 표 레이아웃 유지 */}
+        <div className={`hidden sm:block ${cardTableWrap}`}>
           <table className={tableClean}>
             <thead>
               <tr>
