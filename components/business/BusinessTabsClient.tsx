@@ -25,7 +25,7 @@ export default function BusinessTabsClient({ businesses }: { businesses: string[
 
   return (
     <div className="mb-5">
-      <div className="mb-3 flex items-center gap-1.5">
+      <div className="mb-3 flex flex-wrap items-center gap-1.5">
         <select
           value={current}
           onChange={(e) => onBusinessChange(e.target.value)}

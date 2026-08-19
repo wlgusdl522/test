@@ -24,7 +24,7 @@ export default async function DocumentIndexPrefixSettingsPage() {
       ) : (
         <div className="flex max-w-md flex-col gap-3">
           {teams.map((team) => (
-            <form key={team} action={setDocumentIndexPrefixAction} className="flex items-center gap-2">
+            <form key={team} action={setDocumentIndexPrefixAction} className="flex flex-wrap items-center gap-2">
               <span className="w-24 shrink-0 text-sm text-zinc-700 dark:text-zinc-300">{team}</span>
               <input type="hidden" name="팀명" value={team} />
               <input name="접두사" defaultValue={prefixMap[team] ?? ''} placeholder="예: 서노복102A" className={input} />

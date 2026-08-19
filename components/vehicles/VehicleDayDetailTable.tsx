@@ -11,6 +11,20 @@ function vehicleLabel(vehicleNo: string, vehicles: { 차량번호: string; 차�
   return vehicles.find((v) => v.차량번호 === vehicleNo)?.차종 ?? vehicleNo;
 }
 
+function StatusBadge({ r, date, hasLogRequestIds }: { r: Req; date: string; hasLogRequestIds: Set<string> }) {
+  if (hasLogRequestIds.has(r.id)) {
+    return <span className={`${badgeBase} ${badgeTone.green}`}>작성완료</span>;
+  }
+  if (hasVehicleUseEnded(r.사용일자 ?? date, r.복귀시간)) {
+    return (
+      <a href={`/vehicles/logs?requestId=${r.id}#log-form`} className={`${badgeBase} ${badgeTone.red} hover:opacity-80`}>
+        일지작성
+      </a>
+    );
+  }
+  return <span className={`${badgeBase} ${badgeTone.gray}`}>예약됨</span>;
+}
+
 export default function VehicleDayDetailTable({
   date,
   requests,
@@ -64,49 +78,74 @@ export default function VehicleDayDetailTable({
       {requests.length === 0 ? (
         <p className="text-sm text-zinc-400">이 날짜에 등록된 예약이 없습니다.</p>
       ) : (
-        <div className={cardTableWrap}><table className={tableClean}>
-          <thead>
-            <tr>
-              <th className={thClean}>차량</th><th className={thClean}>신청자</th><th className={thClean}>시간</th>
-              <th className={thClean}>목적</th><th className={thClean}>목적지</th><th className={thClean}>상태</th><th className={thClean}></th>
-            </tr>
-          </thead>
-          <tbody>
+        <>
+          {/* 모바일: 표는 칸이 너무 좁아져서 대신 카드 목록으로 보여준다 */}
+          <div className="flex flex-col gap-2 sm:hidden">
             {requests.map((r) => {
               const isMine = (r.신청자이메일 ?? '').toLowerCase() === viewerEmail.toLowerCase();
               return (
-                <tr key={r.id} className={trHoverClean}>
-                  <td className={tdClean}>{vehicleLabel(r.차량번호, vehicles)}</td>
-                  <td className={tdClean}>{r.신청자명}</td>
-                  <td className={tdClean}>{r.출발시간 || '-'} ~ {r.복귀시간 || '-'}</td>
-                  <td className={tdClean}>{r.목적}</td>
-                  <td className={tdClean}>{r.목적지}</td>
-                  <td className={tdClean}>
-                    {hasLogRequestIds.has(r.id) ? (
-                      <span className={`${badgeBase} ${badgeTone.green}`}>작성완료</span>
-                    ) : hasVehicleUseEnded(r.사용일자 ?? date, r.복귀시간) ? (
-                      <a href={`/vehicles/logs?requestId=${r.id}#log-form`} className={`${badgeBase} ${badgeTone.red} hover:opacity-80`}>
-                        일지작성
-                      </a>
-                    ) : (
-                      <span className={`${badgeBase} ${badgeTone.gray}`}>예약됨</span>
-                    )}
-                  </td>
-                  <td className={`${tdClean} flex gap-1.5`}>
-                    {isMine && (
-                      <>
-                        <button type="button" onClick={() => onEdit(r.id)} className={btnSecondary}>수정</button>
-                        <button type="button" onClick={() => handleDelete(r.id)} disabled={isPending} className={btnDanger}>
-                          {isPending && deletingId === r.id ? '취소 중...' : '예약 취소'}
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
+                <div key={r.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                      {vehicleLabel(r.차량번호, vehicles)}
+                    </span>
+                    <StatusBadge r={r} date={date} hasLogRequestIds={hasLogRequestIds} />
+                  </div>
+                  <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                    {r.신청자명} · {r.출발시간 || '-'} ~ {r.복귀시간 || '-'}
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                    {r.목적}
+                    {r.목적지 && ` · ${r.목적지}`}
+                  </p>
+                  {isMine && (
+                    <div className="mt-2 flex gap-1.5">
+                      <button type="button" onClick={() => onEdit(r.id)} className={btnSecondary}>수정</button>
+                      <button type="button" onClick={() => handleDelete(r.id)} disabled={isPending} className={btnDanger}>
+                        {isPending && deletingId === r.id ? '취소 중...' : '예약 취소'}
+                      </button>
+                    </div>
+                  )}
+                </div>
               );
             })}
-          </tbody>
-        </table></div>
+          </div>
+
+          {/* 데스크톱: 기존 표 레이아웃 유지 */}
+          <div className={`hidden sm:block ${cardTableWrap}`}><table className={tableClean}>
+            <thead>
+              <tr>
+                <th className={thClean}>차량</th><th className={thClean}>신청자</th><th className={thClean}>시간</th>
+                <th className={thClean}>목적</th><th className={thClean}>목적지</th><th className={thClean}>상태</th><th className={thClean}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {requests.map((r) => {
+                const isMine = (r.신청자이메일 ?? '').toLowerCase() === viewerEmail.toLowerCase();
+                return (
+                  <tr key={r.id} className={trHoverClean}>
+                    <td className={tdClean}>{vehicleLabel(r.차량번호, vehicles)}</td>
+                    <td className={tdClean}>{r.신청자명}</td>
+                    <td className={tdClean}>{r.출발시간 || '-'} ~ {r.복귀시간 || '-'}</td>
+                    <td className={tdClean}>{r.목적}</td>
+                    <td className={tdClean}>{r.목적지}</td>
+                    <td className={tdClean}><StatusBadge r={r} date={date} hasLogRequestIds={hasLogRequestIds} /></td>
+                    <td className={`${tdClean} flex gap-1.5`}>
+                      {isMine && (
+                        <>
+                          <button type="button" onClick={() => onEdit(r.id)} className={btnSecondary}>수정</button>
+                          <button type="button" onClick={() => handleDelete(r.id)} disabled={isPending} className={btnDanger}>
+                            {isPending && deletingId === r.id ? '취소 중...' : '예약 취소'}
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table></div>
+        </>
       )}
     </div>
   );

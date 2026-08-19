@@ -299,10 +299,10 @@ export default async function HomePage() {
 
   return (
     <main className={pageFluid}>
-      <div className="mb-8 flex flex-wrap items-start gap-6 rounded-2xl bg-gradient-to-br from-brand-tint to-white p-8 dark:from-brand-tint/10 dark:to-transparent">
-        <div className="max-w-md shrink-0">
+      <div className="mb-8 flex flex-wrap items-start gap-6 rounded-2xl bg-gradient-to-br from-brand-tint to-white p-4 dark:from-brand-tint/10 dark:to-transparent sm:p-8">
+        <div className="w-full sm:max-w-md sm:shrink-0">
           <p className="mb-2 text-xs font-semibold text-brand">서대문노인종합복지관 업무포털 · {monthLabel}</p>
-          <h1 className="text-2xl font-bold leading-snug text-zinc-900 dark:text-zinc-100">
+          <h1 className="text-xl font-bold leading-snug text-zinc-900 dark:text-zinc-100 sm:text-2xl">
             {me?.성명 ?? ''}
             {me?.['직급/직책'] ? ` ${me['직급/직책']}` : ''}님, <span className="text-brand">{greetingMessage}</span>
           </h1>
@@ -336,7 +336,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="min-w-0 flex-1 rounded-xl bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.08)] dark:bg-zinc-900">
+        <div className="min-w-0 flex-1 rounded-xl bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.08)] dark:bg-zinc-900 sm:p-5">
           <ScheduleSlideshow slides={scheduleSlides} />
         </div>
       </div>
@@ -374,7 +374,7 @@ export default async function HomePage() {
         })}
       </div>
 
-      <div className="rounded-xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-xl border border-zinc-200/80 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900 sm:p-5">
         <ListSlideshow slides={listSlides} />
       </div>
     </main>

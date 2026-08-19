@@ -21,12 +21,12 @@ export default async function SimpleListsSettingsPage() {
   return (
     <main className={pageFluid}>
       <h1 className={`${h1} mb-5`}>설정 &gt; 팀 / 직급 / 결재라인</h1>
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {lists.map((list) => (
           <section key={list.name}>
             <h2 className={h2}>{list.label}</h2>
             <FormToggle label="추가">
-              <form action={addItemAction} className="flex gap-2 mb-3">
+              <form action={addItemAction} className="flex flex-wrap gap-2 mb-3">
                 <input type="hidden" name="listName" value={list.name} />
                 <input name="value" placeholder="추가할 값" required className={input} />
                 <button type="submit" className={btn}>추가</button>
@@ -34,7 +34,7 @@ export default async function SimpleListsSettingsPage() {
             </FormToggle>
             <ul className="flex flex-col gap-1">
               {list.items.map((item, i) => (
-                <li key={item} className="flex items-center gap-1.5 text-sm">
+                <li key={item} className="flex flex-wrap items-center gap-1.5 text-sm">
                   <span className="flex-1 text-zinc-800 dark:text-zinc-200">{item}</span>
                   <form action={moveItemAction}>
                     <input type="hidden" name="listName" value={list.name} />

@@ -14,7 +14,7 @@ export default async function TransitCardsSettingsPage() {
       <h1 className={`${h1} mb-5`}>설정 &gt; 교통카드목록</h1>
 
       <FormToggle label="교통카드 등록">
-        <form action={addTransitCardAction} className="flex gap-2 mb-6">
+        <form action={addTransitCardAction} className="flex flex-wrap gap-2 mb-6">
           <input name="cardId" placeholder="카드ID (예: C006)" required className={input} />
           <input name="cardName" placeholder="카드명" className={input} />
           <input name="initBalance" type="number" placeholder="초기잔액" className={input} />
@@ -24,8 +24,8 @@ export default async function TransitCardsSettingsPage() {
 
       <ul className="flex flex-col gap-2">
         {cards.map((c) => (
-          <li key={c.카드ID} className="flex items-center gap-2">
-            <form action={updateTransitCardAction} className="flex flex-1 gap-2">
+          <li key={c.카드ID} className="flex flex-wrap items-center gap-2">
+            <form action={updateTransitCardAction} className="flex flex-1 flex-wrap gap-2 min-w-[240px]">
               <input type="hidden" name="oldCardId" value={c.카드ID} />
               <input name="cardId" defaultValue={c.카드ID} className={`${inputBase} w-28`} />
               <input name="cardName" defaultValue={c.카드명} className={`${input} flex-1`} />

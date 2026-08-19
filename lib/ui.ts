@@ -5,7 +5,7 @@
 export const page = 'p-8 max-w-4xl mx-auto';
 export const pageWide = 'p-8 max-w-6xl mx-auto';
 // 리스트+상세 패널처럼 화면 폭을 그대로 써야 하는 화면용 — 가운데 정렬/폭 제한 없음.
-export const pageFluid = 'p-8';
+export const pageFluid = 'p-4 sm:p-8';
 
 export const pageHeader = 'flex items-center justify-between mb-5 flex-wrap gap-3';
 export const h1 = 'text-[20px] font-semibold text-brand-dark dark:text-brand m-0';

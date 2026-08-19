@@ -12,6 +12,8 @@ const [HOME, MYPAGE] = STANDALONE_NAV_ITEMS;
 export default function TopNav({ userName, userSubtitle }: { userName: string; userSubtitle: string }) {
   const pathname = usePathname();
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileSection, setMobileSection] = useState<string | null>(null);
 
   function tabClass(active: boolean) {
     return `rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -21,9 +23,22 @@ export default function TopNav({ userName, userSubtitle }: { userName: string; u
     }`;
   }
 
+  function mobileLinkClass(active: boolean) {
+    return `block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+      active
+        ? 'bg-brand-tint text-brand'
+        : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900'
+    }`;
+  }
+
+  function closeMobile() {
+    setMobileOpen(false);
+    setMobileSection(null);
+  }
+
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="flex h-14 items-center gap-1 px-6">
+      <div className="flex h-14 items-center gap-1 px-4 md:px-6">
         <Link href="/" className="mr-4 flex shrink-0 items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-brand text-xs font-bold text-white">서</span>
           <span className="hidden text-[13px] font-bold leading-tight text-zinc-900 dark:text-zinc-100 sm:block">
@@ -31,7 +46,7 @@ export default function TopNav({ userName, userSubtitle }: { userName: string; u
           </span>
         </Link>
 
-        <nav className="flex flex-1 items-center gap-1">
+        <nav className="hidden flex-1 items-center gap-1 md:flex">
           <Link href={HOME.href} className={tabClass(pathname === HOME.href)}>
             {HOME.label}
           </Link>
@@ -103,6 +118,23 @@ export default function TopNav({ userName, userSubtitle }: { userName: string; u
           </Link>
         </nav>
 
+        <button
+          type="button"
+          onClick={() => setMobileOpen((v) => !v)}
+          className="ml-auto rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900 md:hidden"
+          aria-label={mobileOpen ? '메뉴 닫기' : '메뉴 열기'}
+        >
+          {mobileOpen ? (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
+
         <div className="flex shrink-0 items-center gap-3 pl-4">
           <div className="hidden text-right sm:block">
             <p className="text-[13px] font-semibold leading-tight text-zinc-900 dark:text-zinc-100">{userName}</p>
@@ -121,6 +153,81 @@ export default function TopNav({ userName, userSubtitle }: { userName: string; u
           </form>
         </div>
       </div>
+
+      {mobileOpen && (
+        <div className="max-h-[calc(100vh-3.5rem)] overflow-y-auto border-t border-zinc-200 bg-white px-3 py-3 dark:border-zinc-800 dark:bg-zinc-950 md:hidden">
+          <Link href={HOME.href} onClick={closeMobile} className={mobileLinkClass(pathname === HOME.href)}>
+            {HOME.label}
+          </Link>
+
+          {NAV_SECTIONS.map((section) => {
+            if (section.flat && section.items.length === 1) {
+              const item = section.items[0];
+              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              return (
+                <Link key={section.label} href={item.href} onClick={closeMobile} className={mobileLinkClass(active)}>
+                  {item.label}
+                </Link>
+              );
+            }
+
+            const open = mobileSection === section.label;
+            return (
+              <div key={section.label}>
+                <button
+                  type="button"
+                  onClick={() => setMobileSection(open ? null : section.label)}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                >
+                  <span className="flex items-center gap-2">
+                    <SectionIcon label={section.label} />
+                    {section.label}
+                  </span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    className={`h-3.5 w-3.5 shrink-0 text-zinc-400 transition-transform ${open ? 'rotate-90' : ''}`}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                {open && (
+                  <div className="ml-[19px] flex flex-col gap-0.5 border-l border-zinc-200 py-1 pl-4 dark:border-zinc-800">
+                    {section.items.map((item) => {
+                      const active = pathname === item.href;
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={closeMobile}
+                          className={`block rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
+                            active
+                              ? 'bg-brand-tint font-medium text-brand'
+                              : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900'
+                          }`}
+                        >
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          <Link href={MYPAGE.href} onClick={closeMobile} className={mobileLinkClass(pathname === MYPAGE.href)}>
+            {MYPAGE.label}
+          </Link>
+
+          <div className="mt-2 border-t border-zinc-100 pt-2 dark:border-zinc-900">
+            <p className="truncate px-3 text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">{userName}</p>
+            <p className="truncate px-3 text-[11.5px] text-zinc-500 dark:text-zinc-400">{userSubtitle}</p>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

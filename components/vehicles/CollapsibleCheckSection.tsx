@@ -16,7 +16,7 @@ export default function CollapsibleCheckSection({
   const [checked, setChecked] = useState(defaultChecked ?? false);
 
   return (
-    <div className="col-span-2 rounded-md border border-dashed border-zinc-300 dark:border-zinc-700 p-3">
+    <div className="sm:col-span-2 rounded-md border border-dashed border-zinc-300 dark:border-zinc-700 p-3">
       <label className="text-sm">
         <input type="checkbox" name={checkboxName} checked={checked} onChange={(e) => setChecked(e.target.checked)} /> {checkLabel}
       </label>

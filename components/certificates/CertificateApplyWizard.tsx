@@ -235,8 +235,8 @@ export default function CertificateApplyWizard({
   }, [docType, who, instructorType]);
 
   return (
-    <div className="mb-6 flex items-start gap-6">
-      <div className="flex w-64 shrink-0 flex-col gap-2">
+    <div className="mb-6 flex flex-col items-start gap-6 sm:flex-row">
+      <div className="flex w-full shrink-0 flex-col gap-2 sm:w-64">
         {DOC_TYPES.map((dt) => (
           <DocTypeCard key={dt.value} docType={dt} active={docType === dt.value} onClick={() => selectDocType(dt.value)} />
         ))}
@@ -445,8 +445,8 @@ function AwardForm({ action, directorName }: { action: (formData: FormData) => v
   }
 
   return (
-    <div className="flex items-start gap-6">
-      <form action={awardSuccess.formAction} className="w-[380px] shrink-0">
+    <div className="flex flex-col items-start gap-6 sm:flex-row">
+      <form action={awardSuccess.formAction} className="w-full shrink-0 sm:w-[380px]">
         <input type="hidden" name="대상자성명" value={대상자원본} />
         <input type="hidden" name="종류" value={finalKind} />
         <input type="hidden" name="대상자구분" value={대상자구분} />

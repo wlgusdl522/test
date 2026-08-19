@@ -42,7 +42,37 @@ export default function HeadcountEntryClient({ ym, rows: initialRows }: { ym: st
 
   return (
     <div>
-      <div className={tableWrap}>
+      {/* 모바일: 표는 칸이 너무 좁아져서 대신 카드 목록으로 보여준다 */}
+      <div className="flex flex-col gap-2 sm:hidden">
+        {initialRows.length === 0 && <p className="text-center text-sm text-zinc-400">등록된 항목이 없습니다.</p>}
+        {initialRows.map((r) => (
+          <div key={r.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{r.항목명}</p>
+            <div className="mt-1.5 flex items-center gap-2">
+              <label className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">실인원(명)</label>
+              <input
+                type="number" min="0" value={rows[r.id]?.실인원 ?? ''} onChange={(e) => update(r.id, '실인원', e.target.value)}
+                placeholder="0" className="w-full rounded border border-zinc-200 bg-[#fcfbf8] px-2 py-1 text-right font-mono focus:border-brand focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
+              />
+            </div>
+            <label className="mt-1.5 flex flex-col gap-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+              비고
+              <input
+                value={rows[r.id]?.비고 ?? ''} onChange={(e) => update(r.id, '비고', e.target.value)}
+                className="w-full rounded border border-zinc-200 bg-[#fcfbf8] px-2 py-1 text-[13.5px] focus:border-brand focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
+              />
+            </label>
+          </div>
+        ))}
+        {initialRows.length > 0 && (
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-zinc-300 bg-[#eef1f5] p-3 font-semibold dark:border-zinc-700 dark:bg-zinc-800">
+            <span className="text-sm">합 계</span>
+            <span className="text-sm font-mono">{nf(합계)}</span>
+          </div>
+        )}
+      </div>
+
+      <div className={`${tableWrap} hidden sm:block`}>
         <table className={table}>
           <thead>
             <tr>
@@ -82,7 +112,7 @@ export default function HeadcountEntryClient({ ym, rows: initialRows }: { ym: st
           </tbody>
         </table>
       </div>
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <button type="button" onClick={handleSave} disabled={isPending} className={btn}>저장</button>
         <span className="text-sm text-zinc-500">{status}</span>
       </div>

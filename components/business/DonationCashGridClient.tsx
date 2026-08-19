@@ -135,7 +135,7 @@ export default function DonationCashGridClient({
         </table>
       </div>
       <p className={`${hint} mt-2 mb-0`}>엑셀 등에서 여러 줄을 복사해 아무 칸에나 붙여넣으면(Ctrl+V) 한 번에 여러 행이 채워집니다.</p>
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <button type="button" onClick={addRow} className={btnSecondary}>+ 행 추가</button>
         <button type="button" onClick={handleSave} disabled={isPending} className={btn}>저장</button>
         <span className="text-sm text-zinc-500">{status}</span>

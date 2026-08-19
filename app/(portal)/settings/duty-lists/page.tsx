@@ -117,7 +117,7 @@ export default async function DutyListsSettingsPage({
     <main className={pageFluid}>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <h1 className={h1}>설정 &gt; 당직 순서 / 공휴일 / 제외목록</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <form method="get" className="flex items-center gap-2">
             <span className="text-sm text-zinc-500 dark:text-zinc-400">연도</span>
             <select name="year" defaultValue={year} className={`${input} w-auto`}>
@@ -163,7 +163,7 @@ export default async function DutyListsSettingsPage({
         </div>
       )}
 
-      <div className="grid grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <OrderSection type="weekday" label="평일당직순서" items={weekdayOrder} staff={staff} />
         <OrderSection type="saturday" label="토요당직순서" items={saturdayOrder} staff={staff} />
 

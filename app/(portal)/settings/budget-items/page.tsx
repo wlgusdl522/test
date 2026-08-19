@@ -30,7 +30,31 @@ export default async function BudgetItemsSettingsPage() {
         </form>
       </FormToggle>
 
-      <div className={cardTableWrap}><table className={tableClean}>
+      <div className="flex flex-col gap-2 sm:hidden">
+        {items.map((b) => (
+          <div key={b.예산과목명} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{b.예산과목명}</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">{b.구분}</span>
+            </div>
+            {(b.연계사업명 || b.소관팀) && (
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                {b.연계사업명 && `연계사업: ${b.연계사업명}`}
+                {b.연계사업명 && b.소관팀 && ' · '}
+                {b.소관팀 && `소관팀: ${b.소관팀}`}
+              </p>
+            )}
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <form action={deleteBudgetItemAction}>
+                <input type="hidden" name="name" value={b.예산과목명} />
+                <button type="submit" className={btnDanger}>삭제</button>
+              </form>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className={`hidden sm:block ${cardTableWrap}`}><table className={tableClean}>
         <thead>
           <tr>
             <th className={thClean}>예산과목명</th>
