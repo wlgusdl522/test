@@ -1,5 +1,4 @@
 import { randomUUID } from 'crypto';
-import { headers } from 'next/headers';
 import { getSupabaseServerClient } from './server';
 import { ApprovalPermissionError, applyApprovalAction, decorateApprovalInfo } from '@/lib/approval/engine';
 import { findStaffEmailByPosition, findTeamSupervisorEmail } from '@/lib/approval/teamSupervisor';
@@ -13,6 +12,7 @@ import { renderCertificatePdf } from '@/lib/pdf/certificatePdf';
 import { renderAwardPdf } from '@/lib/pdf/awardPdf';
 import { uploadCertificatePdf } from '@/lib/drive/certificateFolder';
 import { buildAwardEmail, buildCertificateEmail, sendMail } from '@/lib/mail/certificateMail';
+import { getOrigin } from '@/lib/pdf/printShared';
 
 // 증명서(재직/경력/원천징수/기타) + 상장 발급대장 — 시트 없이 Supabase가 원본(당직/부재중현황과 동일한 예외 패턴).
 // 구분='증명서'는 전자결재(결재상태/결재이력JSON) 대상, 구분='상장'은 결재 없이 즉시 확정된다.
@@ -310,13 +310,6 @@ async function markCertificateIssued(id: string): Promise<Record<string, string>
 async function setCertificateDocumentUrl(id: string, url: string): Promise<void> {
   const { error } = await table().update({ 문서URL: url }).eq('id', id);
   if (error) throw new Error(`증명서 문서URL 저장 실패: ${error.message}`);
-}
-
-async function getOrigin(): Promise<string> {
-  const h = await headers();
-  const host = h.get('host') ?? 'localhost:3000';
-  const protocol = host.startsWith('localhost') ? 'http' : 'https';
-  return `${protocol}://${host}`;
 }
 
 export type IssueCertificateResult = {
