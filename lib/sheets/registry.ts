@@ -292,7 +292,8 @@ export const BOARD_BANK_ACCOUNT_TABLE: KeyedTableConfig = {
 
 // 시설: 회계/후원은 복지관/요양센터/데이케어센터가 서로 다른 값을 가지므로 항목ID+년월에 더해
 // 시설까지 키로 잡는다. 자원봉사자처럼 시설 구분이 없는 모듈은 '전체' 고정값을 쓴다.
-export const BOARD_STAT_VALUE_HEADERS = ['id', '항목ID', '시설', '년월', '값', '작성자이메일', '작성자명', '등록일시'];
+// 비고는 실인원처럼 숫자값과 함께 짧은 메모가 필요한 모듈을 위해 맨 뒤에 추가(기존 모듈은 빈 값).
+export const BOARD_STAT_VALUE_HEADERS = ['id', '항목ID', '시설', '년월', '값', '작성자이메일', '작성자명', '등록일시', '비고'];
 
 export const BOARD_STAT_VALUE_TABLE: KeyedTableConfig = {
   spreadsheetId: WORKLOG_SHEET_ID,
@@ -350,9 +351,11 @@ export const BOARD_ROSTER_TABLE: KeyedTableConfig = {
   primaryKey: 'id',
 };
 
-// 요약 업무보고 "8. 행정사항" — 월별로 자유롭게 줄글을 몇 줄 적어 넣는 목록(업무보고 표와 같은
-// "행 추가 후 저장" 방식). 항목/그룹 구분이 필요 없어 이사회항목과는 별도의 단순 테이블로 둔다.
-export const BOARD_ADMIN_NOTE_HEADERS = ['id', '년월', '내용', '정렬순서'];
+// 요약 업무보고 "8. 행정사항" — 월별로 자유롭게 줄글을 몇 줄(하위 번호 1./1)/가) 포함) 적어 넣는
+// 목록(업무보고 표와 같은 "행 추가 후 저장" 방식). 항목/그룹 구분이 필요 없어 이사회항목과는 별도의
+// 단순 테이블로 둔다. 요약포함/요약내용은 요약보고 8)에 실을 항목을 고르고, 원문과는 독립적으로
+// 줄여 쓸 수 있게 맨 뒤에 추가(체크 시 최초 1회 내용을 그대로 복사해주고, 이후엔 따로 수정).
+export const BOARD_ADMIN_NOTE_HEADERS = ['id', '년월', '내용', '정렬순서', '요약포함', '요약내용'];
 
 export const BOARD_ADMIN_NOTE_TABLE: KeyedTableConfig = {
   spreadsheetId: WORKLOG_SHEET_ID,
@@ -361,17 +364,9 @@ export const BOARD_ADMIN_NOTE_TABLE: KeyedTableConfig = {
   primaryKey: 'id',
 };
 
-// 사업실적 "실인원 산출내역" — 특정 기준일 하나(그 달 안에서 관리자가 고른 날짜) + 사업구분별
-// 실인원 수 목록. 기준일은 월 하나에 값 하나뿐이라 이사회기간설정과 같은 결로 별도 단순 테이블.
-export const BOARD_HEADCOUNT_HEADERS = ['id', '년월', '사업구분', '실인원', '비고', '정렬순서'];
-
-export const BOARD_HEADCOUNT_TABLE: KeyedTableConfig = {
-  spreadsheetId: WORKLOG_SHEET_ID,
-  sheetName: '이사회실인원',
-  headers: BOARD_HEADCOUNT_HEADERS,
-  primaryKey: 'id',
-};
-
+// 사업실적(→ 이사회자료 "실인원" 탭) "실인원 산출내역"의 기준일 하나(그 달 안에서 관리자가
+// 고른 날짜). 사업구분별 실인원 수치 자체는 이사회항목(모듈='실인원')+이사회월별값을 그대로 쓴다
+// (항목이 고정 목록으로 관리되고, 값은 시설 구분 없이 항목별 실인원 수 + 비고 하나씩).
 export const BOARD_HEADCOUNT_DATE_HEADERS = ['년월', '기준일'];
 
 export const BOARD_HEADCOUNT_DATE_TABLE: KeyedTableConfig = {
@@ -381,19 +376,25 @@ export const BOARD_HEADCOUNT_DATE_TABLE: KeyedTableConfig = {
   primaryKey: '년월',
 };
 
-// 회계 "예산집행현황" — 항목별(인건비/업무추진비/운영비/재산조성비/기능보강사업비/사업비/
-// 후원사업비/잡지출 등) 연간 예산액만 관리자가 입력하고, 집행액/누계/집행률은 이미 있는
-// 수입지출현황 지출 데이터에서 규칙 기반으로 계산한다(lib/mutate/boardBudgetExecution.ts).
-// "사업비"는 기본사업비/특정보조사업비로 더 세분화해야 하는데, 세부항목별로 재원이 자체재원인지
-// 보조금인지는 회계담당자만 판단 가능해서(이름만으로 추론 불가) 지금은 한 카테고리로 묶어두고
-// 나중에 분류 기준이 정해지면 나눈다.
-export const BOARD_BUDGET_AMOUNT_HEADERS = ['시설', '카테고리', '연도', '예산액'];
+// 회계 "예산집행현황" — 항목(시설별 관리) + 월별 예산액/집행액/누계/비고를 전부 담당자가 직접
+// 입력한다(수입지출현황 데이터에서 자동 계산하지 않음 — 기본사업비/특정보조사업비처럼 재원 구분이
+// 이름만으로는 안 되는 항목이 많아 회계담당자 판단이 필요해서). 합계 등은 나중에 추가 예정.
+export const BOARD_BUDGET_ITEM_HEADERS = ['id', '시설', '항목명', '정렬순서'];
 
-export const BOARD_BUDGET_AMOUNT_TABLE: KeyedTableConfig = {
+export const BOARD_BUDGET_ITEM_TABLE: KeyedTableConfig = {
   spreadsheetId: WORKLOG_SHEET_ID,
-  sheetName: '이사회예산액',
-  headers: BOARD_BUDGET_AMOUNT_HEADERS,
-  primaryKey: ['시설', '카테고리', '연도'],
+  sheetName: '이사회예산항목',
+  headers: BOARD_BUDGET_ITEM_HEADERS,
+  primaryKey: 'id',
+};
+
+export const BOARD_BUDGET_VALUE_HEADERS = ['id', '항목ID', '시설', '년월', '예산액', '집행액', '누계', '비고'];
+
+export const BOARD_BUDGET_VALUE_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '이사회예산집행값',
+  headers: BOARD_BUDGET_VALUE_HEADERS,
+  primaryKey: ['항목ID', '시설', '년월'],
 };
 
 // 업무관리 "색인목록"(공문 등록대장) — 팀마다 문서번호 계열(접두사+일련번호)을 독립적으로 관리한다.

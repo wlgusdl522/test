@@ -4,9 +4,9 @@ import {
 } from '@/lib/mutate/keyedTable';
 import { BOARD_STAT_ITEM_TABLE, BOARD_STAT_VALUE_TABLE } from '@/lib/sheets/registry';
 
-export type BoardStatModule = '회계' | '자원봉사자' | '후원';
+export type BoardStatModule = '회계' | '자원봉사자' | '후원' | '실인원';
 
-// 회계/후원은 복지관/요양센터/데이케어센터가 서로 다른 값을 갖는다 — 자원봉사자만 시설 구분이 없다.
+// 회계/후원은 복지관/요양센터/데이케어센터가 서로 다른 값을 갖는다 — 자원봉사자/실인원은 시설 구분이 없다.
 export const FACILITIES = ['복지관', '요양센터', '데이케어센터'] as const;
 export type Facility = (typeof FACILITIES)[number];
 export const NO_FACILITY = '전체';
@@ -20,7 +20,7 @@ export const FACILITY_LABEL: Record<string, string> = {
 };
 
 export function facilitiesFor(모듈: BoardStatModule): readonly string[] {
-  return 모듈 === '자원봉사자' ? [NO_FACILITY] : FACILITIES;
+  return 모듈 === '자원봉사자' || 모듈 === '실인원' ? [NO_FACILITY] : FACILITIES;
 }
 
 // 요약 업무보고 "3. 서비스 제공 인원 현황" — 시설별로 숫자 하나만 매달 입력하면 되는 값이라,
@@ -31,7 +31,7 @@ export function facilitiesFor(모듈: BoardStatModule): readonly string[] {
 export const OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID = 'overview-service-headcount';
 
 export type BoardStatItem = { id: string; 모듈: string; 항목명: string; 정렬순서: number };
-export type BoardStatValue = { 항목ID: string; 시설: string; 년월: string; 값: number };
+export type BoardStatValue = { 항목ID: string; 시설: string; 년월: string; 값: number; 비고: string };
 
 function num(v: string | undefined): number {
   const n = Number(v);
@@ -75,7 +75,7 @@ export async function getModuleValues(항목IDs: string[]): Promise<BoardStatVal
   const idSet = new Set(항목IDs);
   return rows
     .filter((r) => idSet.has(r.항목ID))
-    .map((r) => ({ 항목ID: r.항목ID, 시설: r.시설 || NO_FACILITY, 년월: r.년월, 값: num(r.값) }));
+    .map((r) => ({ 항목ID: r.항목ID, 시설: r.시설 || NO_FACILITY, 년월: r.년월, 값: num(r.값), 비고: r.비고 || '' }));
 }
 
 // 값이 0/빈칸이면 굳이 시트에 빈 행을 남기지 않고 지운다 — 일일실적의 setDailyEntry와 동일한 동작.
@@ -84,7 +84,7 @@ export async function getModuleValues(항목IDs: string[]): Promise<BoardStatVal
 // (후원 저장 때 실제로 겪은 문제, boardDonation.ts saveDonationDetails 참고) 삭제/upsert를
 // 각각 batch 한 번씩으로 묶는다.
 export async function setModuleValues(
-  entries: { 항목ID: string; 시설: string; 년월: string; 값: number }[],
+  entries: { 항목ID: string; 시설: string; 년월: string; 값: number; 비고?: string }[],
   writerEmail: string,
   writerName: string
 ): Promise<void> {
@@ -95,7 +95,8 @@ export async function setModuleValues(
 
   for (const e of entries) {
     const existing = rows.find((r) => r.항목ID === e.항목ID && r.시설 === e.시설 && r.년월 === e.년월);
-    if (!e.값) {
+    const 비고 = e.비고?.trim() ?? '';
+    if (!e.값 && !비고) {
       if (existing) toDelete.push({ 항목ID: e.항목ID, 시설: e.시설, 년월: e.년월 });
       continue;
     }
@@ -103,7 +104,7 @@ export async function setModuleValues(
       keyValues: { 항목ID: e.항목ID, 시설: e.시설, 년월: e.년월 },
       record: {
         id: existing?.id || randomUUID(),
-        항목ID: e.항목ID, 시설: e.시설, 년월: e.년월, 값: String(e.값),
+        항목ID: e.항목ID, 시설: e.시설, 년월: e.년월, 값: String(e.값), 비고,
         작성자이메일: writerEmail, 작성자명: writerName, 등록일시: now,
       },
     });

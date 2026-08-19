@@ -5,6 +5,7 @@ const SUB_TABS = [
   { href: '/business-summary/overview', label: '요약보고', pageId: 'business-overview' },
   { href: '/business-summary/report', label: '업무보고', pageId: 'business-board-plan' },
   { href: '/business-summary', label: '사업실적', pageId: 'business-summary' },
+  { href: '/business-summary/headcount', label: '실인원', pageId: 'business-headcount' },
   { href: '/business-summary/volunteers', label: '자원봉사', pageId: 'business-volunteers' },
   { href: '/business-summary/accounting', label: '회계', pageId: 'business-accounting' },
   { href: '/business-summary/donations', label: '후원', pageId: 'business-donations' },

@@ -7,8 +7,8 @@ const TABS = [
   {
     href: '/business-summary', label: '이사회자료', pageId: 'business-summary',
     match: [
-      '/business-summary', '/business-summary/overview', '/business-summary/report', '/business-summary/volunteers',
-      '/business-summary/accounting', '/business-summary/accounting/budget', '/business-summary/donations',
+      '/business-summary', '/business-summary/overview', '/business-summary/report', '/business-summary/headcount',
+      '/business-summary/volunteers', '/business-summary/accounting', '/business-summary/donations',
       '/business-summary/admin-notes',
     ],
   },

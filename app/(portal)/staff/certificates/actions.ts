@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { requireCanViewCertificateLog } from '@/lib/auth-helpers';
 import {
   addAwardBatch, addCertificate, actOnCertificate, attachUploadedCertificatePdf, issueCertificate,
@@ -94,8 +95,18 @@ export async function issueCertificateAction(formData: FormData): Promise<void> 
   revalidatePath('/staff/certificates');
 }
 
+// throw로 실패를 알리면 프로덕션에서는 "An error occurred in the Server Components render"라는
+// 의미없는 화면만 뜨고 실제 원인은 안 보인다 - 쿼리스트링에 결과/사유를 담아 리다이렉트해서
+// 화면에 직접 띄운다(redirect()는 try/catch 밖에서 호출해야 Next의 내부 리다이렉트 신호를 안 삼킨다).
 export async function resendCertificateEmailAction(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '');
-  await resendCertificateEmail(id);
+  let resultQuery = 'resend=ok';
+  try {
+    await resendCertificateEmail(id);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '메일 발송에 실패했습니다.';
+    resultQuery = `resend=fail&reason=${encodeURIComponent(message)}`;
+  }
   revalidatePath('/staff/certificates');
+  redirect(`/staff/certificates?tab=manage&${resultQuery}`);
 }

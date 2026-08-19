@@ -35,7 +35,10 @@ export default async function AdminNotesPage({
       <div className={card}>
         <h2 className={`${h2} mb-3`}>행정사항 ({ym})</h2>
         <p className="mb-3 text-xs text-zinc-400">여기서 작성한 내용은 요약보고 &quot;8) 행정사항&quot;에 자동으로 표시됩니다.</p>
-        <AdminNoteListClient ym={ym} initialRows={adminNotes.map((n) => ({ id: n.id, 내용: n.내용 }))} />
+        <AdminNoteListClient
+          ym={ym}
+          initialRows={adminNotes.map((n) => ({ id: n.id, 내용: n.내용, 요약포함: n.요약포함, 요약내용: n.요약내용 }))}
+        />
       </div>
     </>
   );
