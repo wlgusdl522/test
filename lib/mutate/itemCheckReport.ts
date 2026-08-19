@@ -11,7 +11,7 @@ import {
 } from '@/lib/approval/engine';
 import { findStaffEmailByPosition, findTeamSupervisorEmail, resolveCardLedgerFirstApprovalStep } from '@/lib/approval/teamSupervisor';
 import { getStaffList } from '@/lib/mutate/staff';
-import { getSystemSettings } from '@/lib/mutate/settings';
+import { getSystemSettings, type SystemSettings } from '@/lib/mutate/settings';
 import { notifyJandiPersonal } from '@/lib/notify/jandi';
 import { isAdminEmail, requireViewerEmail } from '@/lib/auth-helpers';
 import { recomputeCardLedgerStatus } from '@/lib/mutate/cardLedger';
@@ -59,9 +59,11 @@ function resolveTeam(record: Record<string, string>, staffList: Record<string, s
   return staff?.['소속팀'] ?? '';
 }
 
-async function resolveStepApproverEmail(step: string, record: Record<string, string>, staffList: Record<string, string>[]): Promise<string> {
-  if (step === '물품출납원') return (await getSystemSettings()).itemCheckAssetManagerEmail;
-  if (step === '총무과장') return (await getSystemSettings()).itemCheckGeneralAffairsManagerEmail;
+// settings를 인자로 받아 여기서 다시 조회하지 않는다 — 결재단계마다(그리고 조서마다) 매번
+// getSystemSettings()를 새로 부르면 목록 화면 하나 띄우는 데 설정 조회가 N배로 늘어나 눈에 띄게 느려진다.
+function resolveStepApproverEmail(step: string, record: Record<string, string>, staffList: Record<string, string>[], settings: SystemSettings): string {
+  if (step === '물품출납원') return settings.itemCheckAssetManagerEmail;
+  if (step === '총무과장') return settings.itemCheckGeneralAffairsManagerEmail;
   if (step === '과장') return findTeamSupervisorEmail(resolveTeam(record, staffList), staffList);
   return findStaffEmailByPosition(step, staffList); // '부장' 또는 '관장'
 }
@@ -70,23 +72,27 @@ async function resolveStepApproverEmail(step: string, record: Record<string, str
 // (문자열 필드만 있는 시트 레코드에 배열 필드를 억지로 섞으면 타입이 지저분해진다).
 type DecoratedReport = Record<string, string>;
 
-async function decorate(record: Record<string, string>, staffList: Record<string, string>[]): Promise<DecoratedReport> {
+function decorate(record: Record<string, string>, staffList: Record<string, string>[], settings: SystemSettings): DecoratedReport {
   const staffNameByEmail = (email: string) => staffList.find((s) => s['이메일(아이디)'] === email)?.['성명'] ?? '';
-  // resolveStepApproverEmail is async(설정 조회), 미리 계산해서 동기 콜백에 넘긴다.
   const steps = approvalSteps(record, staffList);
-  const approverCache = new Map<string, string>();
-  for (const step of steps) {
-    approverCache.set(step, await resolveStepApproverEmail(step, record, staffList));
-  }
-  const { 결재이력, ...decorated } = decorateApprovalInfo(record, steps, (step) => approverCache.get(step) ?? '', staffNameByEmail);
+  const { 결재이력, ...decorated } = decorateApprovalInfo(
+    record,
+    steps,
+    (step) => resolveStepApproverEmail(step, record, staffList, settings),
+    staffNameByEmail
+  );
   void 결재이력;
   return { ...record, ...decorated };
 }
 
 export async function getItemCheckReportList(): Promise<DecoratedReport[]> {
-  const [list, staffList] = await Promise.all([getKeyedList(ITEM_CHECK_REPORT_TABLE), getStaffList()]);
+  const [list, staffList, settings] = await Promise.all([
+    getKeyedList(ITEM_CHECK_REPORT_TABLE),
+    getStaffList(),
+    getSystemSettings(),
+  ]);
   const reversed = [...list].reverse();
-  return Promise.all(reversed.map((r) => decorate(r, staffList)));
+  return reversed.map((r) => decorate(r, staffList, settings));
 }
 
 export async function getMyPendingItemCheckReportApprovals(): Promise<DecoratedReport[]> {
@@ -155,16 +161,15 @@ export async function addItemCheckReport(payload: Record<string, string>): Promi
     throw new Error('검수 품목을 1개 이상 입력해주세요.');
   }
 
-  const staffList = await getStaffList();
+  const [staffList, settings] = await Promise.all([getStaffList(), getSystemSettings()]);
   const steps = approvalSteps(record, staffList);
   // 결재라인이 아예 없는 경우(관장 본인 작성 + 비품 아님)는 결재 없이 바로 완료 처리한다.
   record['결재상태'] = steps.length > 0 ? '결재중' : '승인';
 
   await appendRecord(ITEM_CHECK_REPORT_TABLE, record);
   if (steps.length > 0) {
-    const decorated = await decorate(record, staffList);
-    const fallback = (await getSystemSettings()).itemCheckReportJandiWebhook;
-    await notifyJandiPersonal(decorated.현재결재자이메일, staffList, buildSubmitMessage(decorated), fallback);
+    const decorated = decorate(record, staffList, settings);
+    await notifyJandiPersonal(decorated.현재결재자이메일, staffList, buildSubmitMessage(decorated), settings.itemCheckReportJandiWebhook);
   }
   const result = await afterWrite();
   await recomputeCardLedgerStatus(record['카드사용대장ID']);
@@ -194,10 +199,9 @@ export async function updateItemCheckReport(id: string, payload: Record<string, 
   await updateRecord(ITEM_CHECK_REPORT_TABLE, { id }, record);
 
   if (wasRejected) {
-    const staffList = await getStaffList();
-    const decorated = await decorate(record, staffList);
-    const fallback = (await getSystemSettings()).itemCheckReportJandiWebhook;
-    await notifyJandiPersonal(decorated.현재결재자이메일, staffList, buildSubmitMessage(decorated), fallback);
+    const [staffList, settings] = await Promise.all([getStaffList(), getSystemSettings()]);
+    const decorated = decorate(record, staffList, settings);
+    await notifyJandiPersonal(decorated.현재결재자이메일, staffList, buildSubmitMessage(decorated), settings.itemCheckReportJandiWebhook);
   }
   return afterWrite();
 }
@@ -221,8 +225,8 @@ export async function actOnItemCheckReport(id: string, action: '승인' | '반�
   const existing = (await getKeyedList(ITEM_CHECK_REPORT_TABLE)).find((r) => r.id === id);
   if (!existing) throw new Error('처리할 조서를 찾을 수 없습니다.');
 
-  const staffList = await getStaffList();
-  const decorated = await decorate(existing, staffList);
+  const [staffList, settings] = await Promise.all([getStaffList(), getSystemSettings()]);
+  const decorated = decorate(existing, staffList, settings);
   const isAdmin = await isAdminEmail(viewerEmail);
   const me = staffList.find((s) => s['이메일(아이디)'] === viewerEmail);
 
@@ -262,13 +266,12 @@ export async function actOnItemCheckReport(id: string, action: '승인' | '반�
     await getAllRecords(ITEM_CHECK_REPORT_TABLE)
   );
 
-  const redecorated = await decorate(record, staffList);
-  const fallback = (await getSystemSettings()).itemCheckReportJandiWebhook;
+  const redecorated = decorate(record, staffList, settings);
   await notifyJandiPersonal(
     redecorated.검수자이메일,
     staffList,
     buildActionMessage(redecorated, action, comment, me?.['성명'] ?? viewerEmail),
-    fallback
+    settings.itemCheckReportJandiWebhook
   );
   return redecorated;
 }
