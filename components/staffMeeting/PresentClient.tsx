@@ -44,10 +44,10 @@ function TeamTable({ team, rows, reportLabel, planLabel }: { team: string; rows:
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
-                <td className={`${td} whitespace-pre-wrap font-semibold align-top`}>{r.사업구분}</td>
-                <td className={`${td} align-top whitespace-pre-wrap`}>{r.업무보고}</td>
-                <td className={`${td} align-top whitespace-pre-wrap`}>{r.업무계획}</td>
-                <td className={`${td} align-top whitespace-pre-wrap`}>{r.협조사항}</td>
+                <td className={`${td} whitespace-pre-wrap break-keep break-words font-semibold align-top`}>{r.사업구분}</td>
+                <td className={`${td} align-top whitespace-pre-wrap break-keep break-words`}>{r.업무보고}</td>
+                <td className={`${td} align-top whitespace-pre-wrap break-keep break-words`}>{r.업무계획}</td>
+                <td className={`${td} align-top whitespace-pre-wrap break-keep break-words`}>{r.협조사항}</td>
               </tr>
             ))}
           </tbody>
@@ -203,10 +203,10 @@ export default function PresentClient({
                         arr[i] = el;
                       }}
                     >
-                      <td className={`${td} whitespace-pre-wrap font-semibold align-top`}>{r.사업구분}</td>
-                      <td className={`${td} align-top whitespace-pre-wrap`}>{r.업무보고}</td>
-                      <td className={`${td} align-top whitespace-pre-wrap`}>{r.업무계획}</td>
-                      <td className={`${td} align-top whitespace-pre-wrap`}>{r.협조사항}</td>
+                      <td className={`${td} whitespace-pre-wrap break-keep break-words font-semibold align-top`}>{r.사업구분}</td>
+                      <td className={`${td} align-top whitespace-pre-wrap break-keep break-words`}>{r.업무보고}</td>
+                      <td className={`${td} align-top whitespace-pre-wrap break-keep break-words`}>{r.업무계획}</td>
+                      <td className={`${td} align-top whitespace-pre-wrap break-keep break-words`}>{r.협조사항}</td>
                     </tr>
                   ))}
                 </tbody>
