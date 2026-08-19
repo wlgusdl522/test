@@ -1,5 +1,6 @@
 import FormToggle from '@/components/FormToggle';
 import TrashIcon from '@/components/icons/TrashIcon';
+import SubmitButton from '@/components/SubmitButton';
 import type { StaffMeetingItem } from '@/lib/mutate/staffMeeting';
 import {
   addStaffMeetingItemAction,
@@ -26,7 +27,7 @@ export default function ItemManageModal({ 팀명, items }: { 팀명: string; ite
           name="사업구분" placeholder="추가할 사업구분 (예: 시설관리)" required rows={2}
           className={`${input} bg-white dark:bg-zinc-900`}
         />
-        <button type="submit" className={`${btn} shrink-0`}>+ 추가</button>
+        <SubmitButton className={`${btn} shrink-0`} pendingLabel="추가 중...">+ 추가</SubmitButton>
       </form>
 
       {items.length === 0 ? (
@@ -47,19 +48,19 @@ export default function ItemManageModal({ 팀명, items }: { 팀명: string; ite
                   <input type="hidden" name="팀명" value={팀명} />
                   <input type="hidden" name="id" value={item.id} />
                   <input type="hidden" name="direction" value="up" />
-                  <button type="submit" disabled={i === 0} aria-label="위로" className={iconBtn}>▲</button>
+                  <SubmitButton disabled={i === 0} ariaLabel="위로" showPendingLabel={false} className={iconBtn}>▲</SubmitButton>
                 </form>
                 <form action={moveStaffMeetingItemAction}>
                   <input type="hidden" name="팀명" value={팀명} />
                   <input type="hidden" name="id" value={item.id} />
                   <input type="hidden" name="direction" value="down" />
-                  <button type="submit" disabled={i === items.length - 1} aria-label="아래로" className={iconBtn}>▼</button>
+                  <SubmitButton disabled={i === items.length - 1} ariaLabel="아래로" showPendingLabel={false} className={iconBtn}>▼</SubmitButton>
                 </form>
                 <form action={deleteStaffMeetingItemAction}>
                   <input type="hidden" name="id" value={item.id} />
-                  <button type="submit" aria-label="삭제" className={iconBtnDanger}>
+                  <SubmitButton ariaLabel="삭제" showPendingLabel={false} className={iconBtnDanger}>
                     <TrashIcon />
-                  </button>
+                  </SubmitButton>
                 </form>
               </div>
             </li>

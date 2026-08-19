@@ -10,6 +10,7 @@ import {
   nextYm,
   valueFor,
 } from '@/lib/mutate/staffMeeting';
+import { getStaffMeetingContext } from '@/lib/prefs-actions';
 import { pageFluid, table, td, th, tableWrap } from '@/lib/ui';
 
 export const runtime = 'nodejs';
@@ -52,7 +53,8 @@ export default async function StaffMeetingPresentPage({
   if (!(await hasPageAccess('staff-meeting'))) return <PageAccessDenied />;
 
   const { ym: ymParam } = await searchParams;
-  const ym = ymParam || currentYm();
+  const cookieCtx = await getStaffMeetingContext();
+  const ym = ymParam || cookieCtx.ym || currentYm();
 
   const [teams, meetingInfo] = await Promise.all([getSimpleList(TEAM_LIST_SHEET_NAME), getStaffMeetingInfo(ym)]);
 

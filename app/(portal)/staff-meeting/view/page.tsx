@@ -5,6 +5,8 @@ import PageAccessDenied from '@/components/PageAccessDenied';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getStaffMeetingItems, getStaffMeetingValues, nextYm, valueFor } from '@/lib/mutate/staffMeeting';
+import SubmitButton from '@/components/SubmitButton';
+import { getStaffMeetingContext, setStaffMeetingContextAction } from '@/lib/prefs-actions';
 import { btnOutline, card, h1, inputBase, pageFluid, table, td, th, tableWrap } from '@/lib/ui';
 
 export const runtime = 'nodejs';
@@ -26,15 +28,21 @@ export default async function StaffMeetingViewPage({
 }) {
   if (!(await hasPageAccess('staff-meeting'))) return <PageAccessDenied />;
 
-  const [teams, me] = await Promise.all([getSimpleList(TEAM_LIST_SHEET_NAME), getViewerStaffRecord()]);
+  const [teams, me, cookieCtx] = await Promise.all([
+    getSimpleList(TEAM_LIST_SHEET_NAME),
+    getViewerStaffRecord(),
+    getStaffMeetingContext(),
+  ]);
   const { team: teamParam, ym: ymParam } = await searchParams;
   const myTeam = me?.소속팀 ?? '';
   const 팀명 = teams.includes(teamParam ?? '')
     ? (teamParam as string)
-    : teams.includes(myTeam)
-      ? myTeam
-      : (teams[0] ?? '');
-  const ym = ymParam || currentYm();
+    : teams.includes(cookieCtx.team)
+      ? cookieCtx.team
+      : teams.includes(myTeam)
+        ? myTeam
+        : (teams[0] ?? '');
+  const ym = ymParam || cookieCtx.ym || currentYm();
 
   const items = 팀명 ? await getStaffMeetingItems(팀명) : [];
   const values = await getStaffMeetingValues(items.map((i) => i.id));
@@ -51,7 +59,8 @@ export default async function StaffMeetingViewPage({
         </Link>
       </div>
 
-      <form method="get" className="mb-5 flex flex-wrap items-center gap-3">
+      <form action={setStaffMeetingContextAction} className="mb-5 flex flex-wrap items-center gap-3">
+        <input type="hidden" name="redirectTo" value="/staff-meeting/view" />
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">팀</label>
         <select name="team" defaultValue={팀명} className={`${inputBase} w-auto`}>
           {teams.map((t) => (
@@ -60,7 +69,7 @@ export default async function StaffMeetingViewPage({
         </select>
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">조회월</label>
         <input type="month" name="ym" defaultValue={ym} className={`${inputBase} w-auto`} />
-        <button type="submit" className={btnOutline}>조회</button>
+        <SubmitButton className={btnOutline} pendingLabel="조회 중...">조회</SubmitButton>
       </form>
 
       {!팀명 ? (
