@@ -4,15 +4,12 @@ import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } f
 import { getDriveImageAsDataUrl } from '@/lib/drive/upload';
 import { getSystemSettings } from '@/lib/mutate/settings';
 import { getStaffList } from '@/lib/mutate/staff';
+import { AWARD_CONTENT_LEFT as CONTENT_LEFT, AWARD_CONTENT_WIDTH as CONTENT_WIDTH, formatPrintDate } from '@/lib/pdf/printShared';
 
 // 기관에서 실제 쓰던 표창장 한글 양식(상장 테두리가 미리 인쇄된 용지에 텍스트만 겹쳐 인쇄하는 용도)의
 // PDF를 pdfjs로 직접 파싱해서 각 요소의 실제 좌표(pt)·글자크기·자간을 측정한 뒤, 그 값을 그대로
 // 절대좌표로 재현한다. 여백/폰트크기가 조금이라도 다르면 실물 상장 테두리와 어긋나기 때문에
 // 대략적인 느낌이 아니라 측정값을 그대로 쓴다. QR·직인 박스만 원본에 없던 우리쪽 추가 요소.
-const A4_WIDTH = 595.28;
-const CONTENT_LEFT = 96;
-const CONTENT_RIGHT = 96;
-const CONTENT_WIDTH = A4_WIDTH - CONTENT_LEFT - CONTENT_RIGHT;
 
 let fontRegistered = false;
 // certificatePdf.tsx와 동일한 이유(가변폰트 굵기 배리에이션) - 400/700 둘 다 등록해야 fontWeight:700이 실제로 굵게 나온다.
@@ -51,12 +48,6 @@ const styles = StyleSheet.create({
   qrBarImage: { width: 40, height: 40 },
   qrBarText: { flex: 1, marginLeft: 12, fontSize: 9, color: '#666' },
 });
-
-function formatPrintDate(iso: string): string {
-  const parts = String(iso || '').split('-');
-  if (parts.length < 3) return iso || '';
-  return `${parts[0]}년 ${Number(parts[1])}월 ${Number(parts[2])}일`;
-}
 
 export async function renderAwardPdf(record: Record<string, string>, verifyUrl: string): Promise<Buffer> {
   ensureFont();

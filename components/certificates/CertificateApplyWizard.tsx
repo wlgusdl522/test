@@ -378,7 +378,7 @@ export default function CertificateApplyWizard({
   );
 }
 
-// 실제 발행되는 PDF·인쇄화면(lib/pdf/awardPdf.tsx, app/print/award)과 같은 순서·비율로 구성한
+// 실제 발행되는 PDF(lib/pdf/awardPdf.tsx)와 같은 순서·비율로 구성한
 // 미리보기 — 문서번호·직인·QR은 발급 전이라 실제 값 대신 자리표시자로 보여준다.
 export function AwardPreview({
   kind, names, body, directorName, showQr = true,
