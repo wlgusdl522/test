@@ -15,8 +15,8 @@ import { getHeadcountDate } from '@/lib/mutate/boardHeadcount';
 import { getWorklogBusinessNames, buildWorklogItems } from '@/lib/mutate/businessPlan';
 import { getDailyEntries, rangeSum } from '@/lib/mutate/worklogEntry';
 
-// "이사회자료 전체 통" 한 화면/인쇄본/hwpx 파일 3곳에서 전부 같은 데이터가 필요해서, 조회월 하나만
-// 받아 필요한 걸 전부 모아주는 단일 조립 함수로 뺐다 — 각 도메인 모듈의 기존 조회 함수만 그대로
+// "이사회자료 전체 통" 화면/인쇄본 2곳에서 전부 같은 데이터가 필요해서, 조회월 하나만 받아
+// 필요한 걸 전부 모아주는 단일 조립 함수로 뺐다 — 각 도메인 모듈의 기존 조회 함수만 그대로
 // 재사용하고 새 계산 로직은 추가하지 않는다(이미 각 탭에서 검증된 계산식 그대로).
 
 export type FacilityStatRow = { 시설명: string; 전월누계: number; 금월실적: number; 누계?: number };
