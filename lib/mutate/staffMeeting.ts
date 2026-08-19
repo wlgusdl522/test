@@ -221,16 +221,29 @@ function nowTimestamp(): string {
   return new Date().toISOString().slice(0, 19).replace('T', ' ');
 }
 
-// 잔디 알림 화면에 기본으로 채워주는 문구 — 그대로 보내도 되고 고쳐서 보내도 된다.
-export function buildStaffMeetingNotificationMessage(ym: string, info: StaffMeetingInfo): string {
-  return [
-    `📢 ${ym} 전체회의 안내`,
-    info.회의일시 ? `일시: ${info.회의일시.replace('T', ' ')}` : '',
-    info.장소 ? `장소: ${info.장소}` : '',
-    info.진행 ? `진행: ${info.진행}` : '',
-    info.참석부서 ? `참석부서: ${info.참석부서}` : '',
-    '업무포털 > 업무관리 > 전체회의자료에서 자료 준비 부탁드립니다.',
-  ].filter(Boolean).join('\n');
+const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
+
+export function formatMeetingDateTime(dt: string): string {
+  if (!dt) return '';
+  const d = new Date(dt);
+  if (Number.isNaN(d.getTime())) return dt;
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일(${WEEKDAY[d.getDay()]}) ${hh}:${mm}`;
+}
+
+// 잔디 알림 화면에 제목/내용을 따로 기본값으로 채워주고, 담당자가 그대로 두거나 고쳐서 보낸다.
+export function buildStaffMeetingNotificationTitle(ym: string): string {
+  return `${ymLabel(ym)} 전체회의 안내`;
+}
+
+// 회의록 작성 마감일은 저장해둔 값이 없어 자동으로 채울 수 없으므로 빈칸으로 남겨 담당자가 직접 적는다.
+export function buildStaffMeetingNotificationContent(info: StaffMeetingInfo): string {
+  const lines = ['직원 전체 월례회의 일정을 안내합니다.', ''];
+  if (info.회의일시) lines.push(` - 일시 : ${formatMeetingDateTime(info.회의일시)}`);
+  if (info.장소) lines.push(` - 장소 : ${info.장소}`);
+  lines.push('', '전체회의록 작성은  까지 작성부탁드립니다.');
+  return lines.join('\n');
 }
 
 // "잔디 알림 보내기" 버튼을 누르면 즉시 호출 — 예약/크론 없이 그 자리에서 바로 발송한다.

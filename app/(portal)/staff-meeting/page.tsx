@@ -7,7 +7,8 @@ import ItemManageModal from '@/components/staffMeeting/ItemManageModal';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import {
-  buildStaffMeetingNotificationMessage,
+  buildStaffMeetingNotificationContent,
+  buildStaffMeetingNotificationTitle,
   getStaffMeetingInfo,
   getStaffMeetingItems,
   getStaffMeetingValues,
@@ -135,17 +136,21 @@ export default async function StaffMeetingPage({
           <form action={sendStaffMeetingNotificationAction}>
             <input type="hidden" name="년월" value={ym} />
             <label className={label}>
-              잔디로 보낼 문구(수정 가능)
+              제목
+              <input name="제목" defaultValue={buildStaffMeetingNotificationTitle(ym)} className={input} />
+            </label>
+            <label className={`${label} mt-3`}>
+              내용
               <textarea
-                name="메시지"
-                rows={5}
-                defaultValue={buildStaffMeetingNotificationMessage(ym, meetingInfo)}
+                name="내용"
+                rows={7}
+                defaultValue={buildStaffMeetingNotificationContent(meetingInfo)}
                 className={`${input} whitespace-pre-wrap`}
               />
             </label>
             <div className="mt-2 flex items-center gap-3">
               <ConfirmSubmitButton
-                confirmMessage="위 문구로 잔디 공용 채널에 지금 바로 보낼까요?"
+                confirmMessage="위 제목/내용으로 잔디 공용 채널에 지금 바로 보낼까요?"
                 className={btnSecondary}
               >
                 잔디 알림 보내기
