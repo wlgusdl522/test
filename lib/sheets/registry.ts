@@ -2,6 +2,7 @@ import type { KeyedTableConfig } from './keyedTable';
 import {
   CARD_LEDGER_SHEET_ID,
   DOCUMENT_INDEX_SHEET_ID,
+  STAFF_MEETING_SHEET_ID,
   STAFF_SHEET_ID,
   VEHICLE_SHEET_ID,
   WEEKLY_PLAN_SHEET_ID,
@@ -438,7 +439,7 @@ export const DOCUMENT_INDEX_PREFIX_TABLE: KeyedTableConfig = {
 export const STAFF_MEETING_ITEM_HEADERS = ['id', '팀명', '사업구분', '정렬순서'];
 
 export const STAFF_MEETING_ITEM_TABLE: KeyedTableConfig = {
-  spreadsheetId: WORKLOG_SHEET_ID,
+  spreadsheetId: STAFF_MEETING_SHEET_ID,
   sheetName: '전체회의사업구분',
   headers: STAFF_MEETING_ITEM_HEADERS,
   primaryKey: 'id',
@@ -451,7 +452,7 @@ export const STAFF_MEETING_VALUE_HEADERS = [
 ];
 
 export const STAFF_MEETING_VALUE_TABLE: KeyedTableConfig = {
-  spreadsheetId: WORKLOG_SHEET_ID,
+  spreadsheetId: STAFF_MEETING_SHEET_ID,
   sheetName: '전체회의업무보고',
   headers: STAFF_MEETING_VALUE_HEADERS,
   primaryKey: ['사업구분ID', '팀명', '년월'],
