@@ -282,7 +282,7 @@ export default function WeeklyPlanWorkspace({
           {isOwnTeam && (
             <div className="rounded-lg border border-brand bg-brand-tint p-3">
               <p className="text-sm font-semibold text-brand-dark dark:text-brand">{myName}</p>
-              {myBusinessName && <p className="text-xs text-zinc-500 dark:text-zinc-400">{myBusinessName}</p>}
+              {myBusinessName && <p className="text-xs text-zinc-500 dark:text-zinc-400">• {myBusinessName}</p>}
               <div className="mt-1.5 flex flex-col gap-1.5">
                 {dayDates.map((iso, i) => {
                   const dayRows = rowsByDay[iso] ?? [];
@@ -306,7 +306,7 @@ export default function WeeklyPlanWorkspace({
               return (
                 <div key={row.key} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
                   <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{row.label}</p>
-                  {rowBusinessLabel && <p className="text-xs text-zinc-500 dark:text-zinc-400">{rowBusinessLabel}</p>}
+                  {rowBusinessLabel && <p className="text-xs text-zinc-500 dark:text-zinc-400">• {rowBusinessLabel}</p>}
                   {memberTasks.length === 0 ? (
                     <p className="mt-1 text-sm text-zinc-300 dark:text-zinc-700">등록된 업무 없음</p>
                   ) : (
@@ -345,7 +345,7 @@ export default function WeeklyPlanWorkspace({
               {isOwnTeam && (
                 <>
                   <tr className="bg-brand-tint">
-                    <td className={tdClean}><b>{myName}</b></td>
+                    <td className={tdClean} rowSpan={2}><b>{myName}</b></td>
                     {dayDates.map((iso) => (
                       <td key={iso} className={tdClean}>
                         {(rowsByDay[iso] ?? []).length === 0
@@ -355,9 +355,9 @@ export default function WeeklyPlanWorkspace({
                     ))}
                   </tr>
                   <tr className="bg-brand-tint">
-                    <td className={tdClean} colSpan={1 + dayDates.length}>
+                    <td className={tdClean} colSpan={dayDates.length}>
                       <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {myBusinessName || '사업명 미입력'}
+                        {myBusinessName && `• ${myBusinessName}`}
                       </span>
                     </td>
                   </tr>
@@ -369,7 +369,7 @@ export default function WeeklyPlanWorkspace({
                 return (
                   <Fragment key={row.key}>
                     <tr className={trHoverClean}>
-                      <td className={tdClean}>{row.label}</td>
+                      <td className={tdClean} rowSpan={2}>{row.label}</td>
                       {dayDates.map((iso) => {
                         const dayTasks = teamTasks.filter((t) => rowEmails.has(t.email.toLowerCase()) && t.날짜 === iso);
                         return (
@@ -382,9 +382,9 @@ export default function WeeklyPlanWorkspace({
                       })}
                     </tr>
                     <tr className={trHoverClean}>
-                      <td className={tdClean} colSpan={1 + dayDates.length}>
+                      <td className={tdClean} colSpan={dayDates.length}>
                         <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                          {rowBusinessLabel || '사업명 미입력'}
+                          {rowBusinessLabel && `• ${rowBusinessLabel}`}
                         </span>
                       </td>
                     </tr>

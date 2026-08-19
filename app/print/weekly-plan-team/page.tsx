@@ -128,7 +128,7 @@ export default async function WeeklyPlanTeamPrintPage({
                 return (
                   <Fragment key={row.key}>
                     <tr>
-                      <td className={td}>
+                      <td className={td} rowSpan={2}>
                         <b>{row.label}</b>
                         {isLead && <><br /><span style={{ fontSize: 11.5, color: '#888' }}>{single!['직급/직책']}</span></>}
                       </td>
@@ -142,8 +142,8 @@ export default async function WeeklyPlanTeamPrintPage({
                       })}
                     </tr>
                     <tr>
-                      <td className={td} colSpan={1 + dayDates.length} style={{ fontSize: 12, color: '#666' }}>
-                        {businessLabel || ' '}
+                      <td className={td} colSpan={dayDates.length} style={{ fontSize: 12, color: '#666' }}>
+                        {businessLabel && `• ${businessLabel}`}
                       </td>
                     </tr>
                   </Fragment>
