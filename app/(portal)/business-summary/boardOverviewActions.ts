@@ -26,7 +26,11 @@ export async function submitFacilityStatAction(
   revalidateOverview();
 }
 
-export async function saveAdminNotesAction(ym: string, contents: { id?: string; 내용: string }[]): Promise<void> {
+export async function saveAdminNotesAction(
+  ym: string,
+  contents: { id?: string; 내용: string; 요약포함: boolean; 요약내용: string }[]
+): Promise<void> {
   await saveAdminNotes(ym, contents);
   revalidateOverview();
+  revalidatePath('/business-summary/admin-notes');
 }
