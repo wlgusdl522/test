@@ -70,8 +70,9 @@ const CONTENT_WIDTH = A4_WIDTH_PT - CONTENT_LEFT - CONTENT_RIGHT;
 async function AwardDoc({
   record: r, origin, isLast,
 }: { record: Record<string, string>; origin: string; isLast: boolean }) {
+  const showQr = r['QR표시여부'] !== 'N';
   const verifyUrl = `${origin}/verify/certificate/${r.id}`;
-  const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 100, margin: 1 });
+  const qrDataUrl = showQr ? await QRCode.toDataURL(verifyUrl, { width: 100, margin: 1 }) : null;
   const [{ certificateSealImageUrl }, staffList] = await Promise.all([getSystemSettings(), getStaffList()]);
   const sealDataUrl = certificateSealImageUrl ? await getDriveImageAsDataUrl(certificateSealImageUrl) : null;
   const directorName = staffList.find((s) => s['재직상태'] === '재직' && s['직급/직책'] === '관장')?.['성명'] ?? '';
@@ -93,38 +94,38 @@ async function AwardDoc({
     >
       <div style={{ position: 'absolute', top: 108, left: CONTENT_LEFT, fontSize: 15 }}>제 {r.문서번호}호</div>
 
-      <h2 style={{ position: 'absolute', top: 193, left: 0, right: 0, textAlign: 'center', fontSize: 38, fontWeight: 700, letterSpacing: 19, margin: 0 }}>
+      <h2 style={{ position: 'absolute', top: 193, left: 0, right: 0, textAlign: 'center', fontSize: 28, fontWeight: 700, letterSpacing: 14, margin: 0 }}>
         {r.종류 || '상장'}
       </h2>
 
-      <p style={{ position: 'absolute', top: 306, left: CONTENT_LEFT, width: CONTENT_WIDTH, textAlign: 'right', fontSize: 20, letterSpacing: 10, margin: 0 }}>
+      <p style={{ position: 'absolute', top: 306, left: CONTENT_LEFT, width: CONTENT_WIDTH, textAlign: 'right', fontSize: 15, letterSpacing: 7, margin: 0 }}>
         성 명 : {r.대상자성명}
       </p>
 
       <p
         style={{
           position: 'absolute', top: 390, left: CONTENT_LEFT, width: CONTENT_WIDTH,
-          fontSize: 22, lineHeight: 2.15, textAlign: 'justify', textIndent: 12, whiteSpace: 'pre-wrap', margin: 0,
+          fontSize: 16, lineHeight: 1.9, textAlign: 'justify', textIndent: 12, whiteSpace: 'pre-wrap', margin: 0,
         }}
       >
         {r.본문}
       </p>
 
-      <p style={{ position: 'absolute', top: 650, left: 0, right: 0, textAlign: 'center', fontSize: 17, margin: 0 }}>
+      <p style={{ position: 'absolute', top: 650, left: 0, right: 0, textAlign: 'center', fontSize: 13, margin: 0 }}>
         {formatPrintDate(r.발급일)}
       </p>
 
       <div style={{ position: 'absolute', top: 700, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ marginRight: 10, fontSize: 10.5, lineHeight: 1.25, textAlign: 'center' }}>
+        <div style={{ marginRight: 10, fontSize: 9, lineHeight: 1.25, textAlign: 'center' }}>
           <div>사회복지</div>
           <div>법 인</div>
         </div>
-        <div style={{ fontSize: 19, fontWeight: 700 }}>새 문 안 교 회 사 회 복 지 재 단</div>
+        <div style={{ fontSize: 14, fontWeight: 700 }}>새 문 안 교 회 사 회 복 지 재 단</div>
       </div>
 
       <div style={{ position: 'absolute', top: 735, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
         <div style={{ position: 'relative' }}>
-          <p style={{ fontSize: 18.9, fontWeight: 700, margin: 0 }}>시립서대문노인종합복지관장{directorName ? ` ${directorName}` : ''}</p>
+          <p style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>시립서대문노인종합복지관장{directorName ? ` ${directorName}` : ''}</p>
           {sealDataUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -138,19 +139,21 @@ async function AwardDoc({
         </div>
       </div>
 
-      <div
-        style={{
-          position: 'absolute', top: 786, left: CONTENT_LEFT, width: CONTENT_WIDTH,
-          display: 'flex', alignItems: 'center',
-          border: '1px solid #ddd', borderRadius: 8, background: '#fafafa', padding: 10,
-        }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={qrDataUrl} alt="발급 확인 QR코드" width={40} height={40} />
-        <p style={{ flex: 1, marginLeft: 12, fontSize: 9, color: '#666', margin: 0 }}>
-          QR 코드를 스캔하면 본 문서의 발급 진위 여부를 확인할 수 있습니다.
-        </p>
-      </div>
+      {showQr && qrDataUrl && (
+        <div
+          style={{
+            position: 'absolute', top: 786, left: CONTENT_LEFT, width: CONTENT_WIDTH,
+            display: 'flex', alignItems: 'center',
+            border: '1px solid #ddd', borderRadius: 8, background: '#fafafa', padding: 10,
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qrDataUrl} alt="발급 확인 QR코드" width={40} height={40} />
+          <p style={{ flex: 1, marginLeft: 12, fontSize: 9, color: '#666', margin: 0 }}>
+            QR 코드를 스캔하면 본 문서의 발급 진위 여부를 확인할 수 있습니다.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
