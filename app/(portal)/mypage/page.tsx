@@ -1,18 +1,22 @@
+import Link from 'next/link';
 import { getMyRecordsSummary } from '@/lib/mutate/dashboard';
 import { getMyPendingItemCheckReportApprovals } from '@/lib/mutate/itemCheckReport';
 import { getMyPendingVehicleLogApprovals } from '@/lib/mutate/vehicleLog';
 import { getMyPendingCertificateApprovals } from '@/lib/supabase/certificate';
+import { getDutyWeekdayLogs, getDutySaturdayLogs } from '@/lib/supabase/duty';
+import { formatDutyDayLabel } from '@/components/duty/DutyWeeklyLogTable';
+import { todayISO } from '@/lib/dutyDate';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
-import { getNavLayout, setNavLayoutAction } from '@/lib/prefs-actions';
-import { btn, btnDanger, btnSecondary, card, cardTableWrap, h1, h2, input, inputBase, label, pageFluid, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
+import { btn, btnDanger, card, cardTableWrap, h1, h2, inputBase, pageFluid, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
 import { actOnItemCheckReportAction } from '@/app/(portal)/expenses/reports/actions';
-import { parseAmount } from '@/lib/format';
 import { actOnVehicleLogAction } from '@/app/(portal)/vehicles/logs/actions';
 import { actOnCertificateAction } from '@/app/(portal)/staff/certificates/actions';
-import { saveMyJandiWebhookAction, saveMyStampAction } from './actions';
+import MyPageTabs from '@/components/mypage/MyPageTabs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+type TaskItem = { key: string; title: string; meta: string; href: string };
 
 function ApprovalActions({ actionFn, id }: { actionFn: (formData: FormData) => Promise<void>; id: string }) {
   return (
@@ -32,167 +36,194 @@ function ApprovalActions({ actionFn, id }: { actionFn: (formData: FormData) => P
   );
 }
 
+// 업무탭 2x2 카드 하나(제목 + 건수 + 미리보기 목록). '미정' 카드처럼 목록이 없는 경우는
+// items 없이 children으로 안내 문구만 채워서 쓴다.
+function TaskGridCard({
+  title,
+  count,
+  items,
+  emptyText,
+  children,
+}: {
+  title: string;
+  count?: number;
+  items?: TaskItem[];
+  emptyText?: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className={`${card} mb-0 flex flex-col`}>
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="text-[13px] font-bold text-zinc-800 dark:text-zinc-100">{title}</h3>
+        {typeof count === 'number' && (
+          <span className={`text-lg font-bold ${count > 0 ? 'text-brand' : 'text-zinc-300 dark:text-zinc-600'}`}>{count}</span>
+        )}
+      </div>
+      {children ?? (
+        <ul className="flex flex-col gap-1">
+          {(items ?? []).slice(0, 4).map((t) => (
+            <li key={t.key}>
+              <Link href={t.href} className="block truncate rounded-md px-1.5 py-1 text-xs text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800">
+                <span className="text-zinc-400">{t.meta} · </span>{t.title}
+              </Link>
+            </li>
+          ))}
+          {(items ?? []).length === 0 && <li className="px-1.5 py-1 text-xs text-zinc-400">{emptyText}</li>}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default async function MyPage() {
-  const [summary, pendingReports, pendingLogs, pendingCertificates, me, navLayout] = await Promise.all([
+  const [
+    summary, pendingReports, pendingLogs, pendingCertificates, me,
+    weekdayDutyLogs, saturdayDutyLogs,
+  ] = await Promise.all([
     getMyRecordsSummary(),
     getMyPendingItemCheckReportApprovals(),
     getMyPendingVehicleLogApprovals(),
     getMyPendingCertificateApprovals(),
     getViewerStaffRecord(),
-    getNavLayout(),
+    getDutyWeekdayLogs(),
+    getDutySaturdayLogs(),
   ]);
+
+  const viewerEmail = (me?.['이메일(아이디)'] ?? '').toLowerCase();
+  const today = todayISO();
+
+  // 결재필요: 증명서발급 + 물품검수(조서) 결재단계에 있는 건만 (차량운행일지 결재는 제외 — 아래 내 결재함에서는 계속 처리 가능)
+  const approvalItems: TaskItem[] = [
+    ...pendingReports.map((r) => ({
+      key: `report-${r.id}`, title: `${r.품명} · ${Number(r.금액 || 0).toLocaleString()}원`,
+      meta: `물품검수조서 · ${r.현재결재단계}`, href: '#approvals',
+    })),
+    ...pendingCertificates.map((r) => ({
+      key: `cert-${r.id}`, title: `${r.종류} · ${r.대상자성명}`,
+      meta: `증명서발급 · ${r.현재결재단계}`, href: '#approvals',
+    })),
+  ];
+
+  // 검수필요: 카드사용내역 중 물품검수(사진)/조서를 아직 완료하지 않은 내역
+  const inspectionItems: TaskItem[] = summary.pendingTasks
+    .filter((t) => t.section === 'cardLedger' && (t.status === '사진필요' || t.status === '조서필수'))
+    .map((t) => ({
+      key: `inspection-${t.id}-${t.status}`, title: t.title, meta: `${t.date} · ${t.status}`,
+      href: t.status === '사진필요' ? `/expenses/mine?photoFor=${t.id}&all=1` : `/expenses/mine?reportFor=${t.id}&all=1`,
+    }));
+
+  // 일지작성: 차량운행일지 미작성 + 당직근무일지 미작성(근무일이 지났는데 아직 서명 안 한 배정)
+  const myUnsignedWeekdayDuty = weekdayDutyLogs.filter(
+    (r) => (r.이메일 ?? '').toLowerCase() === viewerEmail && r.근무일자 <= today && !r.사인
+  );
+  const myUnsignedSaturdayDuty = saturdayDutyLogs.filter((r) => {
+    const slot1 = (r.이메일1 ?? '').toLowerCase() === viewerEmail && !r.사인1;
+    const slot2 = (r.이메일2 ?? '').toLowerCase() === viewerEmail && !r.사인2;
+    return (slot1 || slot2) && r.근무일자 <= today;
+  });
+  const logItems: TaskItem[] = [
+    ...summary.pendingTasks
+      .filter((t) => t.status === '운행일지 미작성')
+      .map((t) => ({ key: `vehiclelog-${t.id}`, title: t.title, meta: `${t.date} · 차량운행일지`, href: `/vehicles/logs?requestId=${t.id}#log-form` })),
+    ...myUnsignedWeekdayDuty.map((r) => ({
+      key: `duty-weekday-${r.id}`, title: '당직근무일지', meta: `${formatDutyDayLabel(r.근무일자)} · 평일당직`,
+      href: `/duty/log/weekday/${r.id}`,
+    })),
+    ...myUnsignedSaturdayDuty.map((r) => ({
+      key: `duty-saturday-${r.id}`, title: '당직근무일지', meta: `${formatDutyDayLabel(r.근무일자)} · 토요당직`,
+      href: `/duty/log/saturday/${r.id}`,
+    })),
+  ];
+
+  // 위 4개 카드에 안 잡히는 반려/주유필요 등은 기타 목록으로 놓쳐서 묻히지 않게 그대로 노출.
+  const otherTasks = summary.pendingTasks.filter((t) =>
+    ['반려', '조서반려', '운행일지 반려', '주유필요'].includes(t.status)
+  );
+
+  const approvalRows = [
+    ...pendingReports.map((r) => ({
+      key: `report-${r.id}`, label: '물품검수조서',
+      content: `${r.품명} · ${Number(r.금액 || 0).toLocaleString()}원`,
+      step: r.현재결재단계, actionFn: actOnItemCheckReportAction, id: r.id,
+    })),
+    ...pendingLogs.map((r) => ({
+      key: `log-${r.id}`, label: '차량운행일지',
+      content: `${r.차량번호} · ${r.목적}`,
+      step: r.현재결재단계, actionFn: actOnVehicleLogAction, id: r.id,
+    })),
+    ...pendingCertificates.map((r) => ({
+      key: `cert-${r.id}`, label: '증명서 발급',
+      content: `${r.종류} · ${r.대상자성명}`,
+      step: r.현재결재단계, actionFn: actOnCertificateAction, id: r.id,
+    })),
+  ];
 
   return (
     <main className={pageFluid}>
       <h1 className={`${h1} mb-5`}>마이페이지</h1>
+      <MyPageTabs />
 
-      <h2 className={h2}>화면 레이아웃</h2>
-      <div className={`${card} flex flex-wrap items-center gap-3`}>
-        <form action={setNavLayoutAction}>
-          <input type="hidden" name="layout" value="top" />
-          <button type="submit" className={navLayout === 'top' ? btn : btnSecondary}>상단 배치</button>
-        </form>
-        <form action={setNavLayoutAction}>
-          <input type="hidden" name="layout" value="left" />
-          <button type="submit" className={navLayout === 'left' ? btn : btnSecondary}>좌측 배치</button>
-        </form>
-        <p className="text-xs text-zinc-400">메뉴를 화면 상단 또는 좌측 중 원하는 위치에 배치할 수 있어요.</p>
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <TaskGridCard title="결재필요" count={approvalItems.length} items={approvalItems} emptyText="결재 대기 중인 건이 없습니다." />
+        <TaskGridCard title="미정">
+          <p className="px-1.5 py-1 text-xs text-zinc-400">아직 준비중인 기능입니다.</p>
+        </TaskGridCard>
+        <TaskGridCard title="검수필요" count={inspectionItems.length} items={inspectionItems} emptyText="검수가 필요한 내역이 없습니다." />
+        <TaskGridCard title="일지작성" count={logItems.length} items={logItems} emptyText="작성할 일지가 없습니다." />
       </div>
 
-      <h2 className={h2}>내 정보</h2>
-      <div className={`${card} grid grid-cols-1 gap-2 text-sm sm:grid-cols-2`}>
-        <div><span className="text-zinc-500">이메일</span> {me?.['이메일(아이디)'] ?? ''}</div>
-        <div><span className="text-zinc-500">성명</span> {me?.성명 ?? ''}</div>
-        <div><span className="text-zinc-500">소속팀</span> {me?.소속팀 ?? ''}</div>
-        <div><span className="text-zinc-500">직급/직책</span> {me?.['직급/직책'] ?? ''}</div>
-        <div><span className="text-zinc-500">담당사업</span> {me?.담당사업 ?? ''}</div>
-        <div><span className="text-zinc-500">내선번호</span> {me?.내선번호 ?? ''}</div>
-        <div><span className="text-zinc-500">휴대폰번호</span> {me?.휴대폰번호 ?? ''}</div>
-        <div><span className="text-zinc-500">입사일</span> {me?.입사일 ?? ''}</div>
-      </div>
-
-      <h2 className={h2}>내 도장 / 알림 설정</h2>
-      <div className={`${card} grid grid-cols-1 gap-4 sm:grid-cols-2`}>
-        <form action={saveMyStampAction} encType="multipart/form-data" className="flex flex-col gap-2">
-          <label className={label}>
-            내 도장 이미지 {me?.도장 && <a href={me.도장} target="_blank" rel="noreferrer" className="text-brand hover:underline">(현재 도장 보기)</a>}
-            <input type="file" name="stamp" accept="image/*" className={input} />
-          </label>
-          <p className="text-xs text-zinc-400">결재라인이 없는 게시판(물품검수조서 등) 인쇄물에 이름 대신 이 도장 이미지가 찍힙니다.</p>
-          <div><button type="submit" className={btn}>도장 등록</button></div>
-        </form>
-        <form action={saveMyJandiWebhookAction} className="flex flex-col gap-2">
-          <label className={label}>
-            내 잔디(JANDI) 개인 웹훅 URL
-            <input name="webhookUrl" defaultValue={me?.잔디웹훅 ?? ''} placeholder="https://wh.jandi.com/..." className={input} />
-          </label>
-          <p className="text-xs text-zinc-400">잔디에서 "나와의 채팅" 토픽에 인커밍 웹훅을 연결해 등록해두면, 결재요청/승인/반려 알림이 나에게만 옵니다. 비워두면 공용 웹훅으로 대신 갑니다.</p>
-          <div><button type="submit" className={btn}>저장</button></div>
-        </form>
-      </div>
-
-      <h2 className={h2}>처리할 일</h2>
-      <ul className="mb-6 flex flex-col gap-1">
-        {summary.pendingTasks.map((t) => (
-          <li key={`${t.section}-${t.id}`} className="text-sm text-zinc-700 dark:text-zinc-300">
-            [{t.status}] {t.date} · {t.title}
-          </li>
-        ))}
-        {summary.pendingTasks.length === 0 && <li className="text-sm text-zinc-400">처리할 일이 없습니다.</li>}
-      </ul>
-
-      {(pendingReports.length > 0 || pendingLogs.length > 0 || pendingCertificates.length > 0) && (
+      {otherTasks.length > 0 && (
         <>
-          <h2 className={h2}>내 결재함</h2>
-          {(() => {
-            const approvalRows = [
-              ...pendingReports.map((r) => ({
-                key: `report-${r.id}`, label: '물품검수조서',
-                content: `${r.품명} · ${Number(r.금액 || 0).toLocaleString()}원`,
-                step: r.현재결재단계, actionFn: actOnItemCheckReportAction, id: r.id,
-              })),
-              ...pendingLogs.map((r) => ({
-                key: `log-${r.id}`, label: '차량운행일지',
-                content: `${r.차량번호} · ${r.목적}`,
-                step: r.현재결재단계, actionFn: actOnVehicleLogAction, id: r.id,
-              })),
-              ...pendingCertificates.map((r) => ({
-                key: `cert-${r.id}`, label: '증명서 발급',
-                content: `${r.종류} · ${r.대상자성명}`,
-                step: r.현재결재단계, actionFn: actOnCertificateAction, id: r.id,
-              })),
-            ];
-            return (
-              <>
-                {/* 모바일: 표는 칸이 너무 좁아져서 대신 카드 목록으로 보여준다 */}
-                <div className="flex flex-col gap-2 sm:hidden">
-                  {approvalRows.map((row) => (
-                    <div key={row.key} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{row.label}</span>
-                        <span className="text-xs text-zinc-400">{row.step}</span>
-                      </div>
-                      <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{row.content}</p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        <ApprovalActions actionFn={row.actionFn} id={row.id} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* 데스크톱: 기존 표 레이아웃 유지 */}
-                <div className={`hidden sm:block ${cardTableWrap}`}><table className={tableClean}>
-                  <thead>
-                    <tr><th className={thClean}>구분</th><th className={thClean}>내용</th><th className={thClean}>단계</th><th className={thClean}></th></tr>
-                  </thead>
-                  <tbody>
-                    {approvalRows.map((row) => (
-                      <tr key={row.key} className={trHoverClean}>
-                        <td className={tdClean}>{row.label}</td>
-                        <td className={tdClean}>{row.content}</td>
-                        <td className={tdClean}>{row.step}</td>
-                        <td className={`${tdClean} flex items-center gap-1.5`}>
-                          <ApprovalActions actionFn={row.actionFn} id={row.id} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table></div>
-              </>
-            );
-          })()}
+          <h2 className={h2}>기타 처리할 일</h2>
+          <ul className="mb-6 flex flex-col gap-1">
+            {otherTasks.map((t) => (
+              <li key={`${t.section}-${t.id}-${t.status}`} className="text-sm text-zinc-700 dark:text-zinc-300">
+                [{t.status}] {t.date} · {t.title}
+              </li>
+            ))}
+          </ul>
         </>
       )}
 
-      <h2 className={h2}>최근 카드사용대장</h2>
-      <ul className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
-        {summary.cardLedger.map((r) => <li key={r.id}>{r.사용일자} · {r.사용내역} · {parseAmount(r.사용금액).toLocaleString()}원</li>)}
-        {summary.cardLedger.length === 0 && <li className="text-zinc-400">없음</li>}
-      </ul>
+      {approvalRows.length > 0 && (
+        <div id="approvals">
+          <h2 className={h2}>내 결재함</h2>
+          {/* 모바일: 표는 칸이 너무 좁아져서 대신 카드 목록으로 보여준다 */}
+          <div className="flex flex-col gap-2 sm:hidden">
+            {approvalRows.map((row) => (
+              <div key={row.key} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{row.label}</span>
+                  <span className="text-xs text-zinc-400">{row.step}</span>
+                </div>
+                <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{row.content}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <ApprovalActions actionFn={row.actionFn} id={row.id} />
+                </div>
+              </div>
+            ))}
+          </div>
 
-      <h2 className={h2}>최근 물품검수사진</h2>
-      <ul className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
-        {summary.itemCheckPhoto.map((r) => <li key={r.id}>{r.지출일자} · {r.품명}</li>)}
-        {summary.itemCheckPhoto.length === 0 && <li className="text-zinc-400">없음</li>}
-      </ul>
-
-      <h2 className={h2}>최근 작성한 물품검수조서</h2>
-      <ul className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
-        {summary.itemCheckReport.map((r) => <li key={r.id}>{r.검수년월일} · {r.품명} · {r.결재상태}</li>)}
-        {summary.itemCheckReport.length === 0 && <li className="text-zinc-400">없음</li>}
-      </ul>
-
-      <h2 className={h2}>최근 차량사용신청</h2>
-      <ul className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
-        {summary.vehicleRequest.map((r) => <li key={r.id}>{r.사용일자} · {r.차량번호} · {r.목적}</li>)}
-        {summary.vehicleRequest.length === 0 && <li className="text-zinc-400">없음</li>}
-      </ul>
-
-      <h2 className={h2}>최근 차량운행일지</h2>
-      <ul className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
-        {summary.vehicleLog.map((r) => <li key={r.id}>{r.운행일자} · {r.차량번호} · {r.목적} · {r.결재상태}</li>)}
-        {summary.vehicleLog.length === 0 && <li className="text-zinc-400">없음</li>}
-      </ul>
+          {/* 데스크톱: 기존 표 레이아웃 유지 */}
+          <div className={`hidden sm:block ${cardTableWrap}`}><table className={tableClean}>
+            <thead>
+              <tr><th className={thClean}>구분</th><th className={thClean}>내용</th><th className={thClean}>단계</th><th className={thClean}></th></tr>
+            </thead>
+            <tbody>
+              {approvalRows.map((row) => (
+                <tr key={row.key} className={trHoverClean}>
+                  <td className={tdClean}>{row.label}</td>
+                  <td className={tdClean}>{row.content}</td>
+                  <td className={tdClean}>{row.step}</td>
+                  <td className={`${tdClean} flex items-center gap-1.5`}>
+                    <ApprovalActions actionFn={row.actionFn} id={row.id} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table></div>
+        </div>
+      )}
     </main>
   );
 }

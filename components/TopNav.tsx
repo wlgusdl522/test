@@ -88,23 +88,32 @@ export default function TopNav({ userName, userSubtitle }: { userName: string; u
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setOpenSection(null)} />
                     <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
-                      {section.items.map((item) => (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setOpenSection(null)}
-                          className="flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                        >
-                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-tint text-brand">
-                            <SectionIcon label={section.label} />
-                          </span>
-                          <span className="min-w-0">
-                            <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-100">{item.label}</span>
-                            {item.description && (
-                              <span className="block text-xs text-zinc-500 dark:text-zinc-400">{item.description}</span>
-                            )}
-                          </span>
-                        </Link>
+                      {(section.groups ?? [{ label: '', items: section.items }]).map((group, gi) => (
+                        <div key={group.label || '_'} className={gi > 0 ? 'mt-1 border-t border-zinc-100 pt-1 dark:border-zinc-800' : ''}>
+                          {group.label && (
+                            <p className="px-3 pt-1.5 pb-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                              {group.label}
+                            </p>
+                          )}
+                          {group.items.map((item) => (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              onClick={() => setOpenSection(null)}
+                              className="flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                            >
+                              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-tint text-brand">
+                                <SectionIcon label={section.label} />
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-100">{item.label}</span>
+                                {item.description && (
+                                  <span className="block text-xs text-zinc-500 dark:text-zinc-400">{item.description}</span>
+                                )}
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
                       ))}
                     </div>
                   </>
@@ -194,24 +203,33 @@ export default function TopNav({ userName, userSubtitle }: { userName: string; u
                   </svg>
                 </button>
                 {open && (
-                  <div className="ml-[19px] flex flex-col gap-0.5 border-l border-zinc-200 py-1 pl-4 dark:border-zinc-800">
-                    {section.items.map((item) => {
-                      const active = pathname === item.href;
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={closeMobile}
-                          className={`block rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
-                            active
-                              ? 'bg-brand-tint font-medium text-brand'
-                              : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900'
-                          }`}
-                        >
-                          {item.label}
-                        </Link>
-                      );
-                    })}
+                  <div className="ml-[19px] flex flex-col gap-2 border-l border-zinc-200 py-1 pl-4 dark:border-zinc-800">
+                    {(section.groups ?? [{ label: '', items: section.items }]).map((group) => (
+                      <div key={group.label || '_'} className="flex flex-col gap-0.5">
+                        {group.label && (
+                          <p className="px-2.5 pb-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                            {group.label}
+                          </p>
+                        )}
+                        {group.items.map((item) => {
+                          const active = pathname === item.href;
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              onClick={closeMobile}
+                              className={`block rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
+                                active
+                                  ? 'bg-brand-tint font-medium text-brand'
+                                  : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900'
+                              }`}
+                            >
+                              {item.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

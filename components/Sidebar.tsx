@@ -145,26 +145,35 @@ export default function Sidebar({ userName, userSubtitle }: { userName: string; 
                   </svg>
                 </button>
                 {open && (
-                  <ul className="relative ml-[19px] flex flex-col gap-0.5 border-l border-zinc-200 py-1 pl-4 dark:border-zinc-800">
-                    {section.items.map((item) => {
-                      const active = pathname === item.href;
-                      return (
-                        <li key={item.href}>
-                          <Link
-                            href={item.href}
-                            onClick={() => setOpen(false)}
-                            className={`block rounded-lg px-2.5 py-1.5 text-[13px] transition-colors ${
-                              active
-                                ? 'bg-brand-tint font-medium text-brand'
-                                : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900'
-                            }`}
-                          >
-                            {item.label}
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <div className="relative ml-[19px] flex flex-col gap-2 border-l border-zinc-200 py-1 pl-4 dark:border-zinc-800">
+                    {(section.groups ?? [{ label: '', items: section.items }]).map((group) => (
+                      <ul key={group.label || '_'} className="flex flex-col gap-0.5">
+                        {group.label && (
+                          <li className="px-2.5 pb-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                            {group.label}
+                          </li>
+                        )}
+                        {group.items.map((item) => {
+                          const active = pathname === item.href;
+                          return (
+                            <li key={item.href}>
+                              <Link
+                                href={item.href}
+                                onClick={() => setOpen(false)}
+                                className={`block rounded-lg px-2.5 py-1.5 text-[13px] transition-colors ${
+                                  active
+                                    ? 'bg-brand-tint font-medium text-brand'
+                                    : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900'
+                                }`}
+                              >
+                                {item.label}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ))}
+                  </div>
                 )}
               </div>
             );

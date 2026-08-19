@@ -1,6 +1,9 @@
 export type NavItem = { href: string; label: string; description?: string };
+export type NavGroup = { label: string; items: NavItem[] };
 // flat: 항목이 하나뿐이어도 앞으로 늘어날 계획이 없는 섹션만 펼치고 접는 토글 없이 바로 링크로 보여준다.
-export type NavSection = { label: string; items: NavItem[]; flat?: boolean };
+// groups: 항목이 많아 대분류로 묶어 보여줄 섹션(예: 설정). items에는 그대로 전체 목록을 평평하게 담아
+// 활성 판정(pathname 비교) 등 기존 로직이 그대로 동작하게 하고, groups는 렌더링에만 쓴다.
+export type NavSection = { label: string; items: NavItem[]; flat?: boolean; groups?: NavGroup[] };
 
 export const NAV_SECTION_ICON_PATH: Record<string, string> = {
   인사관리: 'M17 20h5v-1a4 4 0 00-3-3.87M9 20H4v-1a4 4 0 013-3.87m6-3.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-4-4',
@@ -14,6 +17,44 @@ export const NAV_SECTION_ICON_PATH: Record<string, string> = {
 export const STANDALONE_NAV_ITEMS: NavItem[] = [
   { href: '/', label: '홈', description: '포털 홈으로 이동' },
   { href: '/mypage', label: '마이페이지', description: '내 정보·설정 관리' },
+];
+
+const SETTINGS_GROUPS: NavGroup[] = [
+  {
+    label: '조직 / 인사',
+    items: [
+      { href: '/settings/simple-lists', label: '팀 / 직급 / 결재라인', description: '팀·직급·결재라인 목록 관리' },
+      { href: '/settings/permissions', label: '권한설정', description: '직원별 권한 설정' },
+      { href: '/settings/approval-rules', label: '결재라인 전결기준', description: '전결 기준 설정' },
+    ],
+  },
+  {
+    label: '당직관리',
+    items: [
+      { href: '/settings/duty-lists', label: '당직순서/공휴일/제외목록', description: '당직 평일·토요 순서, 공휴일, 기간 제외자 관리' },
+    ],
+  },
+  {
+    label: '사업 / 문서',
+    items: [
+      { href: '/settings/business-list', label: '사업목록', description: '사업명·소관팀 목록 관리' },
+      { href: '/settings/document-index', label: '색인목록 접두사', description: '팀별 공문 문서번호 접두사 관리' },
+    ],
+  },
+  {
+    label: '차량 / 지출',
+    items: [
+      { href: '/settings/vehicles', label: '차량목록', description: '보유 차량 목록 관리' },
+      { href: '/settings/budget-items', label: '예산과목', description: '지출 예산 과목 관리' },
+      { href: '/settings/transit-cards', label: '교통카드목록', description: '교통카드 등록·초기잔액 관리' },
+    ],
+  },
+  {
+    label: '시스템',
+    items: [
+      { href: '/settings/system', label: '시스템 설정값', description: '시스템 공통 설정값 관리' },
+    ],
+  },
 ];
 
 export const NAV_SECTIONS: NavSection[] = [
@@ -57,19 +98,5 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: '/business-summary', label: '전체사업 실적집계', description: '전체 사업 목표 대비 기간 실적 한눈에 보기' },
     ],
   },
-  {
-    label: '설정',
-    items: [
-      { href: '/settings/simple-lists', label: '팀 / 직급 / 결재라인', description: '팀·직급·결재라인 목록 관리' },
-      { href: '/settings/duty-lists', label: '당직순서/공휴일/제외목록', description: '당직 평일·토요 순서, 공휴일, 기간 제외자 관리' },
-      { href: '/settings/business-list', label: '사업목록', description: '사업명·소관팀 목록 관리' },
-      { href: '/settings/document-index', label: '색인목록 접두사', description: '팀별 공문 문서번호 접두사 관리' },
-      { href: '/settings/vehicles', label: '차량목록', description: '보유 차량 목록 관리' },
-      { href: '/settings/budget-items', label: '예산과목', description: '지출 예산 과목 관리' },
-      { href: '/settings/transit-cards', label: '교통카드목록', description: '교통카드 등록·초기잔액 관리' },
-      { href: '/settings/permissions', label: '권한설정', description: '직원별 권한 설정' },
-      { href: '/settings/approval-rules', label: '결재라인 전결기준', description: '전결 기준 설정' },
-      { href: '/settings/system', label: '시스템 설정값', description: '시스템 공통 설정값 관리' },
-    ],
-  },
+  { label: '설정', items: SETTINGS_GROUPS.flatMap((g) => g.items), groups: SETTINGS_GROUPS },
 ];

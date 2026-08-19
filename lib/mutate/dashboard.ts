@@ -19,10 +19,6 @@ function isMine(email: string | undefined, viewerEmail: string): boolean {
   return (email ?? '').toLowerCase() === viewerEmail;
 }
 
-function topN(list: Record<string, string>[], dateField: string, limit = 5): Record<string, string>[] {
-  return [...list].sort((a, b) => String(b[dateField]).localeCompare(String(a[dateField]))).slice(0, limit);
-}
-
 export async function getMyRecordsSummary() {
   const viewerEmail = await requireViewerEmail();
 
@@ -36,7 +32,6 @@ export async function getMyRecordsSummary() {
   ]);
 
   const myLedger = myLedgerAll.filter((r) => isMine(r.담당자이메일, viewerEmail));
-  const myPhotos = allPhotos.filter((r) => isMine(r.등록자이메일, viewerEmail));
   const myReports = allReports.filter((r) => isMine(r.검수자이메일, viewerEmail));
   const myVehicleRequests = myVehicleRequestsAll.filter((r) => isMine(r.신청자이메일, viewerEmail));
   const myVehicleLogs = myVehicleLogsAll.filter((r) => isMine(r.운전자이메일, viewerEmail));
@@ -68,10 +63,5 @@ export async function getMyRecordsSummary() {
 
   return {
     pendingTasks: pendingTasks.sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 10),
-    cardLedger: topN(myLedger, '사용일자'),
-    itemCheckPhoto: topN(myPhotos, '지출일자'),
-    itemCheckReport: topN(myReports, '검수년월일'),
-    vehicleRequest: topN(myVehicleRequests, '사용일자'),
-    vehicleLog: topN(myVehicleLogs, '운행일자'),
   };
 }
