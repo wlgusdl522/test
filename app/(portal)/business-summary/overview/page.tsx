@@ -15,7 +15,7 @@ import { getVolunteerFacilitySummary } from '@/lib/mutate/boardRoster';
 import { getAccountingItems, computeFacilityTotals } from '@/lib/mutate/boardAccounting';
 import { getBankAccounts } from '@/lib/mutate/boardBankAccount';
 import { getDonationDetailsForYear, donationPriorCumulative, donationValueFor } from '@/lib/mutate/boardDonation';
-import { getAdminNotes } from '@/lib/mutate/boardAdminNote';
+import { getAdminNoteSummaries } from '@/lib/mutate/boardAdminNote';
 import { btnOutline, btnSecondary, card, h2, inputBase, table, td, th, tableWrap } from '@/lib/ui';
 
 export const runtime = 'nodejs';
@@ -114,11 +114,11 @@ export default async function BusinessSummaryOverviewPage({
     return { 시설명: FACILITY_LABEL[f] ?? f, 전월누계, 금월실적, 누계: 전월누계 + 금월실적 };
   });
 
-  const adminNotes = await getAdminNotes(ym);
+  const adminNotes = await getAdminNoteSummaries(ym);
 
   return (
     <>
-      <BoardSubTabs />
+      <BoardSubTabs ym={ym} />
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <form method="get" className="flex flex-wrap items-center gap-3">
           <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">조회월</label>
@@ -164,7 +164,7 @@ export default async function BusinessSummaryOverviewPage({
           </p>
         ) : (
           <>
-            <ol className="mb-3 list-decimal space-y-1 pl-5 text-sm text-zinc-800 dark:text-zinc-200">
+            <ol className="mb-3 list-decimal space-y-1 pl-5 text-sm whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">
               {adminNotes.map((n) => <li key={n.id}>{n.내용}</li>)}
             </ol>
             <Link href={`/business-summary/admin-notes?ym=${ym}`} className="text-sm text-brand underline">수정하기</Link>

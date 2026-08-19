@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { requireCanViewCertificateLog } from '@/lib/auth-helpers';
 import {
   addAwardBatch, addCertificate, actOnCertificate, attachUploadedCertificatePdf, issueCertificate,
@@ -19,7 +20,7 @@ function fieldsFromForm(formData: FormData, keys: string[]): Record<string, stri
 // 직원이면) 자기 증명서를 신청할 수 있다.
 export async function addCertificateAction(formData: FormData): Promise<void> {
   const record = fieldsFromForm(formData, [
-    '종류', '신청유형', '대상자성명', '대상자소속', '대상자직위', '근무기간', '대상자이메일', '수령방법', '신청일', '비고',
+    '종류', '신청유형', '대상자성명', '대상자소속', '대상자직위', '근무기간', '대상자이메일', '수령방법', '신청일', '용도', '비고',
   ]);
   if (!CERTIFICATE_TYPES.includes(record['종류'] as (typeof CERTIFICATE_TYPES)[number])) {
     throw new Error('증명서 종류를 선택해주세요.');
@@ -41,6 +42,16 @@ export async function actOnCertificateAction(formData: FormData): Promise<void> 
   const id = String(formData.get('id') ?? '');
   const action = String(formData.get('action') ?? '') === '반려' ? '반려' : '승인';
   const comment = String(formData.get('comment') ?? '');
+  // 상장은 승인=발행이 이 안에서 바로 이어지므로, PDF를 렌더링하기 전에 QR 포함 여부를 먼저 저장해둔다.
+  // QR표시여부 컬럼이 아직 Supabase에 추가되기 전이어도(수동 ALTER TABLE 필요) 승인 자체는 막히면 안 된다.
+  const qrFlag = formData.get('QR표시여부');
+  if (action === '승인' && qrFlag) {
+    try {
+      await updateCertificateFields(id, { QR표시여부: String(qrFlag) });
+    } catch (error) {
+      console.error('[QR표시여부 저장 실패 - 컬럼 미생성일 수 있음]', error);
+    }
+  }
   await actOnCertificate(id, action, comment);
   revalidatePath('/staff/certificates');
   revalidatePath('/mypage');
@@ -84,8 +95,18 @@ export async function issueCertificateAction(formData: FormData): Promise<void> 
   revalidatePath('/staff/certificates');
 }
 
+// throw로 실패를 알리면 프로덕션에서는 "An error occurred in the Server Components render"라는
+// 의미없는 화면만 뜨고 실제 원인은 안 보인다 - 쿼리스트링에 결과/사유를 담아 리다이렉트해서
+// 화면에 직접 띄운다(redirect()는 try/catch 밖에서 호출해야 Next의 내부 리다이렉트 신호를 안 삼킨다).
 export async function resendCertificateEmailAction(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '');
-  await resendCertificateEmail(id);
+  let resultQuery = 'resend=ok';
+  try {
+    await resendCertificateEmail(id);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '메일 발송에 실패했습니다.';
+    resultQuery = `resend=fail&reason=${encodeURIComponent(message)}`;
+  }
   revalidatePath('/staff/certificates');
+  redirect(`/staff/certificates?tab=manage&${resultQuery}`);
 }

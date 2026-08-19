@@ -7,16 +7,19 @@ export const CONFIGURABLE_PAGES = [
   { id: 'weekly-plan-review', label: '주간업무 - 부서장확인' },
   { id: 'weekly-plan-meeting', label: '주간업무 - 회의록작성' },
   { id: 'document-index', label: '업무관리 - 색인목록' },
+  { id: 'staff-meeting', label: '업무관리 - 전체회의자료' },
   { id: 'business-goal', label: '사업관리 - 세부사업계획' },
   { id: 'business-daily', label: '사업관리 - 총괄업무일지(업무입력)' },
   { id: 'business-monthly', label: '사업관리 - 총괄업무일지(월별현황)' },
   { id: 'business-summary', label: '사업관리 - 전체사업 실적집계' },
   { id: 'business-overview', label: '사업관리 - 이사회자료(요약보고)' },
+  { id: 'business-headcount', label: '사업관리 - 이사회자료(실인원)' },
   { id: 'business-admin-notes', label: '사업관리 - 이사회자료(행정사항)' },
   { id: 'business-board-plan', label: '사업관리 - 이사회자료(업무보고)' },
   { id: 'business-accounting', label: '사업관리 - 이사회자료(회계)' },
   { id: 'business-volunteers', label: '사업관리 - 이사회자료(자원봉사자)' },
   { id: 'business-donations', label: '사업관리 - 이사회자료(후원)' },
+  { id: 'business-full', label: '사업관리 - 이사회자료(전체보기/인쇄)' },
 ];
 
 export const PRINTABLE_PAGES = [

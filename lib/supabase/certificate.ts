@@ -1,5 +1,4 @@
 import { randomUUID } from 'crypto';
-import { headers } from 'next/headers';
 import { getSupabaseServerClient } from './server';
 import { ApprovalPermissionError, applyApprovalAction, decorateApprovalInfo } from '@/lib/approval/engine';
 import { findStaffEmailByPosition, findTeamSupervisorEmail } from '@/lib/approval/teamSupervisor';
@@ -13,6 +12,7 @@ import { renderCertificatePdf } from '@/lib/pdf/certificatePdf';
 import { renderAwardPdf } from '@/lib/pdf/awardPdf';
 import { uploadCertificatePdf } from '@/lib/drive/certificateFolder';
 import { buildAwardEmail, buildCertificateEmail, sendMail } from '@/lib/mail/certificateMail';
+import { getOrigin } from '@/lib/pdf/printShared';
 
 // 증명서(재직/경력/원천징수/기타) + 상장 발급대장 — 시트 없이 Supabase가 원본(당직/부재중현황과 동일한 예외 패턴).
 // 구분='증명서'는 전자결재(결재상태/결재이력JSON) 대상, 구분='상장'은 결재 없이 즉시 확정된다.
@@ -24,7 +24,7 @@ const HEADERS = [
   'id', '문서번호', '구분', '종류', '신청유형', '대상자성명', '대상자소속', '대상자직위', '대상자이메일',
   '생년월일', '성별', '대상자주소', '대상자구분', '담당업무', '퇴직사유', '수령방법', '출처', '근무기간', '신청일', '용도', '본문',
   '등록자이메일', '등록자명', '등록일시',
-  '결재상태', '결재이력JSON', '발급일', '발행일시', '문서URL', '비고',
+  '결재상태', '결재이력JSON', '발급일', '발행일시', '문서URL', 'QR표시여부', '비고',
 ];
 
 function table() {
@@ -312,13 +312,6 @@ async function setCertificateDocumentUrl(id: string, url: string): Promise<void>
   if (error) throw new Error(`증명서 문서URL 저장 실패: ${error.message}`);
 }
 
-async function getOrigin(): Promise<string> {
-  const h = await headers();
-  const host = h.get('host') ?? 'localhost:3000';
-  const protocol = host.startsWith('localhost') ? 'http' : 'https';
-  return `${protocol}://${host}`;
-}
-
 export type IssueCertificateResult = {
   record: DecoratedCertificate;
   documentUrl: string;
@@ -354,8 +347,19 @@ async function sendCertificateNotificationEmail(
     return { emailSent: true };
   } catch (error) {
     console.error('[증명서·상장 발급 메일 발송 실패]', error);
-    return { emailSent: false, warning: '메일 발송에 실패했습니다 (Gmail 발송 권한이 아직 설정되지 않았을 수 있습니다).' };
+    return { emailSent: false, warning: `메일 발송에 실패했습니다: ${describeGoogleApiError(error)}` };
   }
+}
+
+// googleapis(gaxios) 에러는 .message가 "Bad Request" 같은 뜻없는 문구뿐이고, 실제 사유는
+// .response.data.error(.errors)에 있는 경우가 많다 - 화면에 원인을 그대로 보여주려고 최대한 뽑아낸다.
+function describeGoogleApiError(error: unknown): string {
+  const err = error as { message?: string; response?: { data?: { error?: { message?: string; errors?: { reason?: string; message?: string }[] } } } };
+  const detail = err.response?.data?.error;
+  const reason = detail?.errors?.[0]?.reason;
+  const detailMessage = detail?.message || detail?.errors?.[0]?.message;
+  const parts = [err.message, reason, detailMessage].filter(Boolean);
+  return parts.length > 0 ? parts.join(' / ') : String(error);
 }
 
 // 이미 발행된(문서URL 있는) 건의 안내 메일만 다시 보낸다 - 발행 당시 메일 발송이 실패했거나

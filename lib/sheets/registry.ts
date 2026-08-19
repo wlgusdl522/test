@@ -1,5 +1,13 @@
 import type { KeyedTableConfig } from './keyedTable';
-import { CARD_LEDGER_SHEET_ID, STAFF_SHEET_ID, VEHICLE_SHEET_ID, WEEKLY_PLAN_SHEET_ID, WORKLOG_SHEET_ID } from './sheetIds';
+import {
+  CARD_LEDGER_SHEET_ID,
+  DOCUMENT_INDEX_SHEET_ID,
+  STAFF_MEETING_SHEET_ID,
+  STAFF_SHEET_ID,
+  VEHICLE_SHEET_ID,
+  WEEKLY_PLAN_SHEET_ID,
+  WORKLOG_SHEET_ID,
+} from './sheetIds';
 
 export const VEHICLE_REQUEST_HEADERS = [
   'id', '차량번호', '신청자이메일', '신청자명', '소속팀',
@@ -284,7 +292,8 @@ export const BOARD_BANK_ACCOUNT_TABLE: KeyedTableConfig = {
 
 // 시설: 회계/후원은 복지관/요양센터/데이케어센터가 서로 다른 값을 가지므로 항목ID+년월에 더해
 // 시설까지 키로 잡는다. 자원봉사자처럼 시설 구분이 없는 모듈은 '전체' 고정값을 쓴다.
-export const BOARD_STAT_VALUE_HEADERS = ['id', '항목ID', '시설', '년월', '값', '작성자이메일', '작성자명', '등록일시'];
+// 비고는 실인원처럼 숫자값과 함께 짧은 메모가 필요한 모듈을 위해 맨 뒤에 추가(기존 모듈은 빈 값).
+export const BOARD_STAT_VALUE_HEADERS = ['id', '항목ID', '시설', '년월', '값', '작성자이메일', '작성자명', '등록일시', '비고'];
 
 export const BOARD_STAT_VALUE_TABLE: KeyedTableConfig = {
   spreadsheetId: WORKLOG_SHEET_ID,
@@ -342,9 +351,11 @@ export const BOARD_ROSTER_TABLE: KeyedTableConfig = {
   primaryKey: 'id',
 };
 
-// 요약 업무보고 "8. 행정사항" — 월별로 자유롭게 줄글을 몇 줄 적어 넣는 목록(업무보고 표와 같은
-// "행 추가 후 저장" 방식). 항목/그룹 구분이 필요 없어 이사회항목과는 별도의 단순 테이블로 둔다.
-export const BOARD_ADMIN_NOTE_HEADERS = ['id', '년월', '내용', '정렬순서'];
+// 요약 업무보고 "8. 행정사항" — 월별로 자유롭게 줄글을 몇 줄(하위 번호 1./1)/가) 포함) 적어 넣는
+// 목록(업무보고 표와 같은 "행 추가 후 저장" 방식). 항목/그룹 구분이 필요 없어 이사회항목과는 별도의
+// 단순 테이블로 둔다. 요약포함/요약내용은 요약보고 8)에 실을 항목을 고르고, 원문과는 독립적으로
+// 줄여 쓸 수 있게 맨 뒤에 추가(체크 시 최초 1회 내용을 그대로 복사해주고, 이후엔 따로 수정).
+export const BOARD_ADMIN_NOTE_HEADERS = ['id', '년월', '내용', '정렬순서', '요약포함', '요약내용'];
 
 export const BOARD_ADMIN_NOTE_TABLE: KeyedTableConfig = {
   spreadsheetId: WORKLOG_SHEET_ID,
@@ -353,17 +364,9 @@ export const BOARD_ADMIN_NOTE_TABLE: KeyedTableConfig = {
   primaryKey: 'id',
 };
 
-// 사업실적 "실인원 산출내역" — 특정 기준일 하나(그 달 안에서 관리자가 고른 날짜) + 사업구분별
-// 실인원 수 목록. 기준일은 월 하나에 값 하나뿐이라 이사회기간설정과 같은 결로 별도 단순 테이블.
-export const BOARD_HEADCOUNT_HEADERS = ['id', '년월', '사업구분', '실인원', '비고', '정렬순서'];
-
-export const BOARD_HEADCOUNT_TABLE: KeyedTableConfig = {
-  spreadsheetId: WORKLOG_SHEET_ID,
-  sheetName: '이사회실인원',
-  headers: BOARD_HEADCOUNT_HEADERS,
-  primaryKey: 'id',
-};
-
+// 사업실적(→ 이사회자료 "실인원" 탭) "실인원 산출내역"의 기준일 하나(그 달 안에서 관리자가
+// 고른 날짜). 사업구분별 실인원 수치 자체는 이사회항목(모듈='실인원')+이사회월별값을 그대로 쓴다
+// (항목이 고정 목록으로 관리되고, 값은 시설 구분 없이 항목별 실인원 수 + 비고 하나씩).
 export const BOARD_HEADCOUNT_DATE_HEADERS = ['년월', '기준일'];
 
 export const BOARD_HEADCOUNT_DATE_TABLE: KeyedTableConfig = {
@@ -373,19 +376,25 @@ export const BOARD_HEADCOUNT_DATE_TABLE: KeyedTableConfig = {
   primaryKey: '년월',
 };
 
-// 회계 "예산집행현황" — 항목별(인건비/업무추진비/운영비/재산조성비/기능보강사업비/사업비/
-// 후원사업비/잡지출 등) 연간 예산액만 관리자가 입력하고, 집행액/누계/집행률은 이미 있는
-// 수입지출현황 지출 데이터에서 규칙 기반으로 계산한다(lib/mutate/boardBudgetExecution.ts).
-// "사업비"는 기본사업비/특정보조사업비로 더 세분화해야 하는데, 세부항목별로 재원이 자체재원인지
-// 보조금인지는 회계담당자만 판단 가능해서(이름만으로 추론 불가) 지금은 한 카테고리로 묶어두고
-// 나중에 분류 기준이 정해지면 나눈다.
-export const BOARD_BUDGET_AMOUNT_HEADERS = ['시설', '카테고리', '연도', '예산액'];
+// 회계 "예산집행현황" — 항목(시설별 관리) + 월별 예산액/집행액/누계/비고를 전부 담당자가 직접
+// 입력한다(수입지출현황 데이터에서 자동 계산하지 않음 — 기본사업비/특정보조사업비처럼 재원 구분이
+// 이름만으로는 안 되는 항목이 많아 회계담당자 판단이 필요해서). 합계 등은 나중에 추가 예정.
+export const BOARD_BUDGET_ITEM_HEADERS = ['id', '시설', '항목명', '정렬순서'];
 
-export const BOARD_BUDGET_AMOUNT_TABLE: KeyedTableConfig = {
+export const BOARD_BUDGET_ITEM_TABLE: KeyedTableConfig = {
   spreadsheetId: WORKLOG_SHEET_ID,
-  sheetName: '이사회예산액',
-  headers: BOARD_BUDGET_AMOUNT_HEADERS,
-  primaryKey: ['시설', '카테고리', '연도'],
+  sheetName: '이사회예산항목',
+  headers: BOARD_BUDGET_ITEM_HEADERS,
+  primaryKey: 'id',
+};
+
+export const BOARD_BUDGET_VALUE_HEADERS = ['id', '항목ID', '시설', '년월', '예산액', '집행액', '누계', '비고'];
+
+export const BOARD_BUDGET_VALUE_TABLE: KeyedTableConfig = {
+  spreadsheetId: WORKLOG_SHEET_ID,
+  sheetName: '이사회예산집행값',
+  headers: BOARD_BUDGET_VALUE_HEADERS,
+  primaryKey: ['항목ID', '시설', '년월'],
 };
 
 // 업무관리 "색인목록"(공문 등록대장) — 팀마다 문서번호 계열(접두사+일련번호)을 독립적으로 관리한다.
@@ -398,7 +407,7 @@ export const DOCUMENT_INDEX_HEADERS = [
 ];
 
 export const DOCUMENT_INDEX_TABLE: KeyedTableConfig = {
-  spreadsheetId: WORKLOG_SHEET_ID,
+  spreadsheetId: DOCUMENT_INDEX_SHEET_ID,
   sheetName: '색인목록',
   headers: DOCUMENT_INDEX_HEADERS,
   primaryKey: 'id',
@@ -409,7 +418,7 @@ export const DOCUMENT_INDEX_TABLE: KeyedTableConfig = {
 export const DOCUMENT_INDEX_STATE_HEADERS = ['팀명', '연도', '현재권', '다음일련번호'];
 
 export const DOCUMENT_INDEX_STATE_TABLE: KeyedTableConfig = {
-  spreadsheetId: WORKLOG_SHEET_ID,
+  spreadsheetId: DOCUMENT_INDEX_SHEET_ID,
   sheetName: '색인목록상태',
   headers: DOCUMENT_INDEX_STATE_HEADERS,
   primaryKey: ['팀명', '연도'],
@@ -419,8 +428,59 @@ export const DOCUMENT_INDEX_STATE_TABLE: KeyedTableConfig = {
 export const DOCUMENT_INDEX_PREFIX_HEADERS = ['팀명', '접두사'];
 
 export const DOCUMENT_INDEX_PREFIX_TABLE: KeyedTableConfig = {
-  spreadsheetId: WORKLOG_SHEET_ID,
+  spreadsheetId: DOCUMENT_INDEX_SHEET_ID,
   sheetName: '색인목록접두사',
   headers: DOCUMENT_INDEX_PREFIX_HEADERS,
+  primaryKey: '팀명',
+};
+
+// 업무관리 "전체회의자료" — 원래 팀별로 구글슬라이드 한 장씩 만들던 것을 포털로 이관.
+// 사업구분(예: 시설관리, 운영지원사업)은 팀마다 고정 목록으로 미리 등록해두고, 매달 값(이번달
+// 업무보고/다음달 업무계획/타 부서 협조사항)만 채운다.
+export const STAFF_MEETING_ITEM_HEADERS = ['id', '팀명', '사업구분', '정렬순서'];
+
+export const STAFF_MEETING_ITEM_TABLE: KeyedTableConfig = {
+  spreadsheetId: STAFF_MEETING_SHEET_ID,
+  sheetName: '전체회의사업구분',
+  headers: STAFF_MEETING_ITEM_HEADERS,
+  primaryKey: 'id',
+};
+
+// 사업구분ID가 이미 팀을 유일하게 특정하지만, 다른 값 테이블들(이사회월별값 등)과 같은 관례로
+// 팀명도 키에 함께 둔다(조회 편의).
+export const STAFF_MEETING_VALUE_HEADERS = [
+  '사업구분ID', '팀명', '년월', '업무보고', '업무계획', '협조사항', '작성자이메일', '작성자명', '등록일시',
+];
+
+export const STAFF_MEETING_VALUE_TABLE: KeyedTableConfig = {
+  spreadsheetId: STAFF_MEETING_SHEET_ID,
+  sheetName: '전체회의업무보고',
+  headers: STAFF_MEETING_VALUE_HEADERS,
+  primaryKey: ['사업구분ID', '팀명', '년월'],
+};
+
+// 회의 자체의 메타정보(일시/장소/진행/참석부서) — 서무가 매달 회의 일정에 맞게 등록한다.
+// 알림발송일시: "잔디 알림 보내기" 버튼을 누른 마지막 시각(참고용 표시일 뿐 재발송을 막지 않음).
+// 업무보고기간/업무계획기간: 표 헤더 문구(비우면 조회월 기준 자동 계산, 5~6월처럼 여러 달을
+// 묶을 때는 직접 입력해서 덮어씀) — 맨 뒤에 추가.
+export const STAFF_MEETING_INFO_HEADERS = [
+  '년월', '회의일시', '장소', '진행', '참석부서', '알림발송일시', '업무보고기간', '업무계획기간',
+];
+
+export const STAFF_MEETING_INFO_TABLE: KeyedTableConfig = {
+  spreadsheetId: STAFF_MEETING_SHEET_ID,
+  sheetName: '전체회의정보',
+  headers: STAFF_MEETING_INFO_HEADERS,
+  primaryKey: '년월',
+};
+
+// 발표모드에서 팀이 보여지는 순서 — 설정 > 팀목록(심플리스트)의 순서와는 별개로 관리한다
+// (예: 총무팀이 팀목록에선 앞이지만 발표는 맨 마지막이어야 하는 경우).
+export const STAFF_MEETING_TEAM_ORDER_HEADERS = ['팀명', '순서'];
+
+export const STAFF_MEETING_TEAM_ORDER_TABLE: KeyedTableConfig = {
+  spreadsheetId: STAFF_MEETING_SHEET_ID,
+  sheetName: '전체회의발표순서',
+  headers: STAFF_MEETING_TEAM_ORDER_HEADERS,
   primaryKey: '팀명',
 };

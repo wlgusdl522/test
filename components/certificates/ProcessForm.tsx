@@ -21,6 +21,7 @@ export default function ProcessForm({
         <div><span className="text-zinc-400">신청유형</span> {r.신청유형}</div>
         <div><span className="text-zinc-400">신청일</span> {r.신청일}</div>
         <div><span className="text-zinc-400">성명</span> {r.대상자성명}</div>
+        <div><span className="text-zinc-400">용도</span> {r.용도 || '-'}</div>
         <div><span className="text-zinc-400">수령방법</span> {r.수령방법 || '-'}</div>
         <div className="sm:col-span-2"><span className="text-zinc-400">이메일</span> {r.대상자이메일 || '-'}</div>
         {r.비고 && <div className="sm:col-span-2"><span className="text-zinc-400">비고</span> {r.비고}</div>}
@@ -103,7 +104,7 @@ export default function ProcessForm({
           )}
           <label className={label}>
             용도
-            <input name="용도" required placeholder="예: 기관제출용" className={input} />
+            <input name="용도" required defaultValue={r.용도} placeholder="예: 기관제출용" className={input} />
           </label>
           <button type="submit" className={`${btn} w-full`}>정보 저장 후 승인</button>
         </form>

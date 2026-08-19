@@ -85,6 +85,11 @@ export async function getDocumentIndexPrefixes(): Promise<{ 팀명: string; 접�
   return rows.filter((r) => r.팀명).map((r) => ({ 팀명: r.팀명, 접두사: r.접두사 }));
 }
 
+export async function getDocumentIndexPrefix(팀명: string): Promise<string> {
+  const prefixes = await getDocumentIndexPrefixes();
+  return prefixes.find((p) => p.팀명 === 팀명)?.접두사 ?? '';
+}
+
 export async function setDocumentIndexPrefix(팀명: string, 접두사: string): Promise<void> {
   const trimmedTeam = 팀명.trim();
   if (!trimmedTeam) throw new Error('팀을 선택해주세요.');
@@ -146,8 +151,22 @@ export async function addDocumentIndexEntry(params: {
   });
 }
 
-// 삭제된 문서의 일련번호는 재사용하지 않고 결번으로 남긴다(실제 관공서 등록대장 관행과 동일) —
-// 카운터를 건드리지 않으므로 별도 처리가 필요 없다.
+// 지우는 문서가 그 팀+연도에서 가장 마지막으로 발급된 번호일 때만 카운터를 되돌려 재사용한다
+// (다음 등록이 그 번호를 다시 씀). 중간 번호를 지우면 그 뒤로 이미 더 큰 번호가 발급되어 있어
+// 재사용 시 번호가 겹치므로 결번으로 남긴다(취소선 긋고 다시 쓸 수 있는 건 맨 마지막 줄뿐인 것과 같은 이치).
 export async function deleteDocumentIndexEntry(id: string): Promise<void> {
+  const rows = await getKeyedList(DOCUMENT_INDEX_TABLE);
+  const entry = rows.find((r) => r.id === id);
   await deleteKeyedRecord(DOCUMENT_INDEX_TABLE, { id });
+  if (!entry || entry.구분 !== '일반문서' || !entry.일련번호) return;
+
+  const seq = num(entry.일련번호);
+  const state = await getDocumentIndexState(entry.팀명, entry.연도);
+  if (seq > 0 && seq === state.다음일련번호 - 1) {
+    await upsertKeyedRecord(
+      DOCUMENT_INDEX_STATE_TABLE,
+      { 팀명: entry.팀명, 연도: entry.연도 },
+      { 팀명: entry.팀명, 연도: entry.연도, 현재권: String(state.현재권), 다음일련번호: String(seq) }
+    );
+  }
 }

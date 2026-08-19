@@ -11,6 +11,8 @@ function revalidateAll() {
   revalidatePath('/business-summary/accounting');
   revalidatePath('/business-summary/volunteers');
   revalidatePath('/business-summary/donations');
+  revalidatePath('/business-summary/headcount');
+  revalidatePath('/business-summary/headcount/view');
 }
 
 export async function addBoardStatItemAction(formData: FormData): Promise<void> {

@@ -64,7 +64,7 @@ function toDonationDetail(r: Record<string, string>): DonationDetail {
 // 총괄표(전월누계/금월실적/누계)는 회계와 같은 계산식을 쓰므로, 상세 행을 그 함수가 기대하는
 // {항목ID,시설,년월,값} 모양으로 바꿔서 priorCumulative/valueFor를 그대로 재사용한다.
 function asStatValues(details: DonationDetail[]): BoardStatValue[] {
-  return details.map((d) => ({ 항목ID: d.항목, 시설: d.시설, 년월: d.년월, 값: d.금액 }));
+  return details.map((d) => ({ 항목ID: d.항목, 시설: d.시설, 년월: d.년월, 값: d.금액, 비고: '' }));
 }
 
 export function donationPriorCumulative(details: DonationDetail[], 항목: DonationItem, 시설: string, ym: string): number {

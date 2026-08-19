@@ -1,38 +1,9 @@
-import { randomUUID } from 'crypto';
-import { deleteKeyedRecords, getKeyedList, upsertKeyedRecord, upsertKeyedRecords } from '@/lib/mutate/keyedTable';
-import { BOARD_HEADCOUNT_TABLE, BOARD_HEADCOUNT_DATE_TABLE } from '@/lib/sheets/registry';
+import { getKeyedList, upsertKeyedRecord } from '@/lib/mutate/keyedTable';
+import { BOARD_HEADCOUNT_DATE_TABLE } from '@/lib/sheets/registry';
 
-// 사업실적 "실인원 산출내역" — 그 달 안의 특정 기준일 하나 + 사업구분별 실인원 목록.
-export type HeadcountRow = { id: string; 년월: string; 사업구분: string; 실인원: number; 비고: string; 정렬순서: number };
-export type HeadcountRowInput = { id?: string; 사업구분: string; 실인원: number; 비고: string };
-
-function num(v: string | undefined): number {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-}
-
-export async function getHeadcountRows(ym: string): Promise<HeadcountRow[]> {
-  const rows = await getKeyedList(BOARD_HEADCOUNT_TABLE);
-  return rows
-    .filter((r) => r.id && r.년월 === ym)
-    .map((r) => ({ id: r.id, 년월: r.년월, 사업구분: r.사업구분, 실인원: num(r.실인원), 비고: r.비고, 정렬순서: num(r.정렬순서) }))
-    .sort((a, b) => a.정렬순서 - b.정렬순서);
-}
-
-export async function saveHeadcountRows(ym: string, rows: HeadcountRowInput[]): Promise<void> {
-  const existing = await getHeadcountRows(ym);
-  const keepIds = new Set(rows.filter((r) => r.id).map((r) => r.id));
-  const toDelete = existing.filter((e) => !keepIds.has(e.id)).map((e) => ({ id: e.id }));
-  if (toDelete.length > 0) await deleteKeyedRecords(BOARD_HEADCOUNT_TABLE, toDelete);
-
-  const items = rows.map((r, i) => {
-    const id = r.id || randomUUID();
-    const record = { id, 년월: ym, 사업구분: r.사업구분, 실인원: String(r.실인원 || 0), 비고: r.비고, 정렬순서: String(i + 1) };
-    return { keyValues: { id }, record };
-  });
-  if (items.length > 0) await upsertKeyedRecords(BOARD_HEADCOUNT_TABLE, items);
-}
-
+// 실인원 산출내역의 사업구분/실인원 수치는 이사회항목(모듈='실인원')+이사회월별값을 그대로 쓴다
+// (boardStat.ts의 getModuleItems/getModuleValues/setModuleValues 참고). 여기서는 그 달 안에서
+// 관리자가 고른 기준일 하나만 다룬다.
 export async function getHeadcountDate(ym: string): Promise<string> {
   const rows = await getKeyedList(BOARD_HEADCOUNT_DATE_TABLE);
   return rows.find((r) => r.년월 === ym)?.기준일 ?? '';

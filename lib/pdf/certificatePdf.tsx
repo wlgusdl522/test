@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from '@react-pdf/renderer';
 import { getDriveImageAsDataUrl } from '@/lib/drive/upload';
 import { getSystemSettings } from '@/lib/mutate/settings';
+import { VERIFY_PHRASE, maskedResidentNumber, formatPrintDate } from '@/lib/pdf/printShared';
 
 // 실제 발급되는 최종 문서에는 결재란이 나오지 않는다 — 결재는 신청~승인 단계에서 이미 끝난 상태이고,
 // 이 PDF는 관장 최종승인 후 "발행" 시점에만 생성되는 완결된 결과물이다.
@@ -10,28 +11,20 @@ import { getSystemSettings } from '@/lib/mutate/settings';
 // 한 행에 나란히 배치하는 것)은 기관에서 실제 쓰던 재직/경력증명서 한글 양식 PDF를 pdfjs로 파싱해
 // 얻은 실측값을 반영했다. 여백은 한 페이지 안에 다 들어가도록 압축했다(넘치면 QR이 2페이지로 밀림).
 
-const VERIFY_PHRASE: Record<string, string> = {
-  재직증명서: '위 사실을 증명합니다.',
-  경력증명서: '위 사실을 증명합니다.',
-  원천징수영수증: '위 내용을 확인합니다.',
-  기타: '위 내용을 확인합니다.',
-};
-
-// 실제 주민등록번호는 저장하지 않고, 생년월일+성별로 문서에 찍히는 마스킹된 형태만 재현한다.
-function maskedResidentNumber(birth: string, gender: string): string {
-  if (!birth) return '';
-  const [y, m, d] = birth.split('-');
-  if (!y || !m || !d) return '';
-  const yy = y.slice(2);
-  const isBefore2000 = Number(y) < 2000;
-  const genderDigit = gender === '여' ? (isBefore2000 ? '2' : '4') : (isBefore2000 ? '1' : '3');
-  return `${yy}${m}${d}-${genderDigit}******`;
-}
-
 let fontRegistered = false;
+// 가변폰트(Variable) 파일 하나만 등록하면 fontWeight:700을 줘도 항상 기본 인스턴스(얇게)로만
+// 렌더링된다 - react-pdf/fontkit이 같은 src를 여러 fontWeight로 등록해두면 그 굵기의 배리에이션을
+// 뽑아 쓴다. 그래서 실제 문서에서 라벨/제목이 굵게 안 나오고 전체적으로 얇아 보였다.
 function ensureFont() {
   if (fontRegistered) return;
-  Font.register({ family: 'NotoSansKR', src: path.join(process.cwd(), 'lib/pdf/fonts/NotoSansKR-Variable.ttf') });
+  const src = path.join(process.cwd(), 'lib/pdf/fonts/NotoSansKR-Variable.ttf');
+  Font.register({
+    family: 'NotoSansKR',
+    fonts: [
+      { src, fontWeight: 400 },
+      { src, fontWeight: 700 },
+    ],
+  });
   fontRegistered = true;
 }
 
@@ -76,12 +69,6 @@ const styles = StyleSheet.create({
   qrBarImage: { width: 42, height: 42 },
   qrBarText: { flex: 1, marginLeft: 12, fontSize: 9, color: '#666' },
 });
-
-function formatPrintDate(iso: string): string {
-  const parts = String(iso || '').split('-');
-  if (parts.length < 3) return iso || '';
-  return `${parts[0]}년 ${Number(parts[1])}월 ${Number(parts[2])}일`;
-}
 
 export async function renderCertificatePdf(record: Record<string, string>, verifyUrl: string): Promise<Buffer> {
   ensureFont();
