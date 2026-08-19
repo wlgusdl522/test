@@ -56,7 +56,7 @@ export default async function WeeklyPlanPage({
   const viewTeamTasks = isOwnTeam ? myTeamTasks : await getWeeklyTasks(viewTeam, weekStart);
   const roster = staffList
     .filter((s) => s['소속팀'] === viewTeam && s['재직상태'] !== '퇴사')
-    .map((s) => ({ email: s['이메일(아이디)'], name: s['성명'] }));
+    .map((s) => ({ email: s['이메일(아이디)'], name: s['성명'], 담당사업: s['담당사업'] ?? '' }));
 
   const monday = new Date(`${weekStart}T00:00:00`);
   const dayDates: string[] = [];
@@ -95,6 +95,7 @@ export default async function WeeklyPlanPage({
           myEmail={viewerEmail}
           roster={roster}
           groupRows={groupRows}
+          myBusinessName={me?.담당사업 ?? ''}
           teamTasks={viewTeamTasks.map((t) => ({
             email: t['이메일(아이디)'] ?? '',
             name: t['성명'] ?? '',

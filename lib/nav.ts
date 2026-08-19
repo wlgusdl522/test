@@ -32,7 +32,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: '/weekly-plan', label: '주간업무', description: '업무 입력·회의록·부서장 확인' },
       { href: '/duty', label: '당직근무', description: '당직 배정·교체·근무일지 작성' },
       { href: '/document-index', label: '색인목록', description: '팀별 공문 등록대장(문서번호 자동 채번)' },
-      { href: '/staff-meeting', label: '전체회의자료', description: '팀별 업무보고·업무계획·협조사항 작성' },
+      { href: '/staff-meeting', label: '전체회의', description: '팀별 업무보고·업무계획·협조사항 작성' },
     ],
   },
   {

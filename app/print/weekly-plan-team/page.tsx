@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME, APPROVAL_LINE_SHEET_NAME } from '@/lib/sheets/sheetIds';
@@ -16,6 +17,14 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const WEEKDAY_LABELS = ['월', '화', '수', '목', '금', '토'];
+
+// 같은 그룹으로 합쳐진 줄은 멤버들의 담당사업(직원관리에서 고정 관리)을 " / "로 이어 보여준다 — 겹치는 값은 하나만 남긴다.
+function groupBusinessLabel(emails: string[], staffByEmail: Map<string, Record<string, string>>): string {
+  const names = emails
+    .map((e) => staffByEmail.get(e.toLowerCase())?.['담당사업']?.trim())
+    .filter((v): v is string => !!v);
+  return Array.from(new Set(names)).join(' / ');
+}
 
 function mondayOf(date: Date): string {
   const d = new Date(date);
@@ -115,21 +124,29 @@ export default async function WeeklyPlanTeamPrintPage({
                 const rowEmails = new Set(row.emails.map((e) => e.toLowerCase()));
                 const single = row.emails.length === 1 ? staffByEmail.get(row.emails[0].toLowerCase()) : null;
                 const isLead = !!single && ['과장', '팀장'].includes(single['직급/직책']);
+                const businessLabel = groupBusinessLabel(row.emails, staffByEmail);
                 return (
-                  <tr key={row.key}>
-                    <td className={td}>
-                      <b>{row.label}</b>
-                      {isLead && <><br /><span style={{ fontSize: 11.5, color: '#888' }}>{single!['직급/직책']}</span></>}
-                    </td>
-                    {dayDates.map((iso) => {
-                      const dayTasks = tasks.filter((t) => rowEmails.has((t['이메일(아이디)'] ?? '').toLowerCase()) && t['날짜'] === iso);
-                      return (
-                        <td key={iso} className={td}>
-                          {dayTasks.map((t, i) => <div key={i}>• {t['업무내용']}</div>)}
-                        </td>
-                      );
-                    })}
-                  </tr>
+                  <Fragment key={row.key}>
+                    <tr>
+                      <td className={td}>
+                        <b>{row.label}</b>
+                        {isLead && <><br /><span style={{ fontSize: 11.5, color: '#888' }}>{single!['직급/직책']}</span></>}
+                      </td>
+                      {dayDates.map((iso) => {
+                        const dayTasks = tasks.filter((t) => rowEmails.has((t['이메일(아이디)'] ?? '').toLowerCase()) && t['날짜'] === iso);
+                        return (
+                          <td key={iso} className={td}>
+                            {dayTasks.map((t, i) => <div key={i}>• {t['업무내용']}</div>)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                    <tr>
+                      <td className={td} colSpan={1 + dayDates.length} style={{ fontSize: 12, color: '#666' }}>
+                        {businessLabel || ' '}
+                      </td>
+                    </tr>
+                  </Fragment>
                 );
               })}
             </tbody>
