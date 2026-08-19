@@ -1,20 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import { cleanHtmlFromNodes } from '@/lib/cleanTableHtml';
 
 // 화면에 실제로 렌더링된 표(outerHTML)를 그대로 클립보드에 text/html로 담아 붙여넣기 시
 // 표 구조와 인라인 스타일(테두리·배경 등)이 그대로 유지되게 한다 — 별도로 만든 HTML 문자열을
 // 복사하면 화면과 다르게 보일 수 있어 항상 화면에 있는 실제 엘리먼트를 기준으로 복사한다.
-function copyAsHtml(el: HTMLElement) {
+function copyAsHtml(html: string, plainText: string) {
   if (typeof ClipboardItem !== 'undefined') {
     return navigator.clipboard.write([
       new ClipboardItem({
-        'text/html': new Blob([el.outerHTML], { type: 'text/html' }),
-        'text/plain': new Blob([el.textContent ?? ''], { type: 'text/plain' }),
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([plainText], { type: 'text/plain' }),
       }),
     ]);
   }
-  return navigator.clipboard.writeText(el.textContent ?? '');
+  return navigator.clipboard.writeText(plainText);
 }
 
 // 표/서식을 그대로 붙여넣으면 rowspan·좌우분할 같은 복잡한 표 구조가 한글에서 깨져 보일 수 있어,
@@ -50,7 +51,7 @@ export default function CopyPlanTableButton({
 }: {
   targetId: string;
   className?: string;
-  mode?: 'html' | 'text';
+  mode?: 'html' | 'text' | 'clean-html';
 }) {
   const [status, setStatus] = useState<'idle' | 'ok' | 'err'>('idle');
 
@@ -64,8 +65,10 @@ export default function CopyPlanTableButton({
     try {
       if (mode === 'text') {
         await navigator.clipboard.writeText(elementToPlainText(el));
+      } else if (mode === 'clean-html') {
+        await copyAsHtml(cleanHtmlFromNodes(el.childNodes), elementToPlainText(el));
       } else {
-        await copyAsHtml(el);
+        await copyAsHtml(el.outerHTML, el.textContent ?? '');
       }
       setStatus('ok');
     } catch {
@@ -74,7 +77,7 @@ export default function CopyPlanTableButton({
     setTimeout(() => setStatus('idle'), 2500);
   }
 
-  const idleLabel = mode === 'text' ? '텍스트 복사(한글 붙여넣기용)' : '표 복사(한글 붙여넣기용)';
+  const idleLabel = mode === 'text' ? '텍스트 복사(한글 붙여넣기용)' : mode === 'clean-html' ? '전체 표 복사(한글 붙여넣기용)' : '표 복사(한글 붙여넣기용)';
 
   return (
     <button type="button" onClick={onClick} className={className}>

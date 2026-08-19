@@ -34,6 +34,7 @@ export default async function BusinessSummaryFullPrintPage({
           <button type="submit" className={btnSecondary}>조회</button>
         </form>
         <PrintButton />
+        <CopyPlanTableButton targetId="full-report-body" mode="clean-html" className={btnSecondary} />
         <CopyPlanTableButton targetId="full-report-body" mode="text" className={btnSecondary} />
       </div>
 
