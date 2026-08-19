@@ -15,7 +15,7 @@ import {
   STAFF_MEETING_VALUE_TABLE,
 } from '@/lib/sheets/registry';
 import { getSystemSettings } from '@/lib/mutate/settings';
-import { jandiPost } from '@/lib/notify/jandi';
+import { jandiPostRich } from '@/lib/notify/jandi';
 
 // 매달 크게 안 바뀌는 값이라 기본값으로 미리 채워두고, 담당자가 그대로 두거나 고쳐서 저장한다
 // (회계 전월이월 추천값과 같은 결 — 잠긴 값 아님).
@@ -275,11 +275,12 @@ export function buildStaffMeetingNotificationContent(info: StaffMeetingInfo): st
 }
 
 // "잔디 알림 보내기" 버튼을 누르면 즉시 호출 — 예약/크론 없이 그 자리에서 바로 발송한다.
-// message: 화면에서 기본 문구를 고쳐 썼을 수도 있으므로 그대로 전달받아 보낸다.
-export async function sendStaffMeetingNotification(ym: string, message: string): Promise<void> {
+// title/content: 화면에서 기본 문구를 고쳐 썼을 수도 있으므로 그대로 전달받아 보낸다.
+// 제목+본문을 하나로 합쳐서 보내면 잔디가 통째로 한 줄 미리보기로 뭉개버려서 따로 보낸다.
+export async function sendStaffMeetingNotification(ym: string, title: string, content: string): Promise<void> {
   const [info, settings] = await Promise.all([getStaffMeetingInfo(ym), getSystemSettings()]);
 
-  await jandiPost(settings.staffMeetingJandiWebhook, message);
+  await jandiPostRich(settings.staffMeetingJandiWebhook, title, content);
   await upsertKeyedRecord(
     STAFF_MEETING_INFO_TABLE,
     { 년월: ym },
