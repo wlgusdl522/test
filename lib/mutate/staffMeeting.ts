@@ -9,6 +9,14 @@ import {
   upsertKeyedRecords,
 } from '@/lib/mutate/keyedTable';
 import { STAFF_MEETING_INFO_TABLE, STAFF_MEETING_ITEM_TABLE, STAFF_MEETING_VALUE_TABLE } from '@/lib/sheets/registry';
+import { getSystemSettings } from '@/lib/mutate/settings';
+import { jandiPost } from '@/lib/notify/jandi';
+
+// 매달 크게 안 바뀌는 값이라 기본값으로 미리 채워두고, 담당자가 그대로 두거나 고쳐서 저장한다
+// (회계 전월이월 추천값과 같은 결 — 잠긴 값 아님).
+const DEFAULT_MEETING_PLACE = '2층 회의실';
+const DEFAULT_MEETING_HOST = '이대원 관장님';
+const DEFAULT_MEETING_TEAMS = '복지1 ~ 3팀, 총무팀, 요양센터, 데이케어센터';
 
 // 전체회의자료 — 팀별로 사업구분(고정 목록)마다 이번달 업무보고/다음달 업무계획/타 부서 협조사항을
 // 매달 입력한다. 원래 구글슬라이드로 팀별 한 장씩 만들던 것을 그대로 포털로 옮긴 것.
@@ -150,15 +158,15 @@ export async function setStaffMeetingValues(
   if (toUpsert.length > 0) await upsertKeyedRecords(STAFF_MEETING_VALUE_TABLE, toUpsert);
 }
 
-// 회의 자체의 메타정보(일시/장소/진행/참석부서) — 서무가 매달 등록. 알림일수전은 담당자가
-// 직접 지정(기본 2일 전), 알림발송일시는 크론이 보낸 뒤 채워서 같은 날 중복 발송을 막는 용도.
+// 회의 자체의 메타정보(일시/장소/진행/참석부서) — 서무가 매달 등록. 장소/진행/참석부서는
+// 거의 안 바뀌어서 기본값을 미리 채워둔다. 알림발송일시는 "보내기" 버튼을 눌러 잔디로 보낸
+// 마지막 시각을 보여주는 참고용 정보일 뿐, 재발송을 막지는 않는다.
 export type StaffMeetingInfo = {
   년월: string;
   회의일시: string;
   장소: string;
   진행: string;
   참석부서: string;
-  알림일수전: number;
   알림발송일시: string;
 };
 
@@ -168,34 +176,18 @@ export async function getStaffMeetingInfo(ym: string): Promise<StaffMeetingInfo>
   return {
     년월: ym,
     회의일시: found?.회의일시 ?? '',
-    장소: found?.장소 ?? '',
-    진행: found?.진행 ?? '',
-    참석부서: found?.참석부서 ?? '',
-    알림일수전: found?.알림일수전 ? num(found.알림일수전) : 2,
+    장소: found?.장소 || DEFAULT_MEETING_PLACE,
+    진행: found?.진행 || DEFAULT_MEETING_HOST,
+    참석부서: found?.참석부서 || DEFAULT_MEETING_TEAMS,
     알림발송일시: found?.알림발송일시 ?? '',
   };
 }
 
-export async function getAllStaffMeetingInfo(): Promise<StaffMeetingInfo[]> {
-  const rows = await getKeyedList(STAFF_MEETING_INFO_TABLE);
-  return rows
-    .filter((r) => r.년월)
-    .map((r) => ({
-      년월: r.년월,
-      회의일시: r.회의일시,
-      장소: r.장소,
-      진행: r.진행,
-      참석부서: r.참석부서,
-      알림일수전: r.알림일수전 ? num(r.알림일수전) : 2,
-      알림발송일시: r.알림발송일시 ?? '',
-    }));
-}
-
 export async function setStaffMeetingInfo(
   ym: string,
-  fields: { 회의일시: string; 장소: string; 진행: string; 참석부서: string; 알림일수전: number }
+  fields: { 회의일시: string; 장소: string; 진행: string; 참석부서: string }
 ): Promise<void> {
-  // 회의일시가 바뀌면 알림을 다시 보낼 수 있어야 하므로 알림발송일시는 여기서 초기화한다.
+  const existing = await getStaffMeetingInfo(ym);
   await upsertKeyedRecord(
     STAFF_MEETING_INFO_TABLE,
     { 년월: ym },
@@ -205,14 +197,28 @@ export async function setStaffMeetingInfo(
       장소: fields.장소.trim(),
       진행: fields.진행.trim(),
       참석부서: fields.참석부서.trim(),
-      알림일수전: String(fields.알림일수전 || 2),
-      알림발송일시: '',
+      알림발송일시: existing.알림발송일시,
     }
   );
 }
 
-// 크론(잔디 알림)에서만 쓴다 — 알림을 실제로 보낸 뒤 발송 시각을 기록해 같은 날 중복 발송을 막는다.
-export async function markStaffMeetingNotified(ym: string, info: StaffMeetingInfo, timestamp: string): Promise<void> {
+function nowTimestamp(): string {
+  return new Date().toISOString().slice(0, 19).replace('T', ' ');
+}
+
+// "잔디 알림 보내기" 버튼을 누르면 즉시 호출 — 예약/크론 없이 그 자리에서 바로 발송한다.
+export async function sendStaffMeetingNotification(ym: string): Promise<void> {
+  const [info, settings] = await Promise.all([getStaffMeetingInfo(ym), getSystemSettings()]);
+  const message = [
+    `📢 ${ym} 전체회의 안내`,
+    info.회의일시 ? `일시: ${info.회의일시.replace('T', ' ')}` : '',
+    info.장소 ? `장소: ${info.장소}` : '',
+    info.진행 ? `진행: ${info.진행}` : '',
+    info.참석부서 ? `참석부서: ${info.참석부서}` : '',
+    '업무포털 > 업무관리 > 전체회의자료에서 자료 준비 부탁드립니다.',
+  ].filter(Boolean).join('\n');
+
+  await jandiPost(settings.staffMeetingJandiWebhook, message);
   await upsertKeyedRecord(
     STAFF_MEETING_INFO_TABLE,
     { 년월: ym },
@@ -222,8 +228,7 @@ export async function markStaffMeetingNotified(ym: string, info: StaffMeetingInf
       장소: info.장소,
       진행: info.진행,
       참석부서: info.참석부서,
-      알림일수전: String(info.알림일수전),
-      알림발송일시: timestamp,
+      알림발송일시: nowTimestamp(),
     }
   );
 }

@@ -13,8 +13,9 @@ import {
   prevPlanFor,
   valueFor,
 } from '@/lib/mutate/staffMeeting';
-import { btn, btnOutline, card, h1, h2, input, inputBase, label, pageFluid } from '@/lib/ui';
-import { saveStaffMeetingInfoAction } from './actions';
+import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
+import { btn, btnOutline, btnSecondary, card, h1, h2, input, inputBase, label, pageFluid } from '@/lib/ui';
+import { saveStaffMeetingInfoAction, sendStaffMeetingNotificationAction } from './actions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -98,14 +99,25 @@ export default async function StaffMeetingPage({
             참석부서
             <input name="참석부서" defaultValue={meetingInfo.참석부서} className={input} />
           </label>
-          <label className={label}>
-            잔디 알림(며칠 전)
-            <input type="number" name="알림일수전" min="0" defaultValue={meetingInfo.알림일수전} className={input} />
-          </label>
-          <div className="col-span-2 md:col-span-5">
+          <div className="col-span-2 flex items-end md:col-span-1">
             <button type="submit" className={btn}>저장</button>
           </div>
         </form>
+
+        <div className="mt-4 flex items-center gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+          <form action={sendStaffMeetingNotificationAction}>
+            <input type="hidden" name="년월" value={ym} />
+            <ConfirmSubmitButton
+              confirmMessage="잔디 공용 채널로 전체회의 안내를 지금 바로 보낼까요?"
+              className={btnSecondary}
+            >
+              잔디 알림 보내기
+            </ConfirmSubmitButton>
+          </form>
+          {meetingInfo.알림발송일시 && (
+            <span className="text-xs text-zinc-400">마지막 발송: {meetingInfo.알림발송일시}</span>
+          )}
+        </div>
       </div>
 
       {!팀명 ? (
