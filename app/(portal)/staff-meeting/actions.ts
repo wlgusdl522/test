@@ -37,14 +37,18 @@ export async function saveStaffMeetingInfoAction(formData: FormData) {
     장소: String(formData.get('장소') ?? ''),
     진행: String(formData.get('진행') ?? ''),
     참석부서: String(formData.get('참석부서') ?? ''),
+    업무보고기간: String(formData.get('업무보고기간') ?? ''),
+    업무계획기간: String(formData.get('업무계획기간') ?? ''),
   });
   revalidatePath('/staff-meeting');
+  revalidatePath('/staff-meeting/view');
   revalidatePath('/staff-meeting/present');
 }
 
 export async function sendStaffMeetingNotificationAction(formData: FormData) {
   const ym = String(formData.get('년월') ?? '');
-  await sendStaffMeetingNotification(ym);
+  const message = String(formData.get('메시지') ?? '');
+  await sendStaffMeetingNotification(ym, message);
   revalidatePath('/staff-meeting');
 }
 

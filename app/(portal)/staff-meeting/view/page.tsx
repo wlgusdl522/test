@@ -4,7 +4,7 @@ import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
-import { getStaffMeetingItems, getStaffMeetingValues, nextYm, valueFor } from '@/lib/mutate/staffMeeting';
+import { getStaffMeetingInfo, getStaffMeetingItems, getStaffMeetingValues, valueFor } from '@/lib/mutate/staffMeeting';
 import SubmitButton from '@/components/SubmitButton';
 import { getStaffMeetingContext, setStaffMeetingContextAction } from '@/lib/prefs-actions';
 import { btnOutline, card, h1, inputBase, pageFluid, table, td, th, tableWrap } from '@/lib/ui';
@@ -14,11 +14,6 @@ export const dynamic = 'force-dynamic';
 
 function currentYm(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date()).slice(0, 7);
-}
-
-function ymLabel(ym: string): string {
-  const [y, m] = ym.split('-');
-  return `${y}년 ${Number(m)}월`;
 }
 
 export default async function StaffMeetingViewPage({
@@ -46,6 +41,7 @@ export default async function StaffMeetingViewPage({
 
   const items = 팀명 ? await getStaffMeetingItems(팀명) : [];
   const values = await getStaffMeetingValues(items.map((i) => i.id));
+  const meetingInfo = await getStaffMeetingInfo(ym);
 
   return (
     <main className={pageFluid}>
@@ -84,8 +80,8 @@ export default async function StaffMeetingViewPage({
               <thead>
                 <tr>
                   <th className={th}>사업구분</th>
-                  <th className={th}>{ymLabel(ym)} 업무보고</th>
-                  <th className={th}>{ymLabel(nextYm(ym))} 업무계획</th>
+                  <th className={th}>{meetingInfo.업무보고기간} 업무보고</th>
+                  <th className={th}>{meetingInfo.업무계획기간} 업무계획</th>
                   <th className={th}>타 부서 협조사항 및 기타</th>
                 </tr>
               </thead>

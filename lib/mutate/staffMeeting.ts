@@ -49,6 +49,12 @@ export function nextYm(ym: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+// "2026-06" -> "2026년 6월"
+export function ymLabel(ym: string): string {
+  const [y, m] = ym.split('-');
+  return `${y}년 ${Number(m)}월`;
+}
+
 export async function getStaffMeetingItems(팀명: string): Promise<StaffMeetingItem[]> {
   const rows = await getKeyedList(STAFF_MEETING_ITEM_TABLE);
   return rows
@@ -161,6 +167,9 @@ export async function setStaffMeetingValues(
 // 회의 자체의 메타정보(일시/장소/진행/참석부서) — 서무가 매달 등록. 장소/진행/참석부서는
 // 거의 안 바뀌어서 기본값을 미리 채워둔다. 알림발송일시는 "보내기" 버튼을 눌러 잔디로 보낸
 // 마지막 시각을 보여주는 참고용 정보일 뿐, 재발송을 막지는 않는다.
+// 업무보고기간/업무계획기간: 표 헤더에 보여줄 문구(예: "2026년 6월"). 비워두면 조회월 기준으로
+// 자동 계산하고, 5~6월처럼 여러 달을 묶어 보고할 때는 직접 "2026년 5~6월"로 덮어써서 쓴다
+// (이사회자료 업무보고의 기간텍스트와 같은 방식).
 export type StaffMeetingInfo = {
   년월: string;
   회의일시: string;
@@ -168,6 +177,8 @@ export type StaffMeetingInfo = {
   진행: string;
   참석부서: string;
   알림발송일시: string;
+  업무보고기간: string;
+  업무계획기간: string;
 };
 
 export async function getStaffMeetingInfo(ym: string): Promise<StaffMeetingInfo> {
@@ -180,12 +191,14 @@ export async function getStaffMeetingInfo(ym: string): Promise<StaffMeetingInfo>
     진행: found?.진행 || DEFAULT_MEETING_HOST,
     참석부서: found?.참석부서 || DEFAULT_MEETING_TEAMS,
     알림발송일시: found?.알림발송일시 ?? '',
+    업무보고기간: found?.업무보고기간 || ymLabel(ym),
+    업무계획기간: found?.업무계획기간 || ymLabel(nextYm(ym)),
   };
 }
 
 export async function setStaffMeetingInfo(
   ym: string,
-  fields: { 회의일시: string; 장소: string; 진행: string; 참석부서: string }
+  fields: { 회의일시: string; 장소: string; 진행: string; 참석부서: string; 업무보고기간: string; 업무계획기간: string }
 ): Promise<void> {
   const existing = await getStaffMeetingInfo(ym);
   await upsertKeyedRecord(
@@ -198,6 +211,8 @@ export async function setStaffMeetingInfo(
       진행: fields.진행.trim(),
       참석부서: fields.참석부서.trim(),
       알림발송일시: existing.알림발송일시,
+      업무보고기간: fields.업무보고기간.trim(),
+      업무계획기간: fields.업무계획기간.trim(),
     }
   );
 }
@@ -206,10 +221,9 @@ function nowTimestamp(): string {
   return new Date().toISOString().slice(0, 19).replace('T', ' ');
 }
 
-// "잔디 알림 보내기" 버튼을 누르면 즉시 호출 — 예약/크론 없이 그 자리에서 바로 발송한다.
-export async function sendStaffMeetingNotification(ym: string): Promise<void> {
-  const [info, settings] = await Promise.all([getStaffMeetingInfo(ym), getSystemSettings()]);
-  const message = [
+// 잔디 알림 화면에 기본으로 채워주는 문구 — 그대로 보내도 되고 고쳐서 보내도 된다.
+export function buildStaffMeetingNotificationMessage(ym: string, info: StaffMeetingInfo): string {
+  return [
     `📢 ${ym} 전체회의 안내`,
     info.회의일시 ? `일시: ${info.회의일시.replace('T', ' ')}` : '',
     info.장소 ? `장소: ${info.장소}` : '',
@@ -217,6 +231,12 @@ export async function sendStaffMeetingNotification(ym: string): Promise<void> {
     info.참석부서 ? `참석부서: ${info.참석부서}` : '',
     '업무포털 > 업무관리 > 전체회의자료에서 자료 준비 부탁드립니다.',
   ].filter(Boolean).join('\n');
+}
+
+// "잔디 알림 보내기" 버튼을 누르면 즉시 호출 — 예약/크론 없이 그 자리에서 바로 발송한다.
+// message: 화면에서 기본 문구를 고쳐 썼을 수도 있으므로 그대로 전달받아 보낸다.
+export async function sendStaffMeetingNotification(ym: string, message: string): Promise<void> {
+  const [info, settings] = await Promise.all([getStaffMeetingInfo(ym), getSystemSettings()]);
 
   await jandiPost(settings.staffMeetingJandiWebhook, message);
   await upsertKeyedRecord(
@@ -229,6 +249,8 @@ export async function sendStaffMeetingNotification(ym: string): Promise<void> {
       진행: info.진행,
       참석부서: info.참석부서,
       알림발송일시: nowTimestamp(),
+      업무보고기간: info.업무보고기간,
+      업무계획기간: info.업무계획기간,
     }
   );
 }

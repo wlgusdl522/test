@@ -15,9 +15,28 @@ type Row = {
 };
 
 const textareaClass =
-  'w-full min-w-[200px] rounded border border-transparent bg-[#fcfbf8] px-2 py-1 text-[13px] focus:border-brand focus:outline-none dark:bg-zinc-950';
+  'w-full min-w-[200px] resize-none overflow-hidden rounded border border-transparent bg-[#fcfbf8] px-2 py-1 text-[13px] focus:border-brand focus:outline-none dark:bg-zinc-950';
 
-export default function EntryClient({ 팀명, ym, rows }: { 팀명: string; ym: string; rows: Row[] }) {
+// 입력한 글자 수만큼 칸이 늘어나도록 스크롤 높이에 맞춰 실제 높이를 다시 잰다.
+function autoResize(el: HTMLTextAreaElement | null) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
+}
+
+export default function EntryClient({
+  팀명,
+  ym,
+  rows,
+  reportLabel,
+  planLabel,
+}: {
+  팀명: string;
+  ym: string;
+  rows: Row[];
+  reportLabel: string;
+  planLabel: string;
+}) {
   const router = useRouter();
   // 이번달 업무보고를 아직 안 썼으면 지난달에 적어둔 "다음달 업무계획"을 그대로 옮겨 적어 시작점으로
   // 준다(회계 전월이월 추천값과 같은 방식 — 그대로 둬도 되고 고쳐 써도 됨, 잠긴 값이 아님).
@@ -58,8 +77,8 @@ export default function EntryClient({ 팀명, ym, rows }: { 팀명: string; ym: 
           <thead>
             <tr>
               <th className={`${th} whitespace-nowrap`}>사업구분</th>
-              <th className={th}>이번달 업무보고</th>
-              <th className={th}>다음달 업무계획</th>
+              <th className={th}>{reportLabel} 업무보고</th>
+              <th className={th}>{planLabel} 업무계획</th>
               <th className={th}>타 부서 협조사항 및 기타</th>
             </tr>
           </thead>
@@ -69,25 +88,28 @@ export default function EntryClient({ 팀명, ym, rows }: { 팀명: string; ym: 
                 <td className={`${td} whitespace-pre-wrap font-semibold align-top`}>{r.사업구분}</td>
                 <td className={`${td} align-top`}>
                   <textarea
+                    ref={autoResize}
                     rows={4}
                     value={values[r.id]?.업무보고 ?? ''}
-                    onChange={(e) => update(r.id, '업무보고', e.target.value)}
+                    onChange={(e) => { update(r.id, '업무보고', e.target.value); autoResize(e.target); }}
                     className={textareaClass}
                   />
                 </td>
                 <td className={`${td} align-top`}>
                   <textarea
+                    ref={autoResize}
                     rows={4}
                     value={values[r.id]?.업무계획 ?? ''}
-                    onChange={(e) => update(r.id, '업무계획', e.target.value)}
+                    onChange={(e) => { update(r.id, '업무계획', e.target.value); autoResize(e.target); }}
                     className={textareaClass}
                   />
                 </td>
                 <td className={`${td} align-top`}>
                   <textarea
+                    ref={autoResize}
                     rows={4}
                     value={values[r.id]?.협조사항 ?? ''}
-                    onChange={(e) => update(r.id, '협조사항', e.target.value)}
+                    onChange={(e) => { update(r.id, '협조사항', e.target.value); autoResize(e.target); }}
                     className={textareaClass}
                   />
                 </td>
