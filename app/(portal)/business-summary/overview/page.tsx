@@ -118,7 +118,7 @@ export default async function BusinessSummaryOverviewPage({
 
   return (
     <>
-      <BoardSubTabs />
+      <BoardSubTabs ym={ym} />
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <form method="get" className="flex flex-wrap items-center gap-3">
           <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">조회월</label>

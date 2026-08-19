@@ -36,7 +36,7 @@ export default async function BusinessSummaryHeadcountPage({
 
   return (
     <>
-      <BoardSubTabs />
+      <BoardSubTabs ym={ym} />
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <form action={setHeadcountDateAction} className="flex flex-wrap items-center gap-3">
           <input type="hidden" name="년월" value={ym} />

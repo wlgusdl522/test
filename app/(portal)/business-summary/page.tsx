@@ -117,7 +117,7 @@ export default async function BusinessSummaryBoardPage({
 
   return (
     <>
-      <BoardSubTabs />
+      <BoardSubTabs ym={ym} />
       <form method="get" className="mb-4 flex flex-wrap items-center gap-3">
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">조회월</label>
         <input type="month" name="ym" defaultValue={ym} className={`${inputBase} w-auto`} />
