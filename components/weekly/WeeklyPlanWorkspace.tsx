@@ -72,6 +72,7 @@ export default function WeeklyPlanWorkspace({
   );
   const [statusText, setStatusText] = useState('');
   const [isPending, startTransition] = useTransition();
+  const [mobileTab, setMobileTab] = useState<'write' | 'team'>('write');
 
   function addRow(iso: string, text: string) {
     const trimmed = text.trim();
@@ -136,9 +137,27 @@ export default function WeeklyPlanWorkspace({
 
   const meetingSummaryLines = buildMeetingSummaryLines(dayDates, rowsByDay);
 
+  function mobileTabClass(active: boolean) {
+    return `-mb-px rounded-t-md border border-b-0 px-3.5 py-2 text-sm transition-colors ${
+      active
+        ? 'border-zinc-200 bg-white font-medium text-brand dark:border-zinc-800 dark:bg-zinc-900'
+        : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+    }`;
+  }
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-      <div>
+    <div>
+      <div className="mb-4 flex gap-1 border-b border-zinc-200 dark:border-zinc-800 lg:hidden">
+        <button type="button" onClick={() => setMobileTab('write')} className={mobileTabClass(mobileTab === 'write')}>
+          내 업무 입력
+        </button>
+        <button type="button" onClick={() => setMobileTab('team')} className={mobileTabClass(mobileTab === 'team')}>
+          팀 조회
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className={`${mobileTab === 'write' ? 'block' : 'hidden'} lg:block`}>
         <div className="flex flex-col mb-4 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
           {dayDates.map((iso, i) => {
             const d = new Date(`${iso}T00:00:00`);
@@ -231,7 +250,7 @@ export default function WeeklyPlanWorkspace({
         </div>
       </div>
 
-      <div>
+      <div className={`${mobileTab === 'team' ? 'block' : 'hidden'} lg:block`}>
         <div className="flex items-center gap-2 mb-2">
           <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">팀 조회</h3>
           <form method="get" className="flex items-center gap-1.5 ml-auto">
@@ -242,7 +261,59 @@ export default function WeeklyPlanWorkspace({
             <button type="submit" className={`${btnSecondary} text-xs py-1`}>조회</button>
           </form>
         </div>
-        <div className={cardTableWrap}>
+        {/* 모바일: 7열 표는 너무 좁아져서 담당자별 카드로, 카드 안에서 날짜별로 나열 */}
+        <div className="flex flex-col gap-2 sm:hidden">
+          {isOwnTeam && (
+            <div className="rounded-lg border border-brand bg-brand-tint p-3">
+              <p className="text-sm font-semibold text-brand-dark dark:text-brand">{myName}</p>
+              <div className="mt-1.5 flex flex-col gap-1.5">
+                {dayDates.map((iso, i) => {
+                  const dayRows = rowsByDay[iso] ?? [];
+                  if (dayRows.length === 0) return null;
+                  return (
+                    <div key={iso}>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                        {weekdayLabels[i]} ({new Date(`${iso}T00:00:00`).getMonth() + 1}/{new Date(`${iso}T00:00:00`).getDate()})
+                      </span>
+                      {dayRows.map((r, i) => <div key={i} className="text-sm text-zinc-700 dark:text-zinc-300">• {r.text}</div>)}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {roster
+            .filter((m) => !isOwnTeam || m.email.toLowerCase() !== myEmail.toLowerCase())
+            .map((member) => {
+              const memberTasks = teamTasks.filter((t) => t.email.toLowerCase() === member.email.toLowerCase());
+              return (
+                <div key={member.email} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{member.name}</p>
+                  {memberTasks.length === 0 ? (
+                    <p className="mt-1 text-sm text-zinc-300 dark:text-zinc-700">등록된 업무 없음</p>
+                  ) : (
+                    <div className="mt-1.5 flex flex-col gap-1.5">
+                      {dayDates.map((iso, i) => {
+                        const dayTasks = memberTasks.filter((t) => t.날짜 === iso);
+                        if (dayTasks.length === 0) return null;
+                        return (
+                          <div key={iso}>
+                            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                              {weekdayLabels[i]} ({new Date(`${iso}T00:00:00`).getMonth() + 1}/{new Date(`${iso}T00:00:00`).getDate()})
+                            </span>
+                            {dayTasks.map((t, i) => <div key={i} className="text-sm text-zinc-700 dark:text-zinc-300">• {t.업무내용}</div>)}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+        </div>
+
+        {/* 데스크톱: 기존 표 레이아웃 유지 */}
+        <div className={`hidden sm:block ${cardTableWrap}`}>
           <table className={tableClean}>
             <thead>
               <tr>
@@ -285,6 +356,7 @@ export default function WeeklyPlanWorkspace({
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </div>
   );

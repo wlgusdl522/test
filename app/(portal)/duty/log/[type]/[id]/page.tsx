@@ -60,10 +60,10 @@ export default async function DutyLogPage({ params }: { params: Promise<{ type: 
 
         <div className={card}>
           {isOwner ? (
-            <form action={saveDutyWeekdayLogAction} className="grid grid-cols-2 gap-3">
+            <form action={saveDutyWeekdayLogAction} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <input type="hidden" name="id" value={id} />
               {CHECK_FIELDS.map((f) => (
-                <div key={f.key} className="col-span-2 grid grid-cols-2 gap-3">
+                <div key={f.key} className="grid grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-2">
                   <label className={label}>
                     {f.label}
                     <input name={f.key} defaultValue={row[f.key] || '이상없음'} className={input} />
@@ -75,16 +75,16 @@ export default async function DutyLogPage({ params }: { params: Promise<{ type: 
                 </div>
               ))}
               {TEXT_FIELDS.map((f) => (
-                <label key={f.key} className={`${label} col-span-2`}>
+                <label key={f.key} className={`${label} sm:col-span-2`}>
                   {f.label}
                   <input name={f.key} defaultValue={row[f.key]} className={input} />
                 </label>
               ))}
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <p className={label}>서명</p>
                 <SignaturePad name="signature" hasExisting={!!row['사인']} />
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <button type="submit" className={btn}>저장</button>
               </div>
             </form>
@@ -116,7 +116,7 @@ export default async function DutyLogPage({ params }: { params: Promise<{ type: 
       <h1 className={h1}>당직근무일지 (토요) · {row['근무일자']}</h1>
       <p className={pageSubtitle}>{slots.map((s) => s.name).filter(Boolean).join(', ')}</p>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {slots.map((s) => {
           const isOwner = isAdmin || (s.email ?? '').toLowerCase() === viewerEmail;
           return (

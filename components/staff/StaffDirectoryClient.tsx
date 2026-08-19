@@ -94,8 +94,8 @@ export default function StaffDirectoryClient({ staff }: { staff: StaffRow[] }) {
         </select>
       </div>
 
-      <div className="flex items-start gap-4">
-        <div className="grid min-w-0 flex-1 grid-cols-1 content-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="flex flex-col items-start gap-4 sm:flex-row">
+        <div className={`min-w-0 flex-1 grid-cols-1 content-start gap-4 md:grid-cols-2 xl:grid-cols-3 ${selected ? 'hidden sm:grid' : 'grid'}`}>
           {groups.map(([teamName, members]) => (
             <div
               key={teamName}

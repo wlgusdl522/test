@@ -7,26 +7,49 @@ import { btn, btnSecondary, table, td, th, tableWrap } from '@/lib/ui';
 const NEXT_KEYS = new Set(['ArrowRight', 'ArrowDown', 'PageDown', ' ']);
 const PREV_KEYS = new Set(['ArrowLeft', 'ArrowUp', 'PageUp']);
 
-const TABLE_FONT_SIZE = '26px';
-const TEAM_TITLE_FONT_SIZE = 44;
+// 사업구분을 몇 개 묶을지(페이지 분할)는 가장 큰 글씨(lg) 기준 높이로 정하고, 그렇게 정해진
+// 페이지가 실제로는 내용이 많아 lg로 안 들어가면 md → sm 순으로 그 페이지만 글씨를 줄인다.
+const TIERS = [
+  { key: 'lg', fontSize: '26px', titleFontSize: 44 },
+  { key: 'md', fontSize: '20px', titleFontSize: 36 },
+  { key: 'sm', fontSize: '15px', titleFontSize: 28 },
+] as const;
+type Tier = (typeof TIERS)[number];
+
 const TEAM_TITLE_MARGIN_BOTTOM = 20;
 // 표 테두리/여백/측정 오차를 흡수하는 여유분 — 이만큼 빼고 채워야 실제로 스크롤 없이 꽉 찬다.
 const SAFETY_MARGIN = 48;
 // 내용이 짧아 화면에 여유가 많이 남아도, 한 페이지에는 최대 이 개수까지만 보여준다.
 const MAX_ROWS_PER_PAGE = 3;
+// th 공용 클래스에 whitespace-nowrap이 박혀있어 협조사항처럼 좁은 열은 헤더 글자("타 부서
+// 협조사항 및 기타")가 한 줄로 강제되며 옆으로 넘쳐 가로 스크롤이 생겼다. 인라인 스타일로
+// 덮어써 좁은 열에서는 헤더도 줄바꿈되게 한다(인라인 스타일이 클래스보다 항상 우선한다).
+const HEADER_WRAP_STYLE: React.CSSProperties = { whiteSpace: 'normal' };
 
 type Row = { id: string; 사업구분: string; 업무보고: string; 업무계획: string; 협조사항: string };
 type Section = { team: string; rows: Row[] };
-type PageGroup = { team: string; rows: Row[] };
+type PageGroup = { team: string; rows: Row[]; tier: Tier };
 
-function TeamTable({ team, rows, reportLabel, planLabel }: { team: string; rows: Row[]; reportLabel: string; planLabel: string }) {
+function TeamTable({
+  team,
+  rows,
+  reportLabel,
+  planLabel,
+  tier,
+}: {
+  team: string;
+  rows: Row[];
+  reportLabel: string;
+  planLabel: string;
+  tier: Tier;
+}) {
   return (
     <div>
       <div style={{ textAlign: 'center', marginBottom: TEAM_TITLE_MARGIN_BOTTOM }}>
-        <div style={{ fontSize: TEAM_TITLE_FONT_SIZE, fontWeight: 700 }}>{team}</div>
+        <div style={{ fontSize: tier.titleFontSize, fontWeight: 700 }}>{team}</div>
       </div>
       <div className={tableWrap}>
-        <table className={table} style={{ fontSize: TABLE_FONT_SIZE, tableLayout: 'fixed', width: '100%' }}>
+        <table className={table} style={{ fontSize: tier.fontSize, tableLayout: 'fixed', width: '100%' }}>
           <colgroup>
             <col style={{ width: '14%' }} />
             <col style={{ width: '38%' }} />
@@ -35,19 +58,19 @@ function TeamTable({ team, rows, reportLabel, planLabel }: { team: string; rows:
           </colgroup>
           <thead>
             <tr>
-              <th className={th}>사업구분</th>
-              <th className={th}>{reportLabel} 업무보고</th>
-              <th className={th}>{planLabel} 업무계획</th>
-              <th className={th}>타 부서 협조사항 및 기타</th>
+              <th className={th} style={HEADER_WRAP_STYLE}>사업구분</th>
+              <th className={th} style={HEADER_WRAP_STYLE}>{reportLabel} 업무보고</th>
+              <th className={th} style={HEADER_WRAP_STYLE}>{planLabel} 업무계획</th>
+              <th className={th} style={HEADER_WRAP_STYLE}>타 부서 협조사항 및 기타</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
-                <td className={`${td} whitespace-pre-wrap font-semibold align-top`}>{r.사업구분}</td>
-                <td className={`${td} align-top whitespace-pre-wrap`}>{r.업무보고}</td>
-                <td className={`${td} align-top whitespace-pre-wrap`}>{r.업무계획}</td>
-                <td className={`${td} align-top whitespace-pre-wrap`}>{r.협조사항}</td>
+                <td className={`${td} whitespace-pre-wrap break-keep break-words font-semibold align-top`}>{r.사업구분}</td>
+                <td className={`${td} align-top whitespace-pre-wrap break-keep break-words`}>{r.업무보고}</td>
+                <td className={`${td} align-top whitespace-pre-wrap break-keep break-words`}>{r.업무계획}</td>
+                <td className={`${td} align-top whitespace-pre-wrap break-keep break-words`}>{r.협조사항}</td>
               </tr>
             ))}
           </tbody>
@@ -55,6 +78,10 @@ function TeamTable({ team, rows, reportLabel, planLabel }: { team: string; rows:
       </div>
     </div>
   );
+}
+
+function refKey(tierKey: string, team: string): string {
+  return `${tierKey}:${team}`;
 }
 
 // 표지 + 팀별 페이지를 실제 프레젠테이션 슬라이드쇼처럼 전체화면으로 보여준다. 사업구분을
@@ -93,27 +120,55 @@ export default function PresentClient({
     const contentHeight = contentRef.current?.clientHeight ?? 0;
     if (!contentHeight) return;
 
-    const groups: PageGroup[] = [];
+    // 1) 페이지를 몇 개씩 묶을지는 항상 가장 큰 글씨(lg) 기준 높이로 정한다 — 내용이 짧으면
+    //    최대한 큰 글씨로 여러 개를 보여주는 경험을 우선한다.
+    const packTier = TIERS[0];
+    type Grouped = { team: string; rowIdx: number[] };
+    const grouped: Grouped[] = [];
     for (const section of sections) {
-      const teamTitleH = (teamTitleRefs.current[section.team]?.offsetHeight ?? 0) + TEAM_TITLE_MARGIN_BOTTOM;
-      const theadH = theadRefs.current[section.team]?.offsetHeight ?? 0;
+      const k = refKey(packTier.key, section.team);
+      const teamTitleH = (teamTitleRefs.current[k]?.offsetHeight ?? 0) + TEAM_TITLE_MARGIN_BOTTOM;
+      const theadH = theadRefs.current[k]?.offsetHeight ?? 0;
       const available = contentHeight - teamTitleH - theadH - SAFETY_MARGIN;
-      const rowEls = rowRefs.current[section.team] ?? [];
+      const rowEls = rowRefs.current[k] ?? [];
 
-      let current: Row[] = [];
+      let current: number[] = [];
       let currentHeight = 0;
-      section.rows.forEach((row, i) => {
+      section.rows.forEach((_row, i) => {
         const h = rowEls[i]?.offsetHeight ?? 0;
         if (current.length > 0 && (current.length >= MAX_ROWS_PER_PAGE || currentHeight + h > available)) {
-          groups.push({ team: section.team, rows: current });
+          grouped.push({ team: section.team, rowIdx: current });
           current = [];
           currentHeight = 0;
         }
-        current.push(row);
+        current.push(i);
         currentHeight += h;
       });
-      if (current.length > 0) groups.push({ team: section.team, rows: current });
+      if (current.length > 0) grouped.push({ team: section.team, rowIdx: current });
     }
+
+    // 2) 정해진 각 묶음이 lg로 실제 화면에 꽉 차지 않으면(내용이 많아 넘치면) md → sm 순으로
+    //    그 페이지만 글씨를 줄여서, 묶는 개수(=구성)는 그대로 두고 세로 스크롤만 없앤다.
+    const groups: PageGroup[] = grouped.map(({ team, rowIdx }) => {
+      const section = sections.find((s) => s.team === team)!;
+      const rows = rowIdx.map((i) => section.rows[i]);
+
+      let chosen: Tier = TIERS[TIERS.length - 1];
+      for (const tier of TIERS) {
+        const k = refKey(tier.key, team);
+        const teamTitleH = (teamTitleRefs.current[k]?.offsetHeight ?? 0) + TEAM_TITLE_MARGIN_BOTTOM;
+        const theadH = theadRefs.current[k]?.offsetHeight ?? 0;
+        const available = contentHeight - teamTitleH - theadH - SAFETY_MARGIN;
+        const rowEls = rowRefs.current[k] ?? [];
+        const total = rowIdx.reduce((sum, i) => sum + (rowEls[i]?.offsetHeight ?? 0), 0);
+        if (total <= available) {
+          chosen = tier;
+          break;
+        }
+      }
+      return { team, rows, tier: chosen };
+    });
+
     setPageGroups(groups);
   }, [sections]);
 
@@ -166,53 +221,56 @@ export default function PresentClient({
 
   return (
     <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-white dark:bg-zinc-950">
-      {/* 실제 화면과 같은 너비로 숨겨서 렌더링해 각 팀 제목/표 머리글/행의 실제 높이를 잰다.
-          overflow:hidden으로 감싸서, 측정용 사본이 아무리 넓어져도 실제 화면 가로 스크롤에
-          영향을 주지 않게 한다. */}
+      {/* 실제 화면과 같은 너비로 숨겨서 렌더링해, 글씨 크기별(lg/md/sm)로 각 팀 제목/표
+          머리글/행의 실제 높이를 잰다. overflow:hidden으로 감싸서, 측정용 사본이 아무리
+          넓어져도 실제 화면 가로/세로 스크롤에 영향을 주지 않게 한다. */}
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: 0, overflow: 'hidden', visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
         <div className="px-10">
-          {sections.map((section) => (
-            <div key={section.team}>
-              <div
-                ref={(el) => { teamTitleRefs.current[section.team] = el; }}
-                style={{ textAlign: 'center' }}
-              >
-                <div style={{ fontSize: TEAM_TITLE_FONT_SIZE, fontWeight: 700 }}>{section.team}</div>
-              </div>
-              <table className={table} style={{ fontSize: TABLE_FONT_SIZE, tableLayout: 'fixed', width: '100%' }}>
-                <colgroup>
-                  <col style={{ width: '14%' }} />
-                  <col style={{ width: '38%' }} />
-                  <col style={{ width: '38%' }} />
-                  <col style={{ width: '10%' }} />
-                </colgroup>
-                <thead ref={(el) => { theadRefs.current[section.team] = el; }}>
-                  <tr>
-                    <th className={th}>사업구분</th>
-                    <th className={th}>{reportLabel} 업무보고</th>
-                    <th className={th}>{planLabel} 업무계획</th>
-                    <th className={th}>타 부서 협조사항 및 기타</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {section.rows.map((r, i) => (
-                    <tr
-                      key={r.id}
-                      ref={(el) => {
-                        const arr = rowRefs.current[section.team] ?? (rowRefs.current[section.team] = []);
-                        arr[i] = el;
-                      }}
-                    >
-                      <td className={`${td} whitespace-pre-wrap font-semibold align-top`}>{r.사업구분}</td>
-                      <td className={`${td} align-top whitespace-pre-wrap`}>{r.업무보고}</td>
-                      <td className={`${td} align-top whitespace-pre-wrap`}>{r.업무계획}</td>
-                      <td className={`${td} align-top whitespace-pre-wrap`}>{r.협조사항}</td>
+          {TIERS.map((tier) =>
+            sections.map((section) => (
+              <div key={refKey(tier.key, section.team)}>
+                <div
+                  ref={(el) => { teamTitleRefs.current[refKey(tier.key, section.team)] = el; }}
+                  style={{ textAlign: 'center' }}
+                >
+                  <div style={{ fontSize: tier.titleFontSize, fontWeight: 700 }}>{section.team}</div>
+                </div>
+                <table className={table} style={{ fontSize: tier.fontSize, tableLayout: 'fixed', width: '100%' }}>
+                  <colgroup>
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '38%' }} />
+                    <col style={{ width: '38%' }} />
+                    <col style={{ width: '10%' }} />
+                  </colgroup>
+                  <thead ref={(el) => { theadRefs.current[refKey(tier.key, section.team)] = el; }}>
+                    <tr>
+                      <th className={th} style={HEADER_WRAP_STYLE}>사업구분</th>
+                      <th className={th} style={HEADER_WRAP_STYLE}>{reportLabel} 업무보고</th>
+                      <th className={th} style={HEADER_WRAP_STYLE}>{planLabel} 업무계획</th>
+                      <th className={th} style={HEADER_WRAP_STYLE}>타 부서 협조사항 및 기타</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
+                  </thead>
+                  <tbody>
+                    {section.rows.map((r, i) => (
+                      <tr
+                        key={r.id}
+                        ref={(el) => {
+                          const k = refKey(tier.key, section.team);
+                          const arr = rowRefs.current[k] ?? (rowRefs.current[k] = []);
+                          arr[i] = el;
+                        }}
+                      >
+                        <td className={`${td} whitespace-pre-wrap break-keep break-words font-semibold align-top`}>{r.사업구분}</td>
+                        <td className={`${td} align-top whitespace-pre-wrap break-keep break-words`}>{r.업무보고}</td>
+                        <td className={`${td} align-top whitespace-pre-wrap break-keep break-words`}>{r.업무계획}</td>
+                        <td className={`${td} align-top whitespace-pre-wrap break-keep break-words`}>{r.협조사항}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -237,7 +295,7 @@ export default function PresentClient({
             )}
           </div>
         ) : current ? (
-          <TeamTable team={current.team} rows={current.rows} reportLabel={reportLabel} planLabel={planLabel} />
+          <TeamTable team={current.team} rows={current.rows} reportLabel={reportLabel} planLabel={planLabel} tier={current.tier} />
         ) : null}
       </div>
 

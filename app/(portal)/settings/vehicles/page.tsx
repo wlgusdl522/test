@@ -15,7 +15,7 @@ export default async function VehiclesSettingsPage() {
       <h1 className={`${h1} mb-5`}>설정 &gt; 차량관리 &gt; 차량목록</h1>
 
       <FormToggle label="차량 등록">
-        <form action={addVehicleAction} className="flex gap-2 mb-6">
+        <form action={addVehicleAction} className="flex flex-wrap gap-2 mb-6">
           <input name="number" placeholder="차량번호" required className={input} />
           <input name="type" placeholder="차종" className={input} />
           <button type="submit" className={btn}>추가</button>
@@ -24,8 +24,8 @@ export default async function VehiclesSettingsPage() {
 
       <ul className="flex flex-col gap-2">
         {vehicles.map((v) => (
-          <li key={v.차량번호} className="flex items-center gap-2">
-            <form action={updateVehicleAction} className="flex flex-1 gap-2">
+          <li key={v.차량번호} className="flex flex-wrap items-center gap-2">
+            <form action={updateVehicleAction} className="flex flex-1 flex-wrap gap-2 min-w-[240px]">
               <input type="hidden" name="oldNumber" value={v.차량번호} />
               <input name="newNumber" defaultValue={v.차량번호} className={`${inputBase} w-28`} />
               <input name="type" defaultValue={v.차종} className={`${input} flex-1`} />

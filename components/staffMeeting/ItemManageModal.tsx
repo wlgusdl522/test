@@ -1,4 +1,4 @@
-import FormToggle from '@/components/FormToggle';
+import Modal from '@/components/Modal';
 import TrashIcon from '@/components/icons/TrashIcon';
 import SubmitButton from '@/components/SubmitButton';
 import type { StaffMeetingItem } from '@/lib/mutate/staffMeeting';
@@ -7,33 +7,26 @@ import {
   deleteStaffMeetingItemAction,
   moveStaffMeetingItemAction,
 } from '@/app/(portal)/staff-meeting/actions';
-import { btn, btnOutline, hint, input } from '@/lib/ui';
+import { btn, hint, input } from '@/lib/ui';
 
 const iconBtn =
   'inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 disabled:opacity-25 disabled:pointer-events-none dark:text-zinc-400 dark:hover:bg-zinc-800';
 const iconBtnDanger = `${iconBtn} hover:!bg-red-50 hover:!text-red-600 dark:hover:!bg-red-950/40`;
 
-// 팀별 "사업구분" 고정 목록 관리 — 회계/자원봉사자/후원의 ItemManageModal과 같은 결이지만
-// 모듈(전체 시설 공용)이 아니라 팀 단위 항목이라 별도 액션(staff-meeting)에 연결한 전용 컴포넌트.
+// 팀별 "사업구분" 고정 목록 관리. 여닫힘은 부모(MeetingSettingsMenu)가 관리한다 — 드롭다운
+// 메뉴 안에 자체 토글 버튼을 두면 메뉴가 닫힐 때 이 컴포넌트까지 같이 사라져서 모달이 뜰
+// 새도 없이 닫혀버리기 때문.
 export default function ItemManageModal({
   팀명,
   items,
-  buttonClassName,
-  onOpen,
+  onClose,
 }: {
   팀명: string;
   items: StaffMeetingItem[];
-  buttonClassName?: string;
-  onOpen?: () => void;
+  onClose: () => void;
 }) {
   return (
-    <FormToggle
-      label="사업구분 관리"
-      buttonLabel="사업구분 관리"
-      buttonClassName={buttonClassName ?? btnOutline}
-      wrapperClassName=""
-      onOpen={onOpen}
-    >
+    <Modal title="사업구분 관리" onClose={onClose}>
       <p className={`${hint} mb-4`}>화살표로 순서를 바꾸고, 삭제는 되돌릴 수 없어요.</p>
 
       <p className={`${hint} mb-2`}>줄바꿈으로 입력하면 표에서도 그 줄바꿈 그대로 보여요(예: &quot;상담사업{'\n'}권익증진사업&quot;).</p>
@@ -83,6 +76,6 @@ export default function ItemManageModal({
           ))}
         </ul>
       )}
-    </FormToggle>
+    </Modal>
   );
 }

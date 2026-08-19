@@ -43,8 +43,8 @@ export default function RegisterForm({
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <input name="제목" placeholder="제목" required className={`${input} md:col-span-2`} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-5">
+        <input name="제목" placeholder="제목" required className={`${input} sm:col-span-2 md:col-span-2`} />
         <input name="월일" placeholder="월/일 (예: 1/5)" className={input} />
         <input name="수신" placeholder="수신" className={input} />
         <input name="발신" placeholder="발신" className={input} />

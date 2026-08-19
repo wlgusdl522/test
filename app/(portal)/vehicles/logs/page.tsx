@@ -58,7 +58,7 @@ export default async function VehicleLogsPage({
         </a>
       </div>
 
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         <a
           href={`/vehicles/logs${vehicleParam ? `?${vehicleParam}` : ''}`}
           className={`text-xs px-2.5 py-1 rounded-full ${!ym && !showAll ? 'bg-brand-tint text-brand-dark dark:text-brand font-medium' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'}`}
@@ -86,7 +86,7 @@ export default async function VehicleLogsPage({
           label={editing ? '운행일지 수정' : '운행일지 등록'}
           defaultOpen={!!editing || !!prefillRequest}
         >
-          <form action={editing ? updateVehicleLogAction : addVehicleLogAction} className="grid grid-cols-2 gap-3">
+          <form action={editing ? updateVehicleLogAction : addVehicleLogAction} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {editing && <input type="hidden" name="id" value={editing.id} />}
             <input type="hidden" name="requestId" value={editing?.신청ID ?? prefillRequest?.id ?? ''} />
             <VehicleSelectWithOdometer
@@ -120,7 +120,7 @@ export default async function VehicleLogsPage({
               도착계기판(km)
               <input type="number" name="odoEnd" defaultValue={editing?.도착계기판 ?? ''} className={input} />
             </label>
-            <label className={`${label} col-span-2`}>
+            <label className={`${label} sm:col-span-2`}>
               비고
               <input name="note" defaultValue={editing?.비고 ?? ''} className={input} />
             </label>
@@ -142,7 +142,7 @@ export default async function VehicleLogsPage({
               </CollapsibleCheckSection>
             )}
 
-            <div className="col-span-2 flex items-center gap-3">
+            <div className="sm:col-span-2 flex items-center gap-3">
               <button type="submit" className={btn}>{editing ? '저장' : '등록'}</button>
             </div>
           </form>

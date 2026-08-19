@@ -61,7 +61,7 @@ export default async function ReviewPage({
         </a>
       </div>
 
-      <form method="get" className="flex gap-2 mb-4">
+      <form method="get" className="flex flex-wrap gap-2 mb-4">
         <select name="team" defaultValue={reviewTeam} className={`${inputBase} w-auto`}>
           {teams.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>

@@ -172,7 +172,7 @@ export default function VehicleReservationClient({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <VehicleViewSwitch view={view} onChange={handleViewChange} />
         <div className="flex items-center gap-3">
           {successMessage && <span className="text-sm text-emerald-600 dark:text-emerald-400">{successMessage}</span>}
@@ -274,7 +274,7 @@ export default function VehicleReservationClient({
 
       {formOpen && (
         <Modal title={editing ? '신청 수정' : '신규 신청'} onClose={closeForm}>
-          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className={label}>
               차량 *
               <VehicleSelectWithFuelWarning
@@ -305,7 +305,7 @@ export default function VehicleReservationClient({
             </label>
 
             {liveConflict && (
-              <div className="col-span-2 rounded-md bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-400">
+              <div className="sm:col-span-2 rounded-md bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-400">
                 ⚠ 이미 {liveConflict['신청자명']}님이 같은 시간대({liveConflict['출발시간'] || '00:00'}~{liveConflict['복귀시간'] || '23:59'})에 이 차량을 예약했어요. 시간을 다시 선택해주세요.
               </div>
             )}
@@ -327,7 +327,7 @@ export default function VehicleReservationClient({
             </label>
 
             {!editing && (
-              <div className="col-span-2 rounded-md border border-dashed border-zinc-300 dark:border-zinc-700 p-3">
+              <div className="sm:col-span-2 rounded-md border border-dashed border-zinc-300 dark:border-zinc-700 p-3">
                 <label className="text-sm"><input type="checkbox" name="recurring" /> 반복 일정으로 등록</label>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   {WEEKDAYS.map((w) => (
@@ -343,12 +343,12 @@ export default function VehicleReservationClient({
             )}
 
             {formError && (
-              <div className="col-span-2 rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-400">
+              <div className="sm:col-span-2 rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-400">
                 {formError}
               </div>
             )}
 
-            <div className="col-span-2 flex items-center gap-3">
+            <div className="sm:col-span-2 flex items-center gap-3">
               <button type="submit" disabled={isPending || !!liveConflict} className={btn}>
                 {isPending ? '저장 중...' : editing ? '저장' : '신청'}
               </button>

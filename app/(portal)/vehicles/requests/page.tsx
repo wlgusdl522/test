@@ -9,6 +9,68 @@ import { hasVehicleUseEnded } from '@/lib/vehicleTimeOverlap';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+type Req = Awaited<ReturnType<typeof getVehicleRequestList>>[number];
+
+function StatusBadge({ r, linkedLogId }: { r: Req; linkedLogId?: string }) {
+  if (linkedLogId) {
+    return (
+      <a href={`/vehicles/logs?edit=${linkedLogId}#log-form`} className={`${badgeBase} ${badgeTone.green} hover:opacity-80`}>
+        작성완료
+      </a>
+    );
+  }
+  if (hasVehicleUseEnded(r.사용일자, r.복귀시간)) {
+    return (
+      <a href={`/vehicles/logs?requestId=${r.id}#log-form`} className={`${badgeBase} ${badgeTone.red} hover:opacity-80`}>
+        일지작성
+      </a>
+    );
+  }
+  return <span className={`${badgeBase} ${badgeTone.gray}`}>예약됨</span>;
+}
+
+function RequestActions({
+  r,
+  ym,
+  showAll,
+  mineOnly,
+}: {
+  r: Req;
+  ym?: string;
+  showAll: boolean;
+  mineOnly: boolean;
+}) {
+  return (
+    <>
+      <a href={`/vehicles?edit=${r.id}`} className={btnSecondary}>수정</a>
+      <form action={deleteVehicleRequestFormAction}>
+        <input type="hidden" name="id" value={r.id} />
+        {ym && <input type="hidden" name="ym" value={ym} />}
+        {showAll && <input type="hidden" name="all" value="1" />}
+        {mineOnly && <input type="hidden" name="mine" value="1" />}
+        <ConfirmSubmitButton confirmMessage="이 예약을 취소할까요?" className={btnDanger}>
+          {r.반복그룹ID ? '예약 취소(이 건만)' : '예약 취소'}
+        </ConfirmSubmitButton>
+      </form>
+      {r.반복그룹ID && (
+        <form action={deleteVehicleRequestSeriesFormAction}>
+          <input type="hidden" name="id" value={r.id} />
+          {ym && <input type="hidden" name="ym" value={ym} />}
+          {showAll && <input type="hidden" name="all" value="1" />}
+          {mineOnly && <input type="hidden" name="mine" value="1" />}
+          <ConfirmSubmitButton
+            confirmMessage="이 날짜 이후의 반복 예약을 전부 취소할까요?"
+            title="이 날짜 이후 반복 전체 취소"
+            className={btnSecondary}
+          >
+            이후 전체취소
+          </ConfirmSubmitButton>
+        </form>
+      )}
+    </>
+  );
+}
+
 export default async function VehicleMyRequestsPage({
   searchParams,
 }: {
@@ -70,76 +132,72 @@ export default async function VehicleMyRequestsPage({
         </a>
       </div>
 
-      <div className={cardTableWrap}><table className={tableClean}>
-        <thead>
-          <tr>
-            <th className={thClean}>사용일자</th><th className={thClean}>차량</th><th className={thClean}>신청자</th><th className={thClean}>시간</th>
-            <th className={thClean}>목적</th><th className={thClean}>목적지</th><th className={thClean}>상태</th><th className={thClean}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {requests.length === 0 ? (
-            <tr><td className={tdClean} colSpan={8}><span className="text-zinc-400">해당 조건에 맞는 신청 내역이 없습니다.</span></td></tr>
-          ) : requests.map((r) => {
-            const linkedLog = logByRequestId.get(r.id);
-            const isMine = (r.신청자이메일 ?? '').toLowerCase() === viewerEmail;
-            return (
-              <tr key={r.id} className={trHoverClean}>
-                <td className={tdClean}>{r.사용일자}</td>
-                <td className={tdClean}>{r.차량번호}</td>
-                <td className={tdClean}>{r.신청자명}</td>
-                <td className={tdClean}>{r.출발시간 || '-'} ~ {r.복귀시간 || '-'}</td>
-                <td className={tdClean}>{r.목적}</td>
-                <td className={tdClean}>{r.목적지}</td>
-                <td className={tdClean}>
-                  {linkedLog ? (
-                    <a href={`/vehicles/logs?edit=${linkedLog.id}#log-form`} className={`${badgeBase} ${badgeTone.green} hover:opacity-80`}>
-                      작성완료
-                    </a>
-                  ) : hasVehicleUseEnded(r.사용일자, r.복귀시간) ? (
-                    <a href={`/vehicles/logs?requestId=${r.id}#log-form`} className={`${badgeBase} ${badgeTone.red} hover:opacity-80`}>
-                      일지작성
-                    </a>
-                  ) : (
-                    <span className={`${badgeBase} ${badgeTone.gray}`}>예약됨</span>
-                  )}
-                </td>
-                <td className={`${tdClean} flex gap-1.5`}>
+      {requests.length === 0 ? (
+        <p className="text-sm text-zinc-400">해당 조건에 맞는 신청 내역이 없습니다.</p>
+      ) : (
+        <>
+          {/* 모바일: 표는 칸이 너무 좁아져서 대신 카드 목록으로 보여준다 */}
+          <div className="flex flex-col gap-2 sm:hidden">
+            {requests.map((r) => {
+              const linkedLog = logByRequestId.get(r.id);
+              const isMine = (r.신청자이메일 ?? '').toLowerCase() === viewerEmail;
+              return (
+                <div key={r.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{r.차량번호}</span>
+                    <StatusBadge r={r} linkedLogId={linkedLog?.id} />
+                  </div>
+                  <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                    {r.사용일자} · {r.신청자명}
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                    {r.출발시간 || '-'} ~ {r.복귀시간 || '-'}
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                    {r.목적}
+                    {r.목적지 && ` · ${r.목적지}`}
+                  </p>
                   {isMine && (
-                    <>
-                      <a href={`/vehicles?edit=${r.id}`} className={btnSecondary}>수정</a>
-                      <form action={deleteVehicleRequestFormAction}>
-                        <input type="hidden" name="id" value={r.id} />
-                        {ym && <input type="hidden" name="ym" value={ym} />}
-                        {showAll && <input type="hidden" name="all" value="1" />}
-                        {mineOnly && <input type="hidden" name="mine" value="1" />}
-                        <ConfirmSubmitButton confirmMessage="이 예약을 취소할까요?" className={btnDanger}>
-                          {r.반복그룹ID ? '예약 취소(이 건만)' : '예약 취소'}
-                        </ConfirmSubmitButton>
-                      </form>
-                      {r.반복그룹ID && (
-                        <form action={deleteVehicleRequestSeriesFormAction}>
-                          <input type="hidden" name="id" value={r.id} />
-                          {ym && <input type="hidden" name="ym" value={ym} />}
-                          {showAll && <input type="hidden" name="all" value="1" />}
-                          {mineOnly && <input type="hidden" name="mine" value="1" />}
-                          <ConfirmSubmitButton
-                            confirmMessage="이 날짜 이후의 반복 예약을 전부 취소할까요?"
-                            title="이 날짜 이후 반복 전체 취소"
-                            className={btnSecondary}
-                          >
-                            이후 전체취소
-                          </ConfirmSubmitButton>
-                        </form>
-                      )}
-                    </>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <RequestActions r={r} ym={ym} showAll={showAll} mineOnly={mineOnly} />
+                    </div>
                   )}
-                </td>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 데스크톱: 기존 표 레이아웃 유지 */}
+          <div className={`hidden sm:block ${cardTableWrap}`}><table className={tableClean}>
+            <thead>
+              <tr>
+                <th className={thClean}>사용일자</th><th className={thClean}>차량</th><th className={thClean}>신청자</th><th className={thClean}>시간</th>
+                <th className={thClean}>목적</th><th className={thClean}>목적지</th><th className={thClean}>상태</th><th className={thClean}></th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table></div>
+            </thead>
+            <tbody>
+              {requests.map((r) => {
+                const linkedLog = logByRequestId.get(r.id);
+                const isMine = (r.신청자이메일 ?? '').toLowerCase() === viewerEmail;
+                return (
+                  <tr key={r.id} className={trHoverClean}>
+                    <td className={tdClean}>{r.사용일자}</td>
+                    <td className={tdClean}>{r.차량번호}</td>
+                    <td className={tdClean}>{r.신청자명}</td>
+                    <td className={tdClean}>{r.출발시간 || '-'} ~ {r.복귀시간 || '-'}</td>
+                    <td className={tdClean}>{r.목적}</td>
+                    <td className={tdClean}>{r.목적지}</td>
+                    <td className={tdClean}><StatusBadge r={r} linkedLogId={linkedLog?.id} /></td>
+                    <td className={`${tdClean} flex gap-1.5`}>
+                      {isMine && <RequestActions r={r} ym={ym} showAll={showAll} mineOnly={mineOnly} />}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table></div>
+        </>
+      )}
     </div>
   );
 }

@@ -8,6 +8,47 @@ import { addAdminAction, addExceptionAction, removeAdminAction, removeExceptionA
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+type Staff = Awaited<ReturnType<typeof getActiveStaffList>>[number];
+type PageDef = (typeof CONFIGURABLE_PAGES)[number];
+
+function TierForm({ p, currentTier }: { p: PageDef; currentTier: string }) {
+  return (
+    <form action={setTierAction} className="flex flex-wrap gap-1.5">
+      <input type="hidden" name="pageId" value={p.id} />
+      <input type="hidden" name="pageLabel" value={p.label} />
+      <select key={currentTier} name="tier" defaultValue={currentTier} className={`${inputBase} w-auto`}>
+        {PAGE_ACCESS_TIERS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+      </select>
+      <button type="submit" className={btn}>저장</button>
+    </form>
+  );
+}
+
+function ExceptionsDetails({ p, staff, exceptedEmails }: { p: PageDef; staff: Staff[]; exceptedEmails: string[] }) {
+  return (
+    <details>
+      <summary className="cursor-pointer text-xs text-zinc-500">예외 대상자 ({exceptedEmails.length}명)</summary>
+      <div className="mt-1.5 max-h-48 overflow-y-auto">
+        {staff.map((s) => {
+          const isExcepted = exceptedEmails.includes(s.email.toLowerCase());
+          return (
+            <form
+              key={s.email}
+              action={isExcepted ? removeExceptionAction : addExceptionAction}
+              className="flex items-center gap-1.5 py-0.5 text-xs"
+            >
+              <input type="hidden" name="pageId" value={p.id} />
+              <input type="hidden" name="email" value={s.email} />
+              <span className="flex-1">{s.name} ({s.team})</span>
+              <button type="submit" className={btnSecondary}>{isExcepted ? '제외' : '포함'}</button>
+            </form>
+          );
+        })}
+      </div>
+    </details>
+  );
+}
+
 export default async function PermissionsSettingsPage() {
   const [rules, exceptions, staff, admins] = await Promise.all([
     getPageAccessRuleMap(),
@@ -43,7 +84,7 @@ export default async function PermissionsSettingsPage() {
           ))}
         </ul>
         {candidates.length > 0 && (
-          <form action={addAdminAction} className="flex gap-2">
+          <form action={addAdminAction} className="flex flex-wrap gap-2">
             <select name="email" required className={`${inputBase} w-auto`}>
               <option value="">직원 선택</option>
               {candidates.map((s) => (
@@ -55,7 +96,25 @@ export default async function PermissionsSettingsPage() {
         )}
       </div>
 
-      <div className={cardTableWrap}><table className={tableClean}>
+      <div className="flex flex-col gap-2 sm:hidden">
+        {CONFIGURABLE_PAGES.map((p) => {
+          const currentTier = rules[p.id] ?? '전체';
+          const exceptedEmails = exceptions[p.id] ?? [];
+          return (
+            <div key={p.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{p.label}</p>
+              <div className="mt-2">
+                <TierForm p={p} currentTier={currentTier} />
+              </div>
+              <div className="mt-2">
+                <ExceptionsDetails p={p} staff={staff} exceptedEmails={exceptedEmails} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className={`hidden sm:block ${cardTableWrap}`}><table className={tableClean}>
         <thead>
           <tr>
             <th className={thClean}>게시판(페이지)</th>
@@ -71,36 +130,10 @@ export default async function PermissionsSettingsPage() {
               <tr key={p.id} className={`align-top ${trHoverClean}`}>
                 <td className={tdClean}>{p.label}</td>
                 <td className={tdClean}>
-                  <form action={setTierAction} className="flex gap-1.5">
-                    <input type="hidden" name="pageId" value={p.id} />
-                    <input type="hidden" name="pageLabel" value={p.label} />
-                    <select key={currentTier} name="tier" defaultValue={currentTier} className={`${inputBase} w-auto`}>
-                      {PAGE_ACCESS_TIERS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                    </select>
-                    <button type="submit" className={btn}>저장</button>
-                  </form>
+                  <TierForm p={p} currentTier={currentTier} />
                 </td>
                 <td className={tdClean}>
-                  <details>
-                    <summary className="cursor-pointer text-xs text-zinc-500">예외 대상자 ({exceptedEmails.length}명)</summary>
-                    <div className="mt-1.5 max-h-48 overflow-y-auto">
-                      {staff.map((s) => {
-                        const isExcepted = exceptedEmails.includes(s.email.toLowerCase());
-                        return (
-                          <form
-                            key={s.email}
-                            action={isExcepted ? removeExceptionAction : addExceptionAction}
-                            className="flex items-center gap-1.5 py-0.5 text-xs"
-                          >
-                            <input type="hidden" name="pageId" value={p.id} />
-                            <input type="hidden" name="email" value={s.email} />
-                            <span className="flex-1">{s.name} ({s.team})</span>
-                            <button type="submit" className={btnSecondary}>{isExcepted ? '제외' : '포함'}</button>
-                          </form>
-                        );
-                      })}
-                    </div>
-                  </details>
+                  <ExceptionsDetails p={p} staff={staff} exceptedEmails={exceptedEmails} />
                 </td>
               </tr>
             );

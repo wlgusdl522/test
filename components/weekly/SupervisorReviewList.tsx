@@ -31,6 +31,7 @@ export default function SupervisorReviewList({
   );
   const [statusText, setStatusText] = useState('');
   const [isPending, startTransition] = useTransition();
+  const [mobileTab, setMobileTab] = useState<'review' | 'preview'>('review');
 
   function toggle(id: string) {
     setReflectedById((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -54,9 +55,27 @@ export default function SupervisorReviewList({
 
   const reflectedTasks = tasks.filter((t) => reflectedById[t.id]);
 
+  function mobileTabClass(active: boolean) {
+    return `-mb-px rounded-t-md border border-b-0 px-3.5 py-2 text-sm transition-colors ${
+      active
+        ? 'border-zinc-200 bg-white font-medium text-brand dark:border-zinc-800 dark:bg-zinc-900'
+        : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+    }`;
+  }
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-      <div>
+    <div>
+      <div className="mb-4 flex gap-1 border-b border-zinc-200 dark:border-zinc-800 lg:hidden">
+        <button type="button" onClick={() => setMobileTab('review')} className={mobileTabClass(mobileTab === 'review')}>
+          업무 확인
+        </button>
+        <button type="button" onClick={() => setMobileTab('preview')} className={mobileTabClass(mobileTab === 'preview')}>
+          반영 미리보기
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className={`${mobileTab === 'review' ? 'block' : 'hidden'} lg:block`}>
         {tasks.length === 0 ? (
           <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4">해당 주에 등록된 업무가 없습니다.</p>
         ) : (
@@ -98,9 +117,30 @@ export default function SupervisorReviewList({
         </div>
       </div>
 
-      <div>
+      <div className={`${mobileTab === 'preview' ? 'block' : 'hidden'} lg:block`}>
         <h3 className="text-sm font-semibold mb-2 text-zinc-700 dark:text-zinc-200">반영 미리보기</h3>
-        <div className={cardTableWrap}>
+
+        {/* 모바일: 6열 표 대신 날짜별 카드로 나열 */}
+        <div className="flex flex-col gap-2 sm:hidden">
+          {dayDates.map((iso, i) => {
+            const dayTasks = reflectedTasks.filter((t) => t.날짜 === iso);
+            return (
+              <div key={iso} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{weekdayLabels[i]} ({formatMD(iso)})</p>
+                {dayTasks.length === 0 ? (
+                  <p className="mt-1 text-sm text-zinc-300 dark:text-zinc-700">-</p>
+                ) : (
+                  dayTasks.map((t) => (
+                    <div key={t.id} className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">• {t.성명}: {t.업무내용}</div>
+                  ))
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 데스크톱: 기존 표 레이아웃 유지 */}
+        <div className={`hidden sm:block ${cardTableWrap}`}>
           <table className={tableClean}>
             <thead>
               <tr>
@@ -125,6 +165,7 @@ export default function SupervisorReviewList({
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </div>
   );

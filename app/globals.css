@@ -30,6 +30,10 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: -apple-system, "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+  /* 한글은 word-break 기본값(normal)에서 음절 단위로 줄바꿈돼서, 좁은 표 셀 등에서
+     "카니발" 같은 단어가 한 글자씩 세로로 쪼개져 보인다. keep-all로 단어 단위 줄바꿈 유지. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 @media print {

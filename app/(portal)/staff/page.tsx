@@ -54,7 +54,7 @@ export default async function StaffPage({
         <FormToggle label={editing ? '직원 수정' : '신규 등록'} defaultOpen={!!editing}>
       <form
         action={editing ? updateStaffAction : registerStaffAction}
-        className="grid grid-cols-2 gap-3"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2"
       >
         {editing && <input type="hidden" name="originalEmail" value={editing['이메일(아이디)']} />}
 
@@ -88,7 +88,7 @@ export default async function StaffPage({
           </select>
         </label>
 
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <p className={label}>담당사업 (여러 개 선택 가능)</p>
           <div className="flex flex-wrap gap-3 mt-1">
             {businesses.map((b) => (
@@ -148,18 +148,18 @@ export default async function StaffPage({
           휴직종료일(예정)
           <input type="date" name="leaveEnd" defaultValue={editing?.['휴직종료일(예정)'] ?? ''} className={input} />
         </label>
-        <label className={`${label} col-span-2`}>
+        <label className={`${label} sm:col-span-2`}>
           휴직사유
           <input name="leaveReason" defaultValue={editing?.휴직사유 ?? ''} className={input} />
         </label>
 
-        <label className={`${label} col-span-2`}>
+        <label className={`${label} sm:col-span-2`}>
           비고
           <input name="note" defaultValue={editing?.비고 ?? ''} className={input} />
         </label>
 
         {!editing && (
-          <div className="col-span-2 flex flex-wrap items-center gap-4 text-sm">
+          <div className="sm:col-span-2 flex flex-wrap items-center gap-4 text-sm">
             <label><input type="radio" name="processType" value="신규생성" defaultChecked /> 신규 생성 (새 계정)</label>
             <label><input type="radio" name="processType" value="계정인계" /> 계정 인계 (기존 계정 이어받기)</label>
             <select name="prevEmail" className={`${inputBase} w-auto`}>
@@ -171,7 +171,7 @@ export default async function StaffPage({
           </div>
         )}
 
-        <div className="col-span-2 flex items-center gap-3">
+        <div className="sm:col-span-2 flex items-center gap-3">
           <button type="submit" className={btn}>{editing ? '저장' : '등록'}</button>
           {editing && <a href="/staff" className="text-xs text-zinc-500 hover:underline">취소</a>}
         </div>
@@ -179,7 +179,7 @@ export default async function StaffPage({
       </FormToggle>
       </div>
 
-      <form method="get" className="mb-4 flex items-center gap-2">
+      <form method="get" className="mb-4 flex flex-wrap items-center gap-2">
         <select name="team" defaultValue={teamFilter ?? ''} className={selectFilter}>
           <option value="">전체 팀</option>
           {teams.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -187,7 +187,33 @@ export default async function StaffPage({
         <button type="submit" className={btnSecondary}>조회</button>
       </form>
 
-      <div className={cardTableWrap}><table className={tableClean}>
+      <div className="flex flex-col gap-2 sm:hidden">
+        {staff.map((s) => (
+          <div key={s['이메일(아이디)']} className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{s.성명}</span>
+              <StatusBadge status={s.재직상태} />
+            </div>
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
+              {s.소속팀} <Tag label={s['직급/직책']} />
+            </p>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{s['이메일(아이디)']}</p>
+            {s.담당사업 && <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{s.담당사업}</p>}
+            <p className="mt-1 text-xs text-zinc-400">
+              입사 {s.입사일 || '-'} · 내선 {s.내선번호 || '-'} · {s.휴대폰번호 || '-'}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <a href={`/staff?edit=${encodeURIComponent(s['이메일(아이디)'])}`} className={btnSecondary}>수정</a>
+              <form action={deleteStaffAction}>
+                <input type="hidden" name="email" value={s['이메일(아이디)']} />
+                <button type="submit" className={btnDanger}>삭제</button>
+              </form>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className={`hidden sm:block ${cardTableWrap}`}><table className={tableClean}>
         <thead>
           <tr>
             <th className={thClean}>이메일</th><th className={thClean}>성명</th><th className={thClean}>소속팀</th>
