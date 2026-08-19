@@ -11,10 +11,10 @@ export const dynamic = 'force-dynamic';
 export default async function CardLedgerReviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ name?: string; status?: string }>;
+  searchParams: Promise<{ name?: string; status?: string; ym?: string }>;
 }) {
   const canManage = await isAccountingViewer();
-  const { name, status } = await searchParams;
+  const { name, status, ym } = await searchParams;
   const [allUnsorted, photos, reports] = await Promise.all([
     getCardLedgerList(),
     getItemCheckPhotoList(),
@@ -34,6 +34,7 @@ export default async function CardLedgerReviewPage({
 
   const rows = all.filter((r) => {
     if (name && r.담당자명 !== name) return false;
+    if (ym && !r.사용일자.startsWith(ym)) return false;
     if (effectiveStatus === '인쇄대기' && r.상태 !== '검수완료') return false;
     if (effectiveStatus === '인쇄완료' && r.상태 !== '인쇄완료') return false;
     return true;
@@ -45,6 +46,7 @@ export default async function CardLedgerReviewPage({
         <p className="text-xs text-zinc-400 mb-3">읽기 전용으로 조회 중입니다. 인쇄·반려 처리는 회계담당자만 할 수 있습니다.</p>
       )}
       <form method="get" className="flex gap-2 mb-3">
+        <input type="month" name="ym" defaultValue={ym ?? ''} className={selectFilter} />
         <select name="name" defaultValue={name ?? ''} className={selectFilter}>
           <option value="">전체 담당자</option>
           {names.map((n) => <option key={n} value={n}>{n}</option>)}

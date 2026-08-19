@@ -3,6 +3,8 @@ import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { ITEM_CHECK_REPORT_TABLE } from '@/lib/sheets/registry';
 import { getStaffList } from '@/lib/mutate/staff';
 import { parseApprovalHistory, type ApprovalHistoryEntry } from '@/lib/approval/engine';
+import { resolveCardLedgerFirstApprovalStep } from '@/lib/approval/teamSupervisor';
+import { parseReportItems, type ReportItem } from '@/lib/mutate/itemCheckReport';
 import { driveThumbUrl } from '@/lib/drive/thumbUrl';
 import PrintButton from '@/components/print/PrintButton';
 import { card, input, inputBase } from '@/lib/ui';
@@ -92,22 +94,34 @@ function ItemCheckReportDoc({
   findStaff: (email: string) => Record<string, string> | undefined;
 }) {
   const isTarget = r.등록구분 === '등록대상';
-  const steps = isTarget ? ['과장', '물품관리자'] : ['과장'];
-  const history = parseApprovalHistory(r.결재이력JSON);
-  const done = new Set(history.filter((h) => h.액션 === '승인').map((h) => h.단계));
-  const currentStep = r.결재상태 === '결재중' ? steps.find((s) => !done.has(s)) ?? '' : '';
-
   const checkerStaff = findStaff(r.검수자이메일);
   const checkerPosition = checkerStaff?.['직급/직책'] ?? '';
   const checkerStamp = checkerStaff?.['도장'] ?? '';
 
-  const gwajang = getStepInfo(history, '과장', currentStep, '', '');
-  const gwajangStaff = gwajang.approved ? findStaff(gwajang.email) : undefined;
-  const gwajangStamp = gwajangStaff?.['도장'] ?? '';
+  // 1단계 결재자는 검수자(카드 사용자) 본인 직급에 따라 과장/부장/관장으로 갈리고, 관장 본인 건은 생략된다.
+  const firstStep = resolveCardLedgerFirstApprovalStep(checkerPosition);
+  const steps = [...(firstStep ? [firstStep] : []), ...(isTarget ? ['물품출납원', '총무과장'] : [])];
+  const history = parseApprovalHistory(r.결재이력JSON);
+  const done = new Set(history.filter((h) => h.액션 === '승인').map((h) => h.단계));
+  const currentStep = r.결재상태 === '결재중' ? steps.find((s) => !done.has(s)) ?? '' : '';
 
-  const assetMgr = isTarget ? getStepInfo(history, '물품관리자', currentStep, '', '') : null;
-  const assetMgrStaff = assetMgr?.approved ? findStaff(assetMgr.email) : undefined;
-  const assetMgrStamp = assetMgrStaff?.['도장'] ?? '';
+  const firstApproval = firstStep ? getStepInfo(history, firstStep, currentStep, '', '') : null;
+  const firstApprovalStaff = firstApproval?.approved ? findStaff(firstApproval.email) : undefined;
+  const firstApprovalStamp = firstApprovalStaff?.['도장'] ?? '';
+
+  const assetClerk = isTarget ? getStepInfo(history, '물품출납원', currentStep, '', '') : null;
+  const assetClerkStaff = assetClerk?.approved ? findStaff(assetClerk.email) : undefined;
+  const assetClerkStamp = assetClerkStaff?.['도장'] ?? '';
+
+  const generalAffairs = isTarget ? getStepInfo(history, '총무과장', currentStep, '', '') : null;
+  const generalAffairsStaff = generalAffairs?.approved ? findStaff(generalAffairs.email) : undefined;
+  const generalAffairsStamp = generalAffairsStaff?.['도장'] ?? '';
+
+  const parsedItems = parseReportItems(r.품목목록JSON);
+  const items: ReportItem[] = parsedItems.length > 0
+    ? parsedItems
+    : [{ 품목명: r.품목명 || r.품명, 규격: r.규격, 단위: r.단위, 수량: r.수량, 단가: r.단가, 금액: r.금액 }];
+  const totalAmount = items.reduce((sum, it) => sum + (Number(String(it.금액 || 0).replace(/,/g, '')) || 0), 0);
 
   const lbl: CSSProperties = { border: '1px solid #333', background: '#f2f2f2', fontWeight: 600, textAlign: 'center', whiteSpace: 'nowrap', padding: '7px 10px' };
   const cell: CSSProperties = { border: '1px solid #333', padding: '7px 10px' };
@@ -143,15 +157,25 @@ function ItemCheckReportDoc({
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td style={{ ...cell, textAlign: 'center' }}>{r.품목명 || r.품명}</td>
-            <td style={{ ...cell, textAlign: 'center' }}>{r.규격}</td>
-            <td style={{ ...cell, textAlign: 'center' }}>{r.단위}</td>
-            <td style={{ ...cell, textAlign: 'center' }}>{r.수량}</td>
-            <td style={{ ...cell, textAlign: 'center' }}>{Number(r.단가 || 0) ? `${Number(r.단가).toLocaleString()}원` : ''}</td>
-            <td style={{ ...cell, textAlign: 'center' }}>{Number(r.금액 || 0) ? `${Number(r.금액).toLocaleString()}원` : ''}</td>
-            <td style={{ ...cell, textAlign: 'center' }}>{isTarget ? r.비품등록번호 : r.비고}</td>
-          </tr>
+          {items.map((it, idx) => (
+            <tr key={idx}>
+              <td style={{ ...cell, textAlign: 'center' }}>{it.품목명}</td>
+              <td style={{ ...cell, textAlign: 'center' }}>{it.규격}</td>
+              <td style={{ ...cell, textAlign: 'center' }}>{it.단위}</td>
+              <td style={{ ...cell, textAlign: 'center' }}>{it.수량}</td>
+              <td style={{ ...cell, textAlign: 'center' }}>{Number(it.단가 || 0) ? `${Number(it.단가).toLocaleString()}원` : ''}</td>
+              <td style={{ ...cell, textAlign: 'center' }}>{Number(it.금액 || 0) ? `${Number(it.금액).toLocaleString()}원` : ''}</td>
+              {idx === 0 && (
+                <td style={{ ...cell, textAlign: 'center' }} rowSpan={items.length}>{isTarget ? r.비품등록번호 : r.비고}</td>
+              )}
+            </tr>
+          ))}
+          {items.length > 1 && (
+            <tr>
+              <td style={{ ...lbl, textAlign: 'right' }} colSpan={5}>합&nbsp;계</td>
+              <td style={{ ...cell, textAlign: 'center', fontWeight: 700 }}>{totalAmount.toLocaleString()}원</td>
+            </tr>
+          )}
         </tbody>
       </table>
 
@@ -161,20 +185,32 @@ function ItemCheckReportDoc({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8, whiteSpace: 'nowrap' }}>
             검수자: {checkerPosition} {r.검수자명}<StampBox url={checkerStamp} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8, whiteSpace: 'nowrap' }}>
-            확인자: 과장 {gwajang.name}<StampBox url={gwajang.approved ? gwajangStamp : ''} />
-          </div>
+          {firstStep && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8, whiteSpace: 'nowrap' }}>
+              확인자: {firstStep} {firstApproval?.name}<StampBox url={firstApproval?.approved ? firstApprovalStamp : ''} />
+            </div>
+          )}
         </div>
         {isTarget ? (
           <div style={{ width: 100, flexShrink: 0 }}>
             <div style={{ border: '1px solid #333', textAlign: 'center', padding: '8px 4px', marginBottom: 8, fontSize: 11.5, fontWeight: 600, minHeight: 50 }}>
-              물품출납원<Checkbox checked={false} />
+              물품출납원<Checkbox checked={!!assetClerk?.approved} />
+              {assetClerk?.approved && (
+                <div style={{ fontSize: 10.5, marginTop: 2 }}>{assetClerkStaff?.['성명'] ?? assetClerk.name}</div>
+              )}
+              {assetClerk?.approved && assetClerkStamp && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={driveThumbUrl(assetClerkStamp)} alt="" style={{ maxWidth: 34, maxHeight: 34, verticalAlign: 'middle' }} />
+              )}
             </div>
             <div style={{ border: '1px solid #333', textAlign: 'center', padding: '8px 4px', marginBottom: 8, fontSize: 11.5, fontWeight: 600, minHeight: 50 }}>
-              물품관리자<Checkbox checked={!!assetMgr?.approved} />
-              {assetMgr?.approved && assetMgrStamp && (
+              총무과장<Checkbox checked={!!generalAffairs?.approved} />
+              {generalAffairs?.approved && (
+                <div style={{ fontSize: 10.5, marginTop: 2 }}>{generalAffairsStaff?.['성명'] ?? generalAffairs.name}</div>
+              )}
+              {generalAffairs?.approved && generalAffairsStamp && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={driveThumbUrl(assetMgrStamp)} alt="" style={{ maxWidth: 34, maxHeight: 34, verticalAlign: 'middle' }} />
+                <img src={driveThumbUrl(generalAffairsStamp)} alt="" style={{ maxWidth: 34, maxHeight: 34, verticalAlign: 'middle' }} />
               )}
             </div>
           </div>

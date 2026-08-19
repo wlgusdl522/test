@@ -25,17 +25,13 @@ async function payloadFromForm(formData: FormData): Promise<Record<string, strin
     검수년월일: String(formData.get('checkDate') ?? ''),
     검수장소: String(formData.get('checkPlace') ?? ''),
     등록구분: String(formData.get('registerType') ?? '비대상'),
-    비품등록번호: String(formData.get('assetNo') ?? ''),
-    규격: String(formData.get('spec') ?? ''),
-    단위: String(formData.get('unit') ?? ''),
-    수량: String(formData.get('qty') ?? ''),
-    단가: String(formData.get('unitPrice') ?? ''),
-    금액: String(formData.get('amount') ?? ''),
+    // 비품등록번호는 이제 작성자가 아니라 물품출납원 결재 단계에서 입력한다(actOnItemCheckReportAction 참고).
     비고: String(formData.get('note') ?? ''),
     검수자이메일: me?.['이메일(아이디)'] ?? '',
     검수자명: me?.성명 ?? '',
     소속부서: me?.소속팀 ?? '',
-    품목명: String(formData.get('lineItemName') ?? ''),
+    // 규격/단위/수량/단가/금액/품목명은 이제 품목목록JSON에서 대표값으로 자동 계산되므로 여기서 넘기지 않는다.
+    품목목록JSON: String(formData.get('품목목록JSON') ?? '[]'),
   };
 }
 
@@ -61,7 +57,8 @@ export async function actOnItemCheckReportAction(formData: FormData) {
   const id = String(formData.get('id') ?? '');
   const action = String(formData.get('action') ?? '') as '승인' | '반려';
   const comment = String(formData.get('comment') ?? '');
-  await actOnItemCheckReport(id, action, comment);
+  const assetNo = String(formData.get('assetNo') ?? '');
+  await actOnItemCheckReport(id, action, comment, assetNo);
   revalidatePath('/expenses/mine');
   revalidatePath('/mypage');
 }

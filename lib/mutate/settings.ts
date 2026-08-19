@@ -6,6 +6,7 @@ export const VEHICLE_LOG_APPROVAL_MODE_ELECTRONIC = '전자결재';
 const KEYS = {
   ITEM_CHECK_REPORT_THRESHOLD: 'ITEM_CHECK_REPORT_THRESHOLD',
   ITEM_CHECK_ASSET_MANAGER_EMAIL: 'ITEM_CHECK_ASSET_MANAGER_EMAIL',
+  ITEM_CHECK_GENERAL_AFFAIRS_MANAGER_EMAIL: 'ITEM_CHECK_GENERAL_AFFAIRS_MANAGER_EMAIL',
   ITEM_CHECK_ACCOUNTING_EMAIL: 'ITEM_CHECK_ACCOUNTING_EMAIL',
   ITEM_CHECK_REPORT_JANDI_WEBHOOK: 'ITEM_CHECK_REPORT_JANDI_WEBHOOK',
   VEHICLE_LOG_APPROVAL_MODE: 'VEHICLE_LOG_APPROVAL_MODE',
@@ -24,6 +25,7 @@ const KEYS = {
 export type SystemSettings = {
   itemCheckReportThreshold: number;
   itemCheckAssetManagerEmail: string;
+  itemCheckGeneralAffairsManagerEmail: string;
   itemCheckAccountingEmail: string;
   itemCheckReportJandiWebhook: string;
   vehicleLogApprovalMode: string;
@@ -43,6 +45,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
   const [
     threshold,
     assetManager,
+    generalAffairsManager,
     accounting,
     jandi,
     approvalMode,
@@ -59,6 +62,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
   ] = await Promise.all([
     getSetting(KEYS.ITEM_CHECK_REPORT_THRESHOLD),
     getSetting(KEYS.ITEM_CHECK_ASSET_MANAGER_EMAIL),
+    getSetting(KEYS.ITEM_CHECK_GENERAL_AFFAIRS_MANAGER_EMAIL),
     getSetting(KEYS.ITEM_CHECK_ACCOUNTING_EMAIL),
     getSetting(KEYS.ITEM_CHECK_REPORT_JANDI_WEBHOOK),
     getSetting(KEYS.VEHICLE_LOG_APPROVAL_MODE),
@@ -76,6 +80,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
   return {
     itemCheckReportThreshold: Number(threshold) || 0,
     itemCheckAssetManagerEmail: assetManager,
+    itemCheckGeneralAffairsManagerEmail: generalAffairsManager,
     itemCheckAccountingEmail: accounting,
     itemCheckReportJandiWebhook: jandi,
     vehicleLogApprovalMode: approvalMode || VEHICLE_LOG_APPROVAL_MODE_MANUAL,
@@ -99,6 +104,7 @@ export async function setSystemSettings(settings: SystemSettings): Promise<void>
   await Promise.all([
     setSetting(KEYS.ITEM_CHECK_REPORT_THRESHOLD, String(Number(settings.itemCheckReportThreshold) || 0)),
     setSetting(KEYS.ITEM_CHECK_ASSET_MANAGER_EMAIL, settings.itemCheckAssetManagerEmail.trim()),
+    setSetting(KEYS.ITEM_CHECK_GENERAL_AFFAIRS_MANAGER_EMAIL, settings.itemCheckGeneralAffairsManagerEmail.trim()),
     setSetting(KEYS.ITEM_CHECK_ACCOUNTING_EMAIL, settings.itemCheckAccountingEmail.trim()),
     setSetting(KEYS.ITEM_CHECK_REPORT_JANDI_WEBHOOK, settings.itemCheckReportJandiWebhook.trim()),
     setSetting(KEYS.VEHICLE_LOG_APPROVAL_MODE, settings.vehicleLogApprovalMode),

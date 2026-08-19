@@ -15,6 +15,9 @@ import TrashIcon from '@/components/icons/TrashIcon';
 import CardLedgerEntryFields from '@/components/expenses/CardLedgerEntryFields';
 import CardLedgerSplitLayout from '@/components/expenses/CardLedgerSplitLayout';
 import CardTypeTabs from '@/components/expenses/CardTypeTabs';
+import ReportItemsFields from '@/components/expenses/ReportItemsFields';
+import CameraGalleryFileInput from '@/components/expenses/CameraGalleryFileInput';
+import { parseReportItems } from '@/lib/mutate/itemCheckReport';
 import { parseAmount } from '@/lib/format';
 import { addCardLedgerAction, deleteCardLedgerAction, updateCardLedgerAction } from '../actions';
 import { deleteItemCheckPhotoAction, saveItemCheckPhotoAction } from '../photos/actions';
@@ -135,9 +138,22 @@ export default async function CardLedgerMinePage({
       </label>
       <label className={label}>
         예산과목 *
-        <select name="budgetItem" defaultValue={editing?.예산과목 ?? ''} required className={input}>
-          {budgetItems.map((b) => <option key={b.예산과목명} value={b.예산과목명}>{b.예산과목명}</option>)}
-        </select>
+        <input
+          name="budgetItem"
+          list="budget-item-options"
+          defaultValue={editing?.예산과목 ?? ''}
+          placeholder="입력해서 검색"
+          autoComplete="off"
+          required
+          className={input}
+        />
+        <datalist id="budget-item-options">
+          {budgetItems.map((b) => (
+            <option key={b.예산과목명} value={b.예산과목명}>
+              {b.연계사업명 ? `${b.예산과목명} · ${b.연계사업명}` : b.예산과목명}
+            </option>
+          ))}
+        </datalist>
       </label>
       <CardLedgerEntryFields
         defaultAmount={editing?.사용금액}
@@ -357,10 +373,10 @@ function PhotoForm({
         <input name="itemName" defaultValue={editing?.품명 ?? ''} className={input} />
       </label>
       {ITEM_CHECK_PHOTO_SLOTS.map((slot) => (
-        <label key={slot} className={label}>
-          {slot} {editing?.[slot] && <a href={editing[slot]} target="_blank" rel="noreferrer" className="text-brand hover:underline">(기존 사진 보기)</a>}
-          <input type="file" name={slot} accept="image/*" className={input} />
-        </label>
+        <div key={slot} className={label}>
+          {slot}
+          <CameraGalleryFileInput name={slot} existingUrl={editing?.[slot]} />
+        </div>
       ))}
       <div className="col-span-2 flex items-center gap-3">
         <button type="submit" className={btn}>{editing ? '저장' : '등록'}</button>
@@ -406,32 +422,41 @@ function ReportForm({
       </label>
       <label className={label}>
         비품등록번호
-        <input name="assetNo" defaultValue={editing?.비품등록번호 ?? ''} className={input} />
+        <input
+          defaultValue={editing?.비품등록번호 || ''}
+          placeholder={editing?.비품등록번호 ? '' : '물품출납원이 승인 단계에서 입력합니다'}
+          disabled
+          className={`${input} disabled:text-zinc-400 disabled:bg-zinc-50 dark:disabled:bg-zinc-800/50`}
+        />
       </label>
-      <label className={label}>
-        납품처상호
-        <input name="vendorName" defaultValue={editing?.납품처상호 ?? ''} className={input} />
-      </label>
-      <label className={label}>
-        납품처대표자
-        <input name="vendorOwner" defaultValue={editing?.납품처대표자 ?? ''} className={input} />
-      </label>
-      <label className={label}>
-        계약금액
-        <input type="number" name="contractAmount" defaultValue={editing?.계약금액 ?? ''} className={input} />
-      </label>
-      <label className={label}>
-        계약체결년월일
-        <input type="date" name="contractDate" defaultValue={editing?.계약체결년월일 ?? ''} className={input} />
-      </label>
-      <label className={label}>
-        납품기한
-        <input type="date" name="deliveryDue" defaultValue={editing?.납품기한 ?? ''} className={input} />
-      </label>
-      <label className={label}>
-        납품완료일자
-        <input type="date" name="deliveryDate" defaultValue={editing?.납품완료일자 ?? ledger.사용일자 ?? ''} className={input} />
-      </label>
+      <div className="col-span-2 grid grid-cols-3 gap-3">
+        <label className={label}>
+          납품처상호
+          <input name="vendorName" defaultValue={editing?.납품처상호 ?? ''} className={input} />
+        </label>
+        <label className={label}>
+          납품처대표자
+          <input name="vendorOwner" defaultValue={editing?.납품처대표자 ?? ''} className={input} />
+        </label>
+        <label className={label}>
+          계약금액
+          <input type="number" name="contractAmount" defaultValue={editing?.계약금액 ?? ''} className={input} />
+        </label>
+      </div>
+      <div className="col-span-2 grid grid-cols-3 gap-3">
+        <label className={label}>
+          계약체결년월일
+          <input type="date" name="contractDate" defaultValue={editing?.계약체결년월일 ?? ''} className={input} />
+        </label>
+        <label className={label}>
+          납품기한
+          <input type="date" name="deliveryDue" defaultValue={editing?.납품기한 ?? ''} className={input} />
+        </label>
+        <label className={label}>
+          납품완료일자
+          <input type="date" name="deliveryDate" defaultValue={editing?.납품완료일자 ?? ledger.사용일자 ?? ''} className={input} />
+        </label>
+      </div>
       <label className={label}>
         검수년월일
         <input type="date" name="checkDate" defaultValue={editing?.검수년월일 ?? ''} className={input} />
@@ -440,30 +465,15 @@ function ReportForm({
         검수장소
         <input name="checkPlace" defaultValue={editing?.검수장소 ?? ''} className={input} />
       </label>
-      <label className={label}>
-        규격
-        <input name="spec" defaultValue={editing?.규격 ?? ''} className={input} />
-      </label>
-      <label className={label}>
-        단위
-        <input name="unit" defaultValue={editing?.단위 ?? ''} className={input} />
-      </label>
-      <label className={label}>
-        수량
-        <input type="number" name="qty" defaultValue={editing?.수량 ?? ''} className={input} />
-      </label>
-      <label className={label}>
-        단가
-        <input type="number" name="unitPrice" defaultValue={editing?.단가 ?? ''} className={input} />
-      </label>
-      <label className={label}>
-        금액
-        <input type="number" name="amount" defaultValue={editing?.금액 ?? ledger.사용금액 ?? ''} className={input} />
-      </label>
-      <label className={label}>
-        품목명
-        <input name="lineItemName" defaultValue={editing?.품목명 ?? ''} className={input} />
-      </label>
+      <ReportItemsFields
+        defaultItems={
+          editing
+            ? parseReportItems(editing.품목목록JSON).length > 0
+              ? parseReportItems(editing.품목목록JSON)
+              : [{ 품목명: editing.품목명 ?? '', 규격: editing.규격 ?? '', 단위: editing.단위 ?? '', 수량: editing.수량 ?? '', 단가: editing.단가 ?? '', 금액: editing.금액 ?? '' }]
+            : [{ 품목명: '', 규격: '', 단위: '', 수량: '1', 단가: '', 금액: ledger.사용금액 ?? '' }]
+        }
+      />
       <label className={`${label} col-span-2`}>
         비고
         <input name="note" defaultValue={editing?.비고 ?? ''} className={input} />
