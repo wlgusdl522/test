@@ -5,6 +5,7 @@ import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import {
   formatMeetingDateTime,
+  getOrderedStaffMeetingTeams,
   getStaffMeetingInfo,
   getStaffMeetingItems,
   getStaffMeetingValues,
@@ -42,9 +43,10 @@ export default async function StaffMeetingPresentPage({
   const ym = ymParam || cookieCtx.ym || currentYm();
 
   const [teams, meetingInfo] = await Promise.all([getSimpleList(TEAM_LIST_SHEET_NAME), getStaffMeetingInfo(ym)]);
+  const orderedTeams = await getOrderedStaffMeetingTeams(teams);
 
   const teamData = await Promise.all(
-    teams.map(async (team) => {
+    orderedTeams.map(async (team) => {
       const items = await getStaffMeetingItems(team);
       const values = await getStaffMeetingValues(items.map((i) => i.id));
       return { team, items, values };
@@ -111,7 +113,7 @@ export default async function StaffMeetingPresentPage({
 
   return (
     <main className={pageFluid}>
-      <PresentClient pages={pages} />
+      <PresentClient pages={pages} ym={ym} />
     </main>
   );
 }

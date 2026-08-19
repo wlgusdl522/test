@@ -8,7 +8,12 @@ import {
   upsertKeyedRecord,
   upsertKeyedRecords,
 } from '@/lib/mutate/keyedTable';
-import { STAFF_MEETING_INFO_TABLE, STAFF_MEETING_ITEM_TABLE, STAFF_MEETING_VALUE_TABLE } from '@/lib/sheets/registry';
+import {
+  STAFF_MEETING_INFO_TABLE,
+  STAFF_MEETING_ITEM_TABLE,
+  STAFF_MEETING_TEAM_ORDER_TABLE,
+  STAFF_MEETING_VALUE_TABLE,
+} from '@/lib/sheets/registry';
 import { getSystemSettings } from '@/lib/mutate/settings';
 import { jandiPost } from '@/lib/notify/jandi';
 
@@ -94,6 +99,29 @@ export async function moveStaffMeetingItem(팀명: string, id: string, direction
   await updateKeyedRecord(
     STAFF_MEETING_ITEM_TABLE, { id: b.id },
     { id: b.id, 팀명: b.팀명, 사업구분: b.사업구분, 정렬순서: String(a.정렬순서) }
+  );
+}
+
+// 발표모드 팀 순서 — 저장된 순서가 있는 팀은 그 순서대로, 아직 순서를 정하지 않은 팀은
+// 팀목록(심플리스트) 순서 그대로 뒤에 이어붙인다.
+export async function getOrderedStaffMeetingTeams(teams: string[]): Promise<string[]> {
+  const rows = await getKeyedList(STAFF_MEETING_TEAM_ORDER_TABLE);
+  const orderMap = new Map(rows.map((r) => [r.팀명, num(r.순서)]));
+  const known = teams.filter((t) => orderMap.has(t)).sort((a, b) => orderMap.get(a)! - orderMap.get(b)!);
+  const unknown = teams.filter((t) => !orderMap.has(t));
+  return [...known, ...unknown];
+}
+
+export async function moveStaffMeetingTeamOrder(teams: string[], 팀명: string, direction: 'up' | 'down'): Promise<void> {
+  const ordered = await getOrderedStaffMeetingTeams(teams);
+  const idx = ordered.indexOf(팀명);
+  const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (idx < 0 || swapIdx < 0 || swapIdx >= ordered.length) return;
+  const next = [...ordered];
+  [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+  await upsertKeyedRecords(
+    STAFF_MEETING_TEAM_ORDER_TABLE,
+    next.map((t, i) => ({ keyValues: { 팀명: t }, record: { 팀명: t, 순서: String(i + 1) } }))
   );
 }
 

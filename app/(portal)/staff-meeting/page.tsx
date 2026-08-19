@@ -4,11 +4,13 @@ import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import EntryClient from '@/components/staffMeeting/EntryClient';
 import ItemManageModal from '@/components/staffMeeting/ItemManageModal';
+import TeamOrderModal from '@/components/staffMeeting/TeamOrderModal';
 import { getSimpleList } from '@/lib/mutate/simpleList';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import {
   buildStaffMeetingNotificationContent,
   buildStaffMeetingNotificationTitle,
+  getOrderedStaffMeetingTeams,
   getStaffMeetingInfo,
   getStaffMeetingItems,
   getStaffMeetingValues,
@@ -54,6 +56,7 @@ export default async function StaffMeetingPage({
   const items = 팀명 ? await getStaffMeetingItems(팀명) : [];
   const values = await getStaffMeetingValues(items.map((i) => i.id));
   const meetingInfo = await getStaffMeetingInfo(ym);
+  const orderedTeams = await getOrderedStaffMeetingTeams(teams);
 
   const rows = items.map((i) => {
     const v = valueFor(values, i.id, ym);
@@ -72,12 +75,6 @@ export default async function StaffMeetingPage({
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className={h1}>업무관리 &gt; 전체회의자료</h1>
         <div className="flex gap-2">
-          <Link
-            href={`/staff-meeting/view?team=${encodeURIComponent(팀명)}&ym=${ym}`}
-            className={btnOutline}
-          >
-            보기 전용 화면
-          </Link>
           <Link href={`/staff-meeting/present?ym=${ym}`} className={btnOutline}>발표 모드</Link>
         </div>
       </div>
@@ -162,6 +159,8 @@ export default async function StaffMeetingPage({
           </form>
         </div>
       </div>
+
+      <TeamOrderModal teams={orderedTeams} />
 
       {!팀명 ? (
         <div className={card}>설정 &gt; 팀 / 직급 / 결재라인 화면에서 팀을 먼저 등록해주세요.</div>
