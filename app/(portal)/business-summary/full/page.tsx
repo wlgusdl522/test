@@ -34,7 +34,7 @@ export default async function BusinessSummaryFullPage({
           <button type="submit" className={btnSecondary}>조회</button>
         </form>
         <Link href={`/print/business-summary-full?ym=${ym}`} target="_blank" className={btnOutline}>
-          인쇄 · hwpx 다운로드 화면 열기
+          인쇄 · 텍스트 복사 화면 열기
         </Link>
       </div>
       <p className="mb-3 text-xs text-zinc-400">

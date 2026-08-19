@@ -3,11 +3,9 @@ import type { FullBoardReportData } from '@/lib/mutate/boardFullReport';
 import type { DonationDetail } from '@/lib/mutate/boardDonation';
 import { sectionTitle, subTitle, reportTable as table, th, td, tdC, tdR, totalRow } from '@/components/business/full/reportStyles';
 
-// 이사회자료 "전체 통" 화면/인쇄에서 쓰는 컴포넌트. hwpx 변환 경로는 Next.js가 라우트 핸들러에서
-// react-dom/server 직접 import를 막아서 이 JSX를 그대로 재사용하지 못하고, 같은 스타일 정의
-// (reportStyles.ts)만 공유하는 별도 문자열 빌더(renderFullReportHtml.ts)를 쓴다.
-// 한글(HWP)에 붙여넣거나 hwpx로 변환했을 때 웹 화면처럼 보이지 않도록, 기존 print/business-plan
-// 페이지에서 이미 쓰던 것과 같은 오피스 문서 스타일(검은 테두리·회색 헤더 인라인 스타일)을 그대로 쓴다.
+// 이사회자료 "전체 통" 화면/인쇄에서 쓰는 컴포넌트. 한글(HWP)에 붙여넣었을 때 웹 화면처럼 보이지
+// 않도록, 기존 print/business-plan 페이지에서 이미 쓰던 것과 같은 오피스 문서 스타일(검은 테두리·
+// 회색 헤더 인라인 스타일)을 그대로 쓴다.
 
 const nf = (n: number) => (n || 0).toLocaleString('ko-KR');
 const pct = (v: number | null) => (v === null ? '–' : v.toFixed(1));
