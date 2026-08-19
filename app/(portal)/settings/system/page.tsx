@@ -57,6 +57,10 @@ export default async function SystemSettingsPage() {
           증명서 발급 담당(서무) 이메일
           <input name="certificateClerkEmail" defaultValue={settings.certificateClerkEmail} className={input} />
         </label>
+        <label className={label}>
+          전체회의자료 JANDI 공용 웹훅 (회의 알림)
+          <input name="staffMeetingJandiWebhook" defaultValue={settings.staffMeetingJandiWebhook} className={input} />
+        </label>
         <div>
           <button type="submit" className={btn}>저장</button>
         </div>

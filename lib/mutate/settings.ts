@@ -15,6 +15,7 @@ const KEYS = {
   CERTIFICATE_APPROVER_EMAIL: 'CERTIFICATE_APPROVER_EMAIL',
   CERTIFICATE_CLERK_EMAIL: 'CERTIFICATE_CLERK_EMAIL',
   CERTIFICATE_SEAL_IMAGE_URL: 'CERTIFICATE_SEAL_IMAGE_URL',
+  STAFF_MEETING_JANDI_WEBHOOK: 'STAFF_MEETING_JANDI_WEBHOOK',
 } as const;
 
 export type SystemSettings = {
@@ -29,6 +30,7 @@ export type SystemSettings = {
   certificateApproverEmail: string;
   certificateClerkEmail: string;
   certificateSealImageUrl: string;
+  staffMeetingJandiWebhook: string;
 };
 
 export async function getSystemSettings(): Promise<SystemSettings> {
@@ -44,6 +46,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     certificateApprover,
     certificateClerk,
     certificateSealImageUrl,
+    staffMeetingJandiWebhook,
   ] = await Promise.all([
     getSetting(KEYS.ITEM_CHECK_REPORT_THRESHOLD),
     getSetting(KEYS.ITEM_CHECK_ASSET_MANAGER_EMAIL),
@@ -56,6 +59,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     getSetting(KEYS.CERTIFICATE_APPROVER_EMAIL),
     getSetting(KEYS.CERTIFICATE_CLERK_EMAIL),
     getSetting(KEYS.CERTIFICATE_SEAL_IMAGE_URL),
+    getSetting(KEYS.STAFF_MEETING_JANDI_WEBHOOK),
   ]);
   return {
     itemCheckReportThreshold: Number(threshold) || 0,
@@ -69,6 +73,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     certificateApproverEmail: certificateApprover,
     certificateClerkEmail: certificateClerk,
     certificateSealImageUrl,
+    staffMeetingJandiWebhook,
   };
 }
 
@@ -87,6 +92,7 @@ export async function setSystemSettings(settings: SystemSettings): Promise<void>
     setSetting(KEYS.CARD_LEDGER_DANGER_DAYS, String(Number(settings.cardLedgerDangerDays) || 10)),
     setSetting(KEYS.CERTIFICATE_APPROVER_EMAIL, settings.certificateApproverEmail.trim()),
     setSetting(KEYS.CERTIFICATE_CLERK_EMAIL, settings.certificateClerkEmail.trim()),
+    setSetting(KEYS.STAFF_MEETING_JANDI_WEBHOOK, settings.staffMeetingJandiWebhook.trim()),
   ]);
 }
 

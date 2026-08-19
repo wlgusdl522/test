@@ -15,31 +15,33 @@ const CONTENT_RIGHT = 96;
 const CONTENT_WIDTH = A4_WIDTH - CONTENT_LEFT - CONTENT_RIGHT;
 
 let fontRegistered = false;
+// certificatePdf.tsx와 동일한 이유(가변폰트 굵기 배리에이션) - 400/700 둘 다 등록해야 fontWeight:700이 실제로 굵게 나온다.
 function ensureFont() {
   if (fontRegistered) return;
-  Font.register({ family: 'NotoSansKR', src: path.join(process.cwd(), 'lib/pdf/fonts/NotoSansKR-Variable.ttf') });
+  const src = path.join(process.cwd(), 'lib/pdf/fonts/NotoSansKR-Variable.ttf');
+  Font.register({ family: 'NotoSansKR', fonts: [{ src, fontWeight: 400 }, { src, fontWeight: 700 }] });
   fontRegistered = true;
 }
 
 const styles = StyleSheet.create({
   page: { fontFamily: 'NotoSansKR', color: '#000', position: 'relative' },
   docNumber: { position: 'absolute', top: 108, left: CONTENT_LEFT, fontSize: 15 },
-  title: { position: 'absolute', top: 193, left: 0, right: 0, textAlign: 'center', fontSize: 38, fontWeight: 700, letterSpacing: 19 },
+  title: { position: 'absolute', top: 193, left: 0, right: 0, textAlign: 'center', fontSize: 28, fontWeight: 700, letterSpacing: 14 },
   recipient: {
     position: 'absolute', top: 306, left: CONTENT_LEFT, width: CONTENT_WIDTH,
-    textAlign: 'right', fontSize: 20, letterSpacing: 10,
+    textAlign: 'right', fontSize: 15, letterSpacing: 7,
   },
   body: {
     position: 'absolute', top: 390, left: CONTENT_LEFT, width: CONTENT_WIDTH,
-    fontSize: 22, lineHeight: 2.15, textAlign: 'justify', textIndent: 12,
+    fontSize: 16, lineHeight: 1.9, textAlign: 'justify', textIndent: 12,
   },
-  date: { position: 'absolute', top: 650, left: 0, right: 0, textAlign: 'center', fontSize: 17 },
+  date: { position: 'absolute', top: 650, left: 0, right: 0, textAlign: 'center', fontSize: 13 },
   orgRow: { position: 'absolute', top: 700, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
   orgLabelCol: { marginRight: 10 },
-  orgLabelLine: { fontSize: 10.5, lineHeight: 1.25 },
-  orgName: { fontSize: 19, fontWeight: 700 },
+  orgLabelLine: { fontSize: 9, lineHeight: 1.25 },
+  orgName: { fontSize: 14, fontWeight: 700 },
   directorRow: { position: 'absolute', top: 735, left: 0, right: 0, alignItems: 'center' },
-  directorTitle: { fontSize: 18.9, fontWeight: 700 },
+  directorTitle: { fontSize: 14, fontWeight: 700 },
   sealImage: { position: 'absolute', width: 56, height: 56, opacity: 0.85, top: -16, right: -20 },
   qrBar: {
     position: 'absolute', top: 786, left: CONTENT_LEFT, width: CONTENT_WIDTH,
@@ -58,7 +60,8 @@ function formatPrintDate(iso: string): string {
 
 export async function renderAwardPdf(record: Record<string, string>, verifyUrl: string): Promise<Buffer> {
   ensureFont();
-  const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 100, margin: 1 });
+  const showQr = record['QR표시여부'] !== 'N';
+  const qrDataUrl = showQr ? await QRCode.toDataURL(verifyUrl, { width: 100, margin: 1 }) : null;
   const [{ certificateSealImageUrl }, staffList] = await Promise.all([getSystemSettings(), getStaffList()]);
   const sealDataUrl = certificateSealImageUrl ? await getDriveImageAsDataUrl(certificateSealImageUrl) : null;
   const directorName = staffList.find((s) => s['재직상태'] === '재직' && s['직급/직책'] === '관장')?.['성명'] ?? '';
@@ -91,10 +94,12 @@ export async function renderAwardPdf(record: Record<string, string>, verifyUrl: 
           </View>
         </View>
 
-        <View style={styles.qrBar}>
-          <Image src={qrDataUrl} style={styles.qrBarImage} />
-          <Text style={styles.qrBarText}>QR 코드를 스캔하면 본 문서의 발급 진위 여부를 확인할 수 있습니다.</Text>
-        </View>
+        {showQr && qrDataUrl && (
+          <View style={styles.qrBar}>
+            <Image src={qrDataUrl} style={styles.qrBarImage} />
+            <Text style={styles.qrBarText}>QR 코드를 스캔하면 본 문서의 발급 진위 여부를 확인할 수 있습니다.</Text>
+          </View>
+        )}
       </Page>
     </Document>
   );

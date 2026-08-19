@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { canViewCertificateLog } from '@/lib/auth-helpers';
+import { canViewCertificateLog, requireViewerEmail } from '@/lib/auth-helpers';
 import { getCertificateList } from '@/lib/supabase/certificate';
 import { getStaffList } from '@/lib/mutate/staff';
 import CertificateApplyWizard from '@/components/certificates/CertificateApplyWizard';
@@ -47,13 +47,19 @@ export default async function CertificatesPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const canManage = await canViewCertificateLog();
+  const viewerEmail = await requireViewerEmail();
   const { tab } = await searchParams;
-  const activeTab = tab === 'manage' || tab === 'process' ? (canManage ? tab : 'apply') : 'apply';
+  const activeTab = tab === 'manage' || tab === 'process'
+    ? (canManage ? tab : 'apply')
+    : tab === 'award-output' ? tab : 'apply';
 
-  const [records, staff] = await Promise.all([
-    canManage ? getCertificateList() : Promise.resolve([]),
+  const needsFullList = canManage || activeTab === 'award-output';
+  const [allRecords, staff] = await Promise.all([
+    needsFullList ? getCertificateList() : Promise.resolve([]),
     getStaffList(),
   ]);
+  const records = canManage ? allRecords : [];
+  const myAwards = allRecords.filter((r) => r.구분 === '상장' && (r.등록자이메일 || '').toLowerCase() === viewerEmail);
   const pendingClerkReview = records.filter(
     (r) => r.결재상태 === '결재중' && r.현재결재단계 === '서무/회계' && (r.구분 === '증명서' || r.구분 === '상장')
   );
@@ -65,6 +71,7 @@ export default async function CertificatesPage({
 
       <div className="mb-5 flex gap-1 border-b border-zinc-200 dark:border-zinc-800">
         <Link href="?tab=apply" className={tabClass(activeTab === 'apply')}>신청</Link>
+        <Link href="?tab=award-output" className={tabClass(activeTab === 'award-output')}>상장 출력관리</Link>
         {canManage && (
           <>
             <Link href="?tab=process" className={tabClass(activeTab === 'process')}>
@@ -81,6 +88,60 @@ export default async function CertificatesPage({
           awardAction={addAwardAction}
           staff={staff}
         />
+      )}
+
+      {activeTab === 'award-output' && (
+        <>
+          <form id="my-award-print-form" method="get" action="/api/certificate/award-print" className="mb-3 flex justify-end">
+            <button type="submit" className={btnOutline}>선택한 상장 인쇄</button>
+          </form>
+          <div className={cardTableWrap}>
+            <table className={tableClean}>
+              <thead>
+                <tr>
+                  <th className={thClean}></th>
+                  <th className={thClean}>문서번호</th>
+                  <th className={thClean}>종류</th>
+                  <th className={thClean}>대상자</th>
+                  <th className={thClean}>수여사유</th>
+                  <th className={thClean}>상태</th>
+                  <th className={thClean}>발급일</th>
+                  <th className={thClean}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {myAwards.map((r) => (
+                  <tr key={r.id} className={trHoverClean}>
+                    <td className={tdClean}>
+                      {r.문서URL && <input type="checkbox" name="id" value={r.id} form="my-award-print-form" />}
+                    </td>
+                    <td className={tdClean}>{r.문서번호 ? `제 ${r.문서번호}호` : '(미채번)'}</td>
+                    <td className={tdClean}>{r.종류}</td>
+                    <td className={tdClean}>{r.대상자성명}</td>
+                    <td className={tdClean}>{r.용도}</td>
+                    <td className={tdClean}>
+                      <span className={`${badgeBase} ${badgeTone[STATUS_TONE[r.결재상태] ?? 'gray']}`}>{r.결재상태}</span>
+                      {r.결재상태 === '결재중' && r.현재결재단계 && (
+                        <span className="ml-1.5 text-xs text-zinc-400">{r.현재결재단계} 대기</span>
+                      )}
+                    </td>
+                    <td className={tdClean}>{r.발급일}</td>
+                    <td className={tdClean}>
+                      {r.문서URL && (
+                        <a href={`/api/certificate/${r.id}/pdf`} target="_blank" rel="noreferrer" className="text-brand hover:underline">인쇄</a>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {myAwards.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className={`${tdClean} text-center text-zinc-400`}>내가 등록한 상장이 없습니다.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {activeTab === 'process' && (
@@ -127,7 +188,7 @@ export default async function CertificatesPage({
 
       {activeTab === 'manage' && (
         <>
-          <form id="award-print-form" method="get" action="/print/award" className="mb-3 flex justify-end">
+          <form id="award-print-form" method="get" action="/api/certificate/award-print" className="mb-3 flex justify-end">
             <button type="submit" className={btnOutline}>선택한 상장 인쇄</button>
           </form>
           <div className={cardTableWrap}>
