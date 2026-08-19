@@ -20,7 +20,29 @@ export default function AccountingSummaryTable({
         <h2 className="text-[13px] font-bold text-brand-dark dark:text-brand">{title}</h2>
         <span className="text-xs text-zinc-400">(단위: 원)</span>
       </div>
-      <div className={tableWrap}>
+      <div className="flex flex-col gap-2 sm:hidden">
+        {rows.map((r) => (
+          <div key={r.시설명} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{r.시설명}</span>
+              <span className="text-sm font-semibold tabular-nums">{nf(r.잔액)}</span>
+            </div>
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              전월잔액 {nf(r.전월잔액)} · 금월수입 {nf(r.금월수입)} · 금월지출 {nf(r.금월지출)}
+            </p>
+          </div>
+        ))}
+        <div className="rounded-lg border border-zinc-300 bg-[#eef1f5] p-3 font-semibold dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm">합 계</span>
+            <span className="text-sm tabular-nums">{nf(합계잔액)}</span>
+          </div>
+          <p className="mt-1 text-xs font-normal text-zinc-500 dark:text-zinc-400">
+            전월잔액 {nf(합계전월)} · 금월수입 {nf(합계수입)} · 금월지출 {nf(합계지출)}
+          </p>
+        </div>
+      </div>
+      <div className={`${tableWrap} hidden sm:block`}>
         <table className={table}>
           <thead>
             <tr>

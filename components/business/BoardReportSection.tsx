@@ -42,7 +42,7 @@ export default async function BoardReportSection({
     <div className={card}>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <h2 className="text-[13px] font-bold text-brand-dark dark:text-brand">{index}. {구분}</h2>
-        <form action={setReportPeriodAction} className="flex items-center gap-1.5">
+        <form action={setReportPeriodAction} className="flex flex-wrap items-center gap-1.5">
           <input type="hidden" name="구분" value={구분} />
           <input type="hidden" name="년월" value={ym} />
           <span className="text-xs text-zinc-400">(</span>

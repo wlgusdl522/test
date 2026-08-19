@@ -91,7 +91,7 @@ export default function BoardRosterGridClient({
           </tbody>
         </table>
       </div>
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <button type="button" onClick={handleSave} disabled={isPending} className={btn}>저장</button>
         <span className="text-sm text-zinc-500">{status}</span>
       </div>

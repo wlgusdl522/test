@@ -43,7 +43,40 @@ export default function BudgetAmountEntryClient({
 
   return (
     <div>
-      <div className={tableWrap}>
+      <div className="flex flex-col gap-2 sm:hidden">
+        {initialRows.map((r) => (
+          <div key={r.카테고리} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{r.카테고리}</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                집행률 {pct(Number(amounts[r.카테고리]) > 0 ? (r.누계 / Number(amounts[r.카테고리])) * 100 : null)}%
+              </span>
+            </div>
+            <div className="mt-1.5 flex items-center gap-2">
+              <label className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">예산액(원)</label>
+              <input
+                type="number" min="0" placeholder="0"
+                value={amounts[r.카테고리] ?? ''}
+                onChange={(e) => setAmounts((prev) => ({ ...prev, [r.카테고리]: e.target.value }))}
+                className="w-full rounded border border-zinc-200 bg-[#fcfbf8] px-2 py-1 text-right font-mono focus:border-brand focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
+              />
+            </div>
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              집행액 {nf(r.집행액)} · 누계 {nf(r.누계)}
+            </p>
+          </div>
+        ))}
+        <div className="rounded-lg border border-zinc-300 bg-[#eef1f5] p-3 font-semibold dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm">총 계</span>
+            <span className="text-sm">{pct(totalBudget > 0 ? (totalCum / totalBudget) * 100 : null)}%</span>
+          </div>
+          <p className="mt-1 text-xs font-normal text-zinc-500 dark:text-zinc-400">
+            예산 {nf(totalBudget)} · 집행 {nf(totalExec)} · 누계 {nf(totalCum)}
+          </p>
+        </div>
+      </div>
+      <div className={`${tableWrap} hidden sm:block`}>
         <table className={table}>
           <thead>
             <tr>
@@ -83,7 +116,7 @@ export default function BudgetAmountEntryClient({
           </tbody>
         </table>
       </div>
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <button type="button" onClick={handleSave} disabled={isPending} className={btn}>예산액 저장</button>
         <span className="text-sm text-zinc-500">{status}</span>
       </div>

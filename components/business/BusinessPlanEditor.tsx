@@ -141,7 +141,7 @@ export default function BusinessPlanEditor({
       </div>
 
       <div className={card}>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className={h2}>{businessNumber}. {business} 세부사업계획(안) <span className="ml-2 text-xs font-normal text-zinc-400">단위 : 천원</span></h2>
           <div className="flex items-center gap-3">
             {settingsToggle}

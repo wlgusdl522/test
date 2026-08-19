@@ -17,7 +17,7 @@ export default async function BusinessLayout({ children }: { children: React.Rea
 
   return (
     <main className={pageFluid}>
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h1 className={h1}>사업관리</h1>
         <FormToggle label="새 사업 만들기">
           <form action={createWorklogBusinessAction} className="flex flex-col gap-3">
