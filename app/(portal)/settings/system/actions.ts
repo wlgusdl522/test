@@ -24,6 +24,7 @@ export async function saveSystemSettingsAction(formData: FormData) {
     staffMeetingJandiWebhook: String(formData.get('staffMeetingJandiWebhook') ?? ''),
     staffMeetingInfoEditTeam: String(formData.get('staffMeetingInfoEditTeam') ?? ''),
     staffMeetingInfoEditEmails: String(formData.get('staffMeetingInfoEditEmails') ?? ''),
+    staffMeetingNotifySenderEmails: formData.getAll('staffMeetingNotifySenderEmails').map(String).join(','),
   });
   revalidatePath('/settings/system');
 }

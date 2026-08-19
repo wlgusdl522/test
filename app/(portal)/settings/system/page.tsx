@@ -1,4 +1,7 @@
+import { getActiveStaffList } from '@/lib/mutate/permissions';
+import { getSimpleList } from '@/lib/mutate/simpleList';
 import { getSystemSettings, VEHICLE_LOG_APPROVAL_MODE_ELECTRONIC, VEHICLE_LOG_APPROVAL_MODE_MANUAL } from '@/lib/mutate/settings';
+import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { btn, h1, hint, input, label, pageFluid } from '@/lib/ui';
 import { saveCertificateSealAction, saveSystemSettingsAction } from './actions';
 
@@ -6,7 +9,18 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export default async function SystemSettingsPage() {
-  const settings = await getSystemSettings();
+  const [settings, staff, teams] = await Promise.all([
+    getSystemSettings(),
+    getActiveStaffList(),
+    getSimpleList(TEAM_LIST_SHEET_NAME),
+  ]);
+  const staffGroups = teams
+    .map((team) => ({ team, staff: staff.filter((s) => s.team === team) }))
+    .filter((g) => g.staff.length > 0);
+  const checkedSenderEmails = settings.staffMeetingNotifySenderEmails
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
 
   return (
     <main className={pageFluid}>
@@ -54,8 +68,13 @@ export default async function SystemSettingsPage() {
           <input name="certificateApproverEmail" defaultValue={settings.certificateApproverEmail} className={input} />
         </label>
         <label className={label}>
-          증명서 발급 담당(서무) 이메일
-          <input name="certificateClerkEmail" defaultValue={settings.certificateClerkEmail} className={input} />
+          증명서 발급 담당(서무)
+          <select name="certificateClerkEmail" defaultValue={settings.certificateClerkEmail} className={input}>
+            <option value="">(지정 안 함)</option>
+            {staff.map((s) => (
+              <option key={s.email} value={s.email}>{s.name} ({s.team})</option>
+            ))}
+          </select>
         </label>
         <label className={label}>
           전체회의자료 JANDI 공용 웹훅 (회의 알림)
@@ -69,6 +88,30 @@ export default async function SystemSettingsPage() {
           전체회의자료 회의정보 편집 가능 담당자 이메일 (쉼표로 여러 명, 비우면 제한 없음)
           <input name="staffMeetingInfoEditEmails" defaultValue={settings.staffMeetingInfoEditEmails} className={input} />
         </label>
+        <div className={label}>
+          전체회의자료 잔디 알림 보내기 가능 담당자 (여러 명 선택 가능, 아무도 선택 안 하면 제한 없음)
+          <div className="mt-1 flex max-h-56 flex-wrap gap-x-4 gap-y-3 overflow-y-auto rounded-md border border-zinc-200 p-3 dark:border-zinc-700">
+            {staffGroups.map((g) => (
+              <div
+                key={g.team}
+                className="flex min-w-[130px] flex-1 flex-col gap-1.5 border-l border-dashed border-zinc-200 pl-3 first:border-l-0 first:pl-0 dark:border-zinc-700"
+              >
+                <div className="text-[10.5px] font-bold text-zinc-400">{g.team}</div>
+                {g.staff.map((s) => (
+                  <label key={s.email} className="flex items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                    <input
+                      type="checkbox"
+                      name="staffMeetingNotifySenderEmails"
+                      value={s.email}
+                      defaultChecked={checkedSenderEmails.includes(s.email.toLowerCase())}
+                    />
+                    {s.name}
+                  </label>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
         <div>
           <button type="submit" className={btn}>저장</button>
         </div>
