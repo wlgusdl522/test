@@ -18,6 +18,7 @@ const KEYS = {
   STAFF_MEETING_JANDI_WEBHOOK: 'STAFF_MEETING_JANDI_WEBHOOK',
   STAFF_MEETING_INFO_EDIT_TEAM: 'STAFF_MEETING_INFO_EDIT_TEAM',
   STAFF_MEETING_INFO_EDIT_EMAILS: 'STAFF_MEETING_INFO_EDIT_EMAILS',
+  STAFF_MEETING_NOTIFY_SENDER_EMAILS: 'STAFF_MEETING_NOTIFY_SENDER_EMAILS',
 } as const;
 
 export type SystemSettings = {
@@ -35,6 +36,7 @@ export type SystemSettings = {
   staffMeetingJandiWebhook: string;
   staffMeetingInfoEditTeam: string;
   staffMeetingInfoEditEmails: string;
+  staffMeetingNotifySenderEmails: string;
 };
 
 export async function getSystemSettings(): Promise<SystemSettings> {
@@ -53,6 +55,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     staffMeetingJandiWebhook,
     staffMeetingInfoEditTeam,
     staffMeetingInfoEditEmails,
+    staffMeetingNotifySenderEmails,
   ] = await Promise.all([
     getSetting(KEYS.ITEM_CHECK_REPORT_THRESHOLD),
     getSetting(KEYS.ITEM_CHECK_ASSET_MANAGER_EMAIL),
@@ -68,6 +71,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     getSetting(KEYS.STAFF_MEETING_JANDI_WEBHOOK),
     getSetting(KEYS.STAFF_MEETING_INFO_EDIT_TEAM),
     getSetting(KEYS.STAFF_MEETING_INFO_EDIT_EMAILS),
+    getSetting(KEYS.STAFF_MEETING_NOTIFY_SENDER_EMAILS),
   ]);
   return {
     itemCheckReportThreshold: Number(threshold) || 0,
@@ -84,6 +88,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     staffMeetingJandiWebhook,
     staffMeetingInfoEditTeam,
     staffMeetingInfoEditEmails,
+    staffMeetingNotifySenderEmails,
   };
 }
 
@@ -105,6 +110,7 @@ export async function setSystemSettings(settings: SystemSettings): Promise<void>
     setSetting(KEYS.STAFF_MEETING_JANDI_WEBHOOK, settings.staffMeetingJandiWebhook.trim()),
     setSetting(KEYS.STAFF_MEETING_INFO_EDIT_TEAM, settings.staffMeetingInfoEditTeam.trim()),
     setSetting(KEYS.STAFF_MEETING_INFO_EDIT_EMAILS, settings.staffMeetingInfoEditEmails.trim()),
+    setSetting(KEYS.STAFF_MEETING_NOTIFY_SENDER_EMAILS, settings.staffMeetingNotifySenderEmails.trim()),
   ]);
 }
 

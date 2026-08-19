@@ -21,7 +21,7 @@ import {
 } from '@/lib/mutate/staffMeeting';
 import SubmitButton from '@/components/SubmitButton';
 import { getStaffMeetingContext, setStaffMeetingContextAction } from '@/lib/prefs-actions';
-import { btn, btnOutline, btnSuccess, card, h1, hint, input, inputBase, label, pageFluid } from '@/lib/ui';
+import { btn, btnOutline, btnSecondary, btnSuccess, card, h1, hint, input, inputBase, label, pageFluid } from '@/lib/ui';
 import { saveStaffMeetingInfoAction, sendStaffMeetingNotificationAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -78,7 +78,33 @@ export default async function StaffMeetingPage({
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className={h1}>업무관리 &gt; 전체회의자료</h1>
         <div className="flex gap-2">
-          <Link href={`/staff-meeting/present?ym=${ym}`} className={btnOutline}>발표 모드</Link>
+          <Link href={`/staff-meeting/present?ym=${ym}`} className={btnSecondary}>발표 모드</Link>
+          {canSendNotification && (
+            <FormToggle label="잔디 알림 보내기" buttonLabel="🟢 잔디 알림 보내기" buttonClassName={btnSuccess} wrapperClassName="">
+              <form action={sendStaffMeetingNotificationAction}>
+                <input type="hidden" name="년월" value={ym} />
+                <label className={label}>
+                  제목
+                  <input name="제목" defaultValue={buildStaffMeetingNotificationTitle(ym)} className={input} />
+                </label>
+                <label className={`${label} mt-3`}>
+                  내용
+                  <textarea
+                    name="내용"
+                    rows={7}
+                    defaultValue={buildStaffMeetingNotificationContent(meetingInfo)}
+                    className={`${input} whitespace-pre-wrap`}
+                  />
+                </label>
+                <div className="mt-4 flex items-center gap-3">
+                  <SubmitButton className={btn} pendingLabel="보내는 중...">전송</SubmitButton>
+                  {meetingInfo.알림발송일시 && (
+                    <span className="text-xs text-zinc-400">마지막 발송: {meetingInfo.알림발송일시}</span>
+                  )}
+                </div>
+              </form>
+            </FormToggle>
+          )}
         </div>
       </div>
 
@@ -141,33 +167,6 @@ export default async function StaffMeetingPage({
             </>
           }
         />
-
-        {canSendNotification && (
-          <FormToggle label="잔디 알림 보내기" buttonLabel="🟢 잔디 알림 보내기" buttonClassName={btnSuccess} wrapperClassName="">
-            <form action={sendStaffMeetingNotificationAction}>
-              <input type="hidden" name="년월" value={ym} />
-              <label className={label}>
-                제목
-                <input name="제목" defaultValue={buildStaffMeetingNotificationTitle(ym)} className={input} />
-              </label>
-              <label className={`${label} mt-3`}>
-                내용
-                <textarea
-                  name="내용"
-                  rows={7}
-                  defaultValue={buildStaffMeetingNotificationContent(meetingInfo)}
-                  className={`${input} whitespace-pre-wrap`}
-                />
-              </label>
-              <div className="mt-4 flex items-center gap-3">
-                <SubmitButton className={btn} pendingLabel="보내는 중...">전송</SubmitButton>
-                {meetingInfo.알림발송일시 && (
-                  <span className="text-xs text-zinc-400">마지막 발송: {meetingInfo.알림발송일시}</span>
-                )}
-              </div>
-            </form>
-          </FormToggle>
-        )}
       </div>
 
       {!팀명 ? (
