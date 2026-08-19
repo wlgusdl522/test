@@ -16,6 +16,8 @@ const KEYS = {
   CERTIFICATE_CLERK_EMAIL: 'CERTIFICATE_CLERK_EMAIL',
   CERTIFICATE_SEAL_IMAGE_URL: 'CERTIFICATE_SEAL_IMAGE_URL',
   STAFF_MEETING_JANDI_WEBHOOK: 'STAFF_MEETING_JANDI_WEBHOOK',
+  STAFF_MEETING_INFO_EDIT_TEAM: 'STAFF_MEETING_INFO_EDIT_TEAM',
+  STAFF_MEETING_INFO_EDIT_EMAILS: 'STAFF_MEETING_INFO_EDIT_EMAILS',
 } as const;
 
 export type SystemSettings = {
@@ -31,6 +33,8 @@ export type SystemSettings = {
   certificateClerkEmail: string;
   certificateSealImageUrl: string;
   staffMeetingJandiWebhook: string;
+  staffMeetingInfoEditTeam: string;
+  staffMeetingInfoEditEmails: string;
 };
 
 export async function getSystemSettings(): Promise<SystemSettings> {
@@ -47,6 +51,8 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     certificateClerk,
     certificateSealImageUrl,
     staffMeetingJandiWebhook,
+    staffMeetingInfoEditTeam,
+    staffMeetingInfoEditEmails,
   ] = await Promise.all([
     getSetting(KEYS.ITEM_CHECK_REPORT_THRESHOLD),
     getSetting(KEYS.ITEM_CHECK_ASSET_MANAGER_EMAIL),
@@ -60,6 +66,8 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     getSetting(KEYS.CERTIFICATE_CLERK_EMAIL),
     getSetting(KEYS.CERTIFICATE_SEAL_IMAGE_URL),
     getSetting(KEYS.STAFF_MEETING_JANDI_WEBHOOK),
+    getSetting(KEYS.STAFF_MEETING_INFO_EDIT_TEAM),
+    getSetting(KEYS.STAFF_MEETING_INFO_EDIT_EMAILS),
   ]);
   return {
     itemCheckReportThreshold: Number(threshold) || 0,
@@ -74,6 +82,8 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     certificateClerkEmail: certificateClerk,
     certificateSealImageUrl,
     staffMeetingJandiWebhook,
+    staffMeetingInfoEditTeam,
+    staffMeetingInfoEditEmails,
   };
 }
 
@@ -93,6 +103,8 @@ export async function setSystemSettings(settings: SystemSettings): Promise<void>
     setSetting(KEYS.CERTIFICATE_APPROVER_EMAIL, settings.certificateApproverEmail.trim()),
     setSetting(KEYS.CERTIFICATE_CLERK_EMAIL, settings.certificateClerkEmail.trim()),
     setSetting(KEYS.STAFF_MEETING_JANDI_WEBHOOK, settings.staffMeetingJandiWebhook.trim()),
+    setSetting(KEYS.STAFF_MEETING_INFO_EDIT_TEAM, settings.staffMeetingInfoEditTeam.trim()),
+    setSetting(KEYS.STAFF_MEETING_INFO_EDIT_EMAILS, settings.staffMeetingInfoEditEmails.trim()),
   ]);
 }
 

@@ -11,6 +11,7 @@ import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import {
   buildStaffMeetingNotificationContent,
   buildStaffMeetingNotificationTitle,
+  canEditStaffMeetingInfo,
   getOrderedStaffMeetingTeams,
   getStaffMeetingInfo,
   getStaffMeetingItems,
@@ -37,10 +38,11 @@ export default async function StaffMeetingPage({
 }) {
   if (!(await hasPageAccess('staff-meeting'))) return <PageAccessDenied />;
 
-  const [teams, me, cookieCtx] = await Promise.all([
+  const [teams, me, cookieCtx, canEditInfo] = await Promise.all([
     getSimpleList(TEAM_LIST_SHEET_NAME),
     getViewerStaffRecord(),
     getStaffMeetingContext(),
+    canEditStaffMeetingInfo(),
   ]);
   const { team: teamParam, ym: ymParam } = await searchParams;
   const myTeam = me?.소속팀 ?? '';
@@ -93,43 +95,45 @@ export default async function StaffMeetingPage({
       </form>
 
       <div className="mb-5 flex flex-wrap gap-2">
-        <FormToggle label="회의정보 관리" buttonLabel="회의정보 관리" buttonClassName={btnOutline} wrapperClassName="">
-          <p className={hint}>{ym} 회의 정보예요.</p>
-          <form action={saveStaffMeetingInfoAction}>
-            <input type="hidden" name="년월" value={ym} />
-            <div className="grid grid-cols-2 gap-3">
-              <label className={label}>
-                회의일시
-                <input type="datetime-local" name="회의일시" defaultValue={meetingInfo.회의일시} className={input} />
-              </label>
-              <label className={label}>
-                장소
-                <input name="장소" defaultValue={meetingInfo.장소} className={input} />
-              </label>
-              <label className={label}>
-                진행
-                <input name="진행" defaultValue={meetingInfo.진행} className={input} />
-              </label>
-              <label className={label}>
-                참석부서
-                <input name="참석부서" defaultValue={meetingInfo.참석부서} className={input} />
-              </label>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <label className={label}>
-                업무보고 표시(비우면 자동)
-                <input name="업무보고기간" defaultValue={meetingInfo.업무보고기간} placeholder="예: 2026년 5~6월" className={input} />
-              </label>
-              <label className={label}>
-                업무계획 표시(비우면 자동)
-                <input name="업무계획기간" defaultValue={meetingInfo.업무계획기간} placeholder="예: 2026년 7월" className={input} />
-              </label>
-            </div>
-            <div className="mt-4">
-              <SubmitButton className={btn} pendingLabel="저장 중...">저장</SubmitButton>
-            </div>
-          </form>
-        </FormToggle>
+        {canEditInfo && (
+          <FormToggle label="회의정보 관리" buttonLabel="회의정보 관리" buttonClassName={btnOutline} wrapperClassName="">
+            <p className={hint}>{ym} 회의 정보예요.</p>
+            <form action={saveStaffMeetingInfoAction}>
+              <input type="hidden" name="년월" value={ym} />
+              <div className="grid grid-cols-2 gap-3">
+                <label className={label}>
+                  회의일시
+                  <input type="datetime-local" name="회의일시" defaultValue={meetingInfo.회의일시} className={input} />
+                </label>
+                <label className={label}>
+                  장소
+                  <input name="장소" defaultValue={meetingInfo.장소} className={input} />
+                </label>
+                <label className={label}>
+                  진행
+                  <input name="진행" defaultValue={meetingInfo.진행} className={input} />
+                </label>
+                <label className={label}>
+                  참석부서
+                  <input name="참석부서" defaultValue={meetingInfo.참석부서} className={input} />
+                </label>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <label className={label}>
+                  업무보고 표시(비우면 자동)
+                  <input name="업무보고기간" defaultValue={meetingInfo.업무보고기간} placeholder="예: 2026년 5~6월" className={input} />
+                </label>
+                <label className={label}>
+                  업무계획 표시(비우면 자동)
+                  <input name="업무계획기간" defaultValue={meetingInfo.업무계획기간} placeholder="예: 2026년 7월" className={input} />
+                </label>
+              </div>
+              <div className="mt-4">
+                <SubmitButton className={btn} pendingLabel="저장 중...">저장</SubmitButton>
+              </div>
+            </form>
+          </FormToggle>
+        )}
 
         <TeamOrderModal teams={orderedTeams} />
 

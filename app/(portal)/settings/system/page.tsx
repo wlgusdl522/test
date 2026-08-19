@@ -61,6 +61,14 @@ export default async function SystemSettingsPage() {
           전체회의자료 JANDI 공용 웹훅 (회의 알림)
           <input name="staffMeetingJandiWebhook" defaultValue={settings.staffMeetingJandiWebhook} className={input} />
         </label>
+        <label className={label}>
+          전체회의자료 회의정보 편집 가능 팀 (비우면 제한 없음)
+          <input name="staffMeetingInfoEditTeam" defaultValue={settings.staffMeetingInfoEditTeam} placeholder="예: 총무팀" className={input} />
+        </label>
+        <label className={label}>
+          전체회의자료 회의정보 편집 가능 담당자 이메일 (쉼표로 여러 명, 비우면 제한 없음)
+          <input name="staffMeetingInfoEditEmails" defaultValue={settings.staffMeetingInfoEditEmails} className={input} />
+        </label>
         <div>
           <button type="submit" className={btn}>저장</button>
         </div>
