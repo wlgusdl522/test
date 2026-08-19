@@ -5,6 +5,8 @@ import { getKeyedList } from '@/lib/mutate/keyedTable';
 import { APPROVAL_JEONGYEOL_TABLE } from '@/lib/sheets/registry';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { getStaffList } from '@/lib/mutate/staff';
+import { getWeeklyPlanGroups } from '@/lib/mutate/weeklyPlanGroup';
+import { buildGroupedRoster } from '@/lib/weeklyPlanGroup';
 import { buildApprovalBoxData } from '@/lib/approval/approvalLine';
 import ApprovalBox from '@/components/print/ApprovalBox';
 import PrintButton from '@/components/print/PrintButton';
@@ -38,9 +40,14 @@ export default async function WeeklyPlanTeamPrintPage({
   ]);
   const team = params.team ?? me?.소속팀 ?? teams[0] ?? '';
   const weekStart = params.weekStart ?? mondayOf(new Date());
-  const tasks = await getWeeklyTasks(team, weekStart);
+  const [tasks, groupRows] = await Promise.all([getWeeklyTasks(team, weekStart), getWeeklyPlanGroups(team)]);
 
   const roster = staffList.filter((s) => s['소속팀'] === team && s['재직상태'] !== '퇴사');
+  const staffByEmail = new Map(roster.map((s) => [s['이메일(아이디)'].toLowerCase(), s]));
+  const groupedRows = buildGroupedRoster(
+    roster.map((s) => ({ email: s['이메일(아이디)'], name: s['성명'] })),
+    groupRows
+  );
 
   const monday = new Date(`${weekStart}T00:00:00`);
   const dayDates: string[] = [];
@@ -102,19 +109,20 @@ export default async function WeeklyPlanTeamPrintPage({
               </tr>
             </thead>
             <tbody>
-              {roster.length === 0 ? (
+              {groupedRows.length === 0 ? (
                 <tr><td className={td} colSpan={7} style={{ textAlign: 'center', color: '#888' }}>해당 팀에 재직 중인 직원이 없습니다.</td></tr>
-              ) : roster.map((r) => {
-                const email = r['이메일(아이디)'];
-                const isLead = ['과장', '팀장'].includes(r['직급/직책']);
+              ) : groupedRows.map((row) => {
+                const rowEmails = new Set(row.emails.map((e) => e.toLowerCase()));
+                const single = row.emails.length === 1 ? staffByEmail.get(row.emails[0].toLowerCase()) : null;
+                const isLead = !!single && ['과장', '팀장'].includes(single['직급/직책']);
                 return (
-                  <tr key={email}>
+                  <tr key={row.key}>
                     <td className={td}>
-                      <b>{r['성명']}</b>
-                      {isLead && <><br /><span style={{ fontSize: 11.5, color: '#888' }}>{r['직급/직책']}</span></>}
+                      <b>{row.label}</b>
+                      {isLead && <><br /><span style={{ fontSize: 11.5, color: '#888' }}>{single!['직급/직책']}</span></>}
                     </td>
                     {dayDates.map((iso) => {
-                      const dayTasks = tasks.filter((t) => t['이메일(아이디)'] === email && t['날짜'] === iso);
+                      const dayTasks = tasks.filter((t) => rowEmails.has((t['이메일(아이디)'] ?? '').toLowerCase()) && t['날짜'] === iso);
                       return (
                         <td key={iso} className={td}>
                           {dayTasks.map((t, i) => <div key={i}>• {t['업무내용']}</div>)}

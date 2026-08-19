@@ -1,6 +1,7 @@
 import { getWeeklyTasks } from '@/lib/mutate/weeklyTask';
 import { getStaffList } from '@/lib/mutate/staff';
 import { getSimpleList } from '@/lib/mutate/simpleList';
+import { getWeeklyPlanGroups } from '@/lib/mutate/weeklyPlanGroup';
 import { TEAM_LIST_SHEET_NAME } from '@/lib/sheets/sheetIds';
 import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import { hasPageAccess } from '@/lib/mutate/permissions';
@@ -45,10 +46,11 @@ export default async function WeeklyPlanPage({
     return <PageAccessDenied />;
   }
 
-  const [myTeamTasks, staffList, teams] = await Promise.all([
+  const [myTeamTasks, staffList, teams, groupRows] = await Promise.all([
     getWeeklyTasks(team, weekStart),
     getStaffList(),
     getSimpleList(TEAM_LIST_SHEET_NAME),
+    getWeeklyPlanGroups(viewTeam),
   ]);
   const myTasks = myTeamTasks.filter((t) => (t['이메일(아이디)'] ?? '').toLowerCase() === viewerEmail);
   const viewTeamTasks = isOwnTeam ? myTeamTasks : await getWeeklyTasks(viewTeam, weekStart);
@@ -92,6 +94,7 @@ export default async function WeeklyPlanPage({
           myName={me?.성명 ?? ''}
           myEmail={viewerEmail}
           roster={roster}
+          groupRows={groupRows}
           teamTasks={viewTeamTasks.map((t) => ({
             email: t['이메일(아이디)'] ?? '',
             name: t['성명'] ?? '',

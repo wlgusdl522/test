@@ -5,6 +5,7 @@ const TABS = [
   { href: '/weekly-plan', label: '작성', pageId: 'weekly-plan-write' },
   { href: '/weekly-plan/review', label: '부서장확인', pageId: 'weekly-plan-review' },
   { href: '/weekly-plan/meeting', label: '회의록작성', pageId: 'weekly-plan-meeting' },
+  { href: '/weekly-plan/groups', label: '그룹설정', pageId: 'weekly-plan-groups' },
 ];
 
 // 권한설정에서 막힌 탭은 목록에 아예 안 보이게 — 눌러야만 "권한 없음"을 확인하는 대신

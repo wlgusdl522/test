@@ -37,6 +37,10 @@ export const MEETING_HEADERS = [
 
 export const REVIEW_STATUS_HEADERS = ['id', '소속팀', '주시작일', '완료여부', '확인자이메일', '확인자명', '확인일시'];
 
+// 주간업무계획 "팀 조회"/인쇄에서 여러 담당자를 한 줄로 묶어서 보여주기 위한 그룹 멤버십 —
+// 한 그룹에 속한 사람이 여럿이면 그 수만큼 행이 쌓인다(그룹명+이메일이 한 조합).
+export const WEEKLY_TASK_GROUP_HEADERS = ['id', '소속팀', '그룹명', '이메일', '성명', '정렬순서'];
+
 // 실제 시트엔 '도장'/'잔디웹훅' 컬럼이 물리적으로 존재하지 않아(값을 채운 사람이 아직 없어 헤더 자체가
 // 비어 있었음) 정렬을 맞추려고 새로 추가한 '토요당직제외여부'를 그 앞(P열)에 끼워 넣었다.
 export const STAFF_HEADERS = [
@@ -147,6 +151,13 @@ export const REVIEW_STATUS_TABLE: KeyedTableConfig = {
   spreadsheetId: WEEKLY_PLAN_SHEET_ID,
   sheetName: '부서장확인상태',
   headers: REVIEW_STATUS_HEADERS,
+  primaryKey: 'id',
+};
+
+export const WEEKLY_TASK_GROUP_TABLE: KeyedTableConfig = {
+  spreadsheetId: WEEKLY_PLAN_SHEET_ID,
+  sheetName: '담당자그룹',
+  headers: WEEKLY_TASK_GROUP_HEADERS,
   primaryKey: 'id',
 };
 

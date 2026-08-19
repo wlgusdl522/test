@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { badgeBase, badgeTone, btn, btnSecondary, cardTableWrap, input, inputBase, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
 import { submitWeeklyPlanAction } from '@/app/(portal)/weekly-plan/actions';
 import { FULL_DAY_LEAVE_TYPES, LEAVE_TYPES, parseLeaveTag } from '@/lib/weeklyLeave';
+import { buildGroupedRoster, type WeeklyPlanGroupRow } from '@/lib/weeklyPlanGroup';
 
 type Task = { id: string; 날짜: string; 업무내용: string; 회의록후보: string };
 type Row = { key: string; text: string; flagged: boolean };
@@ -43,6 +44,7 @@ export default function WeeklyPlanWorkspace({
   myName,
   myEmail,
   roster,
+  groupRows,
   teamTasks,
   teams,
   weekStart,
@@ -55,6 +57,7 @@ export default function WeeklyPlanWorkspace({
   myName: string;
   myEmail: string;
   roster: RosterMember[];
+  groupRows: WeeklyPlanGroupRow[];
   teamTasks: TeamTask[];
   teams: string[];
   weekStart: string;
@@ -136,6 +139,8 @@ export default function WeeklyPlanWorkspace({
   }
 
   const meetingSummaryLines = buildMeetingSummaryLines(dayDates, rowsByDay);
+  const visibleRoster = roster.filter((m) => !isOwnTeam || m.email.toLowerCase() !== myEmail.toLowerCase());
+  const groupedRows = buildGroupedRoster(visibleRoster, groupRows);
 
   function mobileTabClass(active: boolean) {
     return `-mb-px rounded-t-md border border-b-0 px-3.5 py-2 text-sm transition-colors ${
@@ -282,13 +287,12 @@ export default function WeeklyPlanWorkspace({
               </div>
             </div>
           )}
-          {roster
-            .filter((m) => !isOwnTeam || m.email.toLowerCase() !== myEmail.toLowerCase())
-            .map((member) => {
-              const memberTasks = teamTasks.filter((t) => t.email.toLowerCase() === member.email.toLowerCase());
+          {groupedRows.map((row) => {
+              const rowEmails = new Set(row.emails.map((e) => e.toLowerCase()));
+              const memberTasks = teamTasks.filter((t) => rowEmails.has(t.email.toLowerCase()));
               return (
-                <div key={member.email} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{member.name}</p>
+                <div key={row.key} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{row.label}</p>
                   {memberTasks.length === 0 ? (
                     <p className="mt-1 text-sm text-zinc-300 dark:text-zinc-700">등록된 업무 없음</p>
                   ) : (
@@ -336,13 +340,13 @@ export default function WeeklyPlanWorkspace({
                   ))}
                 </tr>
               )}
-              {roster
-                .filter((m) => !isOwnTeam || m.email.toLowerCase() !== myEmail.toLowerCase())
-                .map((member) => (
-                  <tr key={member.email} className={trHoverClean}>
-                    <td className={tdClean}>{member.name}</td>
+              {groupedRows.map((row) => {
+                const rowEmails = new Set(row.emails.map((e) => e.toLowerCase()));
+                return (
+                  <tr key={row.key} className={trHoverClean}>
+                    <td className={tdClean}>{row.label}</td>
                     {dayDates.map((iso) => {
-                      const dayTasks = teamTasks.filter((t) => t.email.toLowerCase() === member.email.toLowerCase() && t.날짜 === iso);
+                      const dayTasks = teamTasks.filter((t) => rowEmails.has(t.email.toLowerCase()) && t.날짜 === iso);
                       return (
                         <td key={iso} className={tdClean}>
                           {dayTasks.length === 0
@@ -352,7 +356,8 @@ export default function WeeklyPlanWorkspace({
                       );
                     })}
                   </tr>
-                ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
