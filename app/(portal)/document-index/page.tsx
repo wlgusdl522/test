@@ -57,7 +57,7 @@ export default async function DocumentIndexPage({
         <>
           <div className={card}>
             <h2 className={`${h2} mb-3`}>공문 등록</h2>
-            <form action={addDocumentIndexEntryAction} className="grid grid-cols-2 gap-3 md:grid-cols-6">
+            <form action={addDocumentIndexEntryAction} className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-6">
               <input type="hidden" name="팀명" value={팀명} />
               <input type="hidden" name="연도" value={연도} />
               <select name="구분" defaultValue="일반문서" className={input}>
@@ -77,7 +77,7 @@ export default async function DocumentIndexPage({
             const isLatest = 권 === state.현재권;
             return (
               <div key={권} className={card}>
-                <div className="mb-3 flex items-center justify-between">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <h2 className={h2}>{권}권</h2>
                   {isLatest && (
                     <form action={startNewVolumeAction}>
@@ -92,44 +92,70 @@ export default async function DocumentIndexPage({
                     </form>
                   )}
                 </div>
-                <div className={tableWrap}>
-                  <table className={table}>
-                    <thead>
-                      <tr>
-                        <th className={`${th} w-10 text-center`}>No</th>
-                        <th className={th}>문서번호</th>
-                        <th className={th}>제목</th>
-                        <th className={th}>월/일</th>
-                        <th className={th}>수신</th>
-                        <th className={th}>발신</th>
-                        <th className={`${th} w-12`} />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.length === 0 && (
-                        <tr>
-                          <td className={`${td} text-center text-zinc-400`} colSpan={7}>등록된 공문이 없습니다.</td>
-                        </tr>
-                      )}
+                {rows.length === 0 ? (
+                  <p className="text-sm text-zinc-400">등록된 공문이 없습니다.</p>
+                ) : (
+                  <>
+                    {/* 모바일: 표는 칸이 너무 좁아져서 대신 카드 목록으로 보여준다 */}
+                    <div className="flex flex-col gap-2 sm:hidden">
                       {rows.map((r, i) => (
-                        <tr key={r.id}>
-                          <td className={`${td} text-center tabular-nums text-zinc-400`}>{i + 1}</td>
-                          <td className={td}>{r.구분 === '스탬프결재' ? '스탬프 결재' : r.문서번호}</td>
-                          <td className={td}>{r.제목}</td>
-                          <td className={td}>{r.월일}</td>
-                          <td className={td}>{r.수신}</td>
-                          <td className={td}>{r.발신}</td>
-                          <td className={`${td} text-center`}>
+                        <div key={r.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                              {i + 1}. {r.구분 === '스탬프결재' ? '스탬프 결재' : r.문서번호}
+                            </span>
+                            <span className="text-xs text-zinc-400">{r.월일}</span>
+                          </div>
+                          <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{r.제목}</p>
+                          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                            수신 {r.수신} · 발신 {r.발신}
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
                             <form action={deleteDocumentIndexEntryAction}>
                               <input type="hidden" name="id" value={r.id} />
                               <ConfirmSubmitButton confirmMessage="이 공문을 삭제할까요?" className={btnDanger}>삭제</ConfirmSubmitButton>
                             </form>
-                          </td>
-                        </tr>
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
+                    </div>
+
+                    {/* 데스크톱: 기존 표 레이아웃 유지 */}
+                    <div className={`hidden sm:block ${tableWrap}`}>
+                      <table className={table}>
+                        <thead>
+                          <tr>
+                            <th className={`${th} w-10 text-center`}>No</th>
+                            <th className={th}>문서번호</th>
+                            <th className={th}>제목</th>
+                            <th className={th}>월/일</th>
+                            <th className={th}>수신</th>
+                            <th className={th}>발신</th>
+                            <th className={`${th} w-12`} />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rows.map((r, i) => (
+                            <tr key={r.id}>
+                              <td className={`${td} text-center tabular-nums text-zinc-400`}>{i + 1}</td>
+                              <td className={td}>{r.구분 === '스탬프결재' ? '스탬프 결재' : r.문서번호}</td>
+                              <td className={td}>{r.제목}</td>
+                              <td className={td}>{r.월일}</td>
+                              <td className={td}>{r.수신}</td>
+                              <td className={td}>{r.발신}</td>
+                              <td className={`${td} text-center`}>
+                                <form action={deleteDocumentIndexEntryAction}>
+                                  <input type="hidden" name="id" value={r.id} />
+                                  <ConfirmSubmitButton confirmMessage="이 공문을 삭제할까요?" className={btnDanger}>삭제</ConfirmSubmitButton>
+                                </form>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
               </div>
             );
           })}

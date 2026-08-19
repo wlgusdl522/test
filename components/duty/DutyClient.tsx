@@ -167,10 +167,10 @@ export default function DutyClient({
                 <div>
                   <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">{row.이름} · {row.소속}</p>
                   {isOwner ? (
-                    <form onSubmit={handleSaveWeekday} className="grid grid-cols-2 gap-3">
+                    <form onSubmit={handleSaveWeekday} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <input type="hidden" name="id" value={row.id} />
                       {CHECK_FIELDS.map((f) => (
-                        <div key={f.key} className="col-span-2 grid grid-cols-2 gap-3">
+                        <div key={f.key} className="grid grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-2">
                           <label className={label}>
                             {f.label}
                             <input name={f.key} defaultValue={row[f.key] || '이상없음'} className={input} />
@@ -182,16 +182,16 @@ export default function DutyClient({
                         </div>
                       ))}
                       {TEXT_FIELDS.map((f) => (
-                        <label key={f.key} className={`${label} col-span-2`}>
+                        <label key={f.key} className={`${label} sm:col-span-2`}>
                           {f.label}
                           <input name={f.key} defaultValue={row[f.key]} className={input} />
                         </label>
                       ))}
-                      <div className="col-span-2">
+                      <div className="sm:col-span-2">
                         <p className={label}>서명</p>
                         <SignaturePad name="signature" hasExisting={!!row.사인} />
                       </div>
-                      <div className="col-span-2">
+                      <div className="sm:col-span-2">
                         <button type="submit" disabled={isPending} className={btn}>
                           {isPending ? '저장 중...' : '저장'}
                         </button>
@@ -219,7 +219,7 @@ export default function DutyClient({
                 { slot: 2 as const, email: row.이메일2, name: row.이름2, team: row.소속2, sign: row.사인2 },
               ];
               return (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {slots.map((s) => {
                     const isOwner = isAdmin || (s.email ?? '').toLowerCase() === viewerEmail;
                     return (
