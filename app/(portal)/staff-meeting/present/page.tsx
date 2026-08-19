@@ -83,6 +83,12 @@ export default async function StaffMeetingPresentPage({
           </div>
           <div className={tableWrap}>
             <table className={table} style={{ fontSize: '16px' }}>
+              <colgroup>
+                <col style={{ width: '14%' }} />
+                <col style={{ width: '38%' }} />
+                <col style={{ width: '38%' }} />
+                <col style={{ width: '10%' }} />
+              </colgroup>
               <thead>
                 <tr>
                   <th className={th}>사업구분</th>
@@ -96,7 +102,7 @@ export default async function StaffMeetingPresentPage({
                   const v = valueFor(values, i.id, ym);
                   return (
                     <tr key={i.id}>
-                      <td className={`${td} whitespace-pre-wrap font-semibold align-top`}>{i.사업구분}</td>
+                      <td className={`${td} whitespace-nowrap font-semibold align-top`}>{i.사업구분}</td>
                       <td className={`${td} align-top whitespace-pre-wrap`}>{v?.업무보고 ?? ''}</td>
                       <td className={`${td} align-top whitespace-pre-wrap`}>{v?.업무계획 ?? ''}</td>
                       <td className={`${td} align-top whitespace-pre-wrap`}>{v?.협조사항 ?? ''}</td>

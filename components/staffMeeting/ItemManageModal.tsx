@@ -7,7 +7,7 @@ import {
   deleteStaffMeetingItemAction,
   moveStaffMeetingItemAction,
 } from '@/app/(portal)/staff-meeting/actions';
-import { btn, hint, input } from '@/lib/ui';
+import { btn, btnOutline, hint, input } from '@/lib/ui';
 
 const iconBtn =
   'inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 disabled:opacity-25 disabled:pointer-events-none dark:text-zinc-400 dark:hover:bg-zinc-800';
@@ -17,7 +17,7 @@ const iconBtnDanger = `${iconBtn} hover:!bg-red-50 hover:!text-red-600 dark:hove
 // 모듈(전체 시설 공용)이 아니라 팀 단위 항목이라 별도 액션(staff-meeting)에 연결한 전용 컴포넌트.
 export default function ItemManageModal({ 팀명, items }: { 팀명: string; items: StaffMeetingItem[] }) {
   return (
-    <FormToggle label="사업구분 관리" buttonLabel="사업구분 관리" wrapperClassName="mb-5">
+    <FormToggle label="사업구분 관리" buttonLabel="사업구분 관리" buttonClassName={btnOutline} wrapperClassName="">
       <p className={`${hint} mb-4`}>화살표로 순서를 바꾸고, 삭제는 되돌릴 수 없어요.</p>
 
       <p className={`${hint} mb-2`}>줄바꿈으로 입력하면 표에서도 그 줄바꿈 그대로 보여요(예: &quot;상담사업{'\n'}권익증진사업&quot;).</p>

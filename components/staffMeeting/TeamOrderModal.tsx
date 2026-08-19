@@ -1,7 +1,7 @@
 import FormToggle from '@/components/FormToggle';
 import SubmitButton from '@/components/SubmitButton';
 import { moveStaffMeetingTeamOrderAction } from '@/app/(portal)/staff-meeting/actions';
-import { hint } from '@/lib/ui';
+import { btnOutline, hint } from '@/lib/ui';
 
 const iconBtn =
   'inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 disabled:opacity-25 disabled:pointer-events-none dark:text-zinc-400 dark:hover:bg-zinc-800';
@@ -10,7 +10,7 @@ const iconBtn =
 // (예: 총무팀이 팀목록에선 앞이지만 발표는 맨 마지막이어야 하는 경우).
 export default function TeamOrderModal({ teams }: { teams: string[] }) {
   return (
-    <FormToggle label="발표순서 관리" buttonLabel="발표순서 관리" wrapperClassName="mb-5">
+    <FormToggle label="발표순서 관리" buttonLabel="발표순서 관리" buttonClassName={btnOutline} wrapperClassName="">
       <p className={`${hint} mb-4`}>발표 모드에서 팀이 나오는 순서예요. 화살표로 순서를 바꿀 수 있어요.</p>
       <ul className="flex flex-col gap-1.5">
         {teams.map((t, i) => (
