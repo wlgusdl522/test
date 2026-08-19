@@ -95,34 +95,38 @@ export default async function StaffMeetingPage({
 
       <div className={card}>
         <h2 className={`${h2} mb-3`}>{ym} 회의 정보</h2>
-        <form action={saveStaffMeetingInfoAction} className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <form action={saveStaffMeetingInfoAction}>
           <input type="hidden" name="년월" value={ym} />
-          <label className={label}>
-            회의일시
-            <input type="datetime-local" name="회의일시" defaultValue={meetingInfo.회의일시} className={input} />
-          </label>
-          <label className={label}>
-            장소
-            <input name="장소" defaultValue={meetingInfo.장소} className={input} />
-          </label>
-          <label className={label}>
-            진행
-            <input name="진행" defaultValue={meetingInfo.진행} className={input} />
-          </label>
-          <label className={label}>
-            참석부서
-            <input name="참석부서" defaultValue={meetingInfo.참석부서} className={input} />
-          </label>
-          <label className={label}>
-            업무보고 표시(비우면 자동)
-            <input name="업무보고기간" defaultValue={meetingInfo.업무보고기간} placeholder="예: 2026년 5~6월" className={input} />
-          </label>
-          <label className={label}>
-            업무계획 표시(비우면 자동)
-            <input name="업무계획기간" defaultValue={meetingInfo.업무계획기간} placeholder="예: 2026년 7월" className={input} />
-          </label>
-          <div className="col-span-2 flex items-end md:col-span-1">
-            <SubmitButton className={btn} pendingLabel="저장 중...">저장</SubmitButton>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <label className={label}>
+              회의일시
+              <input type="datetime-local" name="회의일시" defaultValue={meetingInfo.회의일시} className={input} />
+            </label>
+            <label className={label}>
+              장소
+              <input name="장소" defaultValue={meetingInfo.장소} className={input} />
+            </label>
+            <label className={label}>
+              진행
+              <input name="진행" defaultValue={meetingInfo.진행} className={input} />
+            </label>
+            <label className={label}>
+              참석부서
+              <input name="참석부서" defaultValue={meetingInfo.참석부서} className={input} />
+            </label>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <label className={label}>
+              업무보고 표시(비우면 자동)
+              <input name="업무보고기간" defaultValue={meetingInfo.업무보고기간} placeholder="예: 2026년 5~6월" className={input} />
+            </label>
+            <label className={label}>
+              업무계획 표시(비우면 자동)
+              <input name="업무계획기간" defaultValue={meetingInfo.업무계획기간} placeholder="예: 2026년 7월" className={input} />
+            </label>
+            <div className="col-span-2 flex items-end md:col-span-1">
+              <SubmitButton className={btn} pendingLabel="저장 중...">저장</SubmitButton>
+            </div>
           </div>
         </form>
 
