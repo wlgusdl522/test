@@ -19,10 +19,11 @@ export default function ItemManageModal({ 팀명, items }: { 팀명: string; ite
     <FormToggle label="사업구분 관리" buttonLabel="사업구분 관리" wrapperClassName="mb-5">
       <p className={`${hint} mb-4`}>화살표로 순서를 바꾸고, 삭제는 되돌릴 수 없어요.</p>
 
+      <p className={`${hint} mb-2`}>줄바꿈으로 입력하면 표에서도 그 줄바꿈 그대로 보여요(예: &quot;상담사업{'\n'}권익증진사업&quot;).</p>
       <form action={addStaffMeetingItemAction} className="mb-4 flex gap-2 rounded-lg bg-[#f7f8fa] p-3 dark:bg-zinc-800/50">
         <input type="hidden" name="팀명" value={팀명} />
-        <input
-          name="사업구분" placeholder="추가할 사업구분 (예: 시설관리)" required
+        <textarea
+          name="사업구분" placeholder="추가할 사업구분 (예: 시설관리)" required rows={2}
           className={`${input} bg-white dark:bg-zinc-900`}
         />
         <button type="submit" className={`${btn} shrink-0`}>+ 추가</button>
@@ -40,7 +41,7 @@ export default function ItemManageModal({ 팀명, items }: { 팀명: string; ite
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-tint text-[11px] font-semibold text-brand-dark dark:bg-zinc-800 dark:text-brand">
                 {i + 1}
               </span>
-              <span className="flex-1 truncate text-sm text-zinc-800 dark:text-zinc-200">{item.사업구분}</span>
+              <span className="flex-1 whitespace-pre-wrap text-sm text-zinc-800 dark:text-zinc-200">{item.사업구분}</span>
               <div className="flex items-center gap-0.5">
                 <form action={moveStaffMeetingItemAction}>
                   <input type="hidden" name="팀명" value={팀명} />

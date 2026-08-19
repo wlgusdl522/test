@@ -43,7 +43,12 @@ export default async function StaffMeetingViewPage({
     <main className={pageFluid}>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className={h1}>업무관리 &gt; 전체회의자료 (보기)</h1>
-        <Link href="/staff-meeting" className={btnOutline}>수정하기</Link>
+        <Link
+          href={`/staff-meeting?team=${encodeURIComponent(팀명)}&ym=${ym}`}
+          className={btnOutline}
+        >
+          수정하기
+        </Link>
       </div>
 
       <form method="get" className="mb-5 flex flex-wrap items-center gap-3">
@@ -85,7 +90,7 @@ export default async function StaffMeetingViewPage({
                   const v = valueFor(values, i.id, ym);
                   return (
                     <tr key={i.id}>
-                      <td className={`${td} whitespace-nowrap font-semibold align-top`}>{i.사업구분}</td>
+                      <td className={`${td} whitespace-pre-wrap font-semibold align-top`}>{i.사업구분}</td>
                       <td className={`${td} align-top whitespace-pre-wrap`}>{v?.업무보고 ?? ''}</td>
                       <td className={`${td} align-top whitespace-pre-wrap`}>{v?.업무계획 ?? ''}</td>
                       <td className={`${td} align-top whitespace-pre-wrap`}>{v?.협조사항 ?? ''}</td>

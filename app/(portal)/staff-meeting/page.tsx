@@ -62,7 +62,12 @@ export default async function StaffMeetingPage({
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className={h1}>업무관리 &gt; 전체회의자료</h1>
         <div className="flex gap-2">
-          <Link href="/staff-meeting/view" className={btnOutline}>보기 전용 화면</Link>
+          <Link
+            href={`/staff-meeting/view?team=${encodeURIComponent(팀명)}&ym=${ym}`}
+            className={btnOutline}
+          >
+            보기 전용 화면
+          </Link>
           <Link href={`/staff-meeting/present?ym=${ym}`} className={btnOutline}>발표 모드</Link>
         </div>
       </div>

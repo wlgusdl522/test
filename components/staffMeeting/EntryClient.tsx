@@ -66,7 +66,7 @@ export default function EntryClient({ 팀명, ym, rows }: { 팀명: string; ym: 
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
-                <td className={`${td} whitespace-nowrap font-semibold align-top`}>{r.사업구분}</td>
+                <td className={`${td} whitespace-pre-wrap font-semibold align-top`}>{r.사업구분}</td>
                 <td className={`${td} align-top`}>
                   <textarea
                     rows={4}
