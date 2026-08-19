@@ -14,6 +14,7 @@ import {
   valueFor,
 } from '@/lib/mutate/staffMeeting';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
+import { getStaffMeetingContext, setStaffMeetingContextAction } from '@/lib/prefs-actions';
 import { btn, btnOutline, btnSecondary, card, h1, h2, input, inputBase, label, pageFluid } from '@/lib/ui';
 import { saveStaffMeetingInfoAction, sendStaffMeetingNotificationAction } from './actions';
 
@@ -31,15 +32,21 @@ export default async function StaffMeetingPage({
 }) {
   if (!(await hasPageAccess('staff-meeting'))) return <PageAccessDenied />;
 
-  const [teams, me] = await Promise.all([getSimpleList(TEAM_LIST_SHEET_NAME), getViewerStaffRecord()]);
+  const [teams, me, cookieCtx] = await Promise.all([
+    getSimpleList(TEAM_LIST_SHEET_NAME),
+    getViewerStaffRecord(),
+    getStaffMeetingContext(),
+  ]);
   const { team: teamParam, ym: ymParam } = await searchParams;
   const myTeam = me?.소속팀 ?? '';
   const 팀명 = teams.includes(teamParam ?? '')
     ? (teamParam as string)
-    : teams.includes(myTeam)
-      ? myTeam
-      : (teams[0] ?? '');
-  const ym = ymParam || currentYm();
+    : teams.includes(cookieCtx.team)
+      ? cookieCtx.team
+      : teams.includes(myTeam)
+        ? myTeam
+        : (teams[0] ?? '');
+  const ym = ymParam || cookieCtx.ym || currentYm();
 
   const items = 팀명 ? await getStaffMeetingItems(팀명) : [];
   const values = await getStaffMeetingValues(items.map((i) => i.id));
@@ -72,7 +79,8 @@ export default async function StaffMeetingPage({
         </div>
       </div>
 
-      <form method="get" className="mb-5 flex flex-wrap items-center gap-3">
+      <form action={setStaffMeetingContextAction} className="mb-5 flex flex-wrap items-center gap-3">
+        <input type="hidden" name="redirectTo" value="/staff-meeting" />
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">팀</label>
         <select name="team" defaultValue={팀명} className={`${inputBase} w-auto`}>
           {teams.map((t) => (
