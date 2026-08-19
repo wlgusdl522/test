@@ -66,14 +66,16 @@ export default async function MeetingPage({
         </a>
       </div>
 
-      <form method="get" className="flex flex-wrap gap-2 mb-4">
-        <select name="team" defaultValue={team} className={`${inputBase} w-auto`}>
-          {teams.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <input type="date" name="date" defaultValue={date} className={`${inputBase} w-auto`} />
-        <button type="submit" className={btnSecondary}>조회</button>
+      <div className="flex flex-col md:flex-row md:items-end gap-2 mb-4">
+        <form method="get" className="flex flex-wrap gap-2">
+          <select name="team" defaultValue={team} className={`${inputBase} w-auto`}>
+            {teams.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <input type="date" name="date" defaultValue={date} className={`${inputBase} w-auto`} />
+          <button type="submit" className={btnSecondary}>조회</button>
+        </form>
         <MeetingInfoSection team={team} date={date} meta={meta} />
-      </form>
+      </div>
 
       <div className="mb-6 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-900">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
