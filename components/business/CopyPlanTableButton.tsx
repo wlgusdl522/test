@@ -7,11 +7,30 @@ import { useState } from 'react';
 // 복사하면 화면과 다르게 보일 수 있어 항상 화면에 있는 실제 엘리먼트를 기준으로 복사한다.
 // 한글에 "원본 형식 유지"로 붙여넣은 뒤 전체 선택해서 글자체만 한 번에 바꾸는 방식이 더
 // 빠르다는 판단으로, 서식을 걷어내는 다른 모드는 만들었다가 다시 걷어냄.
+//
+// 단, display:flex로 표를 나란히 배치한 곳(후원금 좌우분할, 회계 수입/지출 좌우배치)은
+// 한글이 flex 레이아웃을 이해하지 못해 표 경계가 헷갈리게 붙여넣어지므로, 복사할 때만
+// 그 flex 속성을 걷어낸다(표가 나란히 대신 세로로 붙지만 경계는 명확해짐). 나머지 서식은
+// 그대로 둔다.
+function stripFlexLayout(root: HTMLElement): HTMLElement {
+  const clone = root.cloneNode(true) as HTMLElement;
+  clone.querySelectorAll<HTMLElement>('[style]').forEach((el) => {
+    if (el.style.display === 'flex' || el.style.display === 'inline-flex') {
+      el.style.removeProperty('display');
+      el.style.removeProperty('flex-direction');
+      el.style.removeProperty('flex');
+      el.style.removeProperty('gap');
+    }
+  });
+  return clone;
+}
+
 function copyAsHtml(el: HTMLElement) {
+  const cleaned = stripFlexLayout(el);
   if (typeof ClipboardItem !== 'undefined') {
     return navigator.clipboard.write([
       new ClipboardItem({
-        'text/html': new Blob([el.outerHTML], { type: 'text/html' }),
+        'text/html': new Blob([cleaned.outerHTML], { type: 'text/html' }),
         'text/plain': new Blob([el.textContent ?? ''], { type: 'text/plain' }),
       }),
     ]);
