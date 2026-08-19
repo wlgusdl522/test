@@ -5,7 +5,7 @@ import Modal from '@/components/Modal';
 import ItemManageModal from '@/components/staffMeeting/ItemManageModal';
 import TeamOrderModal from '@/components/staffMeeting/TeamOrderModal';
 import type { StaffMeetingItem } from '@/lib/mutate/staffMeeting';
-import { btnOutline } from '@/lib/ui';
+import { btnSecondary } from '@/lib/ui';
 
 const MENU_ITEM_BUTTON =
   'block w-full rounded px-3 py-2 text-left text-sm text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800';
@@ -49,7 +49,7 @@ export default function MeetingSettingsMenu({
 
   return (
     <div ref={wrapperRef} className="relative inline-block">
-      <button type="button" onClick={() => setMenuOpen((o) => !o)} className={btnOutline}>
+      <button type="button" onClick={() => setMenuOpen((o) => !o)} className={btnSecondary}>
         ⚙️ 회의 설정 ▾
       </button>
       {menuOpen && (
