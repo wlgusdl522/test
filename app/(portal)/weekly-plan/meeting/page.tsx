@@ -76,14 +76,12 @@ export default async function MeetingPage({
       </form>
 
       <div className="mb-6 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-900">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
-            <div className="text-zinc-600 dark:text-zinc-400 font-medium">회의날짜</div>
-            <div className="text-zinc-900 dark:text-zinc-100">{formatKoreanDate(date)}</div>
-          </div>
-          <div>
-            <div className="text-zinc-600 dark:text-zinc-400 font-medium">회의시간</div>
-            <div className="text-zinc-900 dark:text-zinc-100">{meta?.회의시간 || '미설정'}</div>
+            <div className="text-zinc-600 dark:text-zinc-400 font-medium">회의일시</div>
+            <div className="text-zinc-900 dark:text-zinc-100">
+              {formatKoreanDate(date)} {meta?.회의시간 ? meta.회의시간 : '시간 미설정'}
+            </div>
           </div>
           <div>
             <div className="text-zinc-600 dark:text-zinc-400 font-medium">회의장소</div>
