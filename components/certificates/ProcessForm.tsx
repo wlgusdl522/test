@@ -17,13 +17,13 @@ export default function ProcessForm({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 rounded-lg bg-zinc-50 p-4 text-sm dark:bg-zinc-800/50">
+      <div className="grid grid-cols-1 gap-3 rounded-lg bg-zinc-50 p-4 text-sm dark:bg-zinc-800/50 sm:grid-cols-2">
         <div><span className="text-zinc-400">신청유형</span> {r.신청유형}</div>
         <div><span className="text-zinc-400">신청일</span> {r.신청일}</div>
         <div><span className="text-zinc-400">성명</span> {r.대상자성명}</div>
         <div><span className="text-zinc-400">수령방법</span> {r.수령방법 || '-'}</div>
-        <div className="col-span-2"><span className="text-zinc-400">이메일</span> {r.대상자이메일 || '-'}</div>
-        {r.비고 && <div className="col-span-2"><span className="text-zinc-400">비고</span> {r.비고}</div>}
+        <div className="sm:col-span-2"><span className="text-zinc-400">이메일</span> {r.대상자이메일 || '-'}</div>
+        {r.비고 && <div className="sm:col-span-2"><span className="text-zinc-400">비고</span> {r.비고}</div>}
       </div>
 
       <div className="flex gap-1 rounded-full bg-zinc-100 p-1 text-sm dark:bg-zinc-900">
