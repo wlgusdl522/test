@@ -3,7 +3,7 @@ import { getSupabaseServerClient } from './server';
 import { ApprovalPermissionError, applyApprovalAction, decorateApprovalInfo } from '@/lib/approval/engine';
 import { findStaffEmailByPosition, findTeamSupervisorEmail } from '@/lib/approval/teamSupervisor';
 import { getStaffList } from '@/lib/mutate/staff';
-import { getSystemSettings } from '@/lib/mutate/settings';
+import { getSystemSettings, type SystemSettings } from '@/lib/mutate/settings';
 import { nextCertificateNumber } from '@/lib/mutate/certNumbering';
 import { requireCanViewCertificateLog, isAdminEmail, requireViewerEmail } from '@/lib/auth-helpers';
 import { appendLedgerRow } from '@/lib/sheets/ledger';
@@ -108,22 +108,22 @@ function stepsFor(record: Record<string, string>): string[] {
   return AWARD_STEPS;
 }
 
-async function resolveStepApproverEmail(step: string, staffList: Record<string, string>[]): Promise<string> {
-  if (step === '서무/회계') return (await getSystemSettings()).certificateClerkEmail;
+function resolveStepApproverEmail(step: string, staffList: Record<string, string>[], settings: SystemSettings): string {
+  if (step === '서무/회계') return settings.certificateClerkEmail;
   if (step === '총무과 과장') return findTeamSupervisorEmail('총무팀', staffList);
   if (step === '부장') return findStaffEmailByPosition('부장', staffList);
-  if (step === '관장') return findStaffEmailByPosition('관장', staffList) || (await getSystemSettings()).certificateApproverEmail;
+  if (step === '관장') return findStaffEmailByPosition('관장', staffList) || settings.certificateApproverEmail;
   return '';
 }
 
 type DecoratedCertificate = Record<string, string>;
 
-async function decorate(record: Record<string, string>, staffList: Record<string, string>[]): Promise<DecoratedCertificate> {
+function decorate(record: Record<string, string>, staffList: Record<string, string>[], settings: SystemSettings): DecoratedCertificate {
   const steps = stepsFor(record);
   const staffNameByEmail = (email: string) => staffList.find((s) => s['이메일(아이디)'] === email)?.['성명'] ?? '';
   const approverCache = new Map<string, string>();
   for (const step of steps) {
-    approverCache.set(step, await resolveStepApproverEmail(step, staffList));
+    approverCache.set(step, resolveStepApproverEmail(step, staffList, settings));
   }
   const { 결재이력, ...decorated } = decorateApprovalInfo(record, steps, (step) => approverCache.get(step) ?? '', staffNameByEmail);
   void 결재이력;
@@ -131,8 +131,8 @@ async function decorate(record: Record<string, string>, staffList: Record<string
 }
 
 export async function getCertificateList(): Promise<DecoratedCertificate[]> {
-  const [list, staffList] = await Promise.all([getAllCertificates(), getStaffList()]);
-  return Promise.all(list.map((r) => decorate(r, staffList)));
+  const [list, staffList, settings] = await Promise.all([getAllCertificates(), getStaffList(), getSystemSettings()]);
+  return list.map((r) => decorate(r, staffList, settings));
 }
 
 export async function getMyPendingCertificateApprovals(): Promise<DecoratedCertificate[]> {
@@ -214,9 +214,9 @@ export async function actOnCertificate(id: string, action: '승인' | '반려', 
   const existing = await getCertificateById(id);
   if (!existing) throw new Error('처리할 증명서 신청을 찾을 수 없습니다.');
 
-  const staffList = await getStaffList();
+  const [staffList, settings] = await Promise.all([getStaffList(), getSystemSettings()]);
   const steps = stepsFor(existing);
-  const decorated = await decorate(existing, staffList);
+  const decorated = decorate(existing, staffList, settings);
   const admin = await isAdminEmail(viewerEmail);
   const me = staffList.find((s) => s['이메일(아이디)'] === viewerEmail);
 
@@ -247,10 +247,10 @@ export async function actOnCertificate(id: string, action: '승인' | '반려', 
   if (existing['구분'] === '상장' && applied.nextStatus === '승인') {
     await issueCertificate(id);
     const reissued = await getCertificateById(id);
-    return decorate(reissued ?? { ...existing, ...patch }, staffList);
+    return decorate(reissued ?? { ...existing, ...patch }, staffList, settings);
   }
 
-  return decorate({ ...existing, ...patch }, staffList);
+  return decorate({ ...existing, ...patch }, staffList, settings);
 }
 
 // 신청자는 인적사항(성명/생년월일/주소)까지만 적고, 소속·직위·기간·담당업무 등 재직사항은
@@ -406,7 +406,7 @@ export async function issueCertificate(id: string): Promise<IssueCertificateResu
 
   await appendCertificateToLedger({ ...issued, 문서URL: documentUrl }, '발급');
 
-  const staffList = await getStaffList();
-  const record = await decorate({ ...issued, 문서URL: documentUrl }, staffList);
+  const [staffList, settings] = await Promise.all([getStaffList(), getSystemSettings()]);
+  const record = decorate({ ...issued, 문서URL: documentUrl }, staffList, settings);
   return { record, documentUrl, emailSent, warnings };
 }
