@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
-import { canEditLaborCouncilMinutes, getAgendaRounds, getMinutes, getNextRound } from '@/lib/mutate/laborCouncil';
+import { canEditLaborCouncilMinutes, getMeetings, getMinutes, getNextRound } from '@/lib/mutate/laborCouncil';
 import MinutesEditor from '@/components/laborCouncil/MinutesEditor';
 import LaborCouncilTabs from '@/components/laborCouncil/LaborCouncilTabs';
 import SubmitButton from '@/components/SubmitButton';
@@ -18,8 +18,9 @@ export default async function LaborCouncilMinutesPage({
 }) {
   if (!(await hasPageAccess('labor-council'))) return <PageAccessDenied />;
 
-  const [rounds, canEdit] = await Promise.all([getAgendaRounds(), canEditLaborCouncilMinutes()]);
+  const [meetings, canEdit] = await Promise.all([getMeetings(), canEditLaborCouncilMinutes()]);
   const { round: roundParam } = await searchParams;
+  const rounds = meetings.map((m) => m.회차);
   const 회차 = roundParam || rounds[0] || (await getNextRound());
   const minutes = await getMinutes(회차);
 

@@ -515,10 +515,16 @@ export const LABOR_COUNCIL_MEMBER_TABLE: KeyedTableConfig = {
   primaryKey: '이메일',
 };
 
-// 안건취합 — 전 직원이 회차별로 고충/제안 항목을 자유롭게 등록한다(한글 서식의 "업무고충처리 관련"
+// 안건취합 — 전 직원이 상시로 고충/제안 항목을 자유롭게 등록한다(한글 서식의 "업무고충처리 관련"
 // +"사유 및 구체적 제안내용" 두 칸 그대로). 실제 논의결과는 회의록 쪽 협의의결JSON에 독립적으로
 // 기록한다(안건 등록 시점 문구와 회의록 정리 시점 문구가 달라질 수 있어서).
-export const LABOR_COUNCIL_AGENDA_HEADERS = ['id', '회차', '이메일', '성명', '항목명', '제안내용', '등록일시'];
+// '회차'는 구버전(회차별 취합 기간)에서 쓰던 컬럼으로 더는 안 씀 — 새로 등록되는 안건은 항상
+// 빈 값(컬럼 위치는 기존 관례상 유지, 뒤에 새 컬럼만 추가). 상정된 회차는 '상정회차'에 담는다.
+// 공개여부: 제안자가 실명 공개를 선택해도 전체 조회 화면에는 항상 익명으로 표시하고, 노사위원만
+// 실제 이름을 볼 수 있게 한다(안건현황이 전 직원에게 공개되는 화면이라 익명 보호가 기본).
+export const LABOR_COUNCIL_AGENDA_HEADERS = [
+  'id', '회차', '이메일', '성명', '항목명', '제안내용', '등록일시', '공개여부', '상태', '상정회차',
+];
 
 export const LABOR_COUNCIL_AGENDA_TABLE: KeyedTableConfig = {
   spreadsheetId: LABOR_COUNCIL_SHEET_ID,
@@ -542,9 +548,13 @@ export const LABOR_COUNCIL_MINUTES_TABLE: KeyedTableConfig = {
   primaryKey: '회차',
 };
 
-// 안건취합 기간(위원이 지정) + 잔디 알림 발송 시각 — 회의록과 분리해서 회의록을 아직 안 써도
-// 기간만 먼저 설정할 수 있게 한다.
-export const LABOR_COUNCIL_ROUND_INFO_HEADERS = ['회차', '안건취합시작일', '안건취합마감일', '알림발송일시'];
+// 회의 등록 정보(회차/일시/장소/상태) — 회의록과 분리해서 회의록을 아직 안 써도 일정만 먼저
+// 등록할 수 있게 한다. '안건취합시작일'/'안건취합마감일'/'알림발송일시'는 구버전(회차별 취합
+// 기간)에서 쓰던 컬럼으로 더는 안 씀(안건취합이 상시로 바뀜) — 기존 관례상 컬럼은 유지하고
+// 새 컬럼만 뒤에 추가.
+export const LABOR_COUNCIL_ROUND_INFO_HEADERS = [
+  '회차', '안건취합시작일', '안건취합마감일', '알림발송일시', '회의일시', '회의장소', '상태',
+];
 
 export const LABOR_COUNCIL_ROUND_INFO_TABLE: KeyedTableConfig = {
   spreadsheetId: LABOR_COUNCIL_SHEET_ID,

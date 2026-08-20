@@ -7,7 +7,7 @@ import { btn, btnSecondary, card, h2, input, label } from '@/lib/ui';
 import type { AttendeeRow, LaborCouncilMinutes, ResolutionRow } from '@/lib/mutate/laborCouncil';
 
 function emptyResolution(): ResolutionRow {
-  return { 안건제목: '', 근로자의견: '', 사용자의견: '', 의결내용: '' };
+  return { 안건제목: '', 근로자의견: '', 사용자의견: '', 의결내용: '', 담당자: '', 추진기한: '' };
 }
 
 // datetime-local 인풋값("2026-06-29T15:00")을 화면 표기용으로 바꾼다. lib/mutate/staffMeeting.ts의
@@ -86,8 +86,18 @@ export default function MinutesEditor({
                 </div>
               </div>
               <div className="mt-2 text-sm">
-                <div className="text-xs text-zinc-400 mb-1">의결내용</div>
+                <div className="text-xs text-zinc-400 mb-1">의결내용(결정사항)</div>
                 <div className="whitespace-pre-wrap text-zinc-800 dark:text-zinc-100">{r.의결내용 || '-'}</div>
+              </div>
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div>
+                  <div className="text-xs text-zinc-400 mb-1">담당자</div>
+                  <div className="text-zinc-800 dark:text-zinc-100">{r.담당자 || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-zinc-400 mb-1">추진기한</div>
+                  <div className="text-zinc-800 dark:text-zinc-100">{r.추진기한 || '-'}</div>
+                </div>
               </div>
             </div>
           ))}
@@ -180,7 +190,7 @@ export default function MinutesEditor({
                   </label>
                 </div>
                 <label className={`${label} mt-3`}>
-                  의결내용
+                  의결내용(결정사항)
                   <textarea
                     value={r.의결내용}
                     onChange={(e) => updateResolution(idx, '의결내용', e.target.value)}
@@ -188,6 +198,25 @@ export default function MinutesEditor({
                     className={`${input} whitespace-pre-wrap`}
                   />
                 </label>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className={label}>
+                    담당자
+                    <input
+                      value={r.담당자}
+                      onChange={(e) => updateResolution(idx, '담당자', e.target.value)}
+                      className={input}
+                    />
+                  </label>
+                  <label className={label}>
+                    추진기한
+                    <input
+                      type="date"
+                      value={r.추진기한}
+                      onChange={(e) => updateResolution(idx, '추진기한', e.target.value)}
+                      className={input}
+                    />
+                  </label>
+                </div>
               </div>
             ))}
           </div>
@@ -251,6 +280,7 @@ export default function MinutesEditor({
                           <div style={{ marginTop: 4 }}>(가) 근로자 : {r.근로자의견 || '-'}</div>
                           <div style={{ marginTop: 4 }}>(나) 사용자 : {r.사용자의견 || '-'}</div>
                           <div style={{ marginTop: 4 }}>의결내용 : {r.의결내용 || '-'}</div>
+                          <div style={{ marginTop: 4 }}>담당자 : {r.담당자 || '-'} · 추진기한 : {r.추진기한 || '-'}</div>
                         </div>
                       ))
                     )}

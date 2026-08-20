@@ -66,7 +66,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: '/staff/history', label: '계정이력', description: '계정 신규/인계 처리 이력' },
       { href: '/staff/directory', label: '전직원 주소록', description: '팀·직급별 연락처 확인' },
       { href: '/staff/certificates', label: '증명서 발급', description: '재직·경력증명서 및 상장 발급 관리' },
-      { href: '/labor-council', label: '노사협의회', description: '안건취합 · 회의록 작성' },
+      { href: '/labor-council', label: '노사협의회', description: '안건 제안 · 안건 현황 · 회의 관리 · 회의록' },
     ],
   },
   {

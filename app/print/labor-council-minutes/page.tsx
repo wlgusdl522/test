@@ -2,7 +2,7 @@ import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import PrintButton from '@/components/print/PrintButton';
 import CopyPlanTableButton from '@/components/business/CopyPlanTableButton';
-import { getAgendaRounds, getMinutes, getNextRound } from '@/lib/mutate/laborCouncil';
+import { getMeetings, getMinutes, getNextRound } from '@/lib/mutate/laborCouncil';
 import { formatMeetingDateTime } from '@/lib/mutate/staffMeeting';
 import { btnSecondary, card } from '@/lib/ui';
 
@@ -25,9 +25,9 @@ export default async function LaborCouncilMinutesPrintPage({
 }) {
   if (!(await hasPageAccess('labor-council'))) return <PageAccessDenied />;
 
-  const rounds = await getAgendaRounds();
+  const meetings = await getMeetings();
   const { round: roundParam } = await searchParams;
-  const 회차 = roundParam || rounds[0] || (await getNextRound());
+  const 회차 = roundParam || meetings[0]?.회차 || (await getNextRound());
   const minutes = await getMinutes(회차);
 
   const 근로자위원 = minutes.참석자.filter((a) => a.구분 === '근로자위원' && a.참석);
@@ -76,6 +76,7 @@ export default async function LaborCouncilMinutesPrintPage({
                         <div style={{ marginTop: 4 }}>가. 의결내용 : {r.의결내용 || '-'}</div>
                         <div style={{ marginTop: 4 }}>(가) 근로자 : {r.근로자의견 || '-'}</div>
                         <div style={{ marginTop: 4 }}>(나) 사용자 : {r.사용자의견 || '-'}</div>
+                        <div style={{ marginTop: 4 }}>담당자 : {r.담당자 || '-'} · 추진기한 : {r.추진기한 || '-'}</div>
                       </div>
                     ))}
               </td>

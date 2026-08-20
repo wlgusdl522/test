@@ -10,24 +10,47 @@ import { isAdminEmail, requireCanManagePermissions, requireViewerEmail } from '@
 import { getSystemSettings } from '@/lib/mutate/settings';
 import { jandiPostRich } from '@/lib/notify/jandi';
 
-// 노사협의회 — 안건취합(전 직원 제출) → 회의록(위원만 작성, 안건별 근로자/사용자 의견+의결내용을
-// 병기) 흐름을 그대로 옮긴 것. 참고자료(45차 안건취합.hwp, 44차 회의록.hwp) 서식 기준.
+// 노사협의회 — 안건은 상시로 접수받고(전 직원 제출, 전 직원 조회 가능), 위원이 검토해서 특정
+// 회의에 상정하고, 회의록(위원만 작성)에서 안건별 근로자/사용자 의견+결정사항을 기록하는 흐름.
+// 참고자료(45차 안건취합.hwp, 44차 회의록.hwp) 서식 기준으로 시작했으나, 이후 상시접수+상태
+// 추적 구조로 재구성함.
 
 export type LaborCouncilMemberType = '근로자위원' | '사용자위원';
 
 export type LaborCouncilMember = { 이메일: string; 성명: string; 구분: LaborCouncilMemberType; 정렬순서: number };
 
+export type AgendaStatus = '접수' | '검토중' | '상정예정' | '협의완료' | '결과공유';
+export const AGENDA_STATUSES: AgendaStatus[] = ['접수', '검토중', '상정예정', '협의완료', '결과공유'];
+
+export type AgendaVisibility = '실명' | '익명';
+
 export type LaborCouncilAgendaItem = {
   id: string;
-  회차: string;
   이메일: string;
   성명: string;
   항목명: string;
   제안내용: string;
   등록일시: string;
+  공개여부: AgendaVisibility;
+  상태: AgendaStatus;
+  상정회차: string;
 };
 
-export type ResolutionRow = { 안건제목: string; 근로자의견: string; 사용자의견: string; 의결내용: string };
+// 전체 조회 화면(전 직원 대상)에서는 공개여부와 무관하게 항상 익명으로 보여주고, 노사위원만
+// 실제 제안자를 볼 수 있게 한다 — 안건현황이 전 직원 공개 화면이라 익명 보호를 기본으로 둠.
+export function displayedProposerName(item: LaborCouncilAgendaItem, viewerIsCouncil: boolean): string {
+  if (!viewerIsCouncil) return '익명';
+  return item.공개여부 === '실명' ? item.성명 : '익명';
+}
+
+export type ResolutionRow = {
+  안건제목: string;
+  근로자의견: string;
+  사용자의견: string;
+  의결내용: string;
+  담당자: string;
+  추진기한: string;
+};
 export type AttendeeRow = { 이메일: string; 성명: string; 구분: string; 참석: boolean };
 
 export type LaborCouncilMinutes = {
@@ -40,6 +63,15 @@ export type LaborCouncilMinutes = {
   참석자: AttendeeRow[];
   등록일시: string;
   최종수정이메일: string;
+};
+
+export type MeetingStatus = '예정' | '완료';
+
+export type LaborCouncilMeeting = {
+  회차: string;
+  회의일시: string;
+  회의장소: string;
+  상태: MeetingStatus;
 };
 
 function num(v: string | undefined): number {
@@ -92,7 +124,7 @@ export async function isLaborCouncilMember(email: string): Promise<boolean> {
 }
 
 // 관리자는 항상 가능. 그 외에는 노사협의회위원 명단에 등록된 사람(근로자위원·사용자위원 구분 없이)만
-// 회의록을 작성·수정할 수 있다 — "정해진 위원들만" 편집, 나머지 직원은 조회만.
+// 안건 상태변경·회의 등록·회의록 작성을 할 수 있다 — "정해진 위원들만" 편집, 나머지 직원은 조회만.
 export async function canEditLaborCouncilMinutes(): Promise<boolean> {
   const email = await requireViewerEmail();
   if (await isAdminEmail(email)) return true;
@@ -101,7 +133,7 @@ export async function canEditLaborCouncilMinutes(): Promise<boolean> {
 
 export async function requireCanEditLaborCouncilMinutes(): Promise<void> {
   if (!(await canEditLaborCouncilMinutes())) {
-    throw new Error('회의록 작성/수정은 노사협의회 위원만 할 수 있습니다.');
+    throw new Error('이 작업은 노사협의회 위원만 할 수 있습니다.');
   }
 }
 
@@ -110,59 +142,58 @@ function parseRoundNumber(회차: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-export async function getAgendaRounds(): Promise<string[]> {
-  const [agenda, minutes] = await Promise.all([
-    getKeyedList(LABOR_COUNCIL_AGENDA_TABLE),
-    getKeyedList(LABOR_COUNCIL_MINUTES_TABLE),
-  ]);
-  const rounds = new Set<string>();
-  agenda.forEach((r) => r.회차 && rounds.add(r.회차));
-  minutes.forEach((r) => r.회차 && rounds.add(r.회차));
-  return [...rounds].sort((a, b) => parseRoundNumber(b) - parseRoundNumber(a));
+// ── 안건(상시 접수) ──────────────────────────────────────────────
+function toAgendaItem(r: Record<string, string>): LaborCouncilAgendaItem {
+  return {
+    id: r.id,
+    이메일: r.이메일,
+    성명: r.성명,
+    항목명: r.항목명,
+    제안내용: r.제안내용,
+    등록일시: r.등록일시,
+    공개여부: (r.공개여부 === '익명' ? '익명' : '실명') as AgendaVisibility,
+    상태: (AGENDA_STATUSES.includes(r.상태 as AgendaStatus) ? r.상태 : '접수') as AgendaStatus,
+    상정회차: r.상정회차 ?? '',
+  };
 }
 
-export async function getNextRound(): Promise<string> {
-  const rounds = await getAgendaRounds();
-  const max = Math.max(0, ...rounds.map(parseRoundNumber));
-  return String(max + 1);
-}
-
-export async function getAgendaItems(회차: string): Promise<LaborCouncilAgendaItem[]> {
+export async function getAllAgendaItems(): Promise<LaborCouncilAgendaItem[]> {
   const rows = await getKeyedList(LABOR_COUNCIL_AGENDA_TABLE);
-  return rows
-    .filter((r) => r.회차 === 회차)
-    .map((r) => ({
-      id: r.id,
-      회차: r.회차,
-      이메일: r.이메일,
-      성명: r.성명,
-      항목명: r.항목명,
-      제안내용: r.제안내용,
-      등록일시: r.등록일시,
-    }))
-    .sort((a, b) => a.등록일시.localeCompare(b.등록일시));
+  return rows.map(toAgendaItem).sort((a, b) => b.등록일시.localeCompare(a.등록일시));
+}
+
+export async function getMyAgendaItems(email: string): Promise<LaborCouncilAgendaItem[]> {
+  const all = await getAllAgendaItems();
+  return all.filter((a) => a.이메일.toLowerCase() === email.toLowerCase());
+}
+
+export async function getAgendaItemsForRound(회차: string): Promise<LaborCouncilAgendaItem[]> {
+  const all = await getAllAgendaItems();
+  return all.filter((a) => a.상정회차 === 회차).sort((a, b) => a.등록일시.localeCompare(b.등록일시));
 }
 
 export async function addAgendaItem(
-  회차: string,
   항목명: string,
   제안내용: string,
+  공개여부: AgendaVisibility,
   email: string,
   name: string
 ): Promise<void> {
-  const trimmedRound = 회차.trim();
   const trimmedItem = 항목명.trim();
   const trimmedContent = 제안내용.trim();
-  if (!trimmedRound) throw new Error('회차를 입력해주세요.');
-  if (!trimmedItem && !trimmedContent) throw new Error('항목명 또는 제안내용을 입력해주세요.');
+  if (!trimmedItem) throw new Error('제목을 입력해주세요.');
+  if (!trimmedContent) throw new Error('내용을 입력해주세요.');
   await addKeyedRecord(LABOR_COUNCIL_AGENDA_TABLE, {
     id: randomUUID(),
-    회차: trimmedRound,
+    회차: '',
     이메일: email,
     성명: name,
     항목명: trimmedItem,
     제안내용: trimmedContent,
     등록일시: nowTimestamp(),
+    공개여부,
+    상태: '접수',
+    상정회차: '',
   });
 }
 
@@ -170,6 +201,19 @@ export async function addAgendaItem(
 export async function deleteAgendaItem(id: string): Promise<void> {
   await requireCanEditLaborCouncilMinutes();
   await deleteKeyedRecord(LABOR_COUNCIL_AGENDA_TABLE, { id });
+}
+
+// 상태변경·상정 회차 지정은 위원만 — 안건현황 화면에서 바로 쓰는 관리 액션.
+export async function updateAgendaStatus(id: string, 상태: AgendaStatus, 상정회차: string): Promise<void> {
+  await requireCanEditLaborCouncilMinutes();
+  const rows = await getKeyedList(LABOR_COUNCIL_AGENDA_TABLE);
+  const found = rows.find((r) => r.id === id);
+  if (!found) throw new Error('안건을 찾을 수 없습니다.');
+  await upsertKeyedRecord(
+    LABOR_COUNCIL_AGENDA_TABLE,
+    { id },
+    { ...found, 상태, 상정회차: 상정회차.trim() }
+  );
 }
 
 function parseJsonArray<T>(raw: string | undefined): T[] {
@@ -182,7 +226,7 @@ function parseJsonArray<T>(raw: string | undefined): T[] {
   }
 }
 
-// 저장된 회의록이 없으면, 이번 회차 안건취합 항목을 협의의결 초안(근로자의견 자리에 제안내용을
+// 저장된 회의록이 없으면, 이번 회차에 상정된 안건을 협의의결 초안(근로자의견 자리에 제안내용을
 // 임시로 채움)으로, 현재 위원 명단을 참석자 초안(전원 참석 처리)으로 미리 채운다 — 위원이 매번
 // 빈 표부터 다 채우지 않아도 되게.
 export async function getMinutes(회차: string): Promise<LaborCouncilMinutes> {
@@ -202,96 +246,20 @@ export async function getMinutes(회차: string): Promise<LaborCouncilMinutes> {
     };
   }
 
-  const [agendaItems, members] = await Promise.all([getAgendaItems(회차), getLaborCouncilMembers()]);
+  const [agendaItems, members] = await Promise.all([getAgendaItemsForRound(회차), getLaborCouncilMembers()]);
   return {
     회차,
     회의일시: '',
     회의장소: '',
-    협의의결: agendaItems.map((a) => ({ 안건제목: a.항목명, 근로자의견: a.제안내용, 사용자의견: '', 의결내용: '' })),
+    협의의결: agendaItems.map((a) => ({
+      안건제목: a.항목명, 근로자의견: a.제안내용, 사용자의견: '', 의결내용: '', 담당자: '', 추진기한: '',
+    })),
     보고사항: '',
     의결된사항: '',
     참석자: members.map((m) => ({ 이메일: m.이메일, 성명: m.성명, 구분: m.구분, 참석: true })),
     등록일시: '',
     최종수정이메일: '',
   };
-}
-
-export type LaborCouncilRoundInfo = {
-  회차: string;
-  안건취합시작일: string;
-  안건취합마감일: string;
-  알림발송일시: string;
-};
-
-export async function getRoundInfo(회차: string): Promise<LaborCouncilRoundInfo> {
-  const rows = await getKeyedList(LABOR_COUNCIL_ROUND_INFO_TABLE);
-  const found = rows.find((r) => r.회차 === 회차);
-  return {
-    회차,
-    안건취합시작일: found?.안건취합시작일 ?? '',
-    안건취합마감일: found?.안건취합마감일 ?? '',
-    알림발송일시: found?.알림발송일시 ?? '',
-  };
-}
-
-// 안건취합 기간 지정은 위원만 — 아무나 마감일을 바꾸면 회의 준비 일정이 흔들리므로.
-export async function setRoundInfo(회차: string, 안건취합시작일: string, 안건취합마감일: string): Promise<void> {
-  await requireCanEditLaborCouncilMinutes();
-  const existing = await getRoundInfo(회차);
-  await upsertKeyedRecord(
-    LABOR_COUNCIL_ROUND_INFO_TABLE,
-    { 회차 },
-    {
-      회차,
-      안건취합시작일: 안건취합시작일.trim(),
-      안건취합마감일: 안건취합마감일.trim(),
-      알림발송일시: existing.알림발송일시,
-    }
-  );
-}
-
-// 오늘(YYYY-MM-DD, KST 기준은 호출부에서 계산해 넘김)이 안건취합 기간 안에 있는지 — 기간을 아예
-// 안 정했으면(둘 다 빈값) 제한 없음으로 취급해서 위원이 굳이 기간을 지정하지 않아도 예전처럼
-// 계속 등록받을 수 있게 한다.
-export function isWithinAgendaPeriod(info: LaborCouncilRoundInfo, todayYmd: string): boolean {
-  if (!info.안건취합시작일 && !info.안건취합마감일) return true;
-  if (info.안건취합시작일 && todayYmd < info.안건취합시작일) return false;
-  if (info.안건취합마감일 && todayYmd > info.안건취합마감일) return false;
-  return true;
-}
-
-export function buildAgendaNotificationTitle(회차: string): string {
-  return `제 ${회차}차 노사협의회 안건취합 안내`;
-}
-
-export function buildAgendaNotificationContent(info: LaborCouncilRoundInfo): string {
-  const lines = ['노사협의회에 상정할 업무고충·안건을 취합합니다.', ''];
-  if (info.안건취합시작일 || info.안건취합마감일) {
-    lines.push(` - 취합기간 : ${info.안건취합시작일 || '제한없음'} ~ ${info.안건취합마감일 || '제한없음'}`);
-  }
-  lines.push('', '포털 > 인사관리 > 노사협의회에서 등록해주세요.');
-  return lines.join('\n');
-}
-
-// 관리자는 항상 가능. 그 외에는 위원만 — 알림 발송도 위원이 기간을 설정하는 것과 같은 권한으로 묶는다.
-export async function canSendAgendaNotification(): Promise<boolean> {
-  return canEditLaborCouncilMinutes();
-}
-
-export async function sendAgendaNotification(회차: string, title: string, content: string): Promise<void> {
-  await requireCanEditLaborCouncilMinutes();
-  const [info, settings] = await Promise.all([getRoundInfo(회차), getSystemSettings()]);
-  await jandiPostRich(settings.laborCouncilJandiWebhook, title, content);
-  await upsertKeyedRecord(
-    LABOR_COUNCIL_ROUND_INFO_TABLE,
-    { 회차 },
-    {
-      회차,
-      안건취합시작일: info.안건취합시작일,
-      안건취합마감일: info.안건취합마감일,
-      알림발송일시: nowTimestamp(),
-    }
-  );
 }
 
 export async function saveMinutes(
@@ -324,4 +292,87 @@ export async function saveMinutes(
       최종수정이메일: email,
     }
   );
+}
+
+// ── 회의(예정/지난) ──────────────────────────────────────────────
+export async function getMeetings(): Promise<LaborCouncilMeeting[]> {
+  const rows = await getKeyedList(LABOR_COUNCIL_ROUND_INFO_TABLE);
+  return rows
+    .filter((r) => r.회의일시 || r.회의장소)
+    .map((r) => ({
+      회차: r.회차,
+      회의일시: r.회의일시 ?? '',
+      회의장소: r.회의장소 ?? '',
+      상태: (r.상태 === '완료' ? '완료' : '예정') as MeetingStatus,
+    }))
+    .sort((a, b) => parseRoundNumber(b.회차) - parseRoundNumber(a.회차));
+}
+
+export async function getNextRound(): Promise<string> {
+  const [meetings, minutesRows, agendaRows] = await Promise.all([
+    getMeetings(),
+    getKeyedList(LABOR_COUNCIL_MINUTES_TABLE),
+    getKeyedList(LABOR_COUNCIL_AGENDA_TABLE),
+  ]);
+  const rounds = new Set<string>();
+  meetings.forEach((m) => m.회차 && rounds.add(m.회차));
+  minutesRows.forEach((r) => r.회차 && rounds.add(r.회차));
+  agendaRows.forEach((r) => r.상정회차 && rounds.add(r.상정회차));
+  const max = Math.max(0, ...[...rounds].map(parseRoundNumber));
+  return String(max + 1);
+}
+
+// 회차는 위원이 직접 입력할 수 있다(추천값은 자동 채움) — 회의를 건너뛰거나 정정해야 할 때를
+// 대비해 강제 자동증가로 막아두지 않는다.
+export async function addMeeting(회차: string, 회의일시: string, 회의장소: string): Promise<void> {
+  await requireCanEditLaborCouncilMinutes();
+  const trimmedRound = 회차.trim();
+  if (!trimmedRound) throw new Error('회차를 입력해주세요.');
+  const existing = await getKeyedList(LABOR_COUNCIL_ROUND_INFO_TABLE);
+  const found = existing.find((r) => r.회차 === trimmedRound);
+  await upsertKeyedRecord(
+    LABOR_COUNCIL_ROUND_INFO_TABLE,
+    { 회차: trimmedRound },
+    {
+      회차: trimmedRound,
+      안건취합시작일: found?.안건취합시작일 ?? '',
+      안건취합마감일: found?.안건취합마감일 ?? '',
+      알림발송일시: found?.알림발송일시 ?? '',
+      회의일시: 회의일시.trim(),
+      회의장소: 회의장소.trim(),
+      상태: found?.상태 === '완료' ? '완료' : '예정',
+    }
+  );
+}
+
+export async function setMeetingStatus(회차: string, 상태: MeetingStatus): Promise<void> {
+  await requireCanEditLaborCouncilMinutes();
+  const existing = await getKeyedList(LABOR_COUNCIL_ROUND_INFO_TABLE);
+  const found = existing.find((r) => r.회차 === 회차);
+  if (!found) throw new Error('회의를 찾을 수 없습니다.');
+  await upsertKeyedRecord(LABOR_COUNCIL_ROUND_INFO_TABLE, { 회차 }, { ...found, 상태 });
+}
+
+// ── 안건 상시접수 안내 알림 ──────────────────────────────────────
+export function buildAgendaCallNotificationTitle(): string {
+  return '노사협의회 안건 상시 접수 안내';
+}
+
+export function buildAgendaCallNotificationContent(): string {
+  return [
+    '노사협의회에 상정할 업무고충·안건을 상시로 접수하고 있습니다.',
+    '',
+    '포털 > 인사관리 > 노사협의회 > 안건 제안에서 언제든 등록해주세요.',
+  ].join('\n');
+}
+
+// 관리자는 항상 가능. 그 외에는 위원만.
+export async function canSendAgendaNotification(): Promise<boolean> {
+  return canEditLaborCouncilMinutes();
+}
+
+export async function sendAgendaNotification(title: string, content: string): Promise<void> {
+  await requireCanEditLaborCouncilMinutes();
+  const settings = await getSystemSettings();
+  await jandiPostRich(settings.laborCouncilJandiWebhook, title, content);
 }
