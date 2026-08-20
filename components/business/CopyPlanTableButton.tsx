@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { insertTableSeparators } from '@/lib/cleanTableHtml';
+import { cleanHtmlFromNodes, insertTableSeparators } from '@/lib/cleanTableHtml';
 
 // 화면에 실제로 렌더링된 표(outerHTML)를 그대로 클립보드에 text/html로 담아 붙여넣기 시
 // 표 구조와 인라인 스타일(테두리·배경 등)이 그대로 유지되게 한다 — 별도로 만든 HTML 문자열을
@@ -28,12 +28,16 @@ function stripFlexLayout(root: HTMLElement): HTMLElement {
   return clone;
 }
 
-function copyAsHtml(el: HTMLElement) {
-  const cleaned = stripFlexLayout(el);
+// clean 모드: 버튼이 컨테이너 전체(el.childNodes)를 대상으로 cleanHtmlFromNodes를 직접 호출한다 —
+// 사용자가 드래그로 선택하지 않으므로 브라우저의 표-선택 경계 처리(여러 셀에 걸친 드래그가 셀
+// 경계를 놓치는 문제)에 전혀 영향받지 않는다. Tailwind 클래스로만 테두리/배경을 준 표(인라인
+// style이 없는 표)는 raw 모드로는 서식이 하나도 안 남으므로 이런 표는 clean 모드를 써야 한다.
+function copyAsHtml(el: HTMLElement, mode: 'raw' | 'clean') {
+  const html = mode === 'clean' ? cleanHtmlFromNodes(el.childNodes) : stripFlexLayout(el).outerHTML;
   if (typeof ClipboardItem !== 'undefined') {
     return navigator.clipboard.write([
       new ClipboardItem({
-        'text/html': new Blob([cleaned.outerHTML], { type: 'text/html' }),
+        'text/html': new Blob([html], { type: 'text/html' }),
         'text/plain': new Blob([el.textContent ?? ''], { type: 'text/plain' }),
       }),
     ]);
@@ -41,7 +45,15 @@ function copyAsHtml(el: HTMLElement) {
   return navigator.clipboard.writeText(el.textContent ?? '');
 }
 
-export default function CopyPlanTableButton({ targetId, className }: { targetId: string; className?: string }) {
+export default function CopyPlanTableButton({
+  targetId,
+  className,
+  mode = 'raw',
+}: {
+  targetId: string;
+  className?: string;
+  mode?: 'raw' | 'clean';
+}) {
   const [status, setStatus] = useState<'idle' | 'ok' | 'err'>('idle');
 
   async function onClick() {
@@ -52,7 +64,7 @@ export default function CopyPlanTableButton({ targetId, className }: { targetId:
       return;
     }
     try {
-      await copyAsHtml(el);
+      await copyAsHtml(el, mode);
       setStatus('ok');
     } catch {
       setStatus('err');

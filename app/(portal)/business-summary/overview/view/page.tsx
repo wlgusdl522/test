@@ -5,6 +5,7 @@ import AccountingSummaryTable from '@/components/business/AccountingSummaryTable
 import FacilityStatTable from '@/components/business/FacilityStatTable';
 import DonationSummaryTable from '@/components/business/DonationSummaryTable';
 import CleanTableCopy from '@/components/business/full/CleanTableCopy';
+import CopyPlanTableButton from '@/components/business/CopyPlanTableButton';
 import {
   FACILITIES, FACILITY_LABEL, getModuleValues, priorCumulative, valueFor,
   OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID,
@@ -122,7 +123,12 @@ export default async function BusinessSummaryOverviewViewPage({
           <button type="submit" className={btnSecondary}>조회</button>
         </form>
         <Link href={`/business-summary/overview?ym=${ym}`} className={btnOutline}>수정하기</Link>
+        <CopyPlanTableButton targetId="overview-report-body" mode="clean" className={btnOutline} />
       </div>
+      <p className="mb-3 text-xs text-zinc-400">
+        표를 한글에 붙여넣을 땐 드래그로 직접 선택하지 말고 위 &quot;원본 서식 그대로 복사&quot; 버튼을
+        눌러주세요 — 표 여러 개를 가로질러 드래그하면 브라우저가 셀 경계를 놓쳐 붙여넣기가 깨질 수 있습니다.
+      </p>
 
       <CleanTableCopy containerId="overview-report-body" />
       <div id="overview-report-body">

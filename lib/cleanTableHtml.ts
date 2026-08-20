@@ -5,14 +5,21 @@
 // 별도 표 여러 개를 한 번에 복사해도 한글에서 각각 독립된 표로 들어가게 한다.
 const STRUCTURAL_TAGS = new Set(['table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'colgroup', 'col']);
 
+// getComputedStyle을 쓰는 이유: 이 함수가 복사하는 표들 중 일부는 인라인 style이 아니라
+// Tailwind 클래스(className)로 테두리·배경을 준다 — el.style만 읽으면 그런 표는 서식이 전부
+// 빈 값으로 나온다. computed style은 클래스든 인라인이든 최종 렌더링 결과를 그대로 읽어온다.
 function safeStyleAttr(el: Element): string {
-  const style = (el as HTMLElement).style;
-  if (!style) return '';
+  if (typeof window === 'undefined' || el.nodeType !== Node.ELEMENT_NODE) return '';
+  const style = window.getComputedStyle(el);
   const parts: string[] = [];
-  if (style.fontWeight === '700' || style.fontWeight === 'bold') parts.push('font-weight:bold');
+  if (Number(style.fontWeight) >= 700 || style.fontWeight === 'bold') parts.push('font-weight:bold');
   if (style.textAlign === 'right' || style.textAlign === 'center') parts.push(`text-align:${style.textAlign}`);
-  if (style.border) parts.push(`border:${style.border}`);
-  if (style.borderCollapse) parts.push(`border-collapse:${style.borderCollapse}`);
+  if (style.borderTopWidth !== '0px' && style.borderTopStyle !== 'none') {
+    parts.push(`border:${style.borderTopWidth} ${style.borderTopStyle} ${style.borderTopColor}`);
+  }
+  if (style.backgroundColor && style.backgroundColor !== 'rgba(0, 0, 0, 0)' && style.backgroundColor !== 'transparent') {
+    parts.push(`background:${style.backgroundColor}`);
+  }
   return parts.join(';');
 }
 
