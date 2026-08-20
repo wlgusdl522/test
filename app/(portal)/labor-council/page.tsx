@@ -7,6 +7,7 @@ import {
   getAgendaRounds,
   getNextRound,
 } from '@/lib/mutate/laborCouncil';
+import LaborCouncilTabs from '@/components/laborCouncil/LaborCouncilTabs';
 import SubmitButton from '@/components/SubmitButton';
 import {
   btn, btnDanger, btnOutline, card, h1, hint, input, inputBase, label as labelCls, pageFluid, table, td, th, tableWrap,
@@ -31,10 +32,8 @@ export default async function LaborCouncilPage({
 
   return (
     <main className={pageFluid}>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className={h1}>인사관리 &gt; 노사협의회 (안건취합)</h1>
-        <Link href={`/labor-council/minutes?round=${회차}`} className={btnOutline}>회의록 보기/작성</Link>
-      </div>
+      <h1 className={`${h1} mb-5`}>인사관리 &gt; 노사협의회</h1>
+      <LaborCouncilTabs 회차={회차} />
 
       <form method="get" className="mb-5 flex flex-wrap items-center gap-3">
         <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">회차</label>
