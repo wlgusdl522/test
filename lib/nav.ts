@@ -24,6 +24,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: '/staff/history', label: '계정이력', description: '계정 신규/인계 처리 이력' },
       { href: '/staff/directory', label: '전직원 주소록', description: '팀·직급별 연락처 확인' },
       { href: '/staff/certificates', label: '증명서 발급', description: '재직·경력증명서 및 상장 발급 관리' },
+      { href: '/labor-council', label: '노사협의회', description: '안건취합 · 회의록 작성' },
     ],
   },
   {
@@ -68,6 +69,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: '/settings/budget-items', label: '예산과목', description: '지출 예산 과목 관리' },
       { href: '/settings/transit-cards', label: '교통카드목록', description: '교통카드 등록·초기잔액 관리' },
       { href: '/settings/permissions', label: '권한설정', description: '직원별 권한 설정' },
+      { href: '/settings/labor-council-members', label: '노사협의회 위원', description: '근로자위원 · 사용자위원 명단 관리' },
       { href: '/settings/approval-rules', label: '결재라인 전결기준', description: '전결 기준 설정' },
       { href: '/settings/system', label: '시스템 설정값', description: '시스템 공통 설정값 관리' },
     ],

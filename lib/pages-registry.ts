@@ -9,6 +9,7 @@ export const CONFIGURABLE_PAGES = [
   { id: 'weekly-plan-groups', label: '주간업무 - 담당자그룹설정' },
   { id: 'document-index', label: '업무관리 - 색인목록' },
   { id: 'staff-meeting', label: '업무관리 - 전체회의' },
+  { id: 'labor-council', label: '인사관리 - 노사협의회' },
   { id: 'business-goal', label: '사업관리 - 세부사업계획' },
   { id: 'business-daily', label: '사업관리 - 총괄업무일지(업무입력)' },
   { id: 'business-monthly', label: '사업관리 - 총괄업무일지(월별현황)' },
