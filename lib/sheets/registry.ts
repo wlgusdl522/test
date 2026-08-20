@@ -2,6 +2,7 @@ import type { KeyedTableConfig } from './keyedTable';
 import {
   CARD_LEDGER_SHEET_ID,
   DOCUMENT_INDEX_SHEET_ID,
+  LABOR_COUNCIL_SHEET_ID,
   STAFF_MEETING_SHEET_ID,
   STAFF_SHEET_ID,
   VEHICLE_SHEET_ID,
@@ -508,7 +509,7 @@ export const STAFF_MEETING_TEAM_ORDER_TABLE: KeyedTableConfig = {
 export const LABOR_COUNCIL_MEMBER_HEADERS = ['이메일', '성명', '구분', '정렬순서'];
 
 export const LABOR_COUNCIL_MEMBER_TABLE: KeyedTableConfig = {
-  spreadsheetId: STAFF_SHEET_ID,
+  spreadsheetId: LABOR_COUNCIL_SHEET_ID,
   sheetName: '노사협의회위원',
   headers: LABOR_COUNCIL_MEMBER_HEADERS,
   primaryKey: '이메일',
@@ -520,7 +521,7 @@ export const LABOR_COUNCIL_MEMBER_TABLE: KeyedTableConfig = {
 export const LABOR_COUNCIL_AGENDA_HEADERS = ['id', '회차', '이메일', '성명', '항목명', '제안내용', '등록일시'];
 
 export const LABOR_COUNCIL_AGENDA_TABLE: KeyedTableConfig = {
-  spreadsheetId: STAFF_SHEET_ID,
+  spreadsheetId: LABOR_COUNCIL_SHEET_ID,
   sheetName: '노사협의회안건',
   headers: LABOR_COUNCIL_AGENDA_HEADERS,
   primaryKey: 'id',
@@ -535,7 +536,7 @@ export const LABOR_COUNCIL_MINUTES_HEADERS = [
 ];
 
 export const LABOR_COUNCIL_MINUTES_TABLE: KeyedTableConfig = {
-  spreadsheetId: STAFF_SHEET_ID,
+  spreadsheetId: LABOR_COUNCIL_SHEET_ID,
   sheetName: '노사협의회회의록',
   headers: LABOR_COUNCIL_MINUTES_HEADERS,
   primaryKey: '회차',

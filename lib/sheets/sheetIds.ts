@@ -8,6 +8,7 @@ export const CERTIFICATE_LEDGER_SHEET_ID = '1asT0KYMbL0Mw28YtQjrwFWW8ViD19TDY1bV
 export const DUTY_LEDGER_SHEET_ID = '1HqSw3KinUz3s7z9L7c9HOPDKlF3VMOAuYwEAJsxI_W0'; // "7. 당직근무대장" — 근무일지 작성(서명) 완료된 건만 append(감사/위변조 확인용, 앱이 다시 읽지는 않음)
 export const DOCUMENT_INDEX_SHEET_ID = '1-0v-z7UHGkWIv0uMSRz40hXm0jg5rxr6C4lnbp6Z5n0'; // "8. 색인목록"
 export const STAFF_MEETING_SHEET_ID = '1PnNETTJR_WnBWbZQVAjZmSG-ww1UKseQ05H-j-6BF4M'; // "전체회의자료"
+export const LABOR_COUNCIL_SHEET_ID = '1GI6iV82JJjE0E3pdoH4tg0GH8isvr2DKrcvH2wfKeag'; // "10. 노사협의회"
 
 export const TEAM_LIST_SHEET_NAME = '팀목록';
 export const POSITION_LIST_SHEET_NAME = '직급목록';
