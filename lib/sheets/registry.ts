@@ -541,3 +541,14 @@ export const LABOR_COUNCIL_MINUTES_TABLE: KeyedTableConfig = {
   headers: LABOR_COUNCIL_MINUTES_HEADERS,
   primaryKey: '회차',
 };
+
+// 안건취합 기간(위원이 지정) + 잔디 알림 발송 시각 — 회의록과 분리해서 회의록을 아직 안 써도
+// 기간만 먼저 설정할 수 있게 한다.
+export const LABOR_COUNCIL_ROUND_INFO_HEADERS = ['회차', '안건취합시작일', '안건취합마감일', '알림발송일시'];
+
+export const LABOR_COUNCIL_ROUND_INFO_TABLE: KeyedTableConfig = {
+  spreadsheetId: LABOR_COUNCIL_SHEET_ID,
+  sheetName: '노사협의회회차정보',
+  headers: LABOR_COUNCIL_ROUND_INFO_HEADERS,
+  primaryKey: '회차',
+};

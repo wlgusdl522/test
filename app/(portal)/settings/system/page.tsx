@@ -85,6 +85,10 @@ export default async function SystemSettingsPage() {
           <input name="staffMeetingJandiWebhook" defaultValue={settings.staffMeetingJandiWebhook} className={input} />
         </label>
         <label className={label}>
+          노사협의회 JANDI 웹훅 (안건취합 기간 알림)
+          <input name="laborCouncilJandiWebhook" defaultValue={settings.laborCouncilJandiWebhook} className={input} />
+        </label>
+        <label className={label}>
           전체회의 회의정보 편집 가능 팀 (비우면 제한 없음)
           <input name="staffMeetingInfoEditTeam" defaultValue={settings.staffMeetingInfoEditTeam} placeholder="예: 총무팀" className={input} />
         </label>

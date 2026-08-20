@@ -4,8 +4,11 @@ import {
   LABOR_COUNCIL_AGENDA_TABLE,
   LABOR_COUNCIL_MEMBER_TABLE,
   LABOR_COUNCIL_MINUTES_TABLE,
+  LABOR_COUNCIL_ROUND_INFO_TABLE,
 } from '@/lib/sheets/registry';
 import { isAdminEmail, requireCanManagePermissions, requireViewerEmail } from '@/lib/auth-helpers';
+import { getSystemSettings } from '@/lib/mutate/settings';
+import { jandiPostRich } from '@/lib/notify/jandi';
 
 // 노사협의회 — 안건취합(전 직원 제출) → 회의록(위원만 작성, 안건별 근로자/사용자 의견+의결내용을
 // 병기) 흐름을 그대로 옮긴 것. 참고자료(45차 안건취합.hwp, 44차 회의록.hwp) 서식 기준.
@@ -211,6 +214,84 @@ export async function getMinutes(회차: string): Promise<LaborCouncilMinutes> {
     등록일시: '',
     최종수정이메일: '',
   };
+}
+
+export type LaborCouncilRoundInfo = {
+  회차: string;
+  안건취합시작일: string;
+  안건취합마감일: string;
+  알림발송일시: string;
+};
+
+export async function getRoundInfo(회차: string): Promise<LaborCouncilRoundInfo> {
+  const rows = await getKeyedList(LABOR_COUNCIL_ROUND_INFO_TABLE);
+  const found = rows.find((r) => r.회차 === 회차);
+  return {
+    회차,
+    안건취합시작일: found?.안건취합시작일 ?? '',
+    안건취합마감일: found?.안건취합마감일 ?? '',
+    알림발송일시: found?.알림발송일시 ?? '',
+  };
+}
+
+// 안건취합 기간 지정은 위원만 — 아무나 마감일을 바꾸면 회의 준비 일정이 흔들리므로.
+export async function setRoundInfo(회차: string, 안건취합시작일: string, 안건취합마감일: string): Promise<void> {
+  await requireCanEditLaborCouncilMinutes();
+  const existing = await getRoundInfo(회차);
+  await upsertKeyedRecord(
+    LABOR_COUNCIL_ROUND_INFO_TABLE,
+    { 회차 },
+    {
+      회차,
+      안건취합시작일: 안건취합시작일.trim(),
+      안건취합마감일: 안건취합마감일.trim(),
+      알림발송일시: existing.알림발송일시,
+    }
+  );
+}
+
+// 오늘(YYYY-MM-DD, KST 기준은 호출부에서 계산해 넘김)이 안건취합 기간 안에 있는지 — 기간을 아예
+// 안 정했으면(둘 다 빈값) 제한 없음으로 취급해서 위원이 굳이 기간을 지정하지 않아도 예전처럼
+// 계속 등록받을 수 있게 한다.
+export function isWithinAgendaPeriod(info: LaborCouncilRoundInfo, todayYmd: string): boolean {
+  if (!info.안건취합시작일 && !info.안건취합마감일) return true;
+  if (info.안건취합시작일 && todayYmd < info.안건취합시작일) return false;
+  if (info.안건취합마감일 && todayYmd > info.안건취합마감일) return false;
+  return true;
+}
+
+export function buildAgendaNotificationTitle(회차: string): string {
+  return `제 ${회차}차 노사협의회 안건취합 안내`;
+}
+
+export function buildAgendaNotificationContent(info: LaborCouncilRoundInfo): string {
+  const lines = ['노사협의회에 상정할 업무고충·안건을 취합합니다.', ''];
+  if (info.안건취합시작일 || info.안건취합마감일) {
+    lines.push(` - 취합기간 : ${info.안건취합시작일 || '제한없음'} ~ ${info.안건취합마감일 || '제한없음'}`);
+  }
+  lines.push('', '포털 > 인사관리 > 노사협의회에서 등록해주세요.');
+  return lines.join('\n');
+}
+
+// 관리자는 항상 가능. 그 외에는 위원만 — 알림 발송도 위원이 기간을 설정하는 것과 같은 권한으로 묶는다.
+export async function canSendAgendaNotification(): Promise<boolean> {
+  return canEditLaborCouncilMinutes();
+}
+
+export async function sendAgendaNotification(회차: string, title: string, content: string): Promise<void> {
+  await requireCanEditLaborCouncilMinutes();
+  const [info, settings] = await Promise.all([getRoundInfo(회차), getSystemSettings()]);
+  await jandiPostRich(settings.laborCouncilJandiWebhook, title, content);
+  await upsertKeyedRecord(
+    LABOR_COUNCIL_ROUND_INFO_TABLE,
+    { 회차 },
+    {
+      회차,
+      안건취합시작일: info.안건취합시작일,
+      안건취합마감일: info.안건취합마감일,
+      알림발송일시: nowTimestamp(),
+    }
+  );
 }
 
 export async function saveMinutes(
