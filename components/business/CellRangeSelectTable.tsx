@@ -14,6 +14,10 @@ const HL_FG = '#fff';
 
 type Pos = { row: number; col: number };
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function cellAt(target: EventTarget | null, minCol: number): Pos | null {
   if (!(target instanceof Element)) return null;
   const cell = target.closest('td[data-row], th[data-row]') as HTMLElement | null;
@@ -130,12 +134,23 @@ export default function CellRangeSelectTable({
         byRow.get(row)!.push({ col, text: (el.textContent || '').trim() });
       });
       const rows = [...byRow.keys()].sort((a, b) => a - b);
-      const text = rows
-        .map((r) => byRow.get(r)!.sort((a, b) => a.col - b.col).map((c) => c.text).join('\t'))
-        .join('\n');
+      const sortedRows = rows.map((r) => byRow.get(r)!.sort((a, b) => a.col - b.col));
+      const text = sortedRows.map((cells) => cells.map((c) => c.text).join('\t')).join('\n');
       if (!text) return;
       e.preventDefault();
+      // 탭/줄바꿈 텍스트만 넘기면 한글이 진짜 표(칸 구분)로 인식하지 못하고 전부 한 칸에
+      // 그대로 붙여버린다 — 실제 <table><tr><td> 구조를 같이 넘겨야 한글이 표로 인식해서
+      // "원본 서식대로 붙여넣기" 선택지도 뜨고 칸도 제대로 나뉜다.
+      const html = `<table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse;">${sortedRows
+        .map(
+          (cells) =>
+            `<tr>${cells
+              .map((c) => `<td style="border:1px solid #000;padding:2px 6px;">${escapeHtml(c.text)}</td>`)
+              .join('')}</tr>`
+        )
+        .join('')}</table>`;
       e.clipboardData?.setData('text/plain', text);
+      e.clipboardData?.setData('text/html', html);
     }
 
     container.addEventListener('mousedown', onMouseDown);
