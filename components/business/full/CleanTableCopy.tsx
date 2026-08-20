@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { cleanHtmlFromNodes } from '@/lib/cleanTableHtml';
+import { cleanHtmlFromSelection } from '@/lib/cleanTableHtml';
 
 // 드래그로 표를 선택해 Ctrl+C로 복사하면 브라우저가 기본으로 화면의 실제 글자체·색상·크기까지
 // 그대로 클립보드에 담아서, 한글에 "원본 형식 유지"로 붙이면 문서 서식과 안 맞아 깨져 보인다.
@@ -15,8 +15,7 @@ export default function CleanTableCopy({ containerId }: { containerId: string })
       const range = sel.getRangeAt(0);
       if (!container.contains(range.commonAncestorContainer)) return;
 
-      const frag = range.cloneContents();
-      const html = cleanHtmlFromNodes(frag.childNodes);
+      const html = cleanHtmlFromSelection(range, container);
       if (!html) return;
 
       e.clipboardData?.setData('text/html', html);

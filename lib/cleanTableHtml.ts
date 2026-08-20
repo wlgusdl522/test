@@ -79,3 +79,70 @@ export function cleanHtmlFromNodes(nodes: ArrayLike<Node>): string {
   insertTableSeparators(wrapper);
   return wrapper.innerHTML;
 }
+
+// 드래그로 표 여러 셀에 걸쳐 선택했을 때 range.cloneContents()만 믿고 그대로 잘라내면, 드래그가
+// 셀 중간 지점에서 끝난 경우 브라우저가 그 지점 이후의 표 구조(뒤 이어지는 행/셀 경계)를 정확히
+// 복원해주지 못해 내용이 한 칸에 뭉쳐 버리는 경우가 있다. 그래서 텍스트 잘라내기 대신, 선택 범위가
+// "닿은" 행/셀을 표에서 직접 찾아(range.intersectsNode) 그 셀을 통째로(잘리지 않게) 복사한다 —
+// 드래그가 셀 중간에서 끝나도 그 셀 전체가, 건너뛴 셀은 빠진 채로 들어간다.
+function cloneCellWhole(cell: Element): Element {
+  const tag = cell.tagName.toLowerCase() === 'th' ? 'th' : 'td';
+  const clone = document.createElement(tag);
+  const colspan = cell.getAttribute('colspan');
+  const rowspan = cell.getAttribute('rowspan');
+  if (colspan) clone.setAttribute('colspan', colspan);
+  if (rowspan) clone.setAttribute('rowspan', rowspan);
+  const style = safeStyleAttr(cell);
+  if (style) clone.setAttribute('style', style);
+  Array.from(cell.childNodes).forEach((child) => {
+    const c = cleanCloneNode(child);
+    if (c) clone.appendChild(c);
+  });
+  return clone;
+}
+
+function buildTableFromRange(table: HTMLTableElement, range: Range): Element | null {
+  const outTable = document.createElement('table');
+  outTable.setAttribute('border', '1');
+  outTable.setAttribute('cellspacing', '0');
+  outTable.setAttribute('cellpadding', '4');
+  let rowCount = 0;
+  Array.from(table.rows).forEach((row) => {
+    if (!range.intersectsNode(row)) return;
+    const outRow = document.createElement('tr');
+    let cellCount = 0;
+    Array.from(row.cells).forEach((cell) => {
+      if (!range.intersectsNode(cell)) return;
+      outRow.appendChild(cloneCellWhole(cell));
+      cellCount += 1;
+    });
+    if (cellCount > 0) {
+      outTable.appendChild(outRow);
+      rowCount += 1;
+    }
+  });
+  return rowCount > 0 ? outTable : null;
+}
+
+export function cleanHtmlFromSelection(range: Range, container: Element): string {
+  const wrapper = document.createElement('div');
+  const tables = Array.from(container.querySelectorAll('table'));
+  const touched = tables.filter((t) => range.intersectsNode(t));
+
+  if (touched.length === 0) {
+    // 표가 아닌 일반 텍스트 선택은 기존 방식(잘라낸 그대로) 그대로 둔다.
+    const frag = range.cloneContents();
+    Array.from(frag.childNodes).forEach((n) => {
+      const c = cleanCloneNode(n);
+      if (c) wrapper.appendChild(c);
+    });
+  } else {
+    touched.forEach((table) => {
+      const built = buildTableFromRange(table, range);
+      if (built) wrapper.appendChild(built);
+    });
+  }
+
+  insertTableSeparators(wrapper);
+  return wrapper.innerHTML;
+}
