@@ -42,14 +42,14 @@ export default async function LaborCouncilPage({
           {rounds.map((r) => <option key={r} value={r}>{r}차</option>)}
         </select>
         <SubmitButton className={btnOutline} pendingLabel="조회 중...">조회</SubmitButton>
-        {회차 !== nextRound && (
+        {canEdit && 회차 !== nextRound && (
           <Link href={`/labor-council?round=${nextRound}`} className={btn}>+ {nextRound}차 새로 시작</Link>
         )}
       </form>
 
       <p className={hint}>
-        업무고충이나 안건이 있으면 누구나 아래에 등록할 수 있습니다. 위원은 회의 전 내용을 확인·정리한 뒤
-        &quot;회의록 보기/작성&quot;에서 협의사항으로 옮겨 논의 결과를 기록합니다.
+        업무고충이나 안건이 있으면 누구나 아래에 등록할 수 있습니다. 새 회차 시작은 노사협의회 위원만 할 수 있고,
+        위원은 회의 전 내용을 확인·정리한 뒤 &quot;회의록&quot; 탭에서 협의사항으로 옮겨 논의 결과를 기록합니다.
       </p>
 
       <div className={card}>
