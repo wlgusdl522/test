@@ -89,6 +89,12 @@ export const trHoverClean = 'transition-colors hover:bg-zinc-50 dark:hover:bg-zi
 export const listRow = 'cursor-pointer transition-colors hover:bg-brand-tint/60';
 export const listRowActive = 'bg-brand-tint hover:bg-brand-tint';
 
+// 기간/상태처럼 서로 배타적인 값 하나를 고르는 토글형 필터 — 링크 이동만으로 동작해서
+// 클라이언트 JS 없이도 서버 컴포넌트 목록 화면에서 즉시 반영된다.
+export const filterPill =
+  'text-xs px-3 py-1.5 rounded-full transition-colors text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800';
+export const filterPillActive = 'text-xs px-3 py-1.5 rounded-full bg-brand-tint text-brand-dark dark:text-brand font-semibold';
+
 export const detailPanelWrap =
   'w-full max-w-[380px] shrink-0 rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 flex flex-col max-h-[calc(100vh-14rem)]';
 export const detailHeader = 'flex items-start justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 p-5';

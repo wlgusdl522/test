@@ -47,7 +47,7 @@ function sumReportItemsAmount(items: ReportItem[]): number {
 
 // 검수자(카드사용대장 담당자) 본인 직급에 따라 1단계 결재자가 달라지고(사원→과장, 과장→부장, 부장→관장,
 // 관장은 결재 없음), 비품(등록대상) 건은 그 뒤에 물품출납원(비품등록번호 입력)·총무과장 승인이 이어 붙는다.
-function approvalSteps(record: Record<string, string>, staffList: Record<string, string>[]): string[] {
+export function buildApprovalSteps(record: Record<string, string>, staffList: Record<string, string>[]): string[] {
   const requester = staffList.find((s) => s['이메일(아이디)'] === record['검수자이메일']);
   const firstStep = resolveCardLedgerFirstApprovalStep(requester?.['직급/직책'] ?? '');
   const steps = firstStep ? [firstStep] : [];
@@ -76,7 +76,7 @@ type DecoratedReport = Record<string, string>;
 
 function decorate(record: Record<string, string>, staffList: Record<string, string>[], settings: SystemSettings): DecoratedReport {
   const staffNameByEmail = (email: string) => staffList.find((s) => s['이메일(아이디)'] === email)?.['성명'] ?? '';
-  const steps = approvalSteps(record, staffList);
+  const steps = buildApprovalSteps(record, staffList);
   const { 결재이력, ...decorated } = decorateApprovalInfo(
     record,
     steps,
@@ -161,7 +161,7 @@ export async function addItemCheckReport(payload: Record<string, string>): Promi
   }
 
   const [staffList, settings] = await Promise.all([getStaffList(), getSystemSettings()]);
-  const steps = approvalSteps(record, staffList);
+  const steps = buildApprovalSteps(record, staffList);
   // 결재라인이 아예 없는 경우(관장 본인 작성 + 비품 아님)는 결재 없이 바로 완료 처리한다.
   record['결재상태'] = steps.length > 0 ? '결재중' : '승인';
 
@@ -239,7 +239,7 @@ export async function actOnItemCheckReport(id: string, action: '승인' | '반�
   try {
     applied = applyApprovalAction({
       record: existing,
-      steps: approvalSteps(existing, staffList),
+      steps: buildApprovalSteps(existing, staffList),
       action,
       actorEmail: viewerEmail,
       actorName: me?.['성명'] ?? viewerEmail,

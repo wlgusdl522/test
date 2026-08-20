@@ -77,7 +77,7 @@ export async function updateCardLedgerRecord(
   const existing = (await getKeyedList(CARD_LEDGER_TABLE)).find((r) => r.id === id);
   if (!existing) throw new Error('수정할 내역을 찾을 수 없습니다.');
   if (existing['상태'] === CARD_LEDGER_STATUS.PRINTED) {
-    throw new Error('인쇄완료(잠금)된 내역은 수정할 수 없습니다. 회계에 반려를 요청해주세요.');
+    throw new Error('인쇄완료(잠금)된 내역은 수정할 수 없습니다. 회계 담당자에게 수정 활성화를 요청해주세요.');
   }
   const exempt = payload['검수불요여부'] === 'Y';
   const record: Record<string, string> = {};
@@ -97,7 +97,7 @@ export async function updateCardLedgerRecord(
 export async function deleteCardLedgerRecord(id: string): Promise<Record<string, string>[]> {
   const existing = (await getKeyedList(CARD_LEDGER_TABLE)).find((r) => r.id === id);
   if (existing?.['상태'] === CARD_LEDGER_STATUS.PRINTED) {
-    throw new Error('인쇄완료(잠금)된 내역은 삭제할 수 없습니다. 회계에 반려를 요청해주세요.');
+    throw new Error('인쇄완료(잠금)된 내역은 삭제할 수 없습니다. 회계 담당자에게 수정 활성화를 요청해주세요.');
   }
   await deleteRecord(CARD_LEDGER_TABLE, { id });
   await deleteRowsFromSupabase(SUPABASE_CONFIG, [{ id }]);
@@ -183,15 +183,15 @@ export async function markCardLedgerNotified(ids: string[]): Promise<void> {
   await upsertRowsToSupabase(SUPABASE_CONFIG, records);
 }
 
-// 회계 전용 — 인쇄(잠금)된 건을 반려하면 잠금이 풀리고 담당자가 다시 수정/재등록할 수 있게 된다.
-export async function rejectCardLedgerRecord(id: string, reason: string): Promise<Record<string, string>[]> {
-  if (!reason?.trim()) throw new Error('반려 사유를 입력해주세요.');
+// 회계 전용 — 인쇄(잠금)된 건의 잠금을 풀어 담당자가 다시 수정할 수 있게 한다. 사유 입력 없이
+// 바로 검수완료로 되돌리고, 담당자가 내용을 고치면 recomputeCardLedgerStatus가 다시 상태를 판정한다.
+export async function unlockCardLedgerRecord(id: string): Promise<Record<string, string>[]> {
   const existing = (await getKeyedList(CARD_LEDGER_TABLE)).find((r) => r.id === id);
   if (!existing) throw new Error('내역을 찾을 수 없습니다.');
   if (existing['상태'] !== CARD_LEDGER_STATUS.PRINTED) {
-    throw new Error('인쇄완료 상태인 건만 반려할 수 있습니다.');
+    throw new Error('인쇄완료 상태인 건만 수정 활성화할 수 있습니다.');
   }
-  const record = { ...existing, 상태: CARD_LEDGER_STATUS.REJECTED, 반려사유: reason.trim() };
+  const record = { ...existing, 상태: CARD_LEDGER_STATUS.DONE, 반려사유: '' };
   await updateRecord(CARD_LEDGER_TABLE, { id }, record);
   return afterCardLedgerWrite([record]);
 }

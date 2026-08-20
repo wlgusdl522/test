@@ -33,11 +33,11 @@ export default async function SystemSettingsPage() {
           <input type="number" name="itemCheckReportThreshold" defaultValue={settings.itemCheckReportThreshold} className={input} />
         </label>
         <label className={label}>
-          물품출납원 이메일 (비품등록번호 입력·확인)
+          물품출납원 이메일 (비품 등록건 비품등록번호 입력·승인)
           <input name="itemCheckAssetManagerEmail" defaultValue={settings.itemCheckAssetManagerEmail} className={input} />
         </label>
         <label className={label}>
-          총무과장 이메일 (비품 건 최종승인)
+          총무과장 이메일 (비품 등록건 최종승인)
           <input name="itemCheckGeneralAffairsManagerEmail" defaultValue={settings.itemCheckGeneralAffairsManagerEmail} className={input} />
         </label>
         <label className={label}>

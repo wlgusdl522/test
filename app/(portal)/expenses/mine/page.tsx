@@ -17,8 +17,10 @@ import CardLedgerSplitLayout from '@/components/expenses/CardLedgerSplitLayout';
 import CardTypeTabs from '@/components/expenses/CardTypeTabs';
 import ReportItemsFields from '@/components/expenses/ReportItemsFields';
 import CameraGalleryFileInput from '@/components/expenses/CameraGalleryFileInput';
-import { parseReportItems } from '@/lib/mutate/itemCheckReport';
-import { parseAmount } from '@/lib/format';
+import ApprovalChainSteps from '@/components/expenses/ApprovalChainSteps';
+import { buildApprovalSteps, parseReportItems } from '@/lib/mutate/itemCheckReport';
+import { getStaffList } from '@/lib/mutate/staff';
+import { parseAmount, resolveBusinessName } from '@/lib/format';
 import { addCardLedgerAction, deleteCardLedgerAction, updateCardLedgerAction } from '../actions';
 import { deleteItemCheckPhotoAction, saveItemCheckPhotoAction } from '../photos/actions';
 import { addItemCheckReportAction, deleteItemCheckReportAction, updateItemCheckReportAction } from '../reports/actions';
@@ -46,11 +48,6 @@ function dayBadge(days: number, warnDays: number, dangerDays: number) {
   return <span className={`${badgeBase} ${tone}`}>{days}일</span>;
 }
 
-function resolveBusinessName(budgetItemName: string, budgetItems: Record<string, string>[]): string {
-  const match = budgetItems.find((b) => b.예산과목명 === budgetItemName);
-  return match?.연계사업명 || budgetItemName || '';
-}
-
 export default async function CardLedgerMinePage({
   searchParams,
 }: {
@@ -62,13 +59,14 @@ export default async function CardLedgerMinePage({
 }) {
   const { status, focus, edit, ym, all, photoFor, photoEdit, reportFor, reportEdit } = await searchParams;
   const viewerEmail = await requireViewerEmail();
-  const [allLedger, photos, reports, budgetItems, settings, me] = await Promise.all([
+  const [allLedger, photos, reports, budgetItems, settings, me, staffList] = await Promise.all([
     getCardLedgerList(),
     getItemCheckPhotoList(),
     getItemCheckReportList(),
     getKeyedList(BUDGET_ITEM_TABLE),
     getSystemSettings(),
     getViewerStaffRecord(),
+    getStaffList(),
   ]);
 
   const editing = edit ? allLedger.find((r) => r.id === edit) : null;
@@ -230,6 +228,9 @@ export default async function CardLedgerMinePage({
             else if (focus === r.id && !exempt && !locked) {
               if (!hasPhoto) expand = 'photoNew';
               else if (reportRequired && !hasReport) expand = 'reportNew';
+              // 조서를 방금 제출한 직후(포커스만 남고 미등록 조건은 더 이상 안 맞음) — 결재 진행 상황이
+              // 바로 보이도록 등록 폼 대신 수정(조회) 화면을 펼친다.
+              else if (reportRequired && hasReport) expand = 'reportEdit';
             }
 
             return (
@@ -313,14 +314,14 @@ export default async function CardLedgerMinePage({
                 {expand === 'reportNew' && (
                   <tr>
                     <td colSpan={6} className="p-0 border border-[#e3e6ea] dark:border-zinc-800">
-                      <ReportForm ledgerId={r.id} ledger={r} backHref={backHref} filterHiddenFields={filterHiddenFields} />
+                      <ReportForm ledgerId={r.id} ledger={r} backHref={backHref} filterHiddenFields={filterHiddenFields} staffList={staffList} />
                     </td>
                   </tr>
                 )}
                 {expand === 'reportEdit' && report && (
                   <tr>
                     <td colSpan={6} className="p-0 border border-[#e3e6ea] dark:border-zinc-800">
-                      <ReportForm ledgerId={r.id} ledger={r} editing={report} backHref={backHref} filterHiddenFields={filterHiddenFields} />
+                      <ReportForm ledgerId={r.id} ledger={r} editing={report} backHref={backHref} filterHiddenFields={filterHiddenFields} staffList={staffList} />
                     </td>
                   </tr>
                 )}
@@ -393,13 +394,14 @@ function PhotoForm({
 }
 
 function ReportForm({
-  ledgerId, ledger, editing, backHref, filterHiddenFields,
+  ledgerId, ledger, editing, backHref, filterHiddenFields, staffList,
 }: {
   ledgerId: string;
   ledger: Record<string, string>;
   editing?: Record<string, string>;
   backHref: string;
   filterHiddenFields: React.ReactNode;
+  staffList: Record<string, string>[];
 }) {
   return (
     <form action={editing ? updateItemCheckReportAction : addItemCheckReportAction} className={`${card} m-2 grid grid-cols-2 gap-3`}>
@@ -409,6 +411,13 @@ function ReportForm({
       <p className="col-span-2 text-sm font-semibold -mb-1">
         물품검수조서 {editing ? '수정' : '등록'} <span className="font-normal text-zinc-500">({parseAmount(ledger.사용금액).toLocaleString()}원 · 100만원 이상 건)</span>
       </p>
+
+      {editing && (
+        <div className="col-span-2 rounded-md border border-zinc-200 dark:border-zinc-800 p-3 bg-zinc-50 dark:bg-zinc-900/50">
+          <p className="text-xs font-semibold mb-2 text-zinc-600 dark:text-zinc-300">결재 진행 상황</p>
+          <ApprovalChainSteps steps={buildApprovalSteps(editing, staffList)} report={editing} />
+        </div>
+      )}
       <label className={label}>
         품명 *
         <input name="itemName" defaultValue={editing?.품명 ?? ledger.사용내역 ?? ''} required className={input} />

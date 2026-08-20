@@ -7,7 +7,7 @@ import { resolveCardLedgerFirstApprovalStep } from '@/lib/approval/teamSuperviso
 import { parseReportItems, type ReportItem } from '@/lib/mutate/itemCheckReport';
 import { driveThumbUrl } from '@/lib/drive/thumbUrl';
 import PrintButton from '@/components/print/PrintButton';
-import { card, input, inputBase } from '@/lib/ui';
+import { card, inputBase } from '@/lib/ui';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -49,35 +49,55 @@ function getStepInfo(history: ApprovalHistoryEntry[], step: string, currentStep:
 export default async function ItemCheckReportPrintPage({
   searchParams,
 }: {
-  searchParams: Promise<{ id?: string }>;
+  searchParams: Promise<{ id?: string; ids?: string }>;
 }) {
-  const { id } = await searchParams;
+  const { id, ids } = await searchParams;
   const [reports, staffList] = await Promise.all([
     getKeyedList(ITEM_CHECK_REPORT_TABLE),
     getStaffList(),
   ]);
   const sorted = [...reports].reverse();
-  const r = id ? sorted.find((x) => x.id === id) : sorted[0];
+
+  const batchIds = (ids ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  const isBatch = batchIds.length > 0;
+  const batchRecords = isBatch
+    ? batchIds.map((bid) => sorted.find((x) => x.id === bid)).filter((x): x is Record<string, string> => Boolean(x))
+    : [];
+  const r = !isBatch ? (id ? sorted.find((x) => x.id === id) : sorted[0]) : null;
 
   const findStaff = (email: string) => staffList.find((s) => s['이메일(아이디)'] === email);
 
   return (
     <div className="p-6">
       <div className={`${card} print:hidden flex flex-wrap items-center gap-4`}>
-        <form method="get" className="flex flex-wrap items-center gap-2">
-          <select name="id" defaultValue={r?.id ?? ''} className={`${inputBase} w-auto`}>
-            {sorted.map((x) => (
-              <option key={x.id} value={x.id}>
-                {x.검수년월일} · {x.품명} · {x.검수자명}
-              </option>
-            ))}
-          </select>
-          <button type="submit" className="text-sm text-brand hover:underline">선택</button>
-        </form>
+        {isBatch ? (
+          <span className="text-sm text-zinc-600 dark:text-zinc-300">{batchRecords.length}건 일괄인쇄</span>
+        ) : (
+          <form method="get" className="flex flex-wrap items-center gap-2">
+            <select name="id" defaultValue={r?.id ?? ''} className={`${inputBase} w-auto`}>
+              {sorted.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.검수년월일} · {x.품명} · {x.검수자명}
+                </option>
+              ))}
+            </select>
+            <button type="submit" className="text-sm text-brand hover:underline">선택</button>
+          </form>
+        )}
         <PrintButton />
       </div>
 
-      {!r ? (
+      {isBatch ? (
+        batchRecords.length === 0 ? (
+          <div className={card}><p className="text-sm text-zinc-500">인쇄할 조서를 찾을 수 없습니다.</p></div>
+        ) : (
+          batchRecords.map((rec, i) => (
+            <div key={rec.id} style={{ breakAfter: i < batchRecords.length - 1 ? 'page' : 'auto', breakInside: 'avoid' }}>
+              <ItemCheckReportDoc record={rec} findStaff={findStaff} />
+            </div>
+          ))
+        )
+      ) : !r ? (
         <div className={card}><p className="text-sm text-zinc-500">조서를 찾을 수 없습니다.</p></div>
       ) : (
         <ItemCheckReportDoc record={r} findStaff={findStaff} />
