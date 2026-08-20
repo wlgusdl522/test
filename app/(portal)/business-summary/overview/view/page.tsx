@@ -4,6 +4,7 @@ import PageAccessDenied from '@/components/PageAccessDenied';
 import AccountingSummaryTable from '@/components/business/AccountingSummaryTable';
 import FacilityStatTable from '@/components/business/FacilityStatTable';
 import DonationSummaryTable from '@/components/business/DonationSummaryTable';
+import CleanTableCopy from '@/components/business/full/CleanTableCopy';
 import {
   FACILITIES, FACILITY_LABEL, getModuleValues, priorCumulative, valueFor,
   OVERVIEW_SERVICE_HEADCOUNT_ITEM_ID,
@@ -123,40 +124,43 @@ export default async function BusinessSummaryOverviewViewPage({
         <Link href={`/business-summary/overview?ym=${ym}`} className={btnOutline}>수정하기</Link>
       </div>
 
-      <HighlightTable title="1) 사업보고" rows={사업보고하이라이트} />
-      <HighlightTable title="2) 사업계획" rows={사업계획하이라이트} />
+      <CleanTableCopy containerId="overview-report-body" />
+      <div id="overview-report-body">
+        <HighlightTable title="1) 사업보고" rows={사업보고하이라이트} />
+        <HighlightTable title="2) 사업계획" rows={사업계획하이라이트} />
 
-      <div className={`${card} mb-5`}>
-        <h2 className={`${h2} mb-3`}>3) 서비스 제공 인원 현황 ({ym})</h2>
-        <FacilityStatTable rows={serviceRows} />
-      </div>
+        <div className={`${card} mb-5`}>
+          <h2 className={`${h2} mb-3`}>3) 서비스 제공 인원 현황 ({ym})</h2>
+          <FacilityStatTable rows={serviceRows} />
+        </div>
 
-      <div className={`${card} mb-5`}>
-        <h2 className={`${h2} mb-3`}>4) 자원봉사자 현황 요약 ({ym})</h2>
-        <FacilityStatTable rows={volunteerRows} />
-      </div>
+        <div className={`${card} mb-5`}>
+          <h2 className={`${h2} mb-3`}>4) 자원봉사자 현황 요약 ({ym})</h2>
+          <FacilityStatTable rows={volunteerRows} />
+        </div>
 
-      <AccountingSummaryTable title={`5) ${ym} 수입지출현황`} rows={accountingSummaryRows} />
+        <AccountingSummaryTable title={`5) ${ym} 수입지출현황`} rows={accountingSummaryRows} />
 
-      <div className={`${card} mb-5`}>
-        <h2 className={`${h2} mb-3`}>6) 예금잔액</h2>
-        <p className="text-sm text-zinc-700 dark:text-zinc-300">
-          총 <span className="font-semibold tabular-nums">{nf(예금잔액총액)}</span>원 ({ym} 기준)
-        </p>
-      </div>
+        <div className={`${card} mb-5`}>
+          <h2 className={`${h2} mb-3`}>6) 예금잔액</h2>
+          <p className="text-sm text-zinc-700 dark:text-zinc-300">
+            총 <span className="font-semibold tabular-nums">{nf(예금잔액총액)}</span>원 ({ym} 기준)
+          </p>
+        </div>
 
-      <DonationSummaryTable title={`7-1) 후원금 (${ym})`} rows={cashSummaryRows} note="전년 이월금 제외" />
-      <DonationSummaryTable title={`7-2) 후원물품(환가액) (${ym})`} rows={goodsSummaryRows} />
+        <DonationSummaryTable title={`7-1) 후원금 (${ym})`} rows={cashSummaryRows} note="전년 이월금 제외" />
+        <DonationSummaryTable title={`7-2) 후원물품(환가액) (${ym})`} rows={goodsSummaryRows} />
 
-      <div className={card}>
-        <h2 className={`${h2} mb-3`}>8) 행정사항 ({ym})</h2>
-        {adminNotes.length === 0 ? (
-          <p className="text-sm text-zinc-400">등록된 행정사항이 없습니다.</p>
-        ) : (
-          <ol className="list-decimal space-y-1 pl-5 text-sm whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">
-            {adminNotes.map((n) => <li key={n.id}>{n.내용}</li>)}
-          </ol>
-        )}
+        <div className={card}>
+          <h2 className={`${h2} mb-3`}>8) 행정사항 ({ym})</h2>
+          {adminNotes.length === 0 ? (
+            <p className="text-sm text-zinc-400">등록된 행정사항이 없습니다.</p>
+          ) : (
+            <ol className="list-decimal space-y-1 pl-5 text-sm whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">
+              {adminNotes.map((n) => <li key={n.id}>{n.내용}</li>)}
+            </ol>
+          )}
+        </div>
       </div>
     </>
   );
