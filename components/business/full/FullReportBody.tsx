@@ -2,6 +2,17 @@ import { Fragment } from 'react';
 import type { FullBoardReportData } from '@/lib/mutate/boardFullReport';
 import type { DonationDetail } from '@/lib/mutate/boardDonation';
 import { sectionTitle, subTitle, reportTable as table, th, td, tdC, tdR, totalRow } from '@/components/business/full/reportStyles';
+import CellRangeSelectTable from '@/components/business/CellRangeSelectTable';
+
+// 3) 사업실적 표 드래그선택(칸 단위)용 논리 컬럼 번호 — business-summary 메인 페이지와 같은
+// 컨벤션이지만 이 표엔 달성율 칸이 없어 10칸(0~9)까지만 씀.
+const PERF_COL = {
+  사업: 0, 세부사업: 1,
+  목표건: 2, 목표명: 3,
+  전월누계건: 4, 전월누계명: 5,
+  금월실적건: 6, 금월실적명: 7,
+  누계건: 8, 누계명: 9,
+} as const;
 
 // 이사회자료 "전체 통" 화면/인쇄에서 쓰는 컴포넌트. 한글(HWP)에 붙여넣었을 때 웹 화면처럼 보이지
 // 않도록, 기존 print/business-plan 페이지에서 이미 쓰던 것과 같은 오피스 문서 스타일(검은 테두리·
@@ -95,6 +106,17 @@ function FacilityStatTable({ rows, extraTotal }: { rows: { 시설명: string; �
 export default function FullReportBody({ data }: { data: FullBoardReportData }) {
   const { ym, summary, report, performance, headcount, volunteers, accounting, donation, adminNotes } = data;
 
+  // 드래그선택용 행 번호: 사업별로 (subRows 개수 또는 최소 1) + 소계행 1개만큼 순서대로 배정
+  const perfRowOffsets = performance.businesses.reduce<number[]>((acc, b, i) => {
+    const prevStart = i === 0 ? 0 : acc[i - 1];
+    const prevLen = i === 0 ? 0 : Math.max(performance.businesses[i - 1].subRows.length, 1) + 1;
+    acc.push(prevStart + prevLen);
+    return acc;
+  }, []);
+  const perfGrandRow = perfRowOffsets.length
+    ? perfRowOffsets[perfRowOffsets.length - 1] + Math.max(performance.businesses[performance.businesses.length - 1].subRows.length, 1) + 1
+    : 0;
+
   return (
     <div style={{ width: '210mm', margin: '0 auto', color: '#000', fontFamily: '"Malgun Gothic", sans-serif' }}>
       <div style={{ textAlign: 'center', marginBottom: 14 }}>
@@ -162,6 +184,7 @@ export default function FullReportBody({ data }: { data: FullBoardReportData }) 
 
       {/* 3) 사업실적 */}
       <div style={sectionTitle}>3. 전체사업 실적집계</div>
+      <CellRangeSelectTable minSelectableCol={PERF_COL.목표건}>
       <table style={table}>
         <colgroup>
           <col style={{ width: '14%' }} /><col style={{ width: '16%' }} />
@@ -182,40 +205,50 @@ export default function FullReportBody({ data }: { data: FullBoardReportData }) 
           </tr>
         </thead>
         <tbody>
-          {performance.businesses.map((b) => (
+          {performance.businesses.map((b, bi) => {
+            const subtotalRow = perfRowOffsets[bi] + Math.max(b.subRows.length, 1);
+            return (
             <Fragment key={b.business}>
               {b.subRows.length === 0 ? (
-                <tr><td style={td}>{b.business}</td><td style={{ ...td, color: '#888' }} colSpan={9}>등록된 계획 없음</td></tr>
+                <tr>
+                  <td style={td} data-row={perfRowOffsets[bi]} data-col={PERF_COL.사업}>{b.business}</td>
+                  <td style={{ ...td, color: '#888' }} colSpan={9} data-row={perfRowOffsets[bi]} data-col={PERF_COL.세부사업} data-colspan={9}>등록된 계획 없음</td>
+                </tr>
               ) : (
-                b.subRows.map((r, i) => (
+                b.subRows.map((r, i) => {
+                  const rowIdx = perfRowOffsets[bi] + i;
+                  return (
                   <tr key={r.세부사업명}>
-                    {i === 0 && <td style={{ ...td, fontWeight: 700 }} rowSpan={b.subRows.length}>{b.business}</td>}
-                    <td style={td}>{r.세부사업명}</td>
-                    <td style={tdR}>{nf(r.목표건)}</td><td style={tdR}>{nf(r.목표명)}</td>
-                    <td style={tdR}>{nf(r.전월누계건)}</td><td style={tdR}>{nf(r.전월누계명)}</td>
-                    <td style={tdR}>{nf(r.금월실적건)}</td><td style={tdR}>{nf(r.금월실적명)}</td>
-                    <td style={{ ...tdR, fontWeight: 700 }}>{nf(r.누계건)}</td><td style={{ ...tdR, fontWeight: 700 }}>{nf(r.누계명)}</td>
+                    {i === 0 && <td style={{ ...td, fontWeight: 700 }} rowSpan={b.subRows.length} data-row={rowIdx} data-col={PERF_COL.사업} data-rowspan={b.subRows.length}>{b.business}</td>}
+                    <td style={td} data-row={rowIdx} data-col={PERF_COL.세부사업}>{r.세부사업명}</td>
+                    <td style={tdR} data-row={rowIdx} data-col={PERF_COL.목표건}>{nf(r.목표건)}</td><td style={tdR} data-row={rowIdx} data-col={PERF_COL.목표명}>{nf(r.목표명)}</td>
+                    <td style={tdR} data-row={rowIdx} data-col={PERF_COL.전월누계건}>{nf(r.전월누계건)}</td><td style={tdR} data-row={rowIdx} data-col={PERF_COL.전월누계명}>{nf(r.전월누계명)}</td>
+                    <td style={tdR} data-row={rowIdx} data-col={PERF_COL.금월실적건}>{nf(r.금월실적건)}</td><td style={tdR} data-row={rowIdx} data-col={PERF_COL.금월실적명}>{nf(r.금월실적명)}</td>
+                    <td style={{ ...tdR, fontWeight: 700 }} data-row={rowIdx} data-col={PERF_COL.누계건}>{nf(r.누계건)}</td><td style={{ ...tdR, fontWeight: 700 }} data-row={rowIdx} data-col={PERF_COL.누계명}>{nf(r.누계명)}</td>
                   </tr>
-                ))
+                  );
+                })
               )}
               <tr style={totalRow}>
-                <td style={td} colSpan={2}>소계 · {b.business}</td>
-                <td style={tdR}>{nf(b.goalC)}</td><td style={tdR}>{nf(b.goalP)}</td>
-                <td style={tdR}>{nf(b.prevC)}</td><td style={tdR}>{nf(b.prevP)}</td>
-                <td style={tdR}>{nf(b.curC)}</td><td style={tdR}>{nf(b.curP)}</td>
-                <td style={tdR}>{nf(b.cumC)}</td><td style={tdR}>{nf(b.cumP)}</td>
+                <td style={td} colSpan={2} data-row={subtotalRow} data-col={PERF_COL.사업} data-colspan={2}>소계 · {b.business}</td>
+                <td style={tdR} data-row={subtotalRow} data-col={PERF_COL.목표건}>{nf(b.goalC)}</td><td style={tdR} data-row={subtotalRow} data-col={PERF_COL.목표명}>{nf(b.goalP)}</td>
+                <td style={tdR} data-row={subtotalRow} data-col={PERF_COL.전월누계건}>{nf(b.prevC)}</td><td style={tdR} data-row={subtotalRow} data-col={PERF_COL.전월누계명}>{nf(b.prevP)}</td>
+                <td style={tdR} data-row={subtotalRow} data-col={PERF_COL.금월실적건}>{nf(b.curC)}</td><td style={tdR} data-row={subtotalRow} data-col={PERF_COL.금월실적명}>{nf(b.curP)}</td>
+                <td style={tdR} data-row={subtotalRow} data-col={PERF_COL.누계건}>{nf(b.cumC)}</td><td style={tdR} data-row={subtotalRow} data-col={PERF_COL.누계명}>{nf(b.cumP)}</td>
               </tr>
             </Fragment>
-          ))}
+            );
+          })}
           <tr style={{ ...totalRow, background: '#ddd' }}>
-            <td style={td} colSpan={2}>총 계</td>
-            <td style={tdR}>{nf(performance.grandGoalC)}</td><td style={tdR}>{nf(performance.grandGoalP)}</td>
-            <td style={tdR}>{nf(performance.grandPrevC)}</td><td style={tdR}>{nf(performance.grandPrevP)}</td>
-            <td style={tdR}>{nf(performance.grandCurC)}</td><td style={tdR}>{nf(performance.grandCurP)}</td>
-            <td style={tdR}>{nf(performance.grandCumC)}</td><td style={tdR}>{nf(performance.grandCumP)}</td>
+            <td style={td} colSpan={2} data-row={perfGrandRow} data-col={PERF_COL.사업} data-colspan={2}>총 계</td>
+            <td style={tdR} data-row={perfGrandRow} data-col={PERF_COL.목표건}>{nf(performance.grandGoalC)}</td><td style={tdR} data-row={perfGrandRow} data-col={PERF_COL.목표명}>{nf(performance.grandGoalP)}</td>
+            <td style={tdR} data-row={perfGrandRow} data-col={PERF_COL.전월누계건}>{nf(performance.grandPrevC)}</td><td style={tdR} data-row={perfGrandRow} data-col={PERF_COL.전월누계명}>{nf(performance.grandPrevP)}</td>
+            <td style={tdR} data-row={perfGrandRow} data-col={PERF_COL.금월실적건}>{nf(performance.grandCurC)}</td><td style={tdR} data-row={perfGrandRow} data-col={PERF_COL.금월실적명}>{nf(performance.grandCurP)}</td>
+            <td style={tdR} data-row={perfGrandRow} data-col={PERF_COL.누계건}>{nf(performance.grandCumC)}</td><td style={tdR} data-row={perfGrandRow} data-col={PERF_COL.누계명}>{nf(performance.grandCumP)}</td>
           </tr>
         </tbody>
       </table>
+      </CellRangeSelectTable>
 
       {/* 4) 실인원 */}
       <div style={sectionTitle}>4. 실인원 산출내역{headcount.headcountDate ? ` (${headcount.headcountDate} 기준)` : ''}</div>
