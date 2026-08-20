@@ -23,13 +23,27 @@ function safeStyleAttr(el: Element): string {
   return parts.join(';');
 }
 
-export function cleanCloneNode(node: Node): Node | null {
-  if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent ?? '');
-  if (node.nodeType !== Node.ELEMENT_NODE) return null;
+// 텍스트 노드 안의 실제 줄바꿈("\n", 화면에서는 white-space:pre-wrap으로 보이던 것)은 한글에
+// text/html로 붙여넣을 때 CSS가 아니라 <br>로 명시해야 줄이 실제로 나뉜다 — white-space 스타일을
+// 그대로 살려 보내도 한글이 이를 무시하고 한 줄로 뭉쳐버리는 경우가 있기 때문. 그래서 텍스트
+// 노드 하나가 <br>로 나뉜 여러 노드가 될 수 있어(1:N), 반환값을 받는 대신 부모에 직접 붙인다.
+function appendCleanedChild(parent: Node, node: Node): void {
+  if (node.nodeType === Node.TEXT_NODE) {
+    const lines = (node.textContent ?? '').split('\n');
+    lines.forEach((line, i) => {
+      if (i > 0) parent.appendChild(document.createElement('br'));
+      if (line) parent.appendChild(document.createTextNode(line));
+    });
+    return;
+  }
+  if (node.nodeType !== Node.ELEMENT_NODE) return;
   const el = node as Element;
   const tag = el.tagName.toLowerCase();
-  if (tag === 'script' || tag === 'style') return null;
-  if (tag === 'br') return document.createElement('br');
+  if (tag === 'script' || tag === 'style') return;
+  if (tag === 'br') {
+    parent.appendChild(document.createElement('br'));
+    return;
+  }
 
   const outTag = STRUCTURAL_TAGS.has(tag) ? tag : 'span';
   const clone = document.createElement(outTag);
@@ -45,11 +59,8 @@ export function cleanCloneNode(node: Node): Node | null {
   const style = safeStyleAttr(el);
   if (style) clone.setAttribute('style', style);
 
-  Array.from(el.childNodes).forEach((child) => {
-    const c = cleanCloneNode(child);
-    if (c) clone.appendChild(c);
-  });
-  return clone;
+  Array.from(el.childNodes).forEach((child) => appendCleanedChild(clone, child));
+  parent.appendChild(clone);
 }
 
 // 원래 화면에서 flex로 나란히(좌우) 배치했던 표들은 정리 과정에서 감싸던 div가 span으로
@@ -61,7 +72,7 @@ export function insertTableSeparators(root: Element): void {
     for (let i = 0; i < children.length - 1; i++) {
       if (children[i].tagName === 'TABLE' && children[i + 1].tagName === 'TABLE') {
         const sep = document.createElement('p');
-        sep.textContent = ' ';
+        sep.textContent = ' ';
         el.insertBefore(sep, children[i + 1]);
       }
     }
@@ -72,10 +83,7 @@ export function insertTableSeparators(root: Element): void {
 
 export function cleanHtmlFromNodes(nodes: ArrayLike<Node>): string {
   const wrapper = document.createElement('div');
-  Array.from(nodes).forEach((n) => {
-    const c = cleanCloneNode(n);
-    if (c) wrapper.appendChild(c);
-  });
+  Array.from(nodes).forEach((n) => appendCleanedChild(wrapper, n));
   insertTableSeparators(wrapper);
   return wrapper.innerHTML;
 }
@@ -94,10 +102,7 @@ function cloneCellWhole(cell: Element): Element {
   if (rowspan) clone.setAttribute('rowspan', rowspan);
   const style = safeStyleAttr(cell);
   if (style) clone.setAttribute('style', style);
-  Array.from(cell.childNodes).forEach((child) => {
-    const c = cleanCloneNode(child);
-    if (c) clone.appendChild(c);
-  });
+  Array.from(cell.childNodes).forEach((child) => appendCleanedChild(clone, child));
   return clone;
 }
 
@@ -132,10 +137,7 @@ export function cleanHtmlFromSelection(range: Range, container: Element): string
   if (touched.length === 0) {
     // 표가 아닌 일반 텍스트 선택은 기존 방식(잘라낸 그대로) 그대로 둔다.
     const frag = range.cloneContents();
-    Array.from(frag.childNodes).forEach((n) => {
-      const c = cleanCloneNode(n);
-      if (c) wrapper.appendChild(c);
-    });
+    Array.from(frag.childNodes).forEach((n) => appendCleanedChild(wrapper, n));
   } else {
     touched.forEach((table) => {
       const built = buildTableFromRange(table, range);
