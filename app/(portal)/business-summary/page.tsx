@@ -4,7 +4,19 @@ import { getDailyEntries, rangeSum } from '@/lib/mutate/worklogEntry';
 import { hasPageAccess } from '@/lib/mutate/permissions';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import BoardSubTabs from '@/components/business/BoardSubTabs';
+import CellRangeSelectTable from '@/components/business/CellRangeSelectTable';
 import { badgeBase, badgeTone, btnSecondary, card, inputBase, table, td, th, tableWrap } from '@/lib/ui';
+
+// 표 드래그선택(칸 단위)용 논리 컬럼 번호 — rowSpan으로 생략되는 행에서도 각 칸의 실제 의미가
+// 항상 같은 숫자를 갖도록 고정해둔다(CellRangeSelectTable이 이 번호로 사각형 범위를 계산).
+const COL = {
+  사업: 0, 세부사업: 1,
+  목표건: 2, 목표명: 3,
+  전월누계건: 4, 전월누계명: 5,
+  금월실적건: 6, 금월실적명: 7,
+  누계건: 8, 누계명: 9,
+  달성율건: 10, 달성율명: 11,
+} as const;
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -106,6 +118,17 @@ export default async function BusinessSummaryBoardPage({
     })
   );
 
+  // 드래그선택용 행 번호: 사업별로 (subRows 개수 또는 최소 1) + 소계행 1개만큼 순서대로 배정
+  const rowOffsets = perBusiness.reduce<number[]>((acc, b, i) => {
+    const prevStart = i === 0 ? 0 : acc[i - 1];
+    const prevLen = i === 0 ? 0 : Math.max(perBusiness[i - 1].subRows.length, 1) + 1;
+    acc.push(prevStart + prevLen);
+    return acc;
+  }, []);
+  const grandRow = rowOffsets.length
+    ? rowOffsets[rowOffsets.length - 1] + Math.max(perBusiness[perBusiness.length - 1].subRows.length, 1) + 1
+    : 0;
+
   const grandGoalC = perBusiness.reduce((a, b) => a + b.goalC, 0);
   const grandGoalP = perBusiness.reduce((a, b) => a + b.goalP, 0);
   const grandPrevC = perBusiness.reduce((a, b) => a + b.prevC, 0);
@@ -125,7 +148,7 @@ export default async function BusinessSummaryBoardPage({
       </form>
 
       <div className={card}>
-        <div className={tableWrap}>
+        <CellRangeSelectTable className={tableWrap}>
           <table className={table}>
             <thead>
               <tr>
@@ -146,60 +169,66 @@ export default async function BusinessSummaryBoardPage({
               </tr>
             </thead>
             <tbody>
-              {perBusiness.map((b) => (
+              {perBusiness.map((b, bi) => {
+                const subtotalRow = rowOffsets[bi] + Math.max(b.subRows.length, 1);
+                return (
                 <Fragment key={b.business}>
                   {b.subRows.length === 0 ? (
                     <tr className="even:bg-[#f8f9fb] dark:even:bg-zinc-800/30">
-                      <td className={`${td} whitespace-nowrap font-medium`}>
+                      <td className={`${td} whitespace-nowrap font-medium`} data-row={rowOffsets[bi]} data-col={COL.사업}>
                         {b.business}
                         <EntryStatusBadge lastDate={b.lastDate} effectiveEnd={effectiveEnd} />
                       </td>
-                      <td className={`${td} text-left text-zinc-400`} colSpan={11}>등록된 계획 없음</td>
+                      <td className={`${td} text-left text-zinc-400`} colSpan={11} data-row={rowOffsets[bi]} data-col={COL.세부사업} data-colspan={11}>등록된 계획 없음</td>
                     </tr>
                   ) : (
-                    b.subRows.map((r, i) => (
+                    b.subRows.map((r, i) => {
+                      const rowIdx = rowOffsets[bi] + i;
+                      return (
                       <tr key={r.세부사업명} className="even:bg-[#f8f9fb] dark:even:bg-zinc-800/30">
                         {i === 0 && (
-                          <td className={`${td} whitespace-nowrap font-medium align-top`} rowSpan={b.subRows.length}>
+                          <td className={`${td} whitespace-nowrap font-medium align-top`} rowSpan={b.subRows.length} data-row={rowIdx} data-col={COL.사업} data-rowspan={b.subRows.length}>
                             {b.business}
                             <EntryStatusBadge lastDate={b.lastDate} effectiveEnd={effectiveEnd} />
                           </td>
                         )}
-                        <td className={`${td} whitespace-nowrap`}>{r.세부사업명}</td>
-                        <td className={`${numCell} text-zinc-400`}>{nf(r.목표건)}</td>
-                        <td className={`${numCell} text-zinc-400`}>{nf(r.목표명)}</td>
-                        <td className={`${numCell} text-zinc-400`}>{nf(r.전월누계건)}</td>
-                        <td className={`${numCell} text-zinc-400`}>{nf(r.전월누계명)}</td>
-                        <td className={numCell}>{nf(r.금월실적건)}</td><td className={numCell}>{nf(r.금월실적명)}</td>
-                        <td className={`${numCell} font-semibold`}>{nf(r.누계건)}</td><td className={`${numCell} font-semibold`}>{nf(r.누계명)}</td>
-                        <td className={`${td} text-center`}><PctBadge value={r.누계건} goal={r.목표건} /></td>
-                        <td className={`${td} text-center`}><PctBadge value={r.누계명} goal={r.목표명} /></td>
+                        <td className={`${td} whitespace-nowrap`} data-row={rowIdx} data-col={COL.세부사업}>{r.세부사업명}</td>
+                        <td className={`${numCell} text-zinc-400`} data-row={rowIdx} data-col={COL.목표건}>{nf(r.목표건)}</td>
+                        <td className={`${numCell} text-zinc-400`} data-row={rowIdx} data-col={COL.목표명}>{nf(r.목표명)}</td>
+                        <td className={`${numCell} text-zinc-400`} data-row={rowIdx} data-col={COL.전월누계건}>{nf(r.전월누계건)}</td>
+                        <td className={`${numCell} text-zinc-400`} data-row={rowIdx} data-col={COL.전월누계명}>{nf(r.전월누계명)}</td>
+                        <td className={numCell} data-row={rowIdx} data-col={COL.금월실적건}>{nf(r.금월실적건)}</td><td className={numCell} data-row={rowIdx} data-col={COL.금월실적명}>{nf(r.금월실적명)}</td>
+                        <td className={`${numCell} font-semibold`} data-row={rowIdx} data-col={COL.누계건}>{nf(r.누계건)}</td><td className={`${numCell} font-semibold`} data-row={rowIdx} data-col={COL.누계명}>{nf(r.누계명)}</td>
+                        <td className={`${td} text-center`} data-row={rowIdx} data-col={COL.달성율건}><PctBadge value={r.누계건} goal={r.목표건} /></td>
+                        <td className={`${td} text-center`} data-row={rowIdx} data-col={COL.달성율명}><PctBadge value={r.누계명} goal={r.목표명} /></td>
                       </tr>
-                    ))
+                      );
+                    })
                   )}
                   <tr className="bg-[#eef1f5] font-semibold dark:bg-zinc-800">
-                    <td className={`${td} text-left whitespace-nowrap`} colSpan={2}>소계 · {b.business}</td>
-                    <td className={numCell}>{nf(b.goalC)}</td><td className={numCell}>{nf(b.goalP)}</td>
-                    <td className={numCell}>{nf(b.prevC)}</td><td className={numCell}>{nf(b.prevP)}</td>
-                    <td className={numCell}>{nf(b.curC)}</td><td className={numCell}>{nf(b.curP)}</td>
-                    <td className={numCell}>{nf(b.cumC)}</td><td className={numCell}>{nf(b.cumP)}</td>
-                    <td className={`${td} text-center`}><PctBadge value={b.cumC} goal={b.goalC} /></td>
-                    <td className={`${td} text-center`}><PctBadge value={b.cumP} goal={b.goalP} /></td>
+                    <td className={`${td} text-left whitespace-nowrap`} colSpan={2} data-row={subtotalRow} data-col={COL.사업} data-colspan={2}>소계 · {b.business}</td>
+                    <td className={numCell} data-row={subtotalRow} data-col={COL.목표건}>{nf(b.goalC)}</td><td className={numCell} data-row={subtotalRow} data-col={COL.목표명}>{nf(b.goalP)}</td>
+                    <td className={numCell} data-row={subtotalRow} data-col={COL.전월누계건}>{nf(b.prevC)}</td><td className={numCell} data-row={subtotalRow} data-col={COL.전월누계명}>{nf(b.prevP)}</td>
+                    <td className={numCell} data-row={subtotalRow} data-col={COL.금월실적건}>{nf(b.curC)}</td><td className={numCell} data-row={subtotalRow} data-col={COL.금월실적명}>{nf(b.curP)}</td>
+                    <td className={numCell} data-row={subtotalRow} data-col={COL.누계건}>{nf(b.cumC)}</td><td className={numCell} data-row={subtotalRow} data-col={COL.누계명}>{nf(b.cumP)}</td>
+                    <td className={`${td} text-center`} data-row={subtotalRow} data-col={COL.달성율건}><PctBadge value={b.cumC} goal={b.goalC} /></td>
+                    <td className={`${td} text-center`} data-row={subtotalRow} data-col={COL.달성율명}><PctBadge value={b.cumP} goal={b.goalP} /></td>
                   </tr>
                 </Fragment>
-              ))}
+                );
+              })}
               <tr className="bg-brand-dark font-semibold text-white">
-                <td className={`${td} !text-white text-left whitespace-nowrap`} colSpan={2}>총 계</td>
-                <td className={`${numCell} !text-white`}>{nf(grandGoalC)}</td><td className={`${numCell} !text-white`}>{nf(grandGoalP)}</td>
-                <td className={`${numCell} !text-white`}>{nf(grandPrevC)}</td><td className={`${numCell} !text-white`}>{nf(grandPrevP)}</td>
-                <td className={`${numCell} !text-white`}>{nf(grandCurC)}</td><td className={`${numCell} !text-white`}>{nf(grandCurP)}</td>
-                <td className={`${numCell} !text-white`}>{nf(grandCumC)}</td><td className={`${numCell} !text-white`}>{nf(grandCumP)}</td>
-                <td className={`${td} !text-white text-center`}>{fpct(pct(grandCumC, grandGoalC))}%</td>
-                <td className={`${td} !text-white text-center`}>{fpct(pct(grandCumP, grandGoalP))}%</td>
+                <td className={`${td} !text-white text-left whitespace-nowrap`} colSpan={2} data-row={grandRow} data-col={COL.사업} data-colspan={2}>총 계</td>
+                <td className={`${numCell} !text-white`} data-row={grandRow} data-col={COL.목표건}>{nf(grandGoalC)}</td><td className={`${numCell} !text-white`} data-row={grandRow} data-col={COL.목표명}>{nf(grandGoalP)}</td>
+                <td className={`${numCell} !text-white`} data-row={grandRow} data-col={COL.전월누계건}>{nf(grandPrevC)}</td><td className={`${numCell} !text-white`} data-row={grandRow} data-col={COL.전월누계명}>{nf(grandPrevP)}</td>
+                <td className={`${numCell} !text-white`} data-row={grandRow} data-col={COL.금월실적건}>{nf(grandCurC)}</td><td className={`${numCell} !text-white`} data-row={grandRow} data-col={COL.금월실적명}>{nf(grandCurP)}</td>
+                <td className={`${numCell} !text-white`} data-row={grandRow} data-col={COL.누계건}>{nf(grandCumC)}</td><td className={`${numCell} !text-white`} data-row={grandRow} data-col={COL.누계명}>{nf(grandCumP)}</td>
+                <td className={`${td} !text-white text-center`} data-row={grandRow} data-col={COL.달성율건}>{fpct(pct(grandCumC, grandGoalC))}%</td>
+                <td className={`${td} !text-white text-center`} data-row={grandRow} data-col={COL.달성율명}>{fpct(pct(grandCumP, grandGoalP))}%</td>
               </tr>
             </tbody>
           </table>
-        </div>
+        </CellRangeSelectTable>
       </div>
     </>
   );
