@@ -502,3 +502,41 @@ export const STAFF_MEETING_TEAM_ORDER_TABLE: KeyedTableConfig = {
   headers: STAFF_MEETING_TEAM_ORDER_HEADERS,
   primaryKey: '팀명',
 };
+
+// ── 인사관리 "노사협의회" ────────────────────────────────────────────
+// 근로자위원/사용자위원 명단 — 회의록 편집 권한(정해진 위원만) 판단과 참석자 표 자동 채움에 함께 쓴다.
+export const LABOR_COUNCIL_MEMBER_HEADERS = ['이메일', '성명', '구분', '정렬순서'];
+
+export const LABOR_COUNCIL_MEMBER_TABLE: KeyedTableConfig = {
+  spreadsheetId: STAFF_SHEET_ID,
+  sheetName: '노사협의회위원',
+  headers: LABOR_COUNCIL_MEMBER_HEADERS,
+  primaryKey: '이메일',
+};
+
+// 안건취합 — 전 직원이 회차별로 고충/제안 항목을 자유롭게 등록한다(한글 서식의 "업무고충처리 관련"
+// +"사유 및 구체적 제안내용" 두 칸 그대로). 실제 논의결과는 회의록 쪽 협의의결JSON에 독립적으로
+// 기록한다(안건 등록 시점 문구와 회의록 정리 시점 문구가 달라질 수 있어서).
+export const LABOR_COUNCIL_AGENDA_HEADERS = ['id', '회차', '이메일', '성명', '항목명', '제안내용', '등록일시'];
+
+export const LABOR_COUNCIL_AGENDA_TABLE: KeyedTableConfig = {
+  spreadsheetId: STAFF_SHEET_ID,
+  sheetName: '노사협의회안건',
+  headers: LABOR_COUNCIL_AGENDA_HEADERS,
+  primaryKey: 'id',
+};
+
+// 회의록 — 한글 서식(회의일시/장소/협의사항/의결사항(안건별 근로자·사용자 의견+의결내용)/보고사항/
+// 의결된사항/참석자명단)을 회차당 한 행에 담는다. 안건별 의결내용과 참석자는 개수가 가변적이라
+// (물품목록JSON과 같은 이유로) JSON 컬럼에 담는다.
+export const LABOR_COUNCIL_MINUTES_HEADERS = [
+  '회차', '회의일시', '회의장소', '협의의결JSON', '보고사항', '의결된사항', '참석자JSON',
+  '등록일시', '최종수정이메일',
+];
+
+export const LABOR_COUNCIL_MINUTES_TABLE: KeyedTableConfig = {
+  spreadsheetId: STAFF_SHEET_ID,
+  sheetName: '노사협의회회의록',
+  headers: LABOR_COUNCIL_MINUTES_HEADERS,
+  primaryKey: '회차',
+};

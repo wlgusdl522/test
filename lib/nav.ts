@@ -25,6 +25,7 @@ const SETTINGS_GROUPS: NavGroup[] = [
     items: [
       { href: '/settings/simple-lists', label: '팀 / 직급 / 결재라인', description: '팀·직급·결재라인 목록 관리' },
       { href: '/settings/permissions', label: '권한설정', description: '직원별 권한 설정' },
+      { href: '/settings/labor-council-members', label: '노사협의회 위원', description: '근로자위원 · 사용자위원 명단 관리' },
       { href: '/settings/approval-rules', label: '결재라인 전결기준', description: '전결 기준 설정' },
     ],
   },
@@ -65,6 +66,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: '/staff/history', label: '계정이력', description: '계정 신규/인계 처리 이력' },
       { href: '/staff/directory', label: '전직원 주소록', description: '팀·직급별 연락처 확인' },
       { href: '/staff/certificates', label: '증명서 발급', description: '재직·경력증명서 및 상장 발급 관리' },
+      { href: '/labor-council', label: '노사협의회', description: '안건취합 · 회의록 작성' },
     ],
   },
   {
@@ -73,7 +75,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: '/weekly-plan', label: '주간업무', description: '업무 입력·회의록·부서장 확인' },
       { href: '/duty', label: '당직근무', description: '당직 배정·교체·근무일지 작성' },
       { href: '/document-index', label: '색인목록', description: '팀별 공문 등록대장(문서번호 자동 채번)' },
-      { href: '/staff-meeting', label: '전체회의자료', description: '팀별 업무보고·업무계획·협조사항 작성' },
+      { href: '/staff-meeting', label: '전체회의', description: '팀별 업무보고·업무계획·협조사항 작성' },
     ],
   },
   {

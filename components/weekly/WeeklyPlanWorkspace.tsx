@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { Fragment, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { badgeBase, badgeTone, btn, btnSecondary, cardTableWrap, input, inputBase, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
 import { submitWeeklyPlanAction } from '@/app/(portal)/weekly-plan/actions';
@@ -9,8 +9,16 @@ import { buildGroupedRoster, type WeeklyPlanGroupRow } from '@/lib/weeklyPlanGro
 
 type Task = { id: string; 날짜: string; 업무내용: string; 회의록후보: string };
 type Row = { key: string; text: string; flagged: boolean };
-type RosterMember = { email: string; name: string };
+type RosterMember = { email: string; name: string; 담당사업: string };
 type TeamTask = { email: string; name: string; 날짜: string; 업무내용: string };
+
+// 그룹으로 합쳐진 줄은 멤버들의 담당사업(직원관리에서 고정 관리)을 " / "로 이어 보여준다 — 겹치는 값은 하나만 남긴다.
+function groupBusinessLabel(emails: string[], rosterByEmail: Map<string, RosterMember>): string {
+  const names = emails
+    .map((e) => rosterByEmail.get(e.toLowerCase())?.담당사업.trim())
+    .filter((v): v is string => !!v);
+  return Array.from(new Set(names)).join(' / ');
+}
 
 function toRows(tasks: Task[]): Row[] {
   return tasks.map((t) => ({ key: t.id, text: t.업무내용, flagged: t.회의록후보 === 'TRUE' || t.회의록후보 === 'true' }));
@@ -45,6 +53,7 @@ export default function WeeklyPlanWorkspace({
   myEmail,
   roster,
   groupRows,
+  myBusinessName,
   teamTasks,
   teams,
   weekStart,
@@ -58,6 +67,7 @@ export default function WeeklyPlanWorkspace({
   myEmail: string;
   roster: RosterMember[];
   groupRows: WeeklyPlanGroupRow[];
+  myBusinessName: string;
   teamTasks: TeamTask[];
   teams: string[];
   weekStart: string;
@@ -141,6 +151,7 @@ export default function WeeklyPlanWorkspace({
   const meetingSummaryLines = buildMeetingSummaryLines(dayDates, rowsByDay);
   const visibleRoster = roster.filter((m) => !isOwnTeam || m.email.toLowerCase() !== myEmail.toLowerCase());
   const groupedRows = buildGroupedRoster(visibleRoster, groupRows);
+  const rosterByEmail = new Map(roster.map((m) => [m.email.toLowerCase(), m]));
 
   function mobileTabClass(active: boolean) {
     return `-mb-px rounded-t-md border border-b-0 px-3.5 py-2 text-sm transition-colors ${
@@ -271,6 +282,7 @@ export default function WeeklyPlanWorkspace({
           {isOwnTeam && (
             <div className="rounded-lg border border-brand bg-brand-tint p-3">
               <p className="text-sm font-semibold text-brand-dark dark:text-brand">{myName}</p>
+              {myBusinessName && <p className="text-xs text-zinc-500 dark:text-zinc-400">• {myBusinessName}</p>}
               <div className="mt-1.5 flex flex-col gap-1.5">
                 {dayDates.map((iso, i) => {
                   const dayRows = rowsByDay[iso] ?? [];
@@ -290,9 +302,11 @@ export default function WeeklyPlanWorkspace({
           {groupedRows.map((row) => {
               const rowEmails = new Set(row.emails.map((e) => e.toLowerCase()));
               const memberTasks = teamTasks.filter((t) => rowEmails.has(t.email.toLowerCase()));
+              const rowBusinessLabel = groupBusinessLabel(row.emails, rosterByEmail);
               return (
                 <div key={row.key} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
                   <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{row.label}</p>
+                  {rowBusinessLabel && <p className="text-xs text-zinc-500 dark:text-zinc-400">• {rowBusinessLabel}</p>}
                   {memberTasks.length === 0 ? (
                     <p className="mt-1 text-sm text-zinc-300 dark:text-zinc-700">등록된 업무 없음</p>
                   ) : (
@@ -329,33 +343,52 @@ export default function WeeklyPlanWorkspace({
             </thead>
             <tbody>
               {isOwnTeam && (
-                <tr className="bg-brand-tint">
-                  <td className={tdClean}><b>{myName}</b></td>
-                  {dayDates.map((iso) => (
-                    <td key={iso} className={tdClean}>
-                      {(rowsByDay[iso] ?? []).length === 0
-                        ? <span className="text-zinc-300 dark:text-zinc-700">-</span>
-                        : (rowsByDay[iso] ?? []).map((r, i) => <div key={i}>• {r.text}</div>)}
+                <>
+                  <tr className="bg-brand-tint">
+                    <td className={tdClean} rowSpan={2}><b>{myName}</b></td>
+                    {dayDates.map((iso) => (
+                      <td key={iso} className={tdClean}>
+                        {(rowsByDay[iso] ?? []).length === 0
+                          ? <span className="text-zinc-300 dark:text-zinc-700">-</span>
+                          : (rowsByDay[iso] ?? []).map((r, i) => <div key={i}>• {r.text}</div>)}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="bg-brand-tint">
+                    <td className={tdClean} colSpan={dayDates.length}>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                        {myBusinessName && `• ${myBusinessName}`}
+                      </span>
                     </td>
-                  ))}
-                </tr>
+                  </tr>
+                </>
               )}
               {groupedRows.map((row) => {
                 const rowEmails = new Set(row.emails.map((e) => e.toLowerCase()));
+                const rowBusinessLabel = groupBusinessLabel(row.emails, rosterByEmail);
                 return (
-                  <tr key={row.key} className={trHoverClean}>
-                    <td className={tdClean}>{row.label}</td>
-                    {dayDates.map((iso) => {
-                      const dayTasks = teamTasks.filter((t) => rowEmails.has(t.email.toLowerCase()) && t.날짜 === iso);
-                      return (
-                        <td key={iso} className={tdClean}>
-                          {dayTasks.length === 0
-                            ? <span className="text-zinc-300 dark:text-zinc-700">-</span>
-                            : dayTasks.map((t, i) => <div key={i}>• {t.업무내용}</div>)}
-                        </td>
-                      );
-                    })}
-                  </tr>
+                  <Fragment key={row.key}>
+                    <tr className={trHoverClean}>
+                      <td className={tdClean} rowSpan={2}>{row.label}</td>
+                      {dayDates.map((iso) => {
+                        const dayTasks = teamTasks.filter((t) => rowEmails.has(t.email.toLowerCase()) && t.날짜 === iso);
+                        return (
+                          <td key={iso} className={tdClean}>
+                            {dayTasks.length === 0
+                              ? <span className="text-zinc-300 dark:text-zinc-700">-</span>
+                              : dayTasks.map((t, i) => <div key={i}>• {t.업무내용}</div>)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                    <tr className={trHoverClean}>
+                      <td className={tdClean} colSpan={dayDates.length}>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                          {rowBusinessLabel && `• ${rowBusinessLabel}`}
+                        </span>
+                      </td>
+                    </tr>
+                  </Fragment>
                 );
               })}
             </tbody>

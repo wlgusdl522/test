@@ -78,7 +78,7 @@ export default async function StaffMeetingPage({
   return (
     <main className={pageFluid}>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className={h1}>업무관리 &gt; 전체회의자료</h1>
+        <h1 className={h1}>업무관리 &gt; 전체회의</h1>
         <div className="flex gap-2">
           <Link href={`/staff-meeting/present?ym=${ym}`} className={btnSecondary}>발표 모드</Link>
           <MeetingSettingsMenu

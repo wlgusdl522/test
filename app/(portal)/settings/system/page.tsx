@@ -81,19 +81,19 @@ export default async function SystemSettingsPage() {
           </select>
         </label>
         <label className={label}>
-          전체회의자료 JANDI 공용 웹훅 (회의 알림)
+          전체회의 JANDI 공용 웹훅 (회의 알림)
           <input name="staffMeetingJandiWebhook" defaultValue={settings.staffMeetingJandiWebhook} className={input} />
         </label>
         <label className={label}>
-          전체회의자료 회의정보 편집 가능 팀 (비우면 제한 없음)
+          전체회의 회의정보 편집 가능 팀 (비우면 제한 없음)
           <input name="staffMeetingInfoEditTeam" defaultValue={settings.staffMeetingInfoEditTeam} placeholder="예: 총무팀" className={input} />
         </label>
         <label className={label}>
-          전체회의자료 회의정보 편집 가능 담당자 이메일 (쉼표로 여러 명, 비우면 제한 없음)
+          전체회의 회의정보 편집 가능 담당자 이메일 (쉼표로 여러 명, 비우면 제한 없음)
           <input name="staffMeetingInfoEditEmails" defaultValue={settings.staffMeetingInfoEditEmails} className={input} />
         </label>
         <div className={label}>
-          전체회의자료 잔디 알림 보내기 가능 담당자 (여러 명 선택 가능, 아무도 선택 안 하면 제한 없음)
+          전체회의 잔디 알림 보내기 가능 담당자 (여러 명 선택 가능, 아무도 선택 안 하면 제한 없음)
           <div className="mt-1 flex max-h-56 flex-wrap gap-x-4 gap-y-3 overflow-y-auto rounded-md border border-zinc-200 p-3 dark:border-zinc-700">
             {staffGroups.map((g) => (
               <div
