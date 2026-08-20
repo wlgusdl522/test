@@ -78,6 +78,19 @@ export default function CellRangeSelectTable({
     });
   }, [clearHighlight, eachCell]);
 
+  // children은 서버 컴포넌트가 새 데이터로 다시 렌더링할 때마다(예: 조회월 변경) 새 값이 되는데,
+  // Next.js/React가 같은 위치의 td를 재사용(값만 교체)하는 경우 우리가 DOM에 직접 칠해둔
+  // background 색은 React가 모르는 변경이라 지워지지 않고 남는다 — 그래서 다른 화면(월)의
+  // 셀에 이전 드래그의 하이라이트가 그대로 붙어있는 것처럼 보이는 문제가 생긴다. children이
+  // 바뀔 때마다 하이라이트/선택 상태를 명시적으로 초기화해서 이걸 막는다.
+  useEffect(() => {
+    clearHighlight();
+    selectionRef.current = null;
+    startRef.current = null;
+    draggingRef.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [children]);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
