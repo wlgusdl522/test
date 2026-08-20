@@ -4,6 +4,7 @@ import { Fragment, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { badgeBase, badgeTone, btn, btnSecondary, table, td, th, tableWrap } from '@/lib/ui';
 import { submitDailyEntriesAction } from '@/app/(portal)/business/daily/actions';
+import { ensureFirstLineIndent } from '@/lib/text';
 
 type Row = {
   id: string; 세부사업명: string; 중분류: string; 소분류: string;
@@ -228,6 +229,7 @@ export default function DailyEntryClient({
           <div className="mb-1.5 text-xs font-semibold">활동내용</div>
           <textarea
             value={content} onChange={(e) => setContent(e.target.value)}
+            onBlur={() => setContent((v) => ensureFirstLineIndent(v))}
             placeholder="* 항목명 - N명(성명 또는 내용)"
             className="min-h-[88px] w-full rounded-md border border-zinc-300 bg-[#fcfbf8] px-3 py-2.5 text-sm leading-relaxed focus:border-brand focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
           />
@@ -236,6 +238,7 @@ export default function DailyEntryClient({
           <div className="mb-1.5 text-xs font-semibold">특이사항</div>
           <textarea
             value={note} onChange={(e) => setNote(e.target.value)}
+            onBlur={() => setNote((v) => ensureFirstLineIndent(v))}
             placeholder="휴관, 사고, 인수인계 등"
             className="min-h-[88px] w-full rounded-md border border-zinc-300 bg-[#fcfbf8] px-3 py-2.5 text-sm leading-relaxed focus:border-brand focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
           />

@@ -19,7 +19,7 @@ function basisLineText(b: BasisRow): string {
 // 한글(HWP)에 붙여넣었을 때 웹 화면처럼 보이지 않도록, 인쇄물(print/business-worklog)에서
 // 이미 검증된 것과 같은 오피스 문서 스타일(검은 테두리·회색 헤더)을 그대로 쓴다.
 const lbl = { border: '1px solid #000', background: '#f2f2f2', fontWeight: 700 as const, textAlign: 'center' as const, padding: '4px 6px', fontSize: 11 };
-const cell = { border: '1px solid #000', padding: '4px 6px', fontSize: 11, verticalAlign: 'top' as const };
+const cell = { border: '1px solid #000', padding: '4px 6px', fontSize: 11, verticalAlign: 'top' as const, whiteSpace: 'pre-wrap' as const };
 const cellC = { ...cell, textAlign: 'center' as const };
 
 type Row = { sub: BusinessSubNode; plan: PlanItem; pi: number; goal: { gc: number; gp: number } };

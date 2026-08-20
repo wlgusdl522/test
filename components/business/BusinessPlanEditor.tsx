@@ -14,6 +14,7 @@ import {
 import type { BasisRow, BusinessSubNode, PlanItem } from '@/lib/mutate/businessPlan';
 import { btn, btnDanger, btnSecondary, card, h2, input, inputBase, selectFilter, statCard } from '@/lib/ui';
 import ConfirmSubmitButton from '@/components/ConfirmSubmitButton';
+import { ensureFirstLineIndent } from '@/lib/text';
 
 const nf = (n: number) => (n || 0).toLocaleString('ko-KR');
 const inputSm = `${inputBase} w-full`;
@@ -203,6 +204,7 @@ export default function BusinessPlanEditor({
                         <textarea
                           value={sub.기대효과}
                           onChange={(e) => patchSub(sub.id, { 기대효과: e.target.value })}
+                          onBlur={(e) => patchSub(sub.id, { 기대효과: ensureFirstLineIndent(e.target.value) })}
                           placeholder="기대효과"
                           className="min-h-[120px] w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs leading-relaxed dark:border-zinc-700 dark:bg-zinc-950"
                         />
@@ -286,6 +288,7 @@ export default function BusinessPlanEditor({
                         <textarea
                           value={plan.사업내용}
                           onChange={(e) => patchPlan(sub.id, plan.id, { 사업내용: e.target.value })}
+                          onBlur={(e) => patchPlan(sub.id, plan.id, { 사업내용: ensureFirstLineIndent(e.target.value) })}
                           placeholder="사업내용"
                           className="min-h-[52px] w-full rounded-md border border-zinc-200 bg-[#fcfbf8] px-3 py-2 text-xs leading-relaxed dark:border-zinc-700 dark:bg-zinc-950"
                         />
@@ -387,6 +390,7 @@ export default function BusinessPlanEditor({
                           <textarea
                             value={sub.기대효과}
                             onChange={(e) => patchSub(sub.id, { 기대효과: e.target.value })}
+                            onBlur={(e) => patchSub(sub.id, { 기대효과: ensureFirstLineIndent(e.target.value) })}
                             placeholder="기대효과"
                             className="min-h-[120px] w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs leading-relaxed dark:border-zinc-700 dark:bg-zinc-950"
                           />
