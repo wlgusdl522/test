@@ -148,7 +148,7 @@ export default async function BusinessSummaryBoardPage({
       </form>
 
       <div className={card}>
-        <CellRangeSelectTable className={tableWrap}>
+        <CellRangeSelectTable className={tableWrap} minSelectableCol={COL.목표건}>
           <table className={table}>
             <thead>
               <tr>

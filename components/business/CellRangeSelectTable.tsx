@@ -14,22 +14,27 @@ const HL_FG = '#fff';
 
 type Pos = { row: number; col: number };
 
-function cellAt(target: EventTarget | null): Pos | null {
+function cellAt(target: EventTarget | null, minCol: number): Pos | null {
   if (!(target instanceof Element)) return null;
   const cell = target.closest('td[data-row], th[data-row]') as HTMLElement | null;
   if (!cell) return null;
   const row = Number(cell.dataset.row);
   const col = Number(cell.dataset.col);
   if (Number.isNaN(row) || Number.isNaN(col)) return null;
+  if (col < minCol) return null;
   return { row, col };
 }
 
 export default function CellRangeSelectTable({
   children,
   className,
+  minSelectableCol = 0,
 }: {
   children: React.ReactNode;
   className?: string;
+  // 사업/세부사업 같은 이름표 칸은 드래그 대상에서 아예 제외하고 싶을 때 그 칸의 data-col 값을
+  // 넘긴다 — 드래그가 그 칸을 스치거나 거기서 시작해도 무시돼서, 숫자 칸만 정확히 선택된다.
+  minSelectableCol?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
@@ -78,7 +83,7 @@ export default function CellRangeSelectTable({
     if (!container) return;
 
     function onMouseDown(e: MouseEvent) {
-      const pos = cellAt(e.target);
+      const pos = cellAt(e.target, minSelectableCol);
       if (!pos) return;
       e.preventDefault();
       window.getSelection()?.removeAllRanges();
@@ -89,7 +94,7 @@ export default function CellRangeSelectTable({
     }
     function onMouseOver(e: MouseEvent) {
       if (!draggingRef.current || !startRef.current) return;
-      const pos = cellAt(e.target);
+      const pos = cellAt(e.target, minSelectableCol);
       if (!pos) return;
       selectionRef.current = { r0: startRef.current.row, r1: pos.row, c0: startRef.current.col, c1: pos.col };
       applyHighlight(startRef.current.row, pos.row, startRef.current.col, pos.col);
@@ -130,7 +135,7 @@ export default function CellRangeSelectTable({
       window.removeEventListener('mouseup', onMouseUp);
       document.removeEventListener('copy', onCopy);
     };
-  }, [applyHighlight, eachCell]);
+  }, [applyHighlight, eachCell, minSelectableCol]);
 
   return (
     <div ref={containerRef} className={className}>
