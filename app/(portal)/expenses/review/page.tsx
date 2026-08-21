@@ -130,13 +130,7 @@ export default async function CardLedgerReviewPage({
 
   return (
     <>
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[20px] font-semibold text-zinc-900 dark:text-zinc-50">카드사용대장</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
-            카드 사용 내역과 검수 진행 현황을 한눈에 확인할 수 있습니다.
-          </p>
-        </div>
+      <div className="mb-5 flex justify-end">
         <a
           href={`/print/card-ledger?ym=${activeYear ? `${activeYear}-01` : currentYm}`}
           target="_blank"
