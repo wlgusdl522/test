@@ -6,6 +6,7 @@ import {
   canSeeRealProposerName,
   displayedProposerName,
   getAllAgendaItems,
+  getMeetings,
   isLaborCouncilMember,
   parseRoundNumber,
   type AgendaStatus,
@@ -30,6 +31,11 @@ const STATUS_TONE: Record<AgendaStatus, keyof typeof badgeTone> = {
 
 const UNASSIGNED_ROUND = '__unassigned__';
 
+function meetingDateLabel(회의일시: string): string {
+  if (!회의일시) return '일시 미정';
+  return 회의일시.slice(0, 10).replace(/-/g, '.');
+}
+
 function statusUrl(status: AgendaStatus | null, round: string | null): string {
   const params = new URLSearchParams();
   if (status) params.set('status', status);
@@ -47,10 +53,11 @@ export default async function LaborCouncilStatusPage({
 
   const me = await getViewerStaffRecord();
   const email = me?.['이메일(아이디)'] ?? '';
-  const [allItems, isCouncil, canSeeRealName] = await Promise.all([
+  const [allItems, isCouncil, canSeeRealName, meetings] = await Promise.all([
     getAllAgendaItems(),
     isLaborCouncilMember(email),
     canSeeRealProposerName(email),
+    getMeetings(),
   ]);
 
   const { status: statusParam, round: roundParam } = await searchParams;
@@ -139,13 +146,19 @@ export default async function LaborCouncilStatusPage({
                       <form action={updateAgendaStatusAction} id={`status-form-${item.id}`}>
                         <input type="hidden" name="id" value={item.id} />
                       </form>
-                      <input
+                      <select
                         name="상정회차"
                         form={`status-form-${item.id}`}
                         defaultValue={item.상정회차}
-                        placeholder="예: 46"
-                        className={`${inputBase} w-20`}
-                      />
+                        className={`${inputBase} w-auto`}
+                      >
+                        <option value="">미배정</option>
+                        {meetings.map((m) => (
+                          <option key={m.회차} value={m.회차}>
+                            제{m.회차}차 · {meetingDateLabel(m.회의일시)} ({m.상태})
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className={td}>
                       <div className="flex items-center gap-1.5">

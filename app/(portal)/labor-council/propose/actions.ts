@@ -16,6 +16,7 @@ export async function addAgendaItemAction(formData: FormData) {
     me?.성명 ?? ''
   );
   revalidatePath('/labor-council');
+  revalidatePath('/labor-council/propose');
   revalidatePath('/labor-council/status');
 }
 

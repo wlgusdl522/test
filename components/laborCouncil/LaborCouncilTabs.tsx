@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const TABS = [
-  { base: '/labor-council', label: '안건 제안', withRound: false },
+  { base: '/labor-council', label: '전체', withRound: false },
+  { base: '/labor-council/propose', label: '안건 제안', withRound: false },
   { base: '/labor-council/status', label: '안건 현황', withRound: false },
   { base: '/labor-council/meetings', label: '회의 관리', withRound: false },
   { base: '/labor-council/minutes', label: '회의록 및 결과', withRound: true },
