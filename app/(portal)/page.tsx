@@ -299,82 +299,134 @@ export default async function HomePage() {
 
   return (
     <main className={pageFluid}>
-      <div className="mb-8 flex flex-wrap items-start gap-6 rounded-2xl bg-gradient-to-br from-brand-tint to-white p-4 dark:from-brand-tint/10 dark:to-transparent sm:p-8">
-        <div className="w-full sm:max-w-md sm:shrink-0">
-          <p className="mb-2 text-xs font-semibold text-brand">서대문노인종합복지관 업무포털 · {monthLabel}</p>
-          <h1 className="text-xl font-bold leading-snug text-zinc-900 dark:text-zinc-100 sm:text-2xl">
-            {me?.성명 ?? ''}
-            {me?.['직급/직책'] ? ` ${me['직급/직책']}` : ''}님, <span className="text-brand">{greetingMessage}</span>
-          </h1>
+      {/* Welcome Hero & Status Section */}
+      <div className="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-5 flex flex-col justify-between rounded-2xl bg-gradient-to-br from-white via-sky-50/40 to-sky-100/30 border border-slate-200/80 p-6 sm:p-7 shadow-[0_2px_8px_rgba(15,23,42,0.04)] dark:from-zinc-900 dark:via-zinc-900/90 dark:to-zinc-800/50 dark:border-zinc-800">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-brand/10 px-2.5 py-0.5 text-xs font-bold text-brand dark:bg-brand/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
+                서대문노인종합복지관
+              </span>
+              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+                {monthLabel}
+              </span>
+            </div>
 
-          <div className="mt-5 rounded-xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.06)] dark:border-zinc-800 dark:bg-zinc-900">
-            <Link href="/duty" className="block">
-              <p className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />내 당직일자 (이번 달)
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 leading-tight">
+              {me?.성명 ?? '직원'}
+              {me?.['직급/직책'] ? ` ${me['직급/직책']}` : ''}님,
+              <br />
+              <span className="text-brand font-bold">{greetingMessage}</span>
+            </h1>
+          </div>
+
+          <div className="mt-6 rounded-xl border border-slate-200/90 bg-white/90 backdrop-blur-xs p-4.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950/80">
+            <Link href="/duty" className="block group">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400">
+                  <span className="h-2 w-2 rounded-full bg-brand" /> 내 당직일자 (이번 달)
+                </span>
+                <span className="text-[11px] font-semibold text-brand group-hover:underline">당직관리 →</span>
+              </div>
+              <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
+                {myWeekdayDutyDates.length > 0 ? (
+                  <span className="inline-flex flex-wrap gap-1.5">
+                    {myWeekdayDutyDates.map((d) => (
+                      <span key={d} className="rounded bg-sky-50 px-2 py-0.5 text-xs font-bold text-brand-dark dark:bg-sky-950/50 dark:text-sky-300">
+                        {d}
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <span className="text-slate-400 font-normal">배정된 평일 당직이 없습니다.</span>
+                )}
               </p>
-              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                {myWeekdayDutyDates.length > 0 ? myWeekdayDutyDates.join(', ') : '없음'}
+
+              <p className="mt-3.5 flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400">
+                <span className="h-2 w-2 rounded-full bg-amber-500" /> 토요당직 (이번 달)
               </p>
-              <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />토요당직 (이번 달)
-              </p>
-              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                {mySaturdayDutyDates.length > 0 ? mySaturdayDutyDates.join(', ') : '없음'}
+              <p className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
+                {mySaturdayDutyDates.length > 0 ? (
+                  <span className="inline-flex flex-wrap gap-1.5">
+                    {mySaturdayDutyDates.map((d) => (
+                      <span key={d} className="rounded bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
+                        {d}
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <span className="text-slate-400 font-normal">배정된 토요 당직이 없습니다.</span>
+                )}
               </p>
             </Link>
+
             {todayDutyLogHref && (
-              <Link href={todayDutyLogHref} className={`${btn} mt-3 w-fit`}>
-                오늘 당직 · 당직일지 작성하기
+              <Link href={todayDutyLogHref} className={`${btn} mt-3.5 w-full shadow-xs`}>
+                📝 오늘 당직 · 당직일지 작성하기
               </Link>
             )}
-            <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-              <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />부재중 표시
+
+            <div className="mt-4 border-t border-slate-100 pt-3.5 dark:border-zinc-800">
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> 부재중 빠른 상태 설정
               </p>
               <AwayToggle initialAway={!!myAwayStatus} initialReason={myAwayStatus?.사유} />
             </div>
           </div>
         </div>
 
-        <div className="min-w-0 flex-1 rounded-xl bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.08)] dark:bg-zinc-900 sm:p-5">
+        <div className="lg:col-span-7 flex flex-col rounded-2xl bg-white border border-slate-200/80 p-5 sm:p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)] dark:border-zinc-800 dark:bg-zinc-900">
           <ScheduleSlideshow slides={scheduleSlides} />
         </div>
       </div>
 
-      <p className="mb-3 text-[13px] font-semibold uppercase tracking-wide text-zinc-500">바로가기</p>
-      <div className="mb-8 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        {SHORTCUTS.map((s) => {
-          const cardClassName =
-            'flex items-start gap-2.5 rounded-xl border border-zinc-200/80 bg-white p-3 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900';
-          const cardContent = (
-            <>
-              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${TONE_BADGE[s.tone]}`}>
-                <ShortcutIcon d={s.icon} />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold text-zinc-900 dark:text-zinc-100">{s.label}</span>
-                <span className="block truncate text-xs text-zinc-500">{s.desc}</span>
-              </span>
-            </>
-          );
-
-          if ('external' in s && s.external) {
-            return (
-              <a key={s.href} href={s.href} target="_blank" rel="noopener noreferrer" className={cardClassName}>
-                {cardContent}
-              </a>
+      {/* Quick Action Shortcuts */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3.5">
+          <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 m-0 pb-0 border-none">
+            빠른 바로가기
+          </h2>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {SHORTCUTS.map((s) => {
+            const cardClassName =
+              'group flex items-start gap-3 rounded-xl border border-slate-200/90 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.04)] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md hover:border-brand/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-brand/40 cursor-pointer';
+            const cardContent = (
+              <>
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-150 group-hover:scale-105 ${TONE_BADGE[s.tone]}`}>
+                  <ShortcutIcon d={s.icon} className="h-5 w-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-bold text-slate-900 group-hover:text-brand transition-colors dark:text-slate-100 leading-snug">
+                    {s.label}
+                  </span>
+                  <span className="block truncate text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    {s.desc}
+                  </span>
+                </span>
+              </>
             );
-          }
 
-          return (
-            <Link key={s.href} href={s.href} className={cardClassName}>
-              {cardContent}
-            </Link>
-          );
-        })}
+            if ('external' in s && s.external) {
+              return (
+                <a key={s.href} href={s.href} target="_blank" rel="noopener noreferrer" className={cardClassName}>
+                  {cardContent}
+                </a>
+              );
+            }
+
+            return (
+              <Link key={s.href} href={s.href} className={cardClassName}>
+                {cardContent}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="rounded-xl border border-zinc-200/80 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900 sm:p-5">
+      {/* Main Task List & Work Summaries */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)] dark:border-zinc-800 dark:bg-zinc-900">
         <ListSlideshow slides={listSlides} />
       </div>
     </main>

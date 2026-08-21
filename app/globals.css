@@ -1,11 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f6f8;
-  --foreground: #202124;
-  --brand: #1479ba;
-  --brand-dark: #0e5d90;
-  --brand-tint: #eaf4fb;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --brand: #0284c7;
+  --brand-dark: #0369a1;
+  --brand-tint: #f0f9ff;
+  --brand-tint-border: #bae6fd;
 }
 
 @theme inline {
@@ -20,20 +21,40 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --brand-tint: #113347;
+    --background: #090d16;
+    --foreground: #f1f5f9;
+    --brand: #38bdf8;
+    --brand-dark: #0284c7;
+    --brand-tint: #0c263d;
+    --brand-tint-border: #0369a1;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
-  /* 한글은 word-break 기본값(normal)에서 음절 단위로 줄바꿈돼서, 좁은 표 셀 등에서
-     "카니발" 같은 단어가 한 글자씩 세로로 쪼개져 보인다. keep-all로 단어 단위 줄바꿈 유지. */
+  font-family: -apple-system, BlinkMacSystemFont, "Pretendard Variable", Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   word-break: keep-all;
   overflow-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
 }
 
 @media print {

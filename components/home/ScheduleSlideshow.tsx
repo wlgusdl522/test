@@ -27,20 +27,25 @@ export default function ScheduleSlideshow({ slides }: { slides: ScheduleSlide[] 
   }
 
   const slide = slides[index];
-  const hasAny = slide.days.some((d) => d.items.length > 0);
+  const hasAny = slide?.days.some((d) => d.items.length > 0);
+
+  if (!slide) return null;
 
   return (
-    <div>
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{slide.title}</h3>
-        <div className="flex items-center gap-1">
+    <div className="flex h-full flex-col justify-between">
+      <div className="mb-4 flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+        <div className="flex items-center gap-2">
+          <span className="flex h-2.5 w-2.5 rounded-full bg-brand" />
+          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{slide.title}</h3>
+        </div>
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => go(-1)}
             aria-label="이전 슬라이드"
-            className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200/80 bg-white text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95 dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-300 dark:hover:bg-zinc-700 shadow-2xs"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="h-4 w-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
@@ -48,9 +53,9 @@ export default function ScheduleSlideshow({ slides }: { slides: ScheduleSlide[] 
             type="button"
             onClick={() => go(1)}
             aria-label="다음 슬라이드"
-            className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200/80 bg-white text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95 dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-300 dark:hover:bg-zinc-700 shadow-2xs"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="h-4 w-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -59,14 +64,14 @@ export default function ScheduleSlideshow({ slides }: { slides: ScheduleSlide[] 
             onClick={() => setOpen((v) => !v)}
             aria-label={open ? '일정 접기' : '일정 펼치기'}
             aria-expanded={open}
-            className="ml-1 rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 sm:hidden"
+            className="ml-1 flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200/80 bg-white text-slate-600 transition-colors hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-300 sm:hidden"
           >
             <svg
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth={2}
-              className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}
+              className={`h-4 w-4 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
             </svg>
@@ -74,20 +79,29 @@ export default function ScheduleSlideshow({ slides }: { slides: ScheduleSlide[] 
         </div>
       </div>
 
-      <div className={`${open ? 'block' : 'hidden'} sm:block`}>
+      <div className={`${open ? 'block' : 'hidden'} sm:block flex-1`}>
         <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="overflow-x-auto">
-          <div className="grid min-w-[560px] grid-cols-6 gap-2">
+          <div className="grid min-w-[580px] grid-cols-6 gap-2.5">
             {slide.days.map((d) => (
-              <div key={d.iso} className="rounded-lg border border-zinc-100 p-2 dark:border-zinc-800">
-                <p className="mb-1.5 text-[11px] font-medium text-zinc-400">{d.label}</p>
-                <div className="flex h-[160px] flex-col gap-1 overflow-y-auto">
+              <div
+                key={d.iso}
+                className="flex flex-col rounded-xl border border-slate-200/80 bg-slate-50/50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/40"
+              >
+                <p className="mb-2 text-center text-xs font-bold text-slate-600 dark:text-slate-400">
+                  {d.label}
+                </p>
+                <div className="flex h-[180px] flex-col gap-1.5 overflow-y-auto pr-0.5 custom-scrollbar">
                   {d.items.map((it, i) => (
                     <div
                       key={i}
-                      className="rounded bg-brand-tint px-1.5 py-1 text-[11px] leading-tight text-brand-dark dark:bg-brand-tint/20 dark:text-brand"
+                      className="rounded-lg border border-sky-100 bg-sky-50/80 px-2 py-1.5 text-xs text-brand-dark transition-all hover:bg-sky-100/90 dark:border-sky-900/40 dark:bg-sky-950/50 dark:text-sky-200 shadow-2xs"
                     >
-                      <p className="truncate font-medium">{it.primary}</p>
-                      {it.secondary && <p className="truncate text-zinc-500 dark:text-zinc-400">{it.secondary}</p>}
+                      <p className="truncate font-semibold text-[11.5px] leading-tight">{it.primary}</p>
+                      {it.secondary && (
+                        <p className="truncate text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          {it.secondary}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -95,16 +109,24 @@ export default function ScheduleSlideshow({ slides }: { slides: ScheduleSlide[] 
             ))}
           </div>
         </div>
-        {!hasAny && <p className="mt-3 text-center text-xs text-zinc-400">{slide.emptyText}</p>}
+        {!hasAny && (
+          <div className="py-6 text-center">
+            <p className="text-xs font-medium text-slate-400 dark:text-slate-500">{slide.emptyText}</p>
+          </div>
+        )}
 
-        <div className="mt-3 flex justify-center gap-1.5">
+        <div className="mt-4 flex justify-center items-center gap-2">
           {slides.map((s, i) => (
             <button
               key={s.title}
               type="button"
               onClick={() => setIndex(i)}
               aria-label={s.title}
-              className={`h-1.5 rounded-full transition-all ${i === index ? 'w-4 bg-brand' : 'w-1.5 bg-zinc-200 dark:bg-zinc-700'}`}
+              className={`h-2 rounded-full transition-all duration-200 ${
+                i === index
+                  ? 'w-6 bg-brand shadow-xs'
+                  : 'w-2 bg-slate-200 hover:bg-slate-300 dark:bg-zinc-700 dark:hover:bg-zinc-600'
+              }`}
             />
           ))}
         </div>
@@ -112,3 +134,4 @@ export default function ScheduleSlideshow({ slides }: { slides: ScheduleSlide[] 
     </div>
   );
 }
+

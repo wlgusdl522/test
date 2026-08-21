@@ -1,0 +1,9 @@
+{
+  "name": "서대문노인종합복지관 통합 업무포털",
+  "description": "서대문노인종합복지관 통합 업무포털 시스템 (사업요약, 주간업무, 지출/카드관리, 차량관리, 당직일지, 노사협의회)",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
+

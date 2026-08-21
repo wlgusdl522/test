@@ -49,8 +49,9 @@ export default function AwayToggle({ initialAway, initialReason }: { initialAway
         type="button"
         disabled={isPending}
         onClick={returnToSeat}
-        className="rounded-lg border border-zinc-300 bg-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 transition-all hover:bg-amber-100 hover:border-amber-400 active:scale-98 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300 shadow-2xs cursor-pointer"
       >
+        <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
         부재중 · {reason} (클릭 시 복귀)
       </button>
     );
@@ -65,13 +66,13 @@ export default function AwayToggle({ initialAway, initialReason }: { initialAway
             type="button"
             disabled={isPending}
             onClick={() => pickReason(r)}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
+            className="rounded-lg border border-slate-200/90 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:scale-98 dark:border-zinc-800 dark:bg-zinc-900 dark:text-slate-200 dark:hover:bg-zinc-800 shadow-2xs cursor-pointer"
           >
             {r}
           </button>
         ))}
       </div>
-      {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1.5 text-xs text-red-600 font-medium">{error}</p>}
     </div>
   );
 }
