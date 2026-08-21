@@ -5,9 +5,11 @@ import {
   buildAgendaCallNotificationContent,
   buildAgendaCallNotificationTitle,
   canSendAgendaNotification,
+  getMeetings,
   getMyAgendaItems,
   isLaborCouncilMember,
 } from '@/lib/mutate/laborCouncil';
+import { formatMeetingDateTime } from '@/lib/mutate/staffMeeting';
 import LaborCouncilTabs from '@/components/laborCouncil/LaborCouncilTabs';
 import FormToggle from '@/components/FormToggle';
 import SubmitButton from '@/components/SubmitButton';
@@ -30,11 +32,18 @@ export default async function LaborCouncilPage() {
 
   const me = await getViewerStaffRecord();
   const email = me?.['이메일(아이디)'] ?? '';
-  const [myItems, isCouncil, canSendNotification] = await Promise.all([
+  const [myItems, isCouncil, canSendNotification, meetings] = await Promise.all([
     getMyAgendaItems(email),
     isLaborCouncilMember(email),
     canSendAgendaNotification(),
+    getMeetings(),
   ]);
+
+  // 안건 접수 자체엔 마감이 없지만(상시 접수), 제안자가 "언제쯤 다뤄질지" 감을 잡을 수 있게
+  // 가장 가까운 예정 회의를 안내한다 — 예정 회의가 여러 건이면 날짜가 가장 이른 것.
+  const nextMeeting = meetings
+    .filter((m) => m.상태 === '예정' && m.회의일시)
+    .sort((a, b) => a.회의일시.localeCompare(b.회의일시))[0];
 
   return (
     <main className={pageFluid}>
@@ -66,6 +75,11 @@ export default async function LaborCouncilPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <div className={card}>
           <h2 className={h2}>안건 제안하기</h2>
+          <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+            {nextMeeting
+              ? `다음 노사협의회: 제${nextMeeting.회차}차 · ${formatMeetingDateTime(nextMeeting.회의일시)}${nextMeeting.회의장소 ? ` (${nextMeeting.회의장소})` : ''} — 이 전에 제안하시면 이번 회의에서 다뤄질 수 있습니다.`
+              : '다음 회의 일정이 아직 없습니다. 안건은 상시 접수되며, 위원이 검토 후 회의 일정에 맞춰 상정합니다.'}
+          </p>
           <form action={addAgendaItemAction} className="flex flex-col gap-3">
             <label className={labelCls}>
               제목
