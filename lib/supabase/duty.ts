@@ -383,8 +383,9 @@ export async function reapplyDutyExclusions(): Promise<ReapplyExclusionsResult> 
 
 // ── 근무일지 작성(체크리스트/서명) ────────────────────────────────────
 
-// 당직근무대장(구글시트)에 append할 "근무일지 내용" 한 칸 요약 — 화면 CHECK_FIELDS/TEXT_FIELDS와 동일한 항목.
-const WEEKDAY_LOG_CONTENT_FIELDS: { key: string; label: string }[] = [
+// 당직근무대장(구글시트)에 append할 "근무일지 내용" 한 칸 요약 — 화면 CHECK_FIELDS/TEXT_FIELDS와 동일한
+// 항목이며, 평일/토요 모두 같은 컬럼명을 쓴다(토요는 2인이 공유하는 하나의 일지).
+const DUTY_LOG_CONTENT_FIELDS: { key: string; label: string }[] = [
   { key: '실별소등확인', label: '실별소등확인' },
   { key: '사유', label: '실별소등 사유' },
   { key: '창문닫기', label: '창문닫기' },
@@ -398,8 +399,8 @@ const WEEKDAY_LOG_CONTENT_FIELDS: { key: string; label: string }[] = [
   { key: '최종인계자', label: '최종인계자' },
 ];
 
-function buildWeekdayLogContent(row: Record<string, string>): string {
-  return WEEKDAY_LOG_CONTENT_FIELDS.map(({ key, label }) => `${label}: ${row[key] || '-'}`).join(' / ');
+function buildDutyLogContent(row: Record<string, string>): string {
+  return DUTY_LOG_CONTENT_FIELDS.map(({ key, label }) => `${label}: ${row[key] || '-'}`).join(' / ');
 }
 
 // 대장 append 실패로 서명 자체가 실패 처리되면 안 되므로(원본은 Supabase, 대장은 감사용 사본) 에러를 삼키고 로그만 남긴다.
@@ -430,9 +431,16 @@ export async function saveDutyWeekdayLog(
     const finalRow = await getDutyLog('weekday', id);
     if (finalRow) {
       const { original, changed } = resolveOriginalAndChanged(finalRow['원배정성명'] || '', finalRow['이름'] || '');
-      await appendDutyLedgerRow(finalRow['근무일자'] || '', original, changed, buildWeekdayLogContent(finalRow));
+      await appendDutyLedgerRow(finalRow['근무일자'] || '', original, changed, buildDutyLogContent(finalRow));
     }
   }
+}
+
+// 토요는 2인이 근무일지 내용(체크리스트/특이사항 등)을 공유한다 — 어느 한 명이 작성해도 둘 다에게 보인다.
+// 서명만 슬롯별로 따로 저장한다(saveDutySaturdaySignature).
+export async function saveDutySaturdayLog(id: string, fields: Record<string, string>): Promise<void> {
+  const { error } = await table(LOG_TABLE.saturday).update(fields).eq('id', id);
+  if (error) throw new Error(`근무일지 저장 실패: ${error.message}`);
 }
 
 export async function saveDutySaturdaySignature(id: string, slot: 1 | 2, signatureDataUrl: string): Promise<void> {
@@ -446,9 +454,10 @@ export async function saveDutySaturdaySignature(id: string, slot: 1 | 2, signatu
     .eq('id', id);
   if (error) throw new Error(`서명 저장 실패: ${error.message}`);
 
+  const finalRow = await getDutyLog('saturday', id);
   const { original, changed } = resolveOriginalAndChanged(
     existing[`원배정성명${slot}`] || '',
     existing[`이름${slot}`] || ''
   );
-  await appendDutyLedgerRow(existing['근무일자'] || '', original, changed, '');
+  await appendDutyLedgerRow(existing['근무일자'] || '', original, changed, buildDutyLogContent(finalRow ?? existing));
 }

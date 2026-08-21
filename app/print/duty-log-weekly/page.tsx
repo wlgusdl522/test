@@ -1,4 +1,12 @@
 import { getDutyHolidays, getDutySaturdayLogs, getDutyWeekdayLogs } from '@/lib/supabase/duty';
+import { getKeyedList } from '@/lib/mutate/keyedTable';
+import { APPROVAL_JEONGYEOL_TABLE } from '@/lib/sheets/registry';
+import { getSimpleList } from '@/lib/mutate/simpleList';
+import { APPROVAL_LINE_SHEET_NAME } from '@/lib/sheets/sheetIds';
+import { getViewerStaffRecord } from '@/lib/auth-helpers';
+import { getStaffList } from '@/lib/mutate/staff';
+import { buildApprovalBoxData } from '@/lib/approval/approvalLine';
+import ApprovalBox from '@/components/print/ApprovalBox';
 import PrintButton from '@/components/print/PrintButton';
 import DutyWeeklyLogTable, { formatDutyDayLabel } from '@/components/duty/DutyWeeklyLogTable';
 import { addDays, mondayOf, todayISO } from '@/lib/dutyDate';
@@ -16,14 +24,31 @@ export default async function DutyLogWeeklyPrintPage({
   const monday = mondayParam ?? mondayOf(todayISO());
   const saturday = addDays(monday, 5);
 
-  const [weekdayLogs, saturdayLogs, holidays] = await Promise.all([
+  const [weekdayLogs, saturdayLogs, holidays, approvalRules, approvalLine, me, staffList] = await Promise.all([
     getDutyWeekdayLogs(),
     getDutySaturdayLogs(),
     getDutyHolidays(),
+    getKeyedList(APPROVAL_JEONGYEOL_TABLE),
+    getSimpleList(APPROVAL_LINE_SHEET_NAME),
+    getViewerStaffRecord(),
+    getStaffList(),
   ]);
+
+  const rule = approvalRules.find((r) => r.페이지ID === 'duty-log-weekly');
+  const approvalData = buildApprovalBoxData(
+    approvalLine,
+    rule?.전결기준 ?? '',
+    rule?.담당표시 ?? '자동',
+    rule?.결재라인여부 ?? '사용',
+    me?.['직급/직책'] ?? '',
+    me?.소속팀 ?? '',
+    staffList
+  );
 
   return (
     <div className="p-6">
+      {/* 표가 가로로 넓어(요일/시설점검/민원/특근자 등) 세로 A4보다 가로 A4가 훨씬 자연스럽게 들어간다. */}
+      <style>{'@media print { @page { size: A4 landscape; margin: 10mm; } }'}</style>
       <div className={`${card} print:hidden flex flex-wrap items-center gap-4`}>
         <form method="get" className="flex flex-wrap items-center gap-2">
           <input type="date" name="monday" defaultValue={monday} className={`${inputBase} w-auto`} />
@@ -42,17 +67,7 @@ export default async function DutyLogWeeklyPrintPage({
             <span style={{ fontWeight: 600, marginRight: 10 }}>기간</span>
             {formatDutyDayLabel(monday)} ~ {formatDutyDayLabel(saturday)}
           </div>
-          <div style={{ display: 'flex', border: '1px solid #333' }}>
-            <div style={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px solid #333', background: '#f2f2f2', fontWeight: 600, fontSize: 12 }}>
-              결<br />재
-            </div>
-            {['담당', '과장'].map((role, i) => (
-              <div key={role} style={{ width: 70, textAlign: 'center', borderLeft: i > 0 ? '1px solid #333' : undefined }}>
-                <div style={{ borderBottom: '1px solid #333', background: '#f2f2f2', padding: '4px 0', fontWeight: 600 }}>{role}</div>
-                <div style={{ height: 42 }} />
-              </div>
-            ))}
-          </div>
+          <ApprovalBox data={approvalData} scale={0.6} />
         </div>
 
         <DutyWeeklyLogTable monday={monday} weekdayLogs={weekdayLogs} saturdayLogs={saturdayLogs} holidays={holidays} />

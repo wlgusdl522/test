@@ -31,6 +31,7 @@ export const PRINTABLE_PAGES = [
   { id: 'weekly-plan-rollup', label: '주간업무계획 (부서별 취합)' },
   { id: 'vehicle-maintenance', label: '차량정비대장' },
   { id: 'vehicle-log-monthly', label: '차량운행일지 (월별대장출력)' },
+  { id: 'duty-log-weekly', label: '당직근무일지 (주간대장출력)' },
 ];
 
 export const PAGE_ACCESS_TIERS = [

@@ -119,11 +119,18 @@ export default function DutyWeeklyLogTable({
                   <br />
                   <span style={{ color: '#888', fontSize: 11 }}>{saturdayRow.소속1}</span>
                 </td>
-                <td className={td} style={cell} colSpan={7}>토요당직 (시설점검 없음)</td>
+                <td className={td} style={cell}><StatusCheck value={saturdayRow.실별소등확인} reason={saturdayRow.사유} /></td>
+                <td className={td} style={cell}><StatusCheck value={saturdayRow.창문닫기} reason={saturdayRow.사유2} /></td>
+                <td className={td} style={cell}><StatusCheck value={saturdayRow.출입문잠금} reason={saturdayRow.사유3} /></td>
+                <td className={td} style={cell}>{saturdayRow.전화민원내용 || '-'}</td>
+                <td className={td} style={cell}>{saturdayRow.내방객및내방이유 || '-'}</td>
+                <td className={td} style={cell}>{saturdayRow.응급및비상시특이사항 || '-'}</td>
+                <td className={td} style={cell}>{saturdayRow.퇴근전특근자성명 || '-'}</td>
+                <td className={td} style={cell}>{saturdayRow.최종인계자 || '-'}</td>
                 <td className={td} style={cell}><SignatureCell url={saturdayRow.사인1} /></td>
               </>
             ) : (
-              <td className={td} style={cell} colSpan={9}>
+              <td className={td} style={cell} colSpan={10}>
                 {holidayByDate.has(saturdayDate) ? `공휴일(${holidayByDate.get(saturdayDate)})` : '배정 없음'}
               </td>
             )}
@@ -136,7 +143,7 @@ export default function DutyWeeklyLogTable({
                 <br />
                 <span style={{ color: '#888', fontSize: 11 }}>{saturdayRow.소속2}</span>
               </td>
-              <td className={td} style={cell} colSpan={7} />
+              <td className={td} style={cell} colSpan={8} />
               <td className={td} style={cell}><SignatureCell url={saturdayRow.사인2} /></td>
             </tr>
           )}
