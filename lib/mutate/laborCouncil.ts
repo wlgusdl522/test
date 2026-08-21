@@ -137,7 +137,7 @@ export async function requireCanEditLaborCouncilMinutes(): Promise<void> {
   }
 }
 
-function parseRoundNumber(회차: string): number {
+export function parseRoundNumber(회차: string): number {
   const n = Number(회차.replace(/[^0-9]/g, ''));
   return Number.isFinite(n) ? n : 0;
 }

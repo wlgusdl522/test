@@ -6,6 +6,7 @@ import {
   displayedProposerName,
   getAllAgendaItems,
   isLaborCouncilMember,
+  parseRoundNumber,
   type AgendaStatus,
 } from '@/lib/mutate/laborCouncil';
 import LaborCouncilTabs from '@/components/laborCouncil/LaborCouncilTabs';
@@ -26,10 +27,20 @@ const STATUS_TONE: Record<AgendaStatus, keyof typeof badgeTone> = {
   결과공유: 'gray',
 };
 
+const UNASSIGNED_ROUND = '__unassigned__';
+
+function statusUrl(status: AgendaStatus | null, round: string | null): string {
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  if (round) params.set('round', round);
+  const qs = params.toString();
+  return `/labor-council/status${qs ? `?${qs}` : ''}`;
+}
+
 export default async function LaborCouncilStatusPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; round?: string }>;
 }) {
   if (!(await hasPageAccess('labor-council'))) return <PageAccessDenied />;
 
@@ -37,25 +48,55 @@ export default async function LaborCouncilStatusPage({
   const email = me?.['이메일(아이디)'] ?? '';
   const [allItems, isCouncil] = await Promise.all([getAllAgendaItems(), isLaborCouncilMember(email)]);
 
-  const { status: statusParam } = await searchParams;
+  const { status: statusParam, round: roundParam } = await searchParams;
   const filterStatus = (AGENDA_STATUSES as string[]).includes(statusParam ?? '') ? (statusParam as AgendaStatus) : null;
-  const items = filterStatus ? allItems.filter((i) => i.상태 === filterStatus) : allItems;
+  const filterRound = roundParam || null;
+
+  const rounds = [...new Set(allItems.map((i) => i.상정회차).filter(Boolean))].sort(
+    (a, b) => parseRoundNumber(b) - parseRoundNumber(a)
+  );
+  const unassignedCount = allItems.filter((i) => !i.상정회차).length;
+
+  let items = filterStatus ? allItems.filter((i) => i.상태 === filterStatus) : allItems;
+  if (filterRound === UNASSIGNED_ROUND) items = items.filter((i) => !i.상정회차);
+  else if (filterRound) items = items.filter((i) => i.상정회차 === filterRound);
 
   return (
     <main className={pageFluid}>
       <h1 className={`${h1} mb-5`}>인사관리 &gt; 노사협의회</h1>
       <LaborCouncilTabs />
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <a href="/labor-council/status" className={!filterStatus ? btnSecondary : btnOutline}>
+      <div className="mb-2 flex flex-wrap gap-2">
+        <a href={statusUrl(null, filterRound)} className={!filterStatus ? btnSecondary : btnOutline}>
           전체 {allItems.length}
         </a>
         {AGENDA_STATUSES.map((s) => (
-          <a key={s} href={`/labor-council/status?status=${s}`} className={filterStatus === s ? btnSecondary : btnOutline}>
+          <a key={s} href={statusUrl(s, filterRound)} className={filterStatus === s ? btnSecondary : btnOutline}>
             {s} {allItems.filter((i) => i.상태 === s).length}
           </a>
         ))}
       </div>
+
+      {rounds.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          <a href={statusUrl(filterStatus, null)} className={!filterRound ? btnSecondary : btnOutline}>
+            전체 회차
+          </a>
+          {rounds.map((r) => (
+            <a key={r} href={statusUrl(filterStatus, r)} className={filterRound === r ? btnSecondary : btnOutline}>
+              제{r}차 {allItems.filter((i) => i.상정회차 === r).length}
+            </a>
+          ))}
+          {unassignedCount > 0 && (
+            <a
+              href={statusUrl(filterStatus, UNASSIGNED_ROUND)}
+              className={filterRound === UNASSIGNED_ROUND ? btnSecondary : btnOutline}
+            >
+              회차 미배정 {unassignedCount}
+            </a>
+          )}
+        </div>
+      )}
 
       <div className={tableWrap}>
         <table className={table}>
