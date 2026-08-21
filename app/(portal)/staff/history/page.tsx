@@ -1,6 +1,7 @@
 import { getAccountHistory } from '@/lib/mutate/accountHistory';
 import { btn, cardTableWrap, h1, input, label, pageFluid, pageSubtitle, tableClean, tdClean, thClean, trHoverClean } from '@/lib/ui';
 import FormToggle from '@/components/FormToggle';
+import StaffTabs from '@/components/staff/StaffTabs';
 import { addAccountHistoryAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -12,9 +13,11 @@ export default async function AccountHistoryPage() {
 
   return (
     <main className={pageFluid}>
+      <h1 className={h1}>인사관리 &gt; 직원관리</h1>
+      <StaffTabs />
+
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className={h1}>인사관리 &gt; 계정관리</h1>
           <p className={pageSubtitle}>총 {sorted.length}건</p>
         </div>
         <FormToggle label="계정이력 등록">

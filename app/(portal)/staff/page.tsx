@@ -22,6 +22,7 @@ import {
 import StatusBadge from '@/components/StatusBadge';
 import Tag from '@/components/Tag';
 import FormToggle from '@/components/FormToggle';
+import StaffTabs from '@/components/staff/StaffTabs';
 import { deleteStaffAction, registerStaffAction, updateStaffAction } from './actions';
 
 export const runtime = 'nodejs';
@@ -46,9 +47,11 @@ export default async function StaffPage({
 
   return (
     <main className={pageFluid}>
+      <h1 className={h1}>인사관리 &gt; 직원관리</h1>
+      <StaffTabs />
+
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className={h1}>직원관리</h1>
           <p className={pageSubtitle}>{teamFilter ? `${teamFilter} · ` : '전체 · '}{staff.length}명</p>
         </div>
         <FormToggle label={editing ? '직원 수정' : '신규 등록'} defaultOpen={!!editing}>
