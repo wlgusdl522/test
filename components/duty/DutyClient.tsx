@@ -4,45 +4,25 @@ import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { btn, btnSecondary, card, input, label } from '@/lib/ui';
 import Modal from '@/components/Modal';
-import SignaturePad from '@/components/duty/SignaturePad';
 import DutyCalendar, { type DutyDay } from '@/components/duty/DutyCalendar';
 import StaffPicker from '@/components/duty/StaffPicker';
 import DutyWeeklyLogTable, { formatDutyDayLabel } from '@/components/duty/DutyWeeklyLogTable';
 import { swapDutyAssignmentAction } from '@/app/(portal)/duty/actions';
-import { saveDutySaturdaySignatureAction, saveDutyWeekdayLogAction } from '@/app/(portal)/duty/log/[type]/[id]/actions';
 import { addDays, mondayOf, todayISO } from '@/lib/dutyDate';
 
 type Row = Record<string, string>;
 type Tab = 'calendar' | 'log';
-
-const CHECK_FIELDS = [
-  { key: '실별소등확인', reasonKey: '사유', label: '실별 소등 확인' },
-  { key: '창문닫기', reasonKey: '사유2', label: '창문닫기' },
-  { key: '출입문잠금', reasonKey: '사유3', label: '출입문잠금' },
-];
-
-const TEXT_FIELDS = [
-  { key: '전화민원내용', label: '전화/민원 내용' },
-  { key: '내방객및내방이유', label: '내방객 및 내방이유' },
-  { key: '응급및비상시특이사항', label: '응급 및 비상시 특이사항' },
-  { key: '퇴근전특근자성명', label: '당직자 퇴근전 특근자 성명' },
-  { key: '최종인계자', label: '최종인계자' },
-];
 
 export default function DutyClient({
   weekdayLogs,
   saturdayLogs,
   holidays,
   staff,
-  viewerEmail,
-  isAdmin,
 }: {
   weekdayLogs: Row[];
   saturdayLogs: Row[];
   holidays: { 날짜: string; 휴일명: string }[];
   staff: Row[];
-  viewerEmail: string;
-  isAdmin: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -81,18 +61,6 @@ export default function DutyClient({
         setModalError(err instanceof Error ? err.message : '처리 중 오류가 발생했습니다.');
       }
     });
-  }
-
-  function handleSaveWeekday(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    runAction(() => saveDutyWeekdayLogAction(fd));
-  }
-
-  function handleSaveSaturdaySignature(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    runAction(() => saveDutySaturdaySignatureAction(fd));
   }
 
   function handleSwap(e: React.FormEvent<HTMLFormElement>) {
@@ -162,86 +130,22 @@ export default function DutyClient({
 
             {anchorDay?.kind === 'weekday' && (() => {
               const row = anchorDay.row;
-              const isOwner = isAdmin || (row.이메일 ?? '').toLowerCase() === viewerEmail;
               return (
-                <div>
-                  <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">{row.이름} · {row.소속}</p>
-                  {isOwner ? (
-                    <form onSubmit={handleSaveWeekday} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <input type="hidden" name="id" value={row.id} />
-                      {CHECK_FIELDS.map((f) => (
-                        <div key={f.key} className="grid grid-cols-1 gap-3 sm:col-span-2 sm:grid-cols-2">
-                          <label className={label}>
-                            {f.label}
-                            <input name={f.key} defaultValue={row[f.key] || '이상없음'} className={input} />
-                          </label>
-                          <label className={label}>
-                            사유(이상 있을 때만)
-                            <input name={f.reasonKey} defaultValue={row[f.reasonKey]} className={input} />
-                          </label>
-                        </div>
-                      ))}
-                      {TEXT_FIELDS.map((f) => (
-                        <label key={f.key} className={`${label} sm:col-span-2`}>
-                          {f.label}
-                          <input name={f.key} defaultValue={row[f.key]} className={input} />
-                        </label>
-                      ))}
-                      <div className="sm:col-span-2">
-                        <p className={label}>서명</p>
-                        <SignaturePad name="signature" hasExisting={!!row.사인} />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <button type="submit" disabled={isPending} className={btn}>
-                          {isPending ? '저장 중...' : '저장'}
-                        </button>
-                      </div>
-                    </form>
-                  ) : (
-                    <div className="flex flex-col gap-2 text-sm">
-                      {[...CHECK_FIELDS.map((f) => ({ label: f.label, value: row[f.key] })), ...TEXT_FIELDS.map((f) => ({ label: f.label, value: row[f.key] }))].map((f) => (
-                        <div key={f.label}>
-                          <span className="text-zinc-400">{f.label}: </span>
-                          <span className="text-zinc-800 dark:text-zinc-100">{f.value || '-'}</span>
-                        </div>
-                      ))}
-                      <p className="text-xs text-zinc-400">본인이 배정된 당직만 작성할 수 있습니다.</p>
-                    </div>
-                  )}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">{row.이름} · {row.소속}</p>
+                  <a href={`/duty/log/weekday/${row.id}`} className={btn}>일지 작성/보기</a>
                 </div>
               );
             })()}
 
             {anchorDay?.kind === 'saturday' && (() => {
               const row = anchorDay.row;
-              const slots = [
-                { slot: 1 as const, email: row.이메일1, name: row.이름1, team: row.소속1, sign: row.사인1 },
-                { slot: 2 as const, email: row.이메일2, name: row.이름2, team: row.소속2, sign: row.사인2 },
-              ];
               return (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {slots.map((s) => {
-                    const isOwner = isAdmin || (s.email ?? '').toLowerCase() === viewerEmail;
-                    return (
-                      <div key={s.slot}>
-                        <p className="mb-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                          {s.name || '(미배정)'} · {s.team}
-                        </p>
-                        {isOwner ? (
-                          <form onSubmit={handleSaveSaturdaySignature} className="flex flex-col gap-2">
-                            <input type="hidden" name="id" value={row.id} />
-                            <input type="hidden" name="slot" value={s.slot} />
-                            <SignaturePad name="signature" hasExisting={!!s.sign} />
-                            <button type="submit" disabled={isPending} className={`${btn} w-fit`}>
-                              {isPending ? '저장 중...' : '서명 저장'}
-                            </button>
-                          </form>
-                        ) : (
-                          <p className="text-sm text-zinc-400">{s.sign ? '서명 완료' : '서명 없음'}</p>
-                        )}
-                      </div>
-                    );
-                  })}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    {row.이름1 || '(미배정)'} · {row.소속1} / {row.이름2 || '(미배정)'} · {row.소속2}
+                  </p>
+                  <a href={`/duty/log/saturday/${row.id}`} className={btn}>일지 작성/보기</a>
                 </div>
               );
             })()}
