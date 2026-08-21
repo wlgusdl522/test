@@ -3,6 +3,7 @@ import { getViewerStaffRecord } from '@/lib/auth-helpers';
 import PageAccessDenied from '@/components/PageAccessDenied';
 import {
   AGENDA_STATUSES,
+  canSeeRealProposerName,
   displayedProposerName,
   getAllAgendaItems,
   isLaborCouncilMember,
@@ -46,7 +47,11 @@ export default async function LaborCouncilStatusPage({
 
   const me = await getViewerStaffRecord();
   const email = me?.['이메일(아이디)'] ?? '';
-  const [allItems, isCouncil] = await Promise.all([getAllAgendaItems(), isLaborCouncilMember(email)]);
+  const [allItems, isCouncil, canSeeRealName] = await Promise.all([
+    getAllAgendaItems(),
+    isLaborCouncilMember(email),
+    canSeeRealProposerName(email),
+  ]);
 
   const { status: statusParam, round: roundParam } = await searchParams;
   const filterStatus = (AGENDA_STATUSES as string[]).includes(statusParam ?? '') ? (statusParam as AgendaStatus) : null;
@@ -120,7 +125,7 @@ export default async function LaborCouncilStatusPage({
                   <div className="font-medium">{item.항목명 || '(제목 없음)'}</div>
                   <div className="mt-0.5 whitespace-pre-wrap text-xs text-zinc-500 dark:text-zinc-400">{item.제안내용}</div>
                 </td>
-                <td className={td}>{displayedProposerName(item, isCouncil)}</td>
+                <td className={td}>{displayedProposerName(item, canSeeRealName)}</td>
                 <td className={td}>{item.등록일시.slice(0, 10)}</td>
                 <td className={td}>
                   <span className={`${badgeBase} ${badgeTone[STATUS_TONE[item.상태]]}`}>{item.상태}</span>

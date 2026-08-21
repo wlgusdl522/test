@@ -106,7 +106,7 @@ export default async function LaborCouncilPage() {
               </div>
               <p className="text-xs text-zinc-400">
                 &quot;실명 공개&quot;를 선택해도 &quot;안건 현황&quot; 화면에는 항상 익명으로 표시됩니다. 실제 제안자는
-                노사협의회 위원만 확인할 수 있습니다.
+                근로자위원(노측)과 관리자만 확인할 수 있습니다(사용자위원에게는 위원이라도 항상 익명으로 보입니다).
               </p>
             </div>
             <div>

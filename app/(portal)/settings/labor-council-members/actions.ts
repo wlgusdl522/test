@@ -1,15 +1,20 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { addLaborCouncilMember, removeLaborCouncilMember } from '@/lib/mutate/laborCouncil';
+import { addLaborCouncilMembers, removeLaborCouncilMember, type LaborCouncilMemberType } from '@/lib/mutate/laborCouncil';
 import { getActiveStaffList } from '@/lib/mutate/permissions';
 
-export async function addLaborCouncilMemberAction(formData: FormData) {
-  const email = String(formData.get('email') ?? '');
-  const 구분 = formData.get('구분') === '사용자위원' ? '사용자위원' : '근로자위원';
+export async function addLaborCouncilMembersAction(formData: FormData) {
+  const emails = [...new Set(formData.getAll('emails').map(String).filter(Boolean))];
+  if (emails.length === 0) return;
+  const 구분: LaborCouncilMemberType = formData.get('구분') === '사용자위원' ? '사용자위원' : '근로자위원';
   const staff = await getActiveStaffList();
-  const found = staff.find((s) => s.email === email);
-  await addLaborCouncilMember(email, found?.name ?? '', 구분);
+  const entries = emails.map((email) => ({
+    이메일: email,
+    성명: staff.find((s) => s.email === email)?.name ?? '',
+    구분,
+  }));
+  await addLaborCouncilMembers(entries);
   revalidatePath('/settings/labor-council-members');
 }
 

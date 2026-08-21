@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { addKeyedRecord, deleteKeyedRecord, getKeyedList, upsertKeyedRecord } from '@/lib/mutate/keyedTable';
+import { addKeyedRecord, deleteKeyedRecord, getKeyedList, upsertKeyedRecord, upsertKeyedRecords } from '@/lib/mutate/keyedTable';
 import {
   LABOR_COUNCIL_AGENDA_TABLE,
   LABOR_COUNCIL_MEMBER_TABLE,
@@ -36,10 +36,11 @@ export type LaborCouncilAgendaItem = {
   상정회차: string;
 };
 
-// 전체 조회 화면(전 직원 대상)에서는 공개여부와 무관하게 항상 익명으로 보여주고, 노사위원만
-// 실제 제안자를 볼 수 있게 한다 — 안건현황이 전 직원 공개 화면이라 익명 보호를 기본으로 둠.
-export function displayedProposerName(item: LaborCouncilAgendaItem, viewerIsCouncil: boolean): string {
-  if (!viewerIsCouncil) return '익명';
+// 전체 조회 화면(전 직원 대상)에서는 공개여부와 무관하게 항상 익명으로 보여주고, 실명 공개를
+// 선택한 안건이라도 실제 제안자는 근로자위원(노측)·관리자만 볼 수 있게 한다 — 사용자위원(사측)은
+// 위원이라도 제안자 보호를 위해 항상 익명으로 본다.
+export function displayedProposerName(item: LaborCouncilAgendaItem, viewerCanSeeRealName: boolean): string {
+  if (!viewerCanSeeRealName) return '익명';
   return item.공개여부 === '실명' ? item.성명 : '익명';
 }
 
@@ -113,6 +114,27 @@ export async function addLaborCouncilMember(
   });
 }
 
+// 여러 명을 한 번에 추가할 때(팀별 체크박스 다중선택) 인원 수만큼 반복 호출하면 시트 API 왕복이
+// 그만큼 늘어나 속도제한에 걸릴 수 있으므로(다른 모듈에서 겪었던 것과 같은 이유), 한 번에 배치로 저장한다.
+export async function addLaborCouncilMembers(
+  entries: { 이메일: string; 성명: string; 구분: LaborCouncilMemberType }[]
+): Promise<void> {
+  await requireCanManagePermissions();
+  const trimmed = entries
+    .map((e) => ({ 이메일: e.이메일.trim().toLowerCase(), 성명: e.성명.trim(), 구분: e.구분 }))
+    .filter((e) => e.이메일);
+  if (trimmed.length === 0) return;
+  const members = await getLaborCouncilMembers();
+  let nextOrder = Math.max(0, ...members.map((m) => m.정렬순서)) + 1;
+  await upsertKeyedRecords(
+    LABOR_COUNCIL_MEMBER_TABLE,
+    trimmed.map((e) => ({
+      keyValues: { 이메일: e.이메일 },
+      record: { 이메일: e.이메일, 성명: e.성명, 구분: e.구분, 정렬순서: String(nextOrder++) },
+    }))
+  );
+}
+
 export async function removeLaborCouncilMember(이메일: string): Promise<void> {
   await requireCanManagePermissions();
   await deleteKeyedRecord(LABOR_COUNCIL_MEMBER_TABLE, { 이메일: 이메일.trim().toLowerCase() });
@@ -121,6 +143,14 @@ export async function removeLaborCouncilMember(이메일: string): Promise<void>
 export async function isLaborCouncilMember(email: string): Promise<boolean> {
   const members = await getLaborCouncilMembers();
   return members.some((m) => m.이메일.toLowerCase() === email.toLowerCase());
+}
+
+// 실명 공개된 안건의 실제 제안자는 근로자위원(노측)과 관리자만 볼 수 있다 — 사용자위원(사측)에게는
+// 위원이라도 항상 익명으로 보인다(제안자 보호 목적).
+export async function canSeeRealProposerName(email: string): Promise<boolean> {
+  if (await isAdminEmail(email)) return true;
+  const members = await getLaborCouncilMembers();
+  return members.some((m) => m.이메일.toLowerCase() === email.toLowerCase() && m.구분 === '근로자위원');
 }
 
 // 관리자는 항상 가능. 그 외에는 노사협의회위원 명단에 등록된 사람(근로자위원·사용자위원 구분 없이)만
